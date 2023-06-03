@@ -1,0 +1,201 @@
+from config.training_config import TrainingConfig, XgboostParamsConfig
+import numpy as np
+import optuna
+import pandas as pd
+from sklearn.metrics import matthews_corrcoef
+from sklearn.utils import class_weight
+from typing import Dict, Literal, Optional, Tuple
+import xgboost as xgb
+
+from preprocessing.general_utils import check_gpu_support
+
+
+class XgboostModel:
+    def __init__(self, class_problem: Literal["binary", "multiclass"], conf_training: Optional[TrainingConfig],
+                 conf_xgboost: Optional[XgboostParamsConfig]):
+        self.model: Optional[xgb.XGBClassifier] = None
+        self.class_problem = class_problem
+        self.conf_training = conf_training
+        self.conf_xgboost = conf_xgboost
+
+    def calculate_class_weights(self, y: pd.Series) -> Dict[str, float]:
+        classes_weights = class_weight.compute_sample_weight(
+            class_weight="balanced", y=y
+        )
+        return classes_weights
+
+    def fit(self, x_train: pd.DataFrame, y_train: pd.Series, x_test: pd.DataFrame, y_test: pd.Series):
+        d_test = xgb.DMatrix(x_test, label=y_test)
+        train_on = check_gpu_support()
+
+        if not self.conf_training:
+            conf_training = TrainingConfig()
+        if not self.conf_xgboost:
+            conf_xgboost = XgboostParamsConfig()
+
+        def objective(trial):
+            param = {
+                "objective": "multi:softprob",
+                "eval_metric": "mlogloss",
+                "verbose": 0,
+                "tree_method": train_on,
+                "num_class": y_train.nunique(),
+                "max_depth": trial.suggest_int("max_depth", conf_xgboost.max_depth_min, conf_xgboost.max_depth_max),
+                "alpha": trial.suggest_loguniform("alpha", conf_xgboost.alpha_min, conf_xgboost.alpha_max),
+                "lambda": trial.suggest_loguniform("lambda", conf_xgboost.lambda_min, conf_xgboost.lambda_max),
+                "num_leaves": trial.suggest_int("num_leaves", conf_xgboost.num_leaves_min, conf_xgboost.num_leaves_max),
+                "subsample": trial.suggest_uniform("subsample", conf_xgboost.sub_sample_min, conf_xgboost.sub_sample_max),
+                "colsample_bytree": trial.suggest_uniform(
+                    "colsample_bytree", conf_xgboost.col_sample_by_tree_min, conf_xgboost.col_sample_by_tree_max
+                ),
+                "colsample_bylevel": trial.suggest_uniform(
+                    "colsample_bylevel", conf_xgboost.col_sample_by_level_min, conf_xgboost.col_sample_by_level_max
+                ),
+                "colsample_bynode": trial.suggest_uniform(
+                    "colsample_bynode", conf_xgboost.col_sample_by_node_min, conf_xgboost.col_sample_by_node_max
+                ),
+                "min_child_samples": trial.suggest_int(
+                    "min_child_samples", conf_xgboost.min_child_samples_min, conf_xgboost.min_child_samples_max
+                ),
+                "eta": conf_xgboost.eta,  # 0.001
+                "steps": trial.suggest_int("steps", conf_xgboost.steps_min, conf_xgboost.steps_max),
+                "num_parallel_tree": trial.suggest_int(
+                    "num_parallel_tree", conf_xgboost.num_parallel_tree_min, conf_xgboost.num_parallel_tree_max
+                ),
+            }
+            sample_weight = trial.suggest_categorical(
+                "sample_weight", [True, False]
+            )
+            if sample_weight:
+                classes_weights = self.calculate_class_weights(y_train)
+                d_train = xgb.DMatrix(
+                    x_train, label=y_train, weight=classes_weights
+                )
+            else:
+                d_train = xgb.DMatrix(x_train, label=y_train)
+
+            pruning_callback = optuna.integration.XGBoostPruningCallback(
+                trial, "test-mlogloss"
+            )
+
+            if conf_training.hypertuning_cv_folds == 1:
+                eval_set = [(d_train, "train"), (d_test, "test")]
+                model = xgb.train(
+                    param,
+                    d_train,
+                    num_boost_round=param["steps"],
+                    early_stopping_rounds=conf_training.early_stopping_rounds,
+                    evals=eval_set,
+                    callbacks=[pruning_callback],
+                )
+                preds = model.predict(d_test)
+                pred_labels = np.asarray(
+                    [np.argmax(line) for line in preds]
+                )
+                matthew = matthews_corrcoef(y_test, pred_labels) * -1
+                return matthew
+            else:
+                result = xgb.cv(
+                    params=param,
+                    dtrain=d_train,
+                    num_boost_round=param["steps"],
+                    early_stopping_rounds=conf_training.early_stopping_rounds,
+                    nfold=conf_training.hypertuning_cv_folds,
+                    as_pandas=True,
+                    seed=conf_training.global_random_state,
+                    callbacks=[pruning_callback],
+                    shuffle=conf_training.shuffle_during_training,
+                )
+
+                return result["test-mlogloss-mean"].mean()
+
+        algorithm = "xgboost"
+        sampler = optuna.samplers.TPESampler(
+            multivariate=True, seed=conf_training.global_random_state
+        )
+        study = optuna.create_study(
+            direction="maximize",
+            sampler=sampler,
+            study_name=f"{algorithm} tuning",
+        )
+
+        study.optimize(
+            objective,
+            n_trials=conf_training.hyperparameter_tuning_rounds,
+            timeout=conf_training.hyperparameter_tuning_max_runtime_secs,
+            gc_after_trial=True,
+            show_progress_bar=True,
+        )
+        try:
+            fig = optuna.visualization.plot_optimization_history(study)
+            fig.show()
+            fig = optuna.visualization.plot_param_importances(study)
+            fig.show()
+        except ZeroDivisionError:
+            pass
+
+        xgboost_best_param = study.best_trial.params
+        param = {
+            "objective": "multi:softprob",  # OR  'binary:logistic' #the loss function being used
+            "eval_metric": "mlogloss",
+            "verbose": 0,
+            "tree_method": train_on,  # use GPU for training
+            "num_class": y_train.nunique(),
+            "max_depth": xgboost_best_param[
+                "max_depth"
+            ],  # maximum depth of the decision trees being trained
+            "alpha": xgboost_best_param["alpha"],
+            "lambda": xgboost_best_param["lambda"],
+            "num_leaves": xgboost_best_param["num_leaves"],
+            "subsample": xgboost_best_param["subsample"],
+            "colsample_bytree": xgboost_best_param["colsample_bytree"],
+            "colsample_bylevel": xgboost_best_param["colsample_bylevel"],
+            "colsample_bynode": xgboost_best_param["colsample_bynode"],
+            "min_child_samples": xgboost_best_param["min_child_samples"],
+            "eta": xgboost_best_param["eta"],
+            "steps": xgboost_best_param["steps"],
+            "num_parallel_tree": xgboost_best_param["num_parallel_tree"],
+        }
+        sample_weight = xgboost_best_param["sample_weight"]
+        if sample_weight:
+            classes_weights = self.calculate_class_weights(y_train)
+            D_train = xgb.DMatrix(
+                x_train, label=y_train, weight=classes_weights
+            )
+        else:
+            D_train = xgb.DMatrix(x_train, label=y_train)
+        d_test = xgb.DMatrix(x_test, label=y_test)
+        eval_set = [(D_train, "train"), (d_test, "test")]
+
+        model = xgb.train(
+            param,
+            D_train,
+            num_boost_round=param["steps"],
+            early_stopping_rounds=10,
+            evals=eval_set,
+        )
+        self.model = model
+        return self.model
+
+    def xgboost_predict(self, df: pd.DataFrame) -> Tuple[np.ndarray, np.ndarray]:
+        """
+        Loads the pretrained model from the class itself and predicts on new data.
+        :param feat_importance: Set True, if feature importance shall be calculated based on SHAP values.
+        :return: Updates class attributes.
+        """
+        d_test = xgb.DMatrix(df)
+        model = self.model
+        partial_probs = model.predict(d_test)
+        if self.class_problem == "binary":
+            predicted_probs = np.asarray([line[1] for line in partial_probs])
+            predicted_classes = (
+                    predicted_probs
+                    > 0.5
+            )
+        else:
+            predicted_probs = partial_probs
+            predicted_classes = np.asarray(
+                [np.argmax(line) for line in partial_probs]
+            )
+        return predicted_probs, predicted_classes
+

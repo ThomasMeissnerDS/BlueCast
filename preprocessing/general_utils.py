@@ -1,5 +1,21 @@
+import numpy as np
 import pandas as pd
 from typing import Dict, List, Optional, Union
+import xgboost as xgb
+
+
+def check_gpu_support() -> str:
+    data = np.random.rand(50, 2)
+    label = np.random.randint(2, size=50)
+    D_train = xgb.DMatrix(data, label=label)
+    params = {"tree_method": "gpu_hist", "steps": 2}
+    try:
+        xgb.train(params, D_train)
+        print("Xgboost uses GPU.")
+        return "gpu_hist"
+    except Exception:
+        print("Xgboost uses CPU.")
+        return "exact"
 
 
 class FeatureTypeDetector:
