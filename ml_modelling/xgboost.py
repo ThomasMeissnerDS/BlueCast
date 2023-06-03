@@ -29,9 +29,10 @@ class XgboostModel:
         train_on = check_gpu_support()
 
         if not self.conf_training:
-            conf_training = TrainingConfig()
+            self.conf_training = TrainingConfig()
+
         if not self.conf_xgboost:
-            conf_xgboost = XgboostParamsConfig()
+            self.conf_xgboost = XgboostParamsConfig()
 
         def objective(trial):
             param = {
@@ -40,27 +41,27 @@ class XgboostModel:
                 "verbose": 0,
                 "tree_method": train_on,
                 "num_class": y_train.nunique(),
-                "max_depth": trial.suggest_int("max_depth", conf_xgboost.max_depth_min, conf_xgboost.max_depth_max),
-                "alpha": trial.suggest_loguniform("alpha", conf_xgboost.alpha_min, conf_xgboost.alpha_max),
-                "lambda": trial.suggest_loguniform("lambda", conf_xgboost.lambda_min, conf_xgboost.lambda_max),
-                "num_leaves": trial.suggest_int("num_leaves", conf_xgboost.num_leaves_min, conf_xgboost.num_leaves_max),
-                "subsample": trial.suggest_uniform("subsample", conf_xgboost.sub_sample_min, conf_xgboost.sub_sample_max),
+                "max_depth": trial.suggest_int("max_depth", self.conf_xgboost.max_depth_min, self.conf_xgboost.max_depth_max),
+                "alpha": trial.suggest_loguniform("alpha", self.conf_xgboost.alpha_min, self.conf_xgboost.alpha_max),
+                "lambda": trial.suggest_loguniform("lambda", self.conf_xgboost.lambda_min, self.conf_xgboost.lambda_max),
+                "num_leaves": trial.suggest_int("num_leaves", self.conf_xgboost.num_leaves_min, self.conf_xgboost.num_leaves_max),
+                "subsample": trial.suggest_uniform("subsample", self.conf_xgboost.sub_sample_min, self.conf_xgboost.sub_sample_max),
                 "colsample_bytree": trial.suggest_uniform(
-                    "colsample_bytree", conf_xgboost.col_sample_by_tree_min, conf_xgboost.col_sample_by_tree_max
+                    "colsample_bytree", self.conf_xgboost.col_sample_by_tree_min, self.conf_xgboost.col_sample_by_tree_max
                 ),
                 "colsample_bylevel": trial.suggest_uniform(
-                    "colsample_bylevel", conf_xgboost.col_sample_by_level_min, conf_xgboost.col_sample_by_level_max
+                    "colsample_bylevel", self.conf_xgboost.col_sample_by_level_min, self.conf_xgboost.col_sample_by_level_max
                 ),
                 "colsample_bynode": trial.suggest_uniform(
-                    "colsample_bynode", conf_xgboost.col_sample_by_node_min, conf_xgboost.col_sample_by_node_max
+                    "colsample_bynode", self.conf_xgboost.col_sample_by_node_min, self.conf_xgboost.col_sample_by_node_max
                 ),
                 "min_child_samples": trial.suggest_int(
-                    "min_child_samples", conf_xgboost.min_child_samples_min, conf_xgboost.min_child_samples_max
+                    "min_child_samples", self.conf_xgboost.min_child_samples_min, self.conf_xgboost.min_child_samples_max
                 ),
-                "eta": conf_xgboost.eta,  # 0.001
-                "steps": trial.suggest_int("steps", conf_xgboost.steps_min, conf_xgboost.steps_max),
+                "eta": self.conf_xgboost.eta,  # 0.001
+                "steps": trial.suggest_int("steps", self.conf_xgboost.steps_min, self.conf_xgboost.steps_max),
                 "num_parallel_tree": trial.suggest_int(
-                    "num_parallel_tree", conf_xgboost.num_parallel_tree_min, conf_xgboost.num_parallel_tree_max
+                    "num_parallel_tree", self.conf_xgboost.num_parallel_tree_min, self.conf_xgboost.num_parallel_tree_max
                 ),
             }
             sample_weight = trial.suggest_categorical(
@@ -78,13 +79,13 @@ class XgboostModel:
                 trial, "test-mlogloss"
             )
 
-            if conf_training.hypertuning_cv_folds == 1:
+            if self.conf_training.hypertuning_cv_folds == 1:
                 eval_set = [(d_train, "train"), (d_test, "test")]
                 model = xgb.train(
                     param,
                     d_train,
                     num_boost_round=param["steps"],
-                    early_stopping_rounds=conf_training.early_stopping_rounds,
+                    early_stopping_rounds=self.conf_training.early_stopping_rounds,
                     evals=eval_set,
                     callbacks=[pruning_callback],
                 )
@@ -99,19 +100,19 @@ class XgboostModel:
                     params=param,
                     dtrain=d_train,
                     num_boost_round=param["steps"],
-                    early_stopping_rounds=conf_training.early_stopping_rounds,
-                    nfold=conf_training.hypertuning_cv_folds,
+                    early_stopping_rounds=self.conf_training.early_stopping_rounds,
+                    nfold=self.conf_training.hypertuning_cv_folds,
                     as_pandas=True,
-                    seed=conf_training.global_random_state,
+                    seed=self.conf_training.global_random_state,
                     callbacks=[pruning_callback],
-                    shuffle=conf_training.shuffle_during_training,
+                    shuffle=self.conf_training.shuffle_during_training,
                 )
 
                 return result["test-mlogloss-mean"].mean()
 
         algorithm = "xgboost"
         sampler = optuna.samplers.TPESampler(
-            multivariate=True, seed=conf_training.global_random_state
+            multivariate=True, seed=self.conf_training.global_random_state
         )
         study = optuna.create_study(
             direction="maximize",
@@ -121,8 +122,8 @@ class XgboostModel:
 
         study.optimize(
             objective,
-            n_trials=conf_training.hyperparameter_tuning_rounds,
-            timeout=conf_training.hyperparameter_tuning_max_runtime_secs,
+            n_trials=self.conf_training.hyperparameter_tuning_rounds,
+            timeout=self.conf_training.hyperparameter_tuning_max_runtime_secs,
             gc_after_trial=True,
             show_progress_bar=True,
         )
