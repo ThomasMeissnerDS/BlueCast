@@ -75,3 +75,4 @@ class MultiClassTargetEncoder:
             x = pd.concat([x, temp], axis=1)
         self.encoders[f"{algorithm}_all_cols"] = enc
         return x
+
