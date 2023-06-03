@@ -1,0 +1,86 @@
+import pandas as pd
+from typing import Dict, List, Optional, Union
+
+
+class FeatureTypeDetector:
+    def __init__(self,
+                 num_columns: Optional[List[Union[str, int, float]]],
+                 cat_columns: List[Union[str, int, float]],
+                 date_columns: List[Union[str, int, float]]):
+        self.num_columns = num_columns
+        self.cat_columns = cat_columns
+        self.date_columns = date_columns
+        self.detected_col_types: Dict[str, str] = {}
+        self.num_dtypes = [
+            "int8",
+            "int16",
+            "int32",
+            "int64",
+            "float16",
+            "float32",
+            "float64",
+        ]
+
+    def fit_transform_feature_types(self, df: pd.DataFrame) -> None:
+        # detect numeric columns by type
+        if not self.num_columns:
+            num_col_list = []
+            for vartype in self.num_dtypes:
+                num_cols = df.select_dtypes(include=[vartype]).columns
+                for col in num_cols:
+                    num_col_list.append(col)
+            self.num_columns = num_col_list
+
+        # detect and cast boolean columns
+        bool_cols = list(df.select_dtypes(["bool"]))
+        for col in bool_cols:
+            df[col] = df[col].astype(bool)
+            self.detected_col_types[col] = "bool"
+
+        # detect and cast datetime columns
+        try:
+            no_bool_df = df.loc[:, ~df.columns.isin(bool_cols)]
+            no_bool_cols = no_bool_df.columns.to_list()
+        except Exception:
+            no_bool_cols = df.columns.to_list()
+        if not self.date_columns:
+            date_columns = []
+            # convert date columns from object to datetime type
+            for col in no_bool_cols:
+                if col not in self.num_columns:
+                    try:
+                        df[col] = pd.to_datetime(df[col], yearfirst=True)
+                        date_columns.append(col)
+                        self.detected_col_types[col] = "datetime[ns]"
+                    except Exception:
+                        pass
+            self.date_columns = date_columns
+
+        # detect and cast floats
+        no_bool_dt_cols = bool_cols + self.date_columns
+        no_bool_datetime_df = df.loc[:, ~df.columns.isin(no_bool_dt_cols)]
+        no_bool_datetime_cols = no_bool_datetime_df.columns.to_list()
+        for col in no_bool_datetime_cols:
+            try:
+                df[col] = df[col].astype(float)
+                self.detected_col_types[col] = "float"
+            except Exception:
+                df[col] = df[col].astype(str)
+                self.detected_col_types[col] = "object"
+        return df
+
+    def transform_feature_types(self, df: pd.DataFrame) -> pd.DataFrame:
+        """
+        Loops through the dataframe and detects column types and type casts them accordingly.
+        :return: Returns casted dataframe
+        """
+        for key in self.detected_col_types:
+            if self.detected_col_types[key] == "datetime[ns]":
+                df[key] = pd.to_datetime(
+                    df[key], yearfirst=True
+                )
+            else:
+                df[key] = df[key].astype(
+                    self.detected_col_types[key]
+                )
+        return df
