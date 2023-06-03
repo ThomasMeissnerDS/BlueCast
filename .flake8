@@ -1,0 +1,24 @@
+[flake8]
+extend-exclude="tests/,scripts/"
+max_line_length = 80
+max_complexity = 18
+
+select =
+    F, # pyflakes
+    E, # pycodestyle errors
+    W, # pycodestyle warnings
+    B, # flake8-bugbear
+    C  # mccabe complexity
+
+ignore =
+    # These rules clash with black
+    # (https://github.com/psf/black/blob/main/.flake8)
+    # https://github.com/psf/black/issues/52
+    E203,
+    E266,
+    E501,
+    W503,
+
+    # This is flake8-bugbear's "line too long" rule.
+    # Since black enforces line lengths, we don't need to lint it
+    B950

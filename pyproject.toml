@@ -1,0 +1,46 @@
+[tool.poetry]
+name = "bluecast"
+version = "0.1"
+description = "A lightweight and fast automl framework"
+authors = ["Thomas Meißner <meissnercorporation@gmx.de>"]
+license = "GPL-3.0-only"
+classifiers = [
+    "Programming Language :: Python :: 3.7",
+    "Programming Language :: Python :: 3.8",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+]
+homepage = "https://github.com/ThomasMeissnerDS/BlueCast"
+repository = "https://github.com/ThomasMeissnerDS/BlueCast"
+readme = "README.md"
+packages = [
+    { include = "bluecast" },
+]
+
+[tool.poetry.dependencies]
+python = ">=3.7,<3.12"
+category_encoders = "^2.3.0" # changed to also include newer versions
+dill = "^0.3.3"
+numpy = "^1.19.4"
+optuna = "^2.8.0"
+pandas = "^1.1.5"
+scikit-learn = "^1.0.1"
+shap = "^0"
+xgboost = "^1.5.3"
+
+[tool.poetry.dev-dependencies]
+ipython = "^7.10.0"
+jupyter_core = "^4.7.0"
+pytest = "^6.2.5"
+setuptools = "^51.1.0"
+twine = "^1.13.0"
+wheel = "^0.36.2"
+Sphinx = "^4.3.1"
+
+[tool.poetry.extras]
+jupyter = ["ipython", "jupyter_core", "notebook"]
+full = ["ipython", "jupyter_core", "notebook"]
+
+[build-system]
+requires = ["poetry-core>=1.0.0"]
+build-backend = "poetry.core.masonry.api"

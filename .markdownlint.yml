@@ -1,0 +1,8 @@
+# MD013/line-length - Line length
+MD013:
+  line_length: 80
+  heading_line_length: 80
+  # Exclude code blocks
+  code_blocks: false
+  # Exclude tables
+  tables: false
