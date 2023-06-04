@@ -44,17 +44,20 @@ class BlueCast:
 
         df = fill_infinite_values(df)
         df = date_converter(df, self.date_columns)
-        if self.cat_columns is not None and self.class_problem == "binary":
-            self.cat_encoder = BinaryClassTargetEncoder(self.cat_columns)
-            df = self.cat_encoder.fit_target_encode_binary_class(df, df[target_col])
-        elif self.cat_columns is not None and self.class_problem == "multiclass":
-            self.cat_encoder = MultiClassTargetEncoder(self.cat_columns)
-            df = self.cat_encoder.fit_target_encode_multiclass(df, df[target_col])
 
         if self.time_split_column is not None:
             x_train, x_test, y_train, y_test = train_test_split_time(df, target_col, self.time_split_column)
         else:
             x_train, x_test, y_train, y_test = train_test_split_cross(df, target_col)
+
+        if self.cat_columns is not None and self.class_problem == "binary":
+            self.cat_encoder = BinaryClassTargetEncoder(self.cat_columns)
+            x_train = self.cat_encoder.fit_target_encode_binary_class(x_train, x_train[target_col])
+            x_test = self.cat_encoder.transform_target_encode_binary_class(x_test)
+        elif self.cat_columns is not None and self.class_problem == "multiclass":
+            self.cat_encoder = MultiClassTargetEncoder(self.cat_columns)
+            x_train = self.cat_encoder.fit_target_encode_multiclass(x_train, x_train[target_col])
+            x_test = self.cat_encoder.transform_target_encode_multiclass(x_test)
 
         self.ml_model = XgboostModel(self.class_problem,
                                      conf_training=self.conf_training,
