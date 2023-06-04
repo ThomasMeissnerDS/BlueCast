@@ -210,5 +210,6 @@ class XgboostModel:
             predicted_classes = np.asarray(
                 [np.argmax(line) for line in partial_probs]
             )
+        print("Finished predicting")
         return predicted_probs, predicted_classes
 

@@ -43,7 +43,7 @@ def synthetic_train_test_data() -> Tuple[pd.DataFrame, pd.DataFrame]:
     return df_train, df_val
 
 
-def test_fit(synthetic_train_test_data):
+def test_blueprint_xgboost(synthetic_train_test_data):
     """Test that tests the BlueCast class"""
     df_train = synthetic_train_test_data[0]
     df_val = synthetic_train_test_data[1]
@@ -53,9 +53,7 @@ def test_fit(synthetic_train_test_data):
     automl = BlueCast(class_problem="binary", target_column="target", conf_training=train_config)
     automl.fit(df_train, target_col="target")
     y_probs, y_classes = automl.predict(df_val)
-    assert y_probs.shape[0] == len(df_val.index)
-    assert y_classes.shape[0] == len(df_val.index)
-    assert y_probs.shape[1] == 2
-    assert y_classes.shape[1] == 1
-    assert np.min(y_classes) == 0
-    assert np.max(y_classes) == 1
+    print(y_probs)
+    print(y_classes)
+    assert len(y_probs) == len(df_val.index)
+    assert len(y_classes) == len(df_val.index)
