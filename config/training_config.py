@@ -16,9 +16,9 @@ class TrainingConfig:
 class XgboostTuneParamsConfig:
     max_depth_min: int = 2
     max_depth_max: int = 3
-    alpha_min: float = 0.0
+    alpha_min: float = 1e-6
     alpha_max: float = 1e6
-    lambda_min: float = 0.0
+    lambda_min: float = 1e-6
     lambda_max: float = 1e6
     num_leaves_min: int = 2
     num_leaves_max: int = 16

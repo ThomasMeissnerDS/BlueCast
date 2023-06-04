@@ -76,6 +76,7 @@ class FeatureTypeDetector:
         no_bool_dt_cols = bool_cols + self.date_columns
         no_bool_datetime_df = df.loc[:, ~df.columns.isin(no_bool_dt_cols)]
         no_bool_datetime_cols = no_bool_datetime_df.columns.to_list()
+        cat_columns = []
         for col in no_bool_datetime_cols:
             try:
                 df[col] = df[col].astype(float)
@@ -83,6 +84,8 @@ class FeatureTypeDetector:
             except Exception:
                 df[col] = df[col].astype(str)
                 self.detected_col_types[col] = "object"
+                cat_columns.append(col)
+        self.cat_columns = cat_columns
         return df
 
     def transform_feature_types(self, df: pd.DataFrame) -> pd.DataFrame:

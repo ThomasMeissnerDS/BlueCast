@@ -31,6 +31,7 @@ class BlueCast:
         self.conf_training = conf_training
         self.conf_xgboost = conf_xgboost
         self.conf_params_xgboost = conf_params_xgboost
+        self.feat_type_detector: Optional[FeatureTypeDetector] = None
         self.cat_encoder: Optional[Union[BinaryClassTargetEncoder, MultiClassTargetEncoder]] = None
         self.ml_model: Optional[XgboostModel] = None
 
@@ -64,6 +65,7 @@ class BlueCast:
 
     def predict(self, df: pd.DataFrame) -> Tuple[np.ndarray, np.ndarray]:
         check_gpu_support()
+        df = self.feat_type_detector.transform_feature_types(df)
         df = fill_infinite_values(df)
         df = date_converter(df, self.date_columns)
 

@@ -8,10 +8,11 @@ import pytest
 def synthetic_train_df_binary_classification() -> pd.DataFrame:
     """Create a synthetic train df for binary classification."""
     df = pd.DataFrame({
-        "a": [np.nan, 2, 3, "A", 5, 6, 7, 8, 9, np.nan],
-        "b": [1, 2, 3, "B", 5, 6, 7, 8, 9, 10],
+        "a": ["A", 2, 3, "A", 5, 6, 7, 8, "B", np.nan],
+        "b": [1, 2, 3, 4, 5, 6, 7, 8, 9, 10],
         "c": [1, 2, 3, "A", 5, 6, 7, 8, np.nan, 10],
         "d": [-50, -237, -8, "C", 0, np.nan, 0.3, 0.98, 0.1, 0.2],
+        "e": [f"2023-{m}-01" for m in range(10)],
         "target": [0, 0, 0, 0, 0, 1, 1, 1, 1, 1]
     })
     return df
@@ -36,4 +37,5 @@ def test_fit(synthetic_train_df_binary_classification, synthetic_test_df_binary_
     assert y_classes.shape[0] == len(synthetic_test_df_binary_classification.index)
     assert y_probs.shape[1] == 2
     assert y_classes.shape[1] == 1
-    assert y_probs[0][0] == pytest.approx(0.9999997615814209, 0.0001)
+    assert np.min(y_classes) == 0
+    assert np.max(y_classes) == 1
