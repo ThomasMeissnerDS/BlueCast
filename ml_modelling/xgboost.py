@@ -38,7 +38,7 @@ class XgboostModel:
         if not self.conf_params_xgboost:
             self.conf_params_xgboost = XgboostFinalParamConfig()
 
-    def fit(self, x_train: pd.DataFrame, y_train: pd.Series, x_test: pd.DataFrame, y_test: pd.Series) -> xgb.Booster:
+    def fit(self, x_train: pd.DataFrame, x_test: pd.DataFrame, y_train: pd.Series, y_test: pd.Series) -> xgb.Booster:
         self.check_load_confs()
         if self.autotune_params:
             self.autotune(x_train, y_train, x_test, y_test)

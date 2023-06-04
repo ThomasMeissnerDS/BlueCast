@@ -5,7 +5,7 @@ import pytest
 
 
 @pytest.fixture
-def synthetic_train_df_binary_classification():
+def synthetic_train_df_binary_classification() -> pd.DataFrame:
     """Create a synthetic train df for binary classification."""
     df = pd.DataFrame({
         "a": [np.nan, 2, 3, "A", 5, 6, 7, 8, 9, np.nan],
@@ -18,7 +18,7 @@ def synthetic_train_df_binary_classification():
 
 
 @pytest.fixture
-def synthetic_test_df_binary_classification(synthetic_train_df_binary_classification):
+def synthetic_test_df_binary_classification(synthetic_train_df_binary_classification) -> pd.DataFrame:
     """Create a synthetic test df for binary classification."""
     df = synthetic_train_df_binary_classification
     df[["a", "b", "c", "d"]] = df[["a", "b", "c", "d"]] * 2
@@ -26,14 +26,14 @@ def synthetic_test_df_binary_classification(synthetic_train_df_binary_classifica
     return df
 
 
-def test_fit(synthetic_df_binary_classification, synthetic_test_df_binary_classification):
+def test_fit(synthetic_train_df_binary_classification, synthetic_test_df_binary_classification):
     """Test that tests the BlueCast class"""
-    df = synthetic_df_binary_classification
+    df = synthetic_train_df_binary_classification
     automl = BlueCast(class_problem="binary", target_column="target")
     automl.fit(df, target_col="target")
     y_probs, y_classes = automl.predict(synthetic_test_df_binary_classification)
-    assert y_probs.shape[0] == synthetic_test_df_binary_classification.shape[0]
-    assert y_classes.shape[0] == synthetic_test_df_binary_classification.shape[0]
+    assert y_probs.shape[0] == len(synthetic_test_df_binary_classification.index)
+    assert y_classes.shape[0] == len(synthetic_test_df_binary_classification.index)
     assert y_probs.shape[1] == 2
     assert y_classes.shape[1] == 1
     assert y_probs[0][0] == pytest.approx(0.9999997615814209, 0.0001)
