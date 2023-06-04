@@ -43,6 +43,8 @@ class XgboostModel:
         if self.autotune_params:
             self.autotune(x_train, x_test, y_train, y_test)
 
+        print("Finished hyperparameter tuning")
+
         if self.conf_params_xgboost.sample_weight:
             classes_weights = self.calculate_class_weights(y_train)
             d_train = xgb.DMatrix(
@@ -53,14 +55,14 @@ class XgboostModel:
         d_test = xgb.DMatrix(x_test, label=y_test)
         eval_set = [(d_train, "train"), (d_test, "test")]
 
-        model = xgb.train(
+        self.model = xgb.train(
             self.conf_params_xgboost.params,
             d_train,
             num_boost_round=self.conf_params_xgboost.params["steps"],
             early_stopping_rounds=self.conf_training.early_stopping_rounds,
             evals=eval_set,
         )
-        self.model = model
+        print("Finished training")
         return self.model
 
     def autotune(self, x_train: pd.DataFrame, x_test: pd.DataFrame, y_train: pd.Series, y_test: pd.Series) -> None:
@@ -188,21 +190,15 @@ class XgboostModel:
             "colsample_bylevel": xgboost_best_param["colsample_bylevel"],
             "colsample_bynode": xgboost_best_param["colsample_bynode"],
             "min_child_samples": xgboost_best_param["min_child_samples"],
-            "eta": xgboost_best_param["eta"],
+            "eta": self.conf_xgboost.eta,
             "steps": xgboost_best_param["steps"],
             "num_parallel_tree": xgboost_best_param["num_parallel_tree"],
         }
         self.conf_params_xgboost.sample_weight = xgboost_best_param["sample_weight"]
 
     def predict(self, df: pd.DataFrame) -> Tuple[np.ndarray, np.ndarray]:
-        """
-        Loads the pretrained model from the class itself and predicts on new data.
-        :param feat_importance: Set True, if feature importance shall be calculated based on SHAP values.
-        :return: Updates class attributes.
-        """
         d_test = xgb.DMatrix(df)
-        model = self.model
-        partial_probs = model.predict(d_test)
+        partial_probs = self.model.predict(d_test)
         if self.class_problem == "binary":
             predicted_probs = np.asarray([line[1] for line in partial_probs])
             predicted_classes = (

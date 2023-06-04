@@ -17,11 +17,11 @@ class XgboostTuneParamsConfig:
     max_depth_min: int = 2
     max_depth_max: int = 3
     alpha_min: float = 1.0
-    alpha_max: float = 1e6
+    alpha_max: float = 1e3
     lambda_min: float = 1.0
-    lambda_max: float = 1e6
+    lambda_max: float = 1e3
     num_leaves_min: int = 2
-    num_leaves_max: int = 16
+    num_leaves_max: int = 64
     sub_sample_min: float = 0.3
     sub_sample_max: float = 1.0
     col_sample_by_tree_min: float = 0.3

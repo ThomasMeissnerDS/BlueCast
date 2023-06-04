@@ -37,10 +37,10 @@ class BlueCast:
 
     def fit(self, df: pd.DataFrame, target_col: str):
         check_gpu_support()
-        feat_detector = FeatureTypeDetector()
-        df = feat_detector.fit_transform_feature_types(df)
-        self.cat_columns = feat_detector.cat_columns
-        self.date_columns = feat_detector.date_columns
+        self.feat_type_detector = FeatureTypeDetector()
+        df = self.feat_type_detector.fit_transform_feature_types(df)
+        self.cat_columns = self.feat_type_detector.cat_columns
+        self.date_columns = self.feat_type_detector.date_columns
 
         df = fill_infinite_values(df)
         df = date_converter(df, self.date_columns)
@@ -63,7 +63,7 @@ class BlueCast:
                                      conf_training=self.conf_training,
                                      conf_xgboost=self.conf_xgboost,
                                      conf_params_xgboost=self.conf_params_xgboost)
-        self.ml_model = self.ml_model.fit(x_train, x_test, y_train, y_test)
+        self.ml_model.fit(x_train, x_test, y_train, y_test)
         self.prediction_mode = True
 
     def predict(self, df: pd.DataFrame) -> Tuple[np.ndarray, np.ndarray]:
@@ -76,7 +76,7 @@ class BlueCast:
             df = self.cat_encoder.transform_target_encode_binary_class(df)
         elif self.cat_columns is not None and self.class_problem == "multiclass":
             df = self.cat_encoder.transform_target_encode_multiclass(df)
-
+        print("Predicting...")
         y_probs, y_classes = self.ml_model.predict(df)
 
         return y_probs, y_classes
