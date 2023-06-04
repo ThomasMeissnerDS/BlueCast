@@ -1,4 +1,5 @@
 from pydantic.dataclasses import dataclass
+from typing import Dict, Optional
 
 
 @dataclass
@@ -12,7 +13,7 @@ class TrainingConfig:
 
 
 @dataclass
-class XgboostParamsConfig:
+class XgboostTuneParamsConfig:
     max_depth_min: int = 2
     max_depth_max: int = 3
     alpha_min: float = 0.0
@@ -36,3 +37,28 @@ class XgboostParamsConfig:
     steps_max: int = 50000
     num_parallel_tree_min: int = 1
     num_parallel_tree_max: int = 3
+
+
+@dataclass
+class XgboostFinalParamConfig:
+    params = {
+        "objective": "multi:softprob",  # OR  'binary:logistic' #the loss function being used
+        "eval_metric": "mlogloss",
+        "verbose": 0,
+        "tree_method": "exact",  # use GPU for training
+        "num_class": 2,
+        "max_depth": 3,  # maximum depth of the decision trees being trained
+        "alpha": 0.1,
+        "lambda": 0.1,
+        "num_leaves": 16,
+        "subsample": 0.8,
+        "colsample_bytree": 0.8,
+        "colsample_bylevel": 0.8,
+        "colsample_bynode": 0.8,
+        "min_child_samples": 100,
+        "eta": 0.1,
+        "steps": 1000,
+        "num_parallel_tree": 1
+    }
+    sample_weight: Optional[Dict[str, float]] = None
+    classification_threshold: float = 0.5

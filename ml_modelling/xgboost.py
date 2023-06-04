@@ -1,4 +1,4 @@
-from config.training_config import TrainingConfig, XgboostParamsConfig
+from config.training_config import TrainingConfig, XgboostTuneParamsConfig, XgboostFinalParamConfig
 import numpy as np
 import optuna
 import pandas as pd
@@ -12,11 +12,12 @@ from preprocessing.general_utils import check_gpu_support
 
 class XgboostModel:
     def __init__(self, class_problem: Literal["binary", "multiclass"], conf_training: Optional[TrainingConfig],
-                 conf_xgboost: Optional[XgboostParamsConfig]):
+                 conf_xgboost: Optional[XgboostTuneParamsConfig], conf_params_xgboost: Optional[XgboostFinalParamConfig]):
         self.model: Optional[xgb.XGBClassifier] = None
         self.class_problem = class_problem
         self.conf_training = conf_training
         self.conf_xgboost = conf_xgboost
+        self.conf_params_xgboost = conf_params_xgboost
 
     def calculate_class_weights(self, y: pd.Series) -> Dict[str, float]:
         classes_weights = class_weight.compute_sample_weight(
@@ -24,15 +25,44 @@ class XgboostModel:
         )
         return classes_weights
 
-    def fit(self, x_train: pd.DataFrame, y_train: pd.Series, x_test: pd.DataFrame, y_test: pd.Series):
-        d_test = xgb.DMatrix(x_test, label=y_test)
-        train_on = check_gpu_support()
-
+    def check_load_confs(self):
         if not self.conf_training:
             self.conf_training = TrainingConfig()
 
         if not self.conf_xgboost:
-            self.conf_xgboost = XgboostParamsConfig()
+            self.conf_xgboost = XgboostTuneParamsConfig()
+
+        if not self.conf_params_xgboost:
+            self.conf_params_xgboost = XgboostFinalParamConfig()
+
+    def fit(self, x_train: pd.DataFrame, y_train: pd.Series, x_test: pd.DataFrame, y_test: pd.Series) -> xgb.Booster:
+        self.check_load_confs()
+
+        if self.conf_params_xgboost.sample_weight:
+            classes_weights = self.calculate_class_weights(y_train)
+            d_train = xgb.DMatrix(
+                x_train, label=y_train, weight=classes_weights
+            )
+        else:
+            d_train = xgb.DMatrix(x_train, label=y_train)
+        d_test = xgb.DMatrix(x_test, label=y_test)
+        eval_set = [(d_train, "train"), (d_test, "test")]
+
+        model = xgb.train(
+            self.conf_params_xgboost.params,
+            d_train,
+            num_boost_round=self.conf_params_xgboost.params["steps"],
+            early_stopping_rounds=self.conf_training.early_stopping_rounds,
+            evals=eval_set,
+        )
+        self.model = model
+        return self.model
+
+    def fit_autotune(self, x_train: pd.DataFrame, y_train: pd.Series, x_test: pd.DataFrame, y_test: pd.Series):
+        d_test = xgb.DMatrix(x_test, label=y_test)
+        train_on = check_gpu_support()
+
+        self.check_load_confs()
 
         def objective(trial):
             param = {
@@ -136,7 +166,7 @@ class XgboostModel:
             pass
 
         xgboost_best_param = study.best_trial.params
-        param = {
+        self.conf_params_xgboost.params = {
             "objective": "multi:softprob",  # OR  'binary:logistic' #the loss function being used
             "eval_metric": "mlogloss",
             "verbose": 0,
@@ -157,26 +187,7 @@ class XgboostModel:
             "steps": xgboost_best_param["steps"],
             "num_parallel_tree": xgboost_best_param["num_parallel_tree"],
         }
-        sample_weight = xgboost_best_param["sample_weight"]
-        if sample_weight:
-            classes_weights = self.calculate_class_weights(y_train)
-            D_train = xgb.DMatrix(
-                x_train, label=y_train, weight=classes_weights
-            )
-        else:
-            D_train = xgb.DMatrix(x_train, label=y_train)
-        d_test = xgb.DMatrix(x_test, label=y_test)
-        eval_set = [(D_train, "train"), (d_test, "test")]
-
-        model = xgb.train(
-            param,
-            D_train,
-            num_boost_round=param["steps"],
-            early_stopping_rounds=10,
-            evals=eval_set,
-        )
-        self.model = model
-        return self.model
+        self.conf_params_xgboost.sample_weight = xgboost_best_param["sample_weight"]
 
     def xgboost_predict(self, df: pd.DataFrame) -> Tuple[np.ndarray, np.ndarray]:
         """
@@ -191,7 +202,7 @@ class XgboostModel:
             predicted_probs = np.asarray([line[1] for line in partial_probs])
             predicted_classes = (
                     predicted_probs
-                    > 0.5
+                    > self.conf_params_xgboost.classification_threshold
             )
         else:
             predicted_probs = partial_probs
