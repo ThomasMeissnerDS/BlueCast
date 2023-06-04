@@ -20,9 +20,9 @@ def check_gpu_support() -> str:
 
 class FeatureTypeDetector:
     def __init__(self,
-                 num_columns: Optional[List[Union[str, int, float]]],
-                 cat_columns: List[Union[str, int, float]],
-                 date_columns: List[Union[str, int, float]]):
+                 num_columns: Optional[List[Union[str, int, float]]] = None,
+                 cat_columns: Optional[List[Union[str, int, float]]] = None,
+                 date_columns: Optional[List[Union[str, int, float]]] = None):
         self.num_columns = num_columns
         self.cat_columns = cat_columns
         self.date_columns = date_columns
@@ -37,7 +37,7 @@ class FeatureTypeDetector:
             "float64",
         ]
 
-    def fit_transform_feature_types(self, df: pd.DataFrame) -> None:
+    def fit_transform_feature_types(self, df: pd.DataFrame) -> pd.DataFrame:
         # detect numeric columns by type
         if not self.num_columns:
             num_col_list = []

@@ -11,8 +11,10 @@ from preprocessing.general_utils import check_gpu_support
 
 
 class XgboostModel:
-    def __init__(self, class_problem: Literal["binary", "multiclass"], conf_training: Optional[TrainingConfig],
-                 conf_xgboost: Optional[XgboostTuneParamsConfig], conf_params_xgboost: Optional[XgboostFinalParamConfig]):
+    def __init__(self, class_problem: Literal["binary", "multiclass"],
+                 conf_training: Optional[TrainingConfig] = None,
+                 conf_xgboost: Optional[XgboostTuneParamsConfig] = None,
+                 conf_params_xgboost: Optional[XgboostFinalParamConfig] = None):
         self.model: Optional[xgb.XGBClassifier] = None
         self.autotune_params: bool = True
         self.class_problem = class_problem
@@ -192,7 +194,7 @@ class XgboostModel:
         }
         self.conf_params_xgboost.sample_weight = xgboost_best_param["sample_weight"]
 
-    def xgboost_predict(self, df: pd.DataFrame) -> Tuple[np.ndarray, np.ndarray]:
+    def predict(self, df: pd.DataFrame) -> Tuple[np.ndarray, np.ndarray]:
         """
         Loads the pretrained model from the class itself and predicts on new data.
         :param feat_importance: Set True, if feature importance shall be calculated based on SHAP values.
