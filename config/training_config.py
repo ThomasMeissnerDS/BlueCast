@@ -30,7 +30,7 @@ class XgboostTuneParamsConfig:
     col_sample_by_level_max: float = 1.0
     col_sample_by_node_min: float = 0.3
     col_sample_by_node_max: float = 1.0
-    min_child_samples_min: int = 5
+    min_child_samples_min: int = 2
     min_child_samples_max: int = 1000
     eta: float = 0.1
     steps_min: int = 2

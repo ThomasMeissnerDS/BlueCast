@@ -8,8 +8,8 @@ import pytest
 def synthetic_train_df_binary_classification() -> pd.DataFrame:
     """Create a synthetic train df for binary classification."""
     df = pd.DataFrame({
-        "a": ["A", 2, 3, "A", 5, 6, 7, 8, "B", np.nan],
-        "b": [1, 2, 3, 4, 5, 6, 7, 8, 9, 10],
+        "a": ["A", "A", "A", "A", "C", "B", "B", "B", "B", np.nan],
+        "b": [1, 2, 3, 4, 5, 10, 10, 10, 10, 10],
         "c": [1, 2, 3, "A", 5, 6, 7, 8, np.nan, 10],
         "d": [-50, -237, -8, "C", 0, np.nan, 0.3, 0.98, 0.1, 0.2],
         "e": [f"2023-{m}-01" for m in range(10)],

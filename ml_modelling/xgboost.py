@@ -77,23 +77,23 @@ class XgboostModel:
                 "tree_method": train_on,
                 "num_class": y_train.nunique(),
                 "max_depth": trial.suggest_int("max_depth", self.conf_xgboost.max_depth_min, self.conf_xgboost.max_depth_max),
-                "alpha": trial.suggest_loguniform("alpha", self.conf_xgboost.alpha_min, self.conf_xgboost.alpha_max),
-                "lambda": trial.suggest_loguniform("lambda", self.conf_xgboost.lambda_min, self.conf_xgboost.lambda_max),
+                "alpha": trial.suggest_float("alpha", self.conf_xgboost.alpha_min, self.conf_xgboost.alpha_max),
+                "lambda": trial.suggest_float("lambda", self.conf_xgboost.lambda_min, self.conf_xgboost.lambda_max),
                 "num_leaves": trial.suggest_int("num_leaves", self.conf_xgboost.num_leaves_min, self.conf_xgboost.num_leaves_max),
-                "subsample": trial.suggest_uniform("subsample", self.conf_xgboost.sub_sample_min, self.conf_xgboost.sub_sample_max),
-                "colsample_bytree": trial.suggest_uniform(
+                "subsample": trial.suggest_float("subsample", self.conf_xgboost.sub_sample_min, self.conf_xgboost.sub_sample_max),
+                "colsample_bytree": trial.suggest_float(
                     "colsample_bytree", self.conf_xgboost.col_sample_by_tree_min, self.conf_xgboost.col_sample_by_tree_max
                 ),
-                "colsample_bylevel": trial.suggest_uniform(
+                "colsample_bylevel": trial.suggest_float(
                     "colsample_bylevel", self.conf_xgboost.col_sample_by_level_min, self.conf_xgboost.col_sample_by_level_max
                 ),
-                "colsample_bynode": trial.suggest_uniform(
+                "colsample_bynode": trial.suggest_float(
                     "colsample_bynode", self.conf_xgboost.col_sample_by_node_min, self.conf_xgboost.col_sample_by_node_max
                 ),
                 "min_child_samples": trial.suggest_int(
                     "min_child_samples", self.conf_xgboost.min_child_samples_min, self.conf_xgboost.min_child_samples_max
                 ),
-                "eta": self.conf_xgboost.eta,  # 0.001
+                "eta": self.conf_xgboost.eta,
                 "steps": trial.suggest_int("steps", self.conf_xgboost.steps_min, self.conf_xgboost.steps_max),
                 "num_parallel_tree": trial.suggest_int(
                     "num_parallel_tree", self.conf_xgboost.num_parallel_tree_min, self.conf_xgboost.num_parallel_tree_max
