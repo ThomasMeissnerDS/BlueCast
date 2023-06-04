@@ -8,10 +8,10 @@ from typing import Dict, List, Union
 
 
 class BinaryClassTargetEncoder:
-    def __init__(self):
+    def __init__(self, cat_columns: List[str]):
         self.encoders: Dict[str, Union[List[str], TargetEncoder]] = {}
         self.prediction_mode: bool = False
-        self.cat_columns: List[str] = []
+        self.cat_columns = cat_columns
 
     def fit_target_encode_binary_class(self, x: pd.DataFrame, y: pd.Series) -> pd.DataFrame:
         enc = TargetEncoder(cols=self.cat_columns)
@@ -23,19 +23,19 @@ class BinaryClassTargetEncoder:
         ] = enc
         return x
 
-    def transform_target_encode_binary_class(self, x: pd.DataFrame, cat_columns: List[str]) -> pd.DataFrame:
+    def transform_target_encode_binary_class(self, x: pd.DataFrame) -> pd.DataFrame:
         enc = self.encoders["target_encoder_all_cols"]
-        x[cat_columns] = enc.transform(
-            x[cat_columns]
+        x[self.cat_columns] = enc.transform(
+            x[self.cat_columns]
         )
         return x
 
 
 class MultiClassTargetEncoder:
-    def __init__(self):
+    def __init__(self, cat_columns: List[str]):
         self.encoders: Dict[str, Union[List[str], TargetEncoder, OneHotEncoder]] = {}
         self.prediction_mode: bool = False
-        self.cat_columns: List[str] = []
+        self.cat_columns: cat_columns
 
     def fit_target_encode_multiclass(self, x: pd.DataFrame, y: pd.Series) -> pd.DataFrame:
         algorithm = "multiclass_target_encoding_onehotter"

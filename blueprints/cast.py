@@ -37,10 +37,10 @@ class BlueCast:
         df = fill_infinite_values(df)
         df = date_converter(df, self.date_columns)
         if self.cat_columns is not None and self.class_problem == "binary":
-            self.cat_encoder = BinaryClassTargetEncoder()
+            self.cat_encoder = BinaryClassTargetEncoder(self.cat_columns)
             df = self.cat_encoder.fit_target_encode_binary_class(df, df[target_col])
         elif self.cat_columns is not None and self.class_problem == "multiclass":
-            self.cat_encoder = MultiClassTargetEncoder()
+            self.cat_encoder = MultiClassTargetEncoder(self.cat_columns)
             df = self.cat_encoder.fit_target_encode_multiclass(df, df[target_col])
 
         if self.time_split_column is not None:
