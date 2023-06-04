@@ -10,7 +10,7 @@ from typing import Tuple
 
 def create_synthetic_dataframe(num_samples=1000) -> pd.DataFrame:
     # Generate synthetic data using make_classification
-    x, y = make_classification(n_samples=num_samples, n_features=5, n_informative=5, n_redundant=0,
+    x, y = make_classification(n_samples=num_samples, n_features=20, n_informative=20, n_redundant=0,
                                n_clusters_per_class=1, random_state=42)
 
     # Create a datetime feature

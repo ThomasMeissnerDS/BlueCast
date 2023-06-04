@@ -4,7 +4,7 @@ from typing import Dict, Optional
 
 @dataclass
 class TrainingConfig:
-    global_random_state: int = 100
+    global_random_state: int = 10
     shuffle_during_training: bool = True
     hyperparameter_tuning_rounds: int = 100
     hyperparameter_tuning_max_runtime_secs: int = 3600
@@ -16,9 +16,9 @@ class TrainingConfig:
 class XgboostTuneParamsConfig:
     max_depth_min: int = 2
     max_depth_max: int = 3
-    alpha_min: float = 1e-6
+    alpha_min: float = 1.0
     alpha_max: float = 1e6
-    lambda_min: float = 1e-6
+    lambda_min: float = 1.0
     lambda_max: float = 1e6
     num_leaves_min: int = 2
     num_leaves_max: int = 16

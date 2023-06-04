@@ -41,7 +41,7 @@ class XgboostModel:
     def fit(self, x_train: pd.DataFrame, x_test: pd.DataFrame, y_train: pd.Series, y_test: pd.Series) -> xgb.Booster:
         self.check_load_confs()
         if self.autotune_params:
-            self.autotune(x_train, y_train, x_test, y_test)
+            self.autotune(x_train, x_test, y_train, y_test)
 
         if self.conf_params_xgboost.sample_weight:
             classes_weights = self.calculate_class_weights(y_train)
@@ -63,7 +63,7 @@ class XgboostModel:
         self.model = model
         return self.model
 
-    def autotune(self, x_train: pd.DataFrame, y_train: pd.Series, x_test: pd.DataFrame, y_test: pd.Series) -> None:
+    def autotune(self, x_train: pd.DataFrame, x_test: pd.DataFrame, y_train: pd.Series, y_test: pd.Series) -> None:
         d_test = xgb.DMatrix(x_test, label=y_test)
         train_on = check_gpu_support()
 
@@ -167,7 +167,7 @@ class XgboostModel:
             fig.show()
             fig = optuna.visualization.plot_param_importances(study)
             fig.show()
-        except ZeroDivisionError:
+        except ZeroDivisionError or RuntimeError:
             pass
 
         xgboost_best_param = study.best_trial.params
