@@ -14,6 +14,7 @@ class XgboostModel:
     def __init__(self, class_problem: Literal["binary", "multiclass"], conf_training: Optional[TrainingConfig],
                  conf_xgboost: Optional[XgboostTuneParamsConfig], conf_params_xgboost: Optional[XgboostFinalParamConfig]):
         self.model: Optional[xgb.XGBClassifier] = None
+        self.autotune_params: bool = True
         self.class_problem = class_problem
         self.conf_training = conf_training
         self.conf_xgboost = conf_xgboost
@@ -37,6 +38,8 @@ class XgboostModel:
 
     def fit(self, x_train: pd.DataFrame, y_train: pd.Series, x_test: pd.DataFrame, y_test: pd.Series) -> xgb.Booster:
         self.check_load_confs()
+        if self.autotune_params:
+            self.autotune(x_train, y_train, x_test, y_test)
 
         if self.conf_params_xgboost.sample_weight:
             classes_weights = self.calculate_class_weights(y_train)
@@ -58,7 +61,7 @@ class XgboostModel:
         self.model = model
         return self.model
 
-    def fit_autotune(self, x_train: pd.DataFrame, y_train: pd.Series, x_test: pd.DataFrame, y_test: pd.Series):
+    def autotune(self, x_train: pd.DataFrame, y_train: pd.Series, x_test: pd.DataFrame, y_test: pd.Series) -> None:
         d_test = xgb.DMatrix(x_test, label=y_test)
         train_on = check_gpu_support()
 
