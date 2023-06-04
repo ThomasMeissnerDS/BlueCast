@@ -1,6 +1,7 @@
 import numpy as np
 import pandas as pd
 
+from config.training_config import TrainingConfig, XgboostTuneParamsConfig, XgboostFinalParamConfig
 from ml_modelling.xgboost import XgboostModel
 from preprocessing.datetime_features import date_converter
 from preprocessing.general_utils import check_gpu_support, FeatureTypeDetector
@@ -17,6 +18,9 @@ class BlueCast:
                  cat_columns: Optional[List[str]],
                  date_columns: Optional[List[str]],
                  time_split_column: Optional[str] = None,
+                 conf_training: Optional[TrainingConfig] = None,
+                 conf_xgboost: Optional[XgboostTuneParamsConfig] = None,
+                 conf_params_xgboost: Optional[XgboostFinalParamConfig] = None
                  ):
         self.class_problem = class_problem
         self.prediction_mode: bool = False
@@ -24,6 +28,9 @@ class BlueCast:
         self.date_columns = date_columns
         self.time_split_column = time_split_column
         self.target_column = target_column
+        self.conf_training = conf_training
+        self.conf_xgboost = conf_xgboost
+        self.conf_params_xgboost = conf_params_xgboost
         self.cat_encoder: Optional[Union[BinaryClassTargetEncoder, MultiClassTargetEncoder]] = None
         self.ml_model: Optional[XgboostModel] = None
 
@@ -48,7 +55,10 @@ class BlueCast:
         else:
             x_train, y_train, x_test, y_test = train_test_split_cross(df, target_col)
 
-        self.ml_model = XgboostModel(self.class_problem)
+        self.ml_model = XgboostModel(self.class_problem,
+                                     conf_training=self.conf_training,
+                                     conf_xgboost=self.conf_xgboost,
+                                     conf_params_xgboost=self.conf_params_xgboost)
         self.ml_model = self.ml_model.fit(x_train, y_train, x_test, y_test)
         self.prediction_mode = True
 
