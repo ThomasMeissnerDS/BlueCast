@@ -65,7 +65,10 @@ def test_blueprint_xgboost(synthetic_train_test_data):
     train_config.hyperparameter_tuning_rounds = 10
 
     automl = BlueCast(
-        class_problem="binary", target_column="target", conf_training=train_config, conf_xgboost=xgboost_param_config
+        class_problem="binary",
+        target_column="target",
+        conf_training=train_config,
+        conf_xgboost=xgboost_param_config,
     )
     automl.fit(df_train, target_col="target")
     print("Autotuning successful.")

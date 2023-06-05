@@ -1,9 +1,10 @@
 from datetime import datetime
-from preprocessing.general_utils import logger
 from typing import Union
 
 import numpy as np
 import pandas as pd
+
+from preprocessing.general_utils import logger
 
 
 def fill_infinite_values(df: pd.DataFrame, fill_with: Union[int, float] = 0):

@@ -1,8 +1,9 @@
 from datetime import datetime
-from preprocessing.general_utils import logger
 from typing import List, Optional, Union
 
 import pandas as pd
+
+from preprocessing.general_utils import logger
 
 
 def date_converter(

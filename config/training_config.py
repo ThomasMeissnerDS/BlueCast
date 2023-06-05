@@ -6,6 +6,7 @@ from pydantic.dataclasses import dataclass
 @dataclass
 class TrainingConfig:
     """Define general training parameters."""
+
     global_random_state: int = 10
     shuffle_during_training: bool = True
     hyperparameter_tuning_rounds: int = 100
@@ -17,6 +18,7 @@ class TrainingConfig:
 @dataclass
 class XgboostTuneParamsConfig:
     """Define hyperparameter tuning search space."""
+
     max_depth_min: int = 2
     max_depth_max: int = 3
     alpha_min: float = 1.0
@@ -45,6 +47,7 @@ class XgboostTuneParamsConfig:
 @dataclass
 class XgboostFinalParamConfig:
     """Define final hyper parameters."""
+
     params = {
         "objective": "multi:softprob",  # OR  'binary:logistic' #the loss function being used
         "eval_metric": "mlogloss",

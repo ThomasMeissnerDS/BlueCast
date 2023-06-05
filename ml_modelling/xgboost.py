@@ -1,5 +1,4 @@
 from datetime import datetime
-from preprocessing.general_utils import logger
 from typing import Dict, Literal, Optional, Tuple
 
 import numpy as np
@@ -14,7 +13,7 @@ from config.training_config import (
     XgboostFinalParamConfig,
     XgboostTuneParamsConfig,
 )
-from preprocessing.general_utils import check_gpu_support
+from preprocessing.general_utils import check_gpu_support, logger
 
 
 class XgboostModel:
@@ -268,7 +267,9 @@ class XgboostModel:
 
     def predict(self, df: pd.DataFrame) -> Tuple[np.ndarray, np.ndarray]:
         """Predict on unseen data."""
-        logger(f"{datetime.utcnow()}: Start predicting on new data using Xgboost model.")
+        logger(
+            f"{datetime.utcnow()}: Start predicting on new data using Xgboost model."
+        )
         d_test = xgb.DMatrix(df)
         if not self.model:
             raise Exception("No trained model has been found.")

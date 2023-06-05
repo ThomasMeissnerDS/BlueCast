@@ -1,7 +1,9 @@
 from datetime import datetime
-from preprocessing.general_utils import logger
+
 import pandas as pd
 from sklearn import model_selection
+
+from preprocessing.general_utils import logger
 
 
 def train_test_split_cross(
@@ -12,7 +14,9 @@ def train_test_split_cross(
     stratify_col: str = None,
 ):
     """Split data into train and test. Stratification is possible."""
-    logger(f"{datetime.utcnow()}: Start executing train-test split with train size of {train_size}.")
+    logger(
+        f"{datetime.utcnow()}: Start executing train-test split with train size of {train_size}."
+    )
     x_train, x_test, y_train, y_test = model_selection.train_test_split(
         df,
         df[target_col],
@@ -27,7 +31,9 @@ def train_test_split_time(
     df: pd.DataFrame, target_col: str, split_by_col: str, train_size: float = 0.80
 ):
     """Split data into train and test based on a provided order (i.e. time)."""
-    logger(f"{datetime.utcnow()}: Start executing ordered train-test split with train size of {train_size}.")
+    logger(
+        f"{datetime.utcnow()}: Start executing ordered train-test split with train size of {train_size}."
+    )
     length = len(df.index)
     train_length = int(length * train_size)
     test_length = length - train_length

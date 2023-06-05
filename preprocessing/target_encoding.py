@@ -1,9 +1,10 @@
 from datetime import datetime
-from preprocessing.general_utils import logger
 from typing import Dict, List, Optional, Union
 
 import pandas as pd
 from category_encoders import OneHotEncoder, TargetEncoder
+
+from preprocessing.general_utils import logger
 
 
 class BinaryClassTargetEncoder:
@@ -26,7 +27,9 @@ class BinaryClassTargetEncoder:
 
     def transform_target_encode_binary_class(self, x: pd.DataFrame) -> pd.DataFrame:
         """Transform categories based on already trained encoder."""
-        logger(f"{datetime.utcnow()}: Start transforming categories with binary target encoder.")
+        logger(
+            f"{datetime.utcnow()}: Start transforming categories with binary target encoder."
+        )
         enc = self.encoders["target_encoder_all_cols"]
         x[self.cat_columns] = enc.transform(x[self.cat_columns])
         return x
@@ -65,7 +68,9 @@ class MultiClassTargetEncoder:
 
     def transform_target_encode_multiclass(self, x: pd.DataFrame) -> pd.DataFrame:
         """Transform categories based on already trained encoder."""
-        logger(f"{datetime.utcnow()}: Start transforming categories with multiclass target encoder.")
+        logger(
+            f"{datetime.utcnow()}: Start transforming categories with multiclass target encoder."
+        )
         algorithm = "multiclass_target_encoding_onehotter"
         enc = self.encoders[f"{algorithm}_all_cols"]
         x_obj = x.loc[:, self.cat_columns].copy()
