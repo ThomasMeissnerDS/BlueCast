@@ -20,7 +20,9 @@ class TargetLabelEncoder:
             cat_mapping[cat] = label
         return cat_mapping
 
-    def label_encoder_transform(self, targets: pd.DataFrame, mapping: Dict[str, int]) -> pd.DataFrame:
+    def label_encoder_transform(
+        self, targets: pd.DataFrame, mapping: Dict[str, int]
+    ) -> pd.DataFrame:
         targets = targets.astype("category")
         col = targets.name
         if isinstance(targets, pd.Series):
@@ -33,15 +35,11 @@ class TargetLabelEncoder:
     def fit_transform_target_labels(self, targets: pd.DataFrame) -> pd.DataFrame:
         cat_mapping = self.fit_label_encoder(targets)
         self.target_label_mapping = cat_mapping
-        targets = self.label_encoder_transform(
-            targets, self.target_label_mapping
-        )
+        targets = self.label_encoder_transform(targets, self.target_label_mapping)
         return targets
 
     def transform_target_labels(self, targets: pd.DataFrame) -> pd.DataFrame:
-        targets = self.label_encoder_transform(
-            targets, self.target_label_mapping
-        )
+        targets = self.label_encoder_transform(targets, self.target_label_mapping)
         return targets
 
     def label_encoder_reverse_transform(self, targets: pd.DataFrame) -> pd.Series:
@@ -51,8 +49,7 @@ class TargetLabelEncoder:
             targets = targets.to_frame()
 
         reverse_mapping = {
-            value: key
-            for key, value in self.target_label_mapping.items()
+            value: key for key, value in self.target_label_mapping.items()
         }
         targets = targets.replace({col: reverse_mapping})
         return targets

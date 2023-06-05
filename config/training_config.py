@@ -59,7 +59,7 @@ class XgboostFinalParamConfig:
         "min_child_samples": 100,
         "eta": 0.1,
         "steps": 1000,
-        "num_parallel_tree": 1
+        "num_parallel_tree": 1,
     }
     sample_weight: Optional[Dict[str, float]] = None
     classification_threshold: float = 0.5

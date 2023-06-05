@@ -3,19 +3,25 @@ from sklearn import model_selection
 
 
 def train_test_split_cross(
-        df: pd.DataFrame, target_col: str, train_size=0.80, random_state: int = 100, stratify_col: str = None
+    df: pd.DataFrame,
+    target_col: str,
+    train_size=0.80,
+    random_state: int = 100,
+    stratify_col: str = None,
 ):
     x_train, x_test, y_train, y_test = model_selection.train_test_split(
         df,
         df[target_col],
         train_size=train_size,
         random_state=random_state,
-        stratify=stratify_col
+        stratify=stratify_col,
     )
     return x_train, x_test, y_train, y_test
 
 
-def train_test_split_time(df: pd.DataFrame, target_col: str, split_by_col: str, train_size: float = 0.80):
+def train_test_split_time(
+    df: pd.DataFrame, target_col: str, split_by_col: str, train_size: float = 0.80
+):
     length = len(df.index)
     train_length = int(length * train_size)
     test_length = length - train_length

@@ -16,10 +16,13 @@ from preprocessing.general_utils import check_gpu_support
 
 
 class XgboostModel:
-    def __init__(self, class_problem: Literal["binary", "multiclass"],
-                 conf_training: Optional[TrainingConfig] = None,
-                 conf_xgboost: Optional[XgboostTuneParamsConfig] = None,
-                 conf_params_xgboost: Optional[XgboostFinalParamConfig] = None):
+    def __init__(
+        self,
+        class_problem: Literal["binary", "multiclass"],
+        conf_training: Optional[TrainingConfig] = None,
+        conf_xgboost: Optional[XgboostTuneParamsConfig] = None,
+        conf_params_xgboost: Optional[XgboostFinalParamConfig] = None,
+    ):
         self.model: Optional[xgb.XGBClassifier] = None
         self.autotune_params: bool = True
         self.class_problem = class_problem
@@ -43,18 +46,25 @@ class XgboostModel:
         if not self.conf_params_xgboost:
             self.conf_params_xgboost = XgboostFinalParamConfig()
 
-    def fit(self, x_train: pd.DataFrame, x_test: pd.DataFrame, y_train: pd.Series, y_test: pd.Series) -> xgb.Booster:
+    def fit(
+        self,
+        x_train: pd.DataFrame,
+        x_test: pd.DataFrame,
+        y_train: pd.Series,
+        y_test: pd.Series,
+    ) -> xgb.Booster:
         self.check_load_confs()
         if self.autotune_params:
             self.autotune(x_train, x_test, y_train, y_test)
 
         print("Finished hyperparameter tuning")
 
+        if not self.conf_params_xgboost or not self.conf_training:
+            raise ValueError("conf_params_xgboost or conf_training is None")
+
         if self.conf_params_xgboost.sample_weight:
             classes_weights = self.calculate_class_weights(y_train)
-            d_train = xgb.DMatrix(
-                x_train, label=y_train, weight=classes_weights
-            )
+            d_train = xgb.DMatrix(x_train, label=y_train, weight=classes_weights)
         else:
             d_train = xgb.DMatrix(x_train, label=y_train)
         d_test = xgb.DMatrix(x_test, label=y_test)
@@ -70,11 +80,26 @@ class XgboostModel:
         print("Finished training")
         return self.model
 
-    def autotune(self, x_train: pd.DataFrame, x_test: pd.DataFrame, y_train: pd.Series, y_test: pd.Series) -> None:
+    def autotune(
+        self,
+        x_train: pd.DataFrame,
+        x_test: pd.DataFrame,
+        y_train: pd.Series,
+        y_test: pd.Series,
+    ) -> None:
         d_test = xgb.DMatrix(x_test, label=y_test)
         train_on = check_gpu_support()
 
         self.check_load_confs()
+
+        if (
+            not self.conf_params_xgboost
+            or not self.conf_training
+            or not self.conf_xgboost
+        ):
+            raise ValueError(
+                "At least one of the configs is None, which is not allowed"
+            )
 
         def objective(trial):
             param = {
@@ -83,37 +108,61 @@ class XgboostModel:
                 "verbose": 0,
                 "tree_method": train_on,
                 "num_class": y_train.nunique(),
-                "max_depth": trial.suggest_int("max_depth", self.conf_xgboost.max_depth_min, self.conf_xgboost.max_depth_max),
-                "alpha": trial.suggest_float("alpha", self.conf_xgboost.alpha_min, self.conf_xgboost.alpha_max),
-                "lambda": trial.suggest_float("lambda", self.conf_xgboost.lambda_min, self.conf_xgboost.lambda_max),
-                "num_leaves": trial.suggest_int("num_leaves", self.conf_xgboost.num_leaves_min, self.conf_xgboost.num_leaves_max),
-                "subsample": trial.suggest_float("subsample", self.conf_xgboost.sub_sample_min, self.conf_xgboost.sub_sample_max),
+                "max_depth": trial.suggest_int(
+                    "max_depth",
+                    self.conf_xgboost.max_depth_min,
+                    self.conf_xgboost.max_depth_max,
+                ),
+                "alpha": trial.suggest_float(
+                    "alpha", self.conf_xgboost.alpha_min, self.conf_xgboost.alpha_max
+                ),
+                "lambda": trial.suggest_float(
+                    "lambda", self.conf_xgboost.lambda_min, self.conf_xgboost.lambda_max
+                ),
+                "num_leaves": trial.suggest_int(
+                    "num_leaves",
+                    self.conf_xgboost.num_leaves_min,
+                    self.conf_xgboost.num_leaves_max,
+                ),
+                "subsample": trial.suggest_float(
+                    "subsample",
+                    self.conf_xgboost.sub_sample_min,
+                    self.conf_xgboost.sub_sample_max,
+                ),
                 "colsample_bytree": trial.suggest_float(
-                    "colsample_bytree", self.conf_xgboost.col_sample_by_tree_min, self.conf_xgboost.col_sample_by_tree_max
+                    "colsample_bytree",
+                    self.conf_xgboost.col_sample_by_tree_min,
+                    self.conf_xgboost.col_sample_by_tree_max,
                 ),
                 "colsample_bylevel": trial.suggest_float(
-                    "colsample_bylevel", self.conf_xgboost.col_sample_by_level_min, self.conf_xgboost.col_sample_by_level_max
+                    "colsample_bylevel",
+                    self.conf_xgboost.col_sample_by_level_min,
+                    self.conf_xgboost.col_sample_by_level_max,
                 ),
                 "colsample_bynode": trial.suggest_float(
-                    "colsample_bynode", self.conf_xgboost.col_sample_by_node_min, self.conf_xgboost.col_sample_by_node_max
+                    "colsample_bynode",
+                    self.conf_xgboost.col_sample_by_node_min,
+                    self.conf_xgboost.col_sample_by_node_max,
                 ),
                 "min_child_samples": trial.suggest_int(
-                    "min_child_samples", self.conf_xgboost.min_child_samples_min, self.conf_xgboost.min_child_samples_max
+                    "min_child_samples",
+                    self.conf_xgboost.min_child_samples_min,
+                    self.conf_xgboost.min_child_samples_max,
                 ),
                 "eta": self.conf_xgboost.eta,
-                "steps": trial.suggest_int("steps", self.conf_xgboost.steps_min, self.conf_xgboost.steps_max),
+                "steps": trial.suggest_int(
+                    "steps", self.conf_xgboost.steps_min, self.conf_xgboost.steps_max
+                ),
                 "num_parallel_tree": trial.suggest_int(
-                    "num_parallel_tree", self.conf_xgboost.num_parallel_tree_min, self.conf_xgboost.num_parallel_tree_max
+                    "num_parallel_tree",
+                    self.conf_xgboost.num_parallel_tree_min,
+                    self.conf_xgboost.num_parallel_tree_max,
                 ),
             }
-            sample_weight = trial.suggest_categorical(
-                "sample_weight", [True, False]
-            )
+            sample_weight = trial.suggest_categorical("sample_weight", [True, False])
             if sample_weight:
                 classes_weights = self.calculate_class_weights(y_train)
-                d_train = xgb.DMatrix(
-                    x_train, label=y_train, weight=classes_weights
-                )
+                d_train = xgb.DMatrix(x_train, label=y_train, weight=classes_weights)
             else:
                 d_train = xgb.DMatrix(x_train, label=y_train)
 
@@ -132,9 +181,7 @@ class XgboostModel:
                     callbacks=[pruning_callback],
                 )
                 preds = model.predict(d_test)
-                pred_labels = np.asarray(
-                    [np.argmax(line) for line in preds]
-                )
+                pred_labels = np.asarray([np.argmax(line) for line in preds])
                 matthew = matthews_corrcoef(y_test, pred_labels) * -1
                 return matthew
             else:
@@ -174,7 +221,7 @@ class XgboostModel:
             fig.show()
             fig = optuna.visualization.plot_param_importances(study)
             fig.show()
-        except ZeroDivisionError or RuntimeError:
+        except (ZeroDivisionError, RuntimeError):
             pass
 
         xgboost_best_param = study.best_trial.params
@@ -203,17 +250,20 @@ class XgboostModel:
 
     def predict(self, df: pd.DataFrame) -> Tuple[np.ndarray, np.ndarray]:
         d_test = xgb.DMatrix(df)
+        if not self.model:
+            raise Exception("No trained model has been found.")
+
+        if not self.conf_params_xgboost:
+            raise Exception("No model configuration file has been found.")
+
         partial_probs = self.model.predict(d_test)
         if self.class_problem == "binary":
             predicted_probs = np.asarray([line[1] for line in partial_probs])
             predicted_classes = (
-                    predicted_probs
-                    > self.conf_params_xgboost.classification_threshold
+                predicted_probs > self.conf_params_xgboost.classification_threshold
             )
         else:
             predicted_probs = partial_probs
-            predicted_classes = np.asarray(
-                [np.argmax(line) for line in partial_probs]
-            )
+            predicted_classes = np.asarray([np.argmax(line) for line in partial_probs])
         print("Finished predicting")
         return predicted_probs, predicted_classes

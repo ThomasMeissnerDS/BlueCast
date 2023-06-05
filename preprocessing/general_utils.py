@@ -1,4 +1,4 @@
-from typing import Dict, List, Optional, Union
+from typing import Dict, List, Optional, Tuple, Union
 
 import numpy as np
 import pandas as pd
@@ -20,10 +20,12 @@ def check_gpu_support() -> str:
 
 
 class FeatureTypeDetector:
-    def __init__(self,
-                 num_columns: Optional[List[Union[str, int, float]]] = None,
-                 cat_columns: Optional[List[Union[str, int, float]]] = None,
-                 date_columns: Optional[List[Union[str, int, float]]] = None):
+    def __init__(
+        self,
+        num_columns: Optional[List[Union[str, int, float]]] = None,
+        cat_columns: Optional[List[Union[str, int, float]]] = None,
+        date_columns: Optional[List[Union[str, int, float]]] = None,
+    ):
         self.num_columns = num_columns
         self.cat_columns = cat_columns
         self.date_columns = date_columns
@@ -38,7 +40,7 @@ class FeatureTypeDetector:
             "float64",
         ]
 
-    def fit_transform_feature_types(self, df: pd.DataFrame) -> pd.DataFrame:
+    def identify_num_columns(self, df: pd.DataFrame):
         # detect numeric columns by type
         if not self.num_columns:
             num_col_list = []
@@ -47,8 +49,11 @@ class FeatureTypeDetector:
                 for col in num_cols:
                     num_col_list.append(col)
             self.num_columns = num_col_list
+        return self.num_columns
 
-        # detect and cast boolean columns
+    def identify_bool_columns(
+        self, df: pd.DataFrame
+    ) -> Tuple[List[Union[str, float, int]], List[Union[str, float, int]]]:
         bool_cols = list(df.select_dtypes(["bool"]))
         for col in bool_cols:
             df[col] = df[col].astype(bool)
@@ -60,8 +65,12 @@ class FeatureTypeDetector:
             no_bool_cols = no_bool_df.columns.to_list()
         except Exception:
             no_bool_cols = df.columns.to_list()
+        return bool_cols, no_bool_cols
 
-        if self.date_columns:
+    def identify_date_time_columns(
+        self, df: pd.DataFrame, no_bool_cols: List[Union[str, float, int]]
+    ):
+        if self.date_columns and self.num_columns:
             date_columns = []
             # convert date columns from object to datetime type
             for col in self.date_columns:
@@ -69,11 +78,11 @@ class FeatureTypeDetector:
                     try:
                         df[col] = pd.to_datetime(df[col], yearfirst=True)
                         date_columns.append(col)
-                        self.detected_col_types[col] = "datetime[ns]"
+                        self.detected_col_types[str(col)] = "datetime[ns]"
                     except Exception:
                         pass
             self.date_columns = date_columns
-        if not self.date_columns:
+        if not self.date_columns and self.num_columns:
             date_columns = []
             # convert date columns from object to datetime type
             for col in no_bool_cols:
@@ -81,13 +90,22 @@ class FeatureTypeDetector:
                     try:
                         df[col] = pd.to_datetime(df[col], yearfirst=True)
                         date_columns.append(col)
-                        self.detected_col_types[col] = "datetime[ns]"
+                        self.detected_col_types[str(col)] = "datetime[ns]"
                     except Exception:
                         pass
             self.date_columns = date_columns
 
-        # detect and cast floats
-        no_bool_dt_cols = bool_cols + self.date_columns
+    def cast_rest_columns_to_object(
+        self, df: pd.DataFrame, bool_cols: List[Union[str, float, int]]
+    ) -> pd.DataFrame:
+        if bool_cols and self.date_columns:
+            no_bool_dt_cols = bool_cols + self.date_columns
+        elif bool_cols and not self.date_columns:
+            no_bool_dt_cols = bool_cols
+        elif not bool_cols and self.date_columns:
+            no_bool_dt_cols = self.date_columns
+        else:
+            no_bool_dt_cols = []
         no_bool_datetime_df = df.loc[:, ~df.columns.isin(no_bool_dt_cols)]
         no_bool_datetime_cols = no_bool_datetime_df.columns.to_list()
         cat_columns = []
@@ -102,6 +120,13 @@ class FeatureTypeDetector:
         self.cat_columns = cat_columns
         return df
 
+    def fit_transform_feature_types(self, df: pd.DataFrame) -> pd.DataFrame:
+        self.identify_num_columns(df)
+        bool_cols, no_bool_cols = self.identify_bool_columns(df)
+        self.identify_date_time_columns(df, no_bool_cols)
+        df = self.cast_rest_columns_to_object(df, bool_cols)
+        return df
+
     def transform_feature_types(self, df: pd.DataFrame) -> pd.DataFrame:
         """
         Loops through the dataframe and detects column types and type casts them accordingly.
@@ -109,11 +134,7 @@ class FeatureTypeDetector:
         """
         for key in self.detected_col_types:
             if self.detected_col_types[key] == "datetime[ns]":
-                df[key] = pd.to_datetime(
-                    df[key], yearfirst=True
-                )
+                df[key] = pd.to_datetime(df[key], yearfirst=True)
             else:
-                df[key] = df[key].astype(
-                    self.detected_col_types[key]
-                )
+                df[key] = df[key].astype(self.detected_col_types[key])
         return df
