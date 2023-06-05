@@ -1,5 +1,6 @@
-import pytest
 import pandas as pd
+import pytest
+
 from preprocessing.train_test_split import train_test_split_cross, train_test_split_time
 
 

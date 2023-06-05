@@ -1,5 +1,6 @@
-import pandas as pd
 from typing import List, Union
+
+import pandas as pd
 
 
 def date_converter(df: pd.DataFrame, date_columns: List[Union[str, int, float]],

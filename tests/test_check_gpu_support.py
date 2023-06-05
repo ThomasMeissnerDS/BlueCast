@@ -1,6 +1,7 @@
 import numpy as np
-from preprocessing.general_utils import check_gpu_support
 import xgboost as xgb
+
+from preprocessing.general_utils import check_gpu_support
 
 
 def test_check_gpu_support(monkeypatch):

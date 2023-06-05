@@ -1,10 +1,7 @@
-from category_encoders import (
-    OneHotEncoder,
-    TargetEncoder,
-)
+from typing import Dict, List, Union
 
 import pandas as pd
-from typing import Dict, List, Union
+from category_encoders import OneHotEncoder, TargetEncoder
 
 
 class BinaryClassTargetEncoder:

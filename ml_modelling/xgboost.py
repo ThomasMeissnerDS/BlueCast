@@ -1,12 +1,17 @@
-from config.training_config import TrainingConfig, XgboostTuneParamsConfig, XgboostFinalParamConfig
+from typing import Dict, Literal, Optional, Tuple
+
 import numpy as np
 import optuna
 import pandas as pd
+import xgboost as xgb
 from sklearn.metrics import matthews_corrcoef
 from sklearn.utils import class_weight
-from typing import Dict, Literal, Optional, Tuple
-import xgboost as xgb
 
+from config.training_config import (
+    TrainingConfig,
+    XgboostFinalParamConfig,
+    XgboostTuneParamsConfig,
+)
 from preprocessing.general_utils import check_gpu_support
 
 
@@ -212,4 +217,3 @@ class XgboostModel:
             )
         print("Finished predicting")
         return predicted_probs, predicted_classes
-

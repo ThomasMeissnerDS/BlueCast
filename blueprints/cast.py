@@ -1,15 +1,23 @@
+from typing import List, Literal, Optional, Tuple, Union
+
 import numpy as np
 import pandas as pd
 
-from config.training_config import TrainingConfig, XgboostTuneParamsConfig, XgboostFinalParamConfig
+from config.training_config import (
+    TrainingConfig,
+    XgboostFinalParamConfig,
+    XgboostTuneParamsConfig,
+)
 from ml_modelling.xgboost import XgboostModel
-from preprocessing.encode_target_labels import TargetLabelEncoder
 from preprocessing.datetime_features import date_converter
-from preprocessing.general_utils import check_gpu_support, FeatureTypeDetector
+from preprocessing.encode_target_labels import TargetLabelEncoder
+from preprocessing.general_utils import FeatureTypeDetector, check_gpu_support
 from preprocessing.nulls_and_infs import fill_infinite_values
-from preprocessing.target_encoding import BinaryClassTargetEncoder, MultiClassTargetEncoder
+from preprocessing.target_encoding import (
+    BinaryClassTargetEncoder,
+    MultiClassTargetEncoder,
+)
 from preprocessing.train_test_split import train_test_split_cross, train_test_split_time
-from typing import List, Literal, Optional, Tuple, Union
 
 
 class BlueCast:
@@ -89,4 +97,3 @@ class BlueCast:
             y_classes = self.target_label_encoder.label_encoder_reverse_transform(y_classes)
 
         return y_probs, y_classes
-

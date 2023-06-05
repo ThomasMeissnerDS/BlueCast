@@ -17,7 +17,7 @@ repos:
             additional_dependencies: [types-requests]
             exclude: ^.github/
   -   repo: https://github.com/pycqa/isort
-      rev: fd5ba70665a37ec301a1f714ed09336048b3be63 #5.9.3
+      rev: 76a71b13dab48f59cc1c006806f04bde1fe19b6d
       hooks:
         - id: isort
           args: [--profile, black, --filter-files]

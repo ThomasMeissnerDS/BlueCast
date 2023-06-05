@@ -1,5 +1,6 @@
-import pytest
 import pandas as pd
+import pytest
+
 from preprocessing.target_encoding import BinaryClassTargetEncoder
 
 

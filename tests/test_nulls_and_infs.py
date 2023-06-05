@@ -1,5 +1,6 @@
-import pandas as pd
 import numpy as np
+import pandas as pd
+
 from preprocessing.nulls_and_infs import fill_infinite_values, fill_nulls
 
 

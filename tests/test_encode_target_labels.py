@@ -1,5 +1,6 @@
 import pandas as pd
 import pytest
+
 from preprocessing.encode_target_labels import TargetLabelEncoder
 
 
@@ -60,4 +61,3 @@ def test_label_encoder_reverse_transform(trained_label_encoder, sample_data):
         'target': ['A', 'B', 'C', 'A', 'B', 'C']
     })
     pd.testing.assert_frame_equal(reversed_data, expected_data)
-

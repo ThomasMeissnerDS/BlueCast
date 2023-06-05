@@ -1,6 +1,7 @@
-import pandas as pd
-import numpy as np
 from typing import Union
+
+import numpy as np
+import pandas as pd
 
 
 def fill_infinite_values(df: pd.DataFrame, fill_with: Union[int, float] = 0):
@@ -13,6 +14,3 @@ def fill_nulls(df: pd.DataFrame, fill_with: Union[int, float] = 0):
     """Replace null values with NaN or given value."""
     df = df.fillna(fill_with)
     return df
-
-
-

@@ -1,6 +1,7 @@
 import pandas as pd
-from preprocessing.datetime_features import date_converter
 import pytest
+
+from preprocessing.datetime_features import date_converter
 
 
 @pytest.fixture

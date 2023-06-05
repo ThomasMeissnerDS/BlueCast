@@ -1,11 +1,12 @@
-from blueprints.cast import BlueCast
-from config.training_config import TrainingConfig
+from typing import Tuple
+
 import numpy as np
 import pandas as pd
 import pytest
-
 from sklearn.datasets import make_classification
-from typing import Tuple
+
+from blueprints.cast import BlueCast
+from config.training_config import TrainingConfig
 
 
 def create_synthetic_dataframe(num_samples=1000) -> pd.DataFrame:
