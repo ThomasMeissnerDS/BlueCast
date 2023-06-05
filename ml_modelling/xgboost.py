@@ -204,7 +204,7 @@ class XgboostModel:
             multivariate=True, seed=self.conf_training.global_random_state
         )
         study = optuna.create_study(
-            direction="maximize",
+            direction="minimize",
             sampler=sampler,
             study_name=f"{algorithm} tuning",
         )
@@ -221,7 +221,7 @@ class XgboostModel:
             fig.show()
             fig = optuna.visualization.plot_param_importances(study)
             fig.show()
-        except (ZeroDivisionError, RuntimeError):
+        except (ZeroDivisionError, RuntimeError, ValueError):
             pass
 
         xgboost_best_param = study.best_trial.params
@@ -246,6 +246,7 @@ class XgboostModel:
             "steps": xgboost_best_param["steps"],
             "num_parallel_tree": xgboost_best_param["num_parallel_tree"],
         }
+        print("Best params: ", self.conf_params_xgboost.params)
         self.conf_params_xgboost.sample_weight = xgboost_best_param["sample_weight"]
 
     def predict(self, df: pd.DataFrame) -> Tuple[np.ndarray, np.ndarray]:
