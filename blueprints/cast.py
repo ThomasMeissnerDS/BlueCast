@@ -3,6 +3,7 @@ import pandas as pd
 
 from config.training_config import TrainingConfig, XgboostTuneParamsConfig, XgboostFinalParamConfig
 from ml_modelling.xgboost import XgboostModel
+from preprocessing.encode_target_labels import TargetLabelEncoder
 from preprocessing.datetime_features import date_converter
 from preprocessing.general_utils import check_gpu_support, FeatureTypeDetector
 from preprocessing.nulls_and_infs import fill_infinite_values
@@ -39,6 +40,10 @@ class BlueCast:
         check_gpu_support()
         self.feat_type_detector = FeatureTypeDetector()
         df = self.feat_type_detector.fit_transform_feature_types(df)
+        if self.target_column in self.feat_type_detector.cat_columns:
+            target_enc = TargetLabelEncoder()
+            df[self.target_column] = target_enc.fit_transform_target_labels(df[self.target_column])
+
         self.cat_columns = self.feat_type_detector.cat_columns
         self.date_columns = self.feat_type_detector.date_columns
 
