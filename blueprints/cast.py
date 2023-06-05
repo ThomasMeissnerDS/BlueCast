@@ -34,6 +34,7 @@ class BlueCast:
         self.conf_params_xgboost = conf_params_xgboost
         self.feat_type_detector: Optional[FeatureTypeDetector] = None
         self.cat_encoder: Optional[Union[BinaryClassTargetEncoder, MultiClassTargetEncoder]] = None
+        self.target_label_encoder: Optional[TargetLabelEncoder] = None
         self.ml_model: Optional[XgboostModel] = None
 
     def fit(self, df: pd.DataFrame, target_col: str):
@@ -41,8 +42,8 @@ class BlueCast:
         self.feat_type_detector = FeatureTypeDetector()
         df = self.feat_type_detector.fit_transform_feature_types(df)
         if self.target_column in self.feat_type_detector.cat_columns:
-            target_enc = TargetLabelEncoder()
-            df[self.target_column] = target_enc.fit_transform_target_labels(df[self.target_column])
+            self.target_label_encoder = TargetLabelEncoder()
+            df[self.target_column] = self.target_label_encoder.fit_transform_target_labels(df[self.target_column])
 
         self.cat_columns = self.feat_type_detector.cat_columns
         self.date_columns = self.feat_type_detector.date_columns
@@ -83,6 +84,9 @@ class BlueCast:
             df = self.cat_encoder.transform_target_encode_multiclass(df)
         print("Predicting...")
         y_probs, y_classes = self.ml_model.predict(df)
+
+        if self.target_column in self.feat_type_detector.cat_columns:
+            y_classes = self.target_label_encoder.label_encoder_reverse_transform(y_classes)
 
         return y_probs, y_classes
 
