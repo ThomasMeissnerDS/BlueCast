@@ -59,6 +59,19 @@ class FeatureTypeDetector:
             no_bool_cols = no_bool_df.columns.to_list()
         except Exception:
             no_bool_cols = df.columns.to_list()
+
+        if self.date_columns:
+            date_columns = []
+            # convert date columns from object to datetime type
+            for col in self.date_columns:
+                if col not in self.num_columns:
+                    try:
+                        df[col] = pd.to_datetime(df[col], yearfirst=True)
+                        date_columns.append(col)
+                        self.detected_col_types[col] = "datetime[ns]"
+                    except Exception:
+                        pass
+            self.date_columns = date_columns
         if not self.date_columns:
             date_columns = []
             # convert date columns from object to datetime type
