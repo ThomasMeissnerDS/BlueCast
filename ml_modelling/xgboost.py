@@ -1,3 +1,5 @@
+from datetime import datetime
+from preprocessing.general_utils import logger
 from typing import Dict, Literal, Optional, Tuple
 
 import numpy as np
@@ -16,6 +18,8 @@ from preprocessing.general_utils import check_gpu_support
 
 
 class XgboostModel:
+    """Train and/or tune Xgboost classification model."""
+
     def __init__(
         self,
         class_problem: Literal["binary", "multiclass"],
@@ -31,20 +35,27 @@ class XgboostModel:
         self.conf_params_xgboost = conf_params_xgboost
 
     def calculate_class_weights(self, y: pd.Series) -> Dict[str, float]:
+        """Calculate class weights of target column."""
+        logger(f"{datetime.utcnow()}: Start calculating target class weights.")
         classes_weights = class_weight.compute_sample_weight(
             class_weight="balanced", y=y
         )
         return classes_weights
 
     def check_load_confs(self):
+        """Load multiple configs or load default configs instead."""
+        logger(f"{datetime.utcnow()}: Start loading existing or default config files..")
         if not self.conf_training:
             self.conf_training = TrainingConfig()
+            logger(f"{datetime.utcnow()}: Load default TrainingConfig.")
 
         if not self.conf_xgboost:
             self.conf_xgboost = XgboostTuneParamsConfig()
+            logger(f"{datetime.utcnow()}: Load default XgboostTuneParamsConfig.")
 
         if not self.conf_params_xgboost:
             self.conf_params_xgboost = XgboostFinalParamConfig()
+            logger(f"{datetime.utcnow()}: Load default XgboostFinalParamConfig.")
 
     def fit(
         self,
@@ -53,6 +64,8 @@ class XgboostModel:
         y_train: pd.Series,
         y_test: pd.Series,
     ) -> xgb.Booster:
+        """Train Xgboost model. Includes hyperparameter tuning on default."""
+        logger(f"{datetime.utcnow()}: Start fitting Xgboost model.")
         self.check_load_confs()
         if self.autotune_params:
             self.autotune(x_train, x_test, y_train, y_test)
@@ -87,6 +100,10 @@ class XgboostModel:
         y_train: pd.Series,
         y_test: pd.Series,
     ) -> None:
+        """Tune hyperparameters.
+
+        An alternative config can be provided to overwrite the hyperparameter search space."""
+        logger(f"{datetime.utcnow()}: Start hyperparameter tuning of Xgboost model.")
         d_test = xgb.DMatrix(x_test, label=y_test)
         train_on = check_gpu_support()
 
@@ -250,6 +267,8 @@ class XgboostModel:
         self.conf_params_xgboost.sample_weight = xgboost_best_param["sample_weight"]
 
     def predict(self, df: pd.DataFrame) -> Tuple[np.ndarray, np.ndarray]:
+        """Predict on unseen data."""
+        logger(f"{datetime.utcnow()}: Start predicting on new data using Xgboost model.")
         d_test = xgb.DMatrix(df)
         if not self.model:
             raise Exception("No trained model has been found.")

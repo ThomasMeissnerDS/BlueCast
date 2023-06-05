@@ -1,3 +1,5 @@
+from datetime import datetime
+from preprocessing.general_utils import logger
 from typing import List, Optional, Union
 
 import pandas as pd
@@ -16,6 +18,7 @@ def date_converter(
     :param date_parts: List of date parts to be extracted.
     :return: Returns modified df.
     """
+    logger(f"{datetime.utcnow()}: Start date column conversion.")
     if not date_columns:
         return df
 

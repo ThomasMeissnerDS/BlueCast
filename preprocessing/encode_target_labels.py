@@ -1,13 +1,24 @@
+from datetime import datetime
+from preprocessing.general_utils import logger
 from typing import Dict
 
 import pandas as pd
 
 
 class TargetLabelEncoder:
+    """
+    Encode target column labels.
+
+    This function is only relevant when target column values are categorical. In such cases they will be converted
+    into numerical representation. This encoding can also be reversed to translate back.
+    """
+
     def __init__(self):
         self.target_label_mapping: Dict[str, int] = {}
 
     def fit_label_encoder(self, targets: pd.DataFrame) -> Dict[str, int]:
+        """Iterate through target values and map them to numerics."""
+        logger(f"{datetime.utcnow()}: Start fitting target label encoder.")
         targets = targets.astype("category")
         col = targets.name
 
@@ -23,6 +34,8 @@ class TargetLabelEncoder:
     def label_encoder_transform(
         self, targets: pd.DataFrame, mapping: Dict[str, int]
     ) -> pd.DataFrame:
+        """Transform target column from categorical to numerical representation."""
+        logger(f"{datetime.utcnow()}: Start encoding target labels.")
         targets = targets.astype("category")
         col = targets.name
         if isinstance(targets, pd.Series):
@@ -33,16 +46,20 @@ class TargetLabelEncoder:
         return targets
 
     def fit_transform_target_labels(self, targets: pd.DataFrame) -> pd.DataFrame:
+        """Wrapper function that creates the mapping and transforms the target column."""
         cat_mapping = self.fit_label_encoder(targets)
         self.target_label_mapping = cat_mapping
         targets = self.label_encoder_transform(targets, self.target_label_mapping)
         return targets
 
     def transform_target_labels(self, targets: pd.DataFrame) -> pd.DataFrame:
+        """Transform the target column based on already created mappings."""
         targets = self.label_encoder_transform(targets, self.target_label_mapping)
         return targets
 
-    def label_encoder_reverse_transform(self, targets: pd.DataFrame) -> pd.Series:
+    def label_encoder_reverse_transform(self, targets: pd.Series) -> pd.DataFrame:
+        """Reverse numerical encodings back to original categories."""
+        logger(f"{datetime.utcnow()}: Start reverse-encoding target labels.")
         col = targets.name
 
         if isinstance(targets, pd.Series):

@@ -21,6 +21,12 @@ from preprocessing.train_test_split import train_test_split_cross, train_test_sp
 
 
 class BlueCast:
+    """Run fully configured classification blueprint.
+
+    Customization via class attributes is possible. Configs can be instantiated and provided to change Xgboost training.
+    Default hyperparameter space is relatively light-weight to speed up the prototyping.
+    """
+
     def __init__(
         self,
         class_problem: Literal["binary", "multiclass"],
@@ -49,6 +55,7 @@ class BlueCast:
         self.ml_model: Optional[XgboostModel] = None
 
     def fit(self, df: pd.DataFrame, target_col: str):
+        """Train a full ML pipeline."""
         check_gpu_support()
         self.feat_type_detector = FeatureTypeDetector()
         df = self.feat_type_detector.fit_transform_feature_types(df)
@@ -98,6 +105,7 @@ class BlueCast:
         self.prediction_mode = True
 
     def predict(self, df: pd.DataFrame) -> Tuple[np.ndarray, np.ndarray]:
+        """Predict on unseen data."""
         check_gpu_support()
         if not self.feat_type_detector:
             raise Exception("Feature type converter could not be found.")
@@ -133,7 +141,7 @@ class BlueCast:
                 and self.feat_type_detector
             ):
                 y_classes = self.target_label_encoder.label_encoder_reverse_transform(
-                    y_classes
+                    pd.Series(y_classes)
                 )
 
         return y_probs, y_classes

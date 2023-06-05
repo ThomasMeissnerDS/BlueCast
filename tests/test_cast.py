@@ -6,7 +6,7 @@ import pytest
 from sklearn.datasets import make_classification
 
 from blueprints.cast import BlueCast
-from config.training_config import TrainingConfig
+from config.training_config import TrainingConfig, XgboostTuneParamsConfig
 
 
 def create_synthetic_dataframe(num_samples=1000) -> pd.DataFrame:
@@ -58,11 +58,14 @@ def test_blueprint_xgboost(synthetic_train_test_data):
     """Test that tests the BlueCast class"""
     df_train = synthetic_train_test_data[0]
     df_val = synthetic_train_test_data[1]
+    xgboost_param_config = XgboostTuneParamsConfig()
+    xgboost_param_config.steps_max = 100
+    xgboost_param_config.num_leaves_max = 16
     train_config = TrainingConfig()
     train_config.hyperparameter_tuning_rounds = 10
 
     automl = BlueCast(
-        class_problem="binary", target_column="target", conf_training=train_config
+        class_problem="binary", target_column="target", conf_training=train_config, conf_xgboost=xgboost_param_config
     )
     automl.fit(df_train, target_col="target")
     print("Autotuning successful.")
