@@ -35,7 +35,7 @@ class MultiClassTargetEncoder:
     def __init__(self, cat_columns: List[str]):
         self.encoders: Dict[str, Union[List[str], TargetEncoder, OneHotEncoder]] = {}
         self.prediction_mode: bool = False
-        self.cat_columns: cat_columns
+        self.cat_columns = cat_columns
 
     def fit_target_encode_multiclass(self, x: pd.DataFrame, y: pd.Series) -> pd.DataFrame:
         algorithm = "multiclass_target_encoding_onehotter"
