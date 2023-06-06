@@ -20,7 +20,7 @@ def test_shap_explanations():
         conf_xgboost=xgboost_param_config,
     )
     eval_dict = automl.fit_eval(
-        df_train, df_val.drop("target", axis=1), target_col="target"
+        df_train, df_val.drop("target", axis=1), df_val["target"], target_col="target"
     )
     print(eval_dict)
     assert isinstance(eval_dict, dict)

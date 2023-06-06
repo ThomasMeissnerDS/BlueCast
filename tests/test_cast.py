@@ -33,7 +33,7 @@ def test_blueprint_xgboost(synthetic_train_test_data):
     )
     automl.fit(df_train, target_col="target")
     print("Autotuning successful.")
-    y_probs, y_classes = automl.predict(df_val)
+    y_probs, y_classes = automl.predict(df_val.drop("target", axis=1))
     print("Predicting successful.")
     assert len(y_probs) == len(df_val.index)
     assert len(y_classes) == len(df_val.index)

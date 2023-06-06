@@ -17,9 +17,11 @@ def train_test_split_cross(
     logger(
         f"{datetime.utcnow()}: Start executing train-test split with train size of {train_size}."
     )
+    target = df[target_col].copy()
+    df = df.drop(target_col, axis=1)
     x_train, x_test, y_train, y_test = model_selection.train_test_split(
         df,
-        df[target_col],
+        target,
         train_size=train_size,
         random_state=random_state,
         stratify=stratify_col,

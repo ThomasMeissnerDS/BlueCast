@@ -68,7 +68,7 @@ class BlueCast:
         self.ml_model: Optional[XgboostModel] = ml_model
         self.shap_values: Optional[np.ndarray] = None
 
-    def fit(self, df: pd.DataFrame, target_col: str):
+    def fit(self, df: pd.DataFrame, target_col: str) -> None:
         """Train a full ML pipeline."""
         check_gpu_support()
         self.feat_type_detector = FeatureTypeDetector()
@@ -99,13 +99,13 @@ class BlueCast:
         if self.cat_columns is not None and self.class_problem == "binary":
             self.cat_encoder = BinaryClassTargetEncoder(self.cat_columns)
             x_train = self.cat_encoder.fit_target_encode_binary_class(
-                x_train, x_train[target_col]
+                x_train, y_train
             )
             x_test = self.cat_encoder.transform_target_encode_binary_class(x_test)
         elif self.cat_columns is not None and self.class_problem == "multiclass":
             self.cat_encoder = MultiClassTargetEncoder(self.cat_columns)
             x_train = self.cat_encoder.fit_target_encode_multiclass(
-                x_train, x_train[target_col]
+                x_train, y_train
             )
             x_test = self.cat_encoder.transform_target_encode_multiclass(x_test)
 
@@ -117,16 +117,17 @@ class BlueCast:
                 conf_params_xgboost=self.conf_params_xgboost,
             )
         self.ml_model.fit(x_train, x_test, y_train, y_test)
-        self.shap_values = shap_explanations(self.ml_model.model, x_test, "tree")
+        if self.conf_training and self.conf_training.calculate_shap_values:
+            self.shap_values = shap_explanations(self.ml_model.model, x_test, "tree")
         self.prediction_mode = True
 
     def fit_eval(
-        self, df: pd.DataFrame, df_eval: pd.DataFrame, target_col: str
+        self, df: pd.DataFrame, df_eval: pd.DataFrame, target: pd.Series, target_col: str, calculate_shap: bool = True
     ) -> Dict[str, Any]:
         self.fit(df, target_col)
-        df_eval = self.transform_new_data(df_eval)
+        df_eval_trans = self.transform_new_data(df_eval)
         y_probs, y_classes = self.predict(df_eval)
-        eval_dict = eval_classifier(y_probs, df_eval[target_col].values)
+        eval_dict = eval_classifier(target.values, y_classes)
         return eval_dict
 
     def transform_new_data(self, df: pd.DataFrame) -> pd.DataFrame:
