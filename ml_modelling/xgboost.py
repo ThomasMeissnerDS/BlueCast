@@ -102,7 +102,8 @@ class XgboostModel(BaseClassMlModel):
     ) -> None:
         """Tune hyperparameters.
 
-        An alternative config can be provided to overwrite the hyperparameter search space."""
+        An alternative config can be provided to overwrite the hyperparameter search space.
+        """
         logger(f"{datetime.utcnow()}: Start hyperparameter tuning of Xgboost model.")
         d_test = xgb.DMatrix(x_test, label=y_test)
         train_on = check_gpu_support()

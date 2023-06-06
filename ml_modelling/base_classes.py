@@ -1,8 +1,11 @@
 from abc import ABC, abstractmethod
-from typing import Tuple
+from typing import Any, Optional, Tuple, TypeVar
 
 import numpy as np
 import pandas as pd
+
+PredictedProbas = TypeVar("PredictedProbas", np.ndarray, pd.Series)
+PredictedClasses = TypeVar("PredictedClasses", np.ndarray, pd.Series)
 
 
 class BaseClassMlModel(ABC):
@@ -19,9 +22,14 @@ class BaseClassMlModel(ABC):
         x_test: pd.DataFrame,
         y_train: pd.Series,
         y_test: pd.Series,
-    ):
+    ) -> Optional[Any]:
         pass
 
     @abstractmethod
-    def predict(self, df: pd.DataFrame) -> Tuple[np.ndarray, np.ndarray]:
+    def predict(self, df: pd.DataFrame) -> Tuple[PredictedProbas, PredictedClasses]:
+        """
+        Predict on unseen data.
+
+        :return tuple of predicted probabilities and predicted classes
+        """
         pass
