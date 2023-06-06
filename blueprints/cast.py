@@ -25,6 +25,16 @@ class BlueCast:
 
     Customization via class attributes is possible. Configs can be instantiated and provided to change Xgboost training.
     Default hyperparameter space is relatively light-weight to speed up the prototyping.
+    :param :class_problem: Takes a string containing the class problem type. Either "binary" or "multiclass".
+    :param :target_column: Takes a string containing the name of the target column.
+    :param :cat_columns: Takes a list of strings containing the names of the categorical columns. If not provided,
+    BlueCast will infer these automaically.
+    :param :date_columns: Takes a list of strings containing the names of the date columns. If not provided,
+    BlueCast will infer these automaically.
+    :param :time_split_column: Takes a string containing the name of the time split column. If not provided,
+    BlueCast will not split the data by time or order, but do a random split instead.
+    :param :ml_model: Takes an instance of a XgboostModel class. If not provided, BlueCast will instantiate one.
+    This is an API to pass any model class. Inherit the baseclass from ml_modelling.base_model.BaseModel.
     """
 
     def __init__(
@@ -34,6 +44,7 @@ class BlueCast:
         cat_columns: Optional[List[Union[str, float, int]]] = None,
         date_columns: Optional[List[Union[str, float, int]]] = None,
         time_split_column: Optional[str] = None,
+        ml_model: Optional[XgboostModel] = None,
         conf_training: Optional[TrainingConfig] = None,
         conf_xgboost: Optional[XgboostTuneParamsConfig] = None,
         conf_params_xgboost: Optional[XgboostFinalParamConfig] = None,
@@ -52,7 +63,7 @@ class BlueCast:
             Union[BinaryClassTargetEncoder, MultiClassTargetEncoder]
         ] = None
         self.target_label_encoder: Optional[TargetLabelEncoder] = None
-        self.ml_model: Optional[XgboostModel] = None
+        self.ml_model: Optional[XgboostModel] = ml_model
 
     def fit(self, df: pd.DataFrame, target_col: str):
         """Train a full ML pipeline."""
@@ -95,12 +106,13 @@ class BlueCast:
             )
             x_test = self.cat_encoder.transform_target_encode_multiclass(x_test)
 
-        self.ml_model = XgboostModel(
-            self.class_problem,
-            conf_training=self.conf_training,
-            conf_xgboost=self.conf_xgboost,
-            conf_params_xgboost=self.conf_params_xgboost,
-        )
+        if not self.ml_model:
+            self.ml_model = XgboostModel(
+                self.class_problem,
+                conf_training=self.conf_training,
+                conf_xgboost=self.conf_xgboost,
+                conf_params_xgboost=self.conf_params_xgboost,
+            )
         self.ml_model.fit(x_train, x_test, y_train, y_test)
         self.prediction_mode = True
 

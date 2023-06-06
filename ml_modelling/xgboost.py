@@ -1,4 +1,3 @@
-from ml_modelling.base_classes import BaseClassMlModel
 from datetime import datetime
 from typing import Dict, Literal, Optional, Tuple
 
@@ -14,6 +13,7 @@ from config.training_config import (
     XgboostFinalParamConfig,
     XgboostTuneParamsConfig,
 )
+from ml_modelling.base_classes import BaseClassMlModel
 from preprocessing.general_utils import check_gpu_support, logger
 
 
