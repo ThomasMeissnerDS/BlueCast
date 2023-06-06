@@ -28,7 +28,6 @@ class XgboostModel(BaseClassMlModel):
         conf_params_xgboost: Optional[XgboostFinalParamConfig] = None,
     ):
         self.model: Optional[xgb.XGBClassifier] = None
-        self.autotune_params: bool = True
         self.class_problem = class_problem
         self.conf_training = conf_training
         self.conf_xgboost = conf_xgboost
@@ -67,13 +66,14 @@ class XgboostModel(BaseClassMlModel):
         """Train Xgboost model. Includes hyperparameter tuning on default."""
         logger(f"{datetime.utcnow()}: Start fitting Xgboost model.")
         self.check_load_confs()
-        if self.autotune_params:
-            self.autotune(x_train, x_test, y_train, y_test)
-
-        print("Finished hyperparameter tuning")
 
         if not self.conf_params_xgboost or not self.conf_training:
             raise ValueError("conf_params_xgboost or conf_training is None")
+
+        if self.conf_training.autotune_model:
+            self.autotune(x_train, x_test, y_train, y_test)
+
+        print("Finished hyperparameter tuning")
 
         if self.conf_params_xgboost.sample_weight:
             classes_weights = self.calculate_class_weights(y_train)

@@ -13,6 +13,7 @@ class TrainingConfig:
     hyperparameter_tuning_max_runtime_secs: int = 3600
     hypertuning_cv_folds: int = 1
     early_stopping_rounds: int = 10
+    autotune_model: bool = True
 
 
 @dataclass
