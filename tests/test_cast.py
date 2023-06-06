@@ -1,56 +1,17 @@
 from typing import Tuple
 
-import numpy as np
 import pandas as pd
 import pytest
-from sklearn.datasets import make_classification
 
 from blueprints.cast import BlueCast
 from config.training_config import TrainingConfig, XgboostTuneParamsConfig
-
-
-def create_synthetic_dataframe(num_samples=1000) -> pd.DataFrame:
-    # Generate synthetic data using make_classification
-    x, y = make_classification(
-        n_samples=num_samples,
-        n_features=20,
-        n_informative=20,
-        n_redundant=0,
-        n_clusters_per_class=1,
-        random_state=42,
-    )
-
-    # Create a datetime feature
-    start_date = pd.to_datetime("2022-01-01")
-    end_date = pd.to_datetime("2022-12-31")
-    datetime_feature = pd.date_range(
-        start=start_date, end=end_date, periods=num_samples
-    )
-
-    # Create categorical features
-    categorical_feature_1 = np.random.choice(["A", "B", "C"], size=num_samples)
-    categorical_feature_2 = np.random.choice(["X", "Y", "Z"], size=num_samples)
-
-    # Create a DataFrame
-    df = pd.DataFrame(
-        {
-            "categorical_feature_1": categorical_feature_1,
-            "categorical_feature_2": categorical_feature_2,
-            "numerical_feature_1": x[:, 0],
-            "numerical_feature_2": x[:, 1],
-            "numerical_feature_3": x[:, 2],
-            "datetime_feature": datetime_feature,
-            "target": y,
-        }
-    )
-
-    return df
+from tests.make_data.create_data import create_synthetic_dataframe
 
 
 @pytest.fixture
 def synthetic_train_test_data() -> Tuple[pd.DataFrame, pd.DataFrame]:
-    df_train = create_synthetic_dataframe(1000)
-    df_val = create_synthetic_dataframe(100)
+    df_train = create_synthetic_dataframe(1000, random_state=20)
+    df_val = create_synthetic_dataframe(100, random_state=200)
     return df_train, df_val
 
 

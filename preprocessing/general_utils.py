@@ -200,15 +200,18 @@ class FeatureTypeDetector:
         df = self.cast_rest_columns_to_object(df, bool_cols)
         return df
 
-    def transform_feature_types(self, df: pd.DataFrame) -> pd.DataFrame:
+    def transform_feature_types(
+        self, df: pd.DataFrame, ignore_cols: List[Union[str, float, int, None]] = None
+    ) -> pd.DataFrame:
         """Transform feature types based on already mapped types."""
         """
         Loops through the dataframe and detects column types and type casts them accordingly.
         :return: Returns casted dataframe
         """
         for key in self.detected_col_types:
-            if self.detected_col_types[key] == "datetime[ns]":
-                df[key] = pd.to_datetime(df[key], yearfirst=True)
-            else:
-                df[key] = df[key].astype(self.detected_col_types[key])
+            if ignore_cols and key not in ignore_cols:
+                if self.detected_col_types[key] == "datetime[ns]":
+                    df[key] = pd.to_datetime(df[key], yearfirst=True)
+                else:
+                    df[key] = df[key].astype(self.detected_col_types[key])
         return df

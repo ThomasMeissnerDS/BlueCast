@@ -1,4 +1,4 @@
-from typing import List, Literal, Optional, Tuple, Union
+from typing import Any, Dict, List, Literal, Optional, Tuple, Union
 
 import numpy as np
 import pandas as pd
@@ -8,6 +8,8 @@ from config.training_config import (
     XgboostFinalParamConfig,
     XgboostTuneParamsConfig,
 )
+from evaluation.eval_metrics import eval_classifier
+from evaluation.shap_values import shap_explanations
 from ml_modelling.xgboost import XgboostModel
 from preprocessing.datetime_features import date_converter
 from preprocessing.encode_target_labels import TargetLabelEncoder
@@ -64,6 +66,7 @@ class BlueCast:
         ] = None
         self.target_label_encoder: Optional[TargetLabelEncoder] = None
         self.ml_model: Optional[XgboostModel] = ml_model
+        self.shap_values: Optional[np.ndarray] = None
 
     def fit(self, df: pd.DataFrame, target_col: str):
         """Train a full ML pipeline."""
@@ -114,18 +117,27 @@ class BlueCast:
                 conf_params_xgboost=self.conf_params_xgboost,
             )
         self.ml_model.fit(x_train, x_test, y_train, y_test)
+        self.shap_values = shap_explanations(self.ml_model.model, x_test, "tree")
         self.prediction_mode = True
 
-    def predict(self, df: pd.DataFrame) -> Tuple[np.ndarray, np.ndarray]:
-        """Predict on unseen data."""
+    def fit_eval(
+        self, df: pd.DataFrame, df_eval: pd.DataFrame, target_col: str
+    ) -> Dict[str, Any]:
+        self.fit(df, target_col)
+        df_eval = self.transform_new_data(df_eval)
+        y_probs, y_classes = self.predict(df_eval)
+        eval_dict = eval_classifier(y_probs, df_eval[target_col].values)
+        return eval_dict
+
+    def transform_new_data(self, df: pd.DataFrame) -> pd.DataFrame:
+        """Transform new data into a xgb.DMatrix."""
         check_gpu_support()
         if not self.feat_type_detector:
             raise Exception("Feature type converter could not be found.")
 
-        if not self.ml_model:
-            raise Exception("Ml model could not be found")
-
-        df = self.feat_type_detector.transform_feature_types(df)
+        df = self.feat_type_detector.transform_feature_types(
+            df, ignore_cols=[self.target_column]
+        )
         df = fill_infinite_values(df)
         df = date_converter(df, self.date_columns)
 
@@ -143,6 +155,19 @@ class BlueCast:
             and isinstance(self.cat_encoder, MultiClassTargetEncoder)
         ):
             df = self.cat_encoder.transform_target_encode_multiclass(df)
+        return df
+
+    def predict(self, df: pd.DataFrame) -> Tuple[np.ndarray, np.ndarray]:
+        """Predict on unseen data."""
+        if not self.ml_model:
+            raise Exception("Ml model could not be found")
+
+        if not self.feat_type_detector:
+            raise Exception("Feature type converter could not be found.")
+
+        check_gpu_support()
+        df = self.transform_new_data(df)
+
         print("Predicting...")
         y_probs, y_classes = self.ml_model.predict(df)
 

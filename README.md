@@ -16,6 +16,7 @@ as possible for the library.
 * [General usage](#general-usage)
   * [Basic usage](#basic-usage)
   * [Advanced usage](#advanced-usage)
+* [Meta](#meta)
 
 <!-- tocstop -->
 
