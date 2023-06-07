@@ -29,7 +29,7 @@ class BlueCast:
     """Run fully configured classification blueprint.
 
     Customization via class attributes is possible. Configs can be instantiated and provided to change Xgboost training.
-    Default hyperparameter space is relatively light-weight to speed up the prototyping.
+    Default hyperparameter search space is relatively light-weight to speed up the prototyping.
     :param :class_problem: Takes a string containing the class problem type. Either "binary" or "multiclass".
     :param :target_column: Takes a string containing the name of the target column.
     :param :cat_columns: Takes a list of strings containing the names of the categorical columns. If not provided,
@@ -127,13 +127,22 @@ class BlueCast:
         target_eval: pd.Series,
         target_col: str,
     ) -> Dict[str, Any]:
+        """Train a full ML pipeline and evaluate on a holdout set.
+
+        This is a convenience function to train and evaluate on a holdout set. It is recommended to use this for model
+        exploration. On production the simple fit() function should be used.
+        :param :df: Takes a pandas DataFrame containing the training data and the targets.
+        :param :df_eval: Takes a pandas DataFrame containing the evaluation data, but not the targets.
+        :param :target_eval: Takes a pandas Series containing the evaluation targets.
+        :param :target_col: Takes a string containing the name of the target column inside the training data df.
+        """
         self.fit(df, target_col)
         y_probs, y_classes = self.predict(df_eval)
         eval_dict = eval_classifier(target_eval.values, y_classes)
         return eval_dict
 
     def transform_new_data(self, df: pd.DataFrame) -> pd.DataFrame:
-        """Transform new data into a xgb.DMatrix."""
+        """Transform new data according to preprocessing pipeline."""
         check_gpu_support()
         if not self.feat_type_detector:
             raise Exception("Feature type converter could not be found.")
@@ -161,7 +170,11 @@ class BlueCast:
         return df
 
     def predict(self, df: pd.DataFrame) -> Tuple[np.ndarray, np.ndarray]:
-        """Predict on unseen data."""
+        """Predict on unseen data.
+
+        Return the predicted probabilities and the predicted classes:
+        y_probs, y_classes = predict(df)
+        """
         if not self.ml_model:
             raise Exception("Ml model could not be found")
 

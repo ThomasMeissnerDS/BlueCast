@@ -44,6 +44,9 @@ class XgboostTuneParamsConfig:
     steps_max: int = 50000
     num_parallel_tree_min: int = 1
     num_parallel_tree_max: int = 3
+    model_verbosity: int = 0
+    model_objective: str = "multi:softprob"
+    model_eval_metric: str = "mlogloss"
 
 
 @dataclass

@@ -88,7 +88,7 @@ class XgboostModel(BaseClassMlModel):
             d_train,
             num_boost_round=self.conf_params_xgboost.params["steps"],
             early_stopping_rounds=self.conf_training.early_stopping_rounds,
-            evals=eval_set,
+            evals=eval_set
         )
         print("Finished training")
         return self.model
@@ -121,9 +121,9 @@ class XgboostModel(BaseClassMlModel):
 
         def objective(trial):
             param = {
-                "objective": "multi:softprob",
-                "eval_metric": "mlogloss",
-                "verbose": 0,
+                "objective": self.conf_xgboost.model_objective,
+                "eval_metric": self.conf_xgboost.model_eval_metric,
+                "verbose": self.conf_xgboost.model_verbosity,
                 "tree_method": train_on,
                 "num_class": y_train.nunique(),
                 "max_depth": trial.suggest_int(
@@ -197,6 +197,7 @@ class XgboostModel(BaseClassMlModel):
                     early_stopping_rounds=self.conf_training.early_stopping_rounds,
                     evals=eval_set,
                     callbacks=[pruning_callback],
+                    verbose_eval=self.conf_xgboost.model_verbosity
                 )
                 preds = model.predict(d_test)
                 pred_labels = np.asarray([np.argmax(line) for line in preds])
@@ -244,9 +245,9 @@ class XgboostModel(BaseClassMlModel):
 
         xgboost_best_param = study.best_trial.params
         self.conf_params_xgboost.params = {
-            "objective": "multi:softprob",  # OR  'binary:logistic' #the loss function being used
-            "eval_metric": "mlogloss",
-            "verbose": 0,
+            "objective": self.conf_xgboost.model_objective,  # OR  'binary:logistic' #the loss function being used
+            "eval_metric": self.conf_xgboost.model_eval_metric,
+            "verbose": self.conf_xgboost.model_verbosity,
             "tree_method": train_on,  # use GPU for training
             "num_class": y_train.nunique(),
             "max_depth": xgboost_best_param[
