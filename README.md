@@ -17,6 +17,7 @@ as possible for the library.
   * [Basic usage](#basic-usage)
   * [Advanced usage](#advanced-usage)
 * [Convenience features](#convenience-features)
+* [Code quality](#code-quality)
 * [Meta](#meta)
 
 <!-- tocstop -->
@@ -93,16 +94,18 @@ y_probs, y_classes = automl.predict(df_val)
 ```
 
 ## Convenience features
+
 Despite being a lightweight library, BlueCast also includes some convenience
 with the following features:
-- automatic feature type detection and casting
-- categorical feature encoding
-- datetime feature encoding
-- automated GPU availability check and usage for Xgboost
-- a fit_eval method to fit a model and evaluate it on a validation set
+
+* automatic feature type detection and casting
+* categorical feature encoding
+* datetime feature encoding
+* automated GPU availability check and usage for Xgboost
+a fit_eval method to fit a model and evaluate it on a validation set
 to mimic production environment reality
-- functions to save and load a trained pipeline
-- shapley values
+* functions to save and load a trained pipeline
+* shapley values
 
 The fit_eval method can be used like this:
 
@@ -117,8 +120,20 @@ automl = BlueCast(
 automl.fit_eval(df_train, df_eval, y_eval, target_col="target")
 y_probs, y_classes = automl.predict(df_val)
 ```
+
 It is important to note that df_train contains the target column while
 df_eval does not. The target column is passed separately as y_eval.
+
+## Code quality
+
+To ensure code quality, we use the following tools:
+
+* various pre-commit libraries
+* strong type hinting in the code base
+* unit tests using Pytest
+
+For contributors it is expected that all pre-commit and unit tests pass.
+For new features it is expected that unit tests are added.
 
 ## Meta
 
