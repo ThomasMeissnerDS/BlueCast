@@ -1,3 +1,10 @@
+"""
+This module contains functions to split data into train and test sets.
+
+The train-test split can be done in two ways:
+    - Randomly
+    - Based on a provided order (i.e. time)
+"""
 from datetime import datetime
 
 import pandas as pd

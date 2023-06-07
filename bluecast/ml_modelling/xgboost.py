@@ -1,3 +1,9 @@
+"""Xgboost classification model.
+
+This module contains a wrapper for the Xgboost classification model. It can be used to train and/or tune the model.
+It also calculates class weights for imbalanced datasets. The weights may or may not be used deepending on the
+hyperparameter tuning.
+"""
 from datetime import datetime
 from typing import Dict, Literal, Optional, Tuple
 

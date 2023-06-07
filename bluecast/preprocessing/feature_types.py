@@ -1,3 +1,9 @@
+"""
+Feature type detection and casting.
+
+This is a convenience class to detect and cast feature types in a DataFrame. It can be used to detect numerical,
+categorical and datetime columns. It also casts columns to a specific type.
+"""
 from typing import Dict, List, Optional, Tuple, Union
 
 import pandas as pd

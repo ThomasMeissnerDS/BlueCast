@@ -1,3 +1,7 @@
+"""Module for evaluation metrics.
+
+This is called as part of the fit_eval function.
+"""
 from typing import Any, Dict
 
 import numpy as np

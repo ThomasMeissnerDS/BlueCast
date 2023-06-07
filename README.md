@@ -16,6 +16,7 @@ as possible for the library.
 * [General usage](#general-usage)
   * [Basic usage](#basic-usage)
   * [Advanced usage](#advanced-usage)
+* [Convenience features](#convenience-features)
 * [Meta](#meta)
 
 <!-- tocstop -->
@@ -90,6 +91,34 @@ automl = BlueCast(
 automl.fit(df_train, target_col="target")
 y_probs, y_classes = automl.predict(df_val)
 ```
+
+## Convenience features
+Despite being a lightweight library, BlueCast also includes some convenience
+with the following features:
+- automatic feature type detection and casting
+- categorical feature encoding
+- datetime feature encoding
+- automated GPU availability check and usage for Xgboost
+- a fit_eval method to fit a model and evaluate it on a validation set
+to mimic production environment reality
+- functions to save and load a trained pipeline
+- shapley values
+
+The fit_eval method can be used like this:
+
+```sh
+from bluecast.blueprints.cast import BlueCast
+
+automl = BlueCast(
+        class_problem="binary",
+        target_column="target"
+    )
+
+automl.fit_eval(df_train, df_eval, y_eval, target_col="target")
+y_probs, y_classes = automl.predict(df_val)
+```
+It is important to note that df_train contains the target column while
+df_eval does not. The target column is passed separately as y_eval.
 
 ## Meta
 

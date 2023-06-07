@@ -1,3 +1,7 @@
+"""Module to calculate SHAP values for a trained ML model.
+
+The implementation is flexible and can be used for almost any ML model. The implementation is based on the SHAP library.
+"""
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd

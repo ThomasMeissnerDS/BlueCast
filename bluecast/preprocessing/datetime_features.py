@@ -1,3 +1,8 @@
+"""
+Module for extracting date parts from datetime columns.
+
+Cyclic transformations are not implemented as they aren't a good match for tree models.
+"""
 from datetime import datetime
 from typing import List, Optional, Union
 

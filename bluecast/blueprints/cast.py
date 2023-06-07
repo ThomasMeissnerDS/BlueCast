@@ -1,3 +1,11 @@
+"""Run fully configured classification blueprint.
+
+Customization via class attributes is possible. Configs can be instantiated and provided to change Xgboost training.
+Default hyperparameter search space is relatively light-weight to speed up the prototyping.
+Can deal with binary and multi-class classification problems.
+Hyperparameter tuning can be switched off or even strengthened via cross-validation. This behaviour can be controlled
+via the config class attributes from config.training_config module.
+"""
 from typing import Any, Dict, List, Literal, Optional, Tuple, Union
 
 import numpy as np

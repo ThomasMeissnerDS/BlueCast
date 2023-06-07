@@ -1,3 +1,11 @@
+"""
+A module for encoding target column labels.
+
+This is a convenience feature. It is only relevant when target column values are categorical.
+In such cases they will be converted to numerical values, but reverse-transformed for the end-user at the end of the
+pipeline.
+"""
+
 from datetime import datetime
 from typing import Dict
 

@@ -1,3 +1,10 @@
+"""Define training and common configuration parameters.
+
+Pydantic dataclasses are used to define the configuration parameters. This allows for type checking and validation of
+the configuration parameters. The configuration parameters are used in the training pipeline and in the evaluation
+pipeline. Pydantic dataclasses are used to allow users a pythonic way to define the configuration parameters.
+Default configurations can be loaded, adjusted and passed into the blueprints.
+"""
 from typing import Dict, Optional
 
 from pydantic.dataclasses import dataclass

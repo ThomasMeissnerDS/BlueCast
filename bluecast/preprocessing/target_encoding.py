@@ -1,3 +1,15 @@
+"""
+Target encoding is a method to encode categorical features. It is a supervised encoding technique, meaning it uses the
+target variable to encode the features. The target variable is used to calculate the mean of the target for each
+category and then replace the category variable with the mean value. This is a powerful technique that can be used to
+create new features from categorical variables. It is also a powerful technique to deal with high cardinality features
+as it reduces the dimensionality of the categorical features.
+
+The target encoding technique is implemented in the category_encoders library. The library offers a variety of
+different encoding techniques. The target encoding technique is implemented in the TargetEncoder class. For multiclass
+uses cases a special implementation is available as the category-encoders implementation is not suitable for
+multiclass.
+"""
 from datetime import datetime
 from typing import Dict, List, Optional, Union
 
