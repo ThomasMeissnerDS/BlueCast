@@ -3,23 +3,23 @@ from typing import Any, Dict, List, Literal, Optional, Tuple, Union
 import numpy as np
 import pandas as pd
 
-from config.training_config import (
+from bluecast.config.training_config import (
     TrainingConfig,
     XgboostFinalParamConfig,
     XgboostTuneParamsConfig,
 )
-from evaluation.eval_metrics import eval_classifier
-from evaluation.shap_values import shap_explanations
-from ml_modelling.xgboost import XgboostModel
-from preprocessing.datetime_features import date_converter
-from preprocessing.encode_target_labels import TargetLabelEncoder
-from preprocessing.general_utils import FeatureTypeDetector, check_gpu_support
-from preprocessing.nulls_and_infs import fill_infinite_values
-from preprocessing.target_encoding import (
+from bluecast.evaluation.eval_metrics import eval_classifier
+from bluecast.evaluation.shap_values import shap_explanations
+from bluecast.ml_modelling.xgboost import XgboostModel
+from bluecast.preprocessing.datetime_features import date_converter
+from bluecast.preprocessing.encode_target_labels import TargetLabelEncoder
+from bluecast.preprocessing.general_utils import FeatureTypeDetector, check_gpu_support
+from bluecast.preprocessing.nulls_and_infs import fill_infinite_values
+from bluecast.preprocessing.target_encoding import (
     BinaryClassTargetEncoder,
     MultiClassTargetEncoder,
 )
-from preprocessing.train_test_split import train_test_split_cross, train_test_split_time
+from bluecast.preprocessing.train_test_split import train_test_split_cross, train_test_split_time
 
 
 class BlueCast:
@@ -122,12 +122,11 @@ class BlueCast:
         self.prediction_mode = True
 
     def fit_eval(
-        self, df: pd.DataFrame, df_eval: pd.DataFrame, target: pd.Series, target_col: str, calculate_shap: bool = True
+        self, df: pd.DataFrame, df_eval: pd.DataFrame, target_eval: pd.Series, target_col: str
     ) -> Dict[str, Any]:
         self.fit(df, target_col)
-        df_eval_trans = self.transform_new_data(df_eval)
         y_probs, y_classes = self.predict(df_eval)
-        eval_dict = eval_classifier(target.values, y_classes)
+        eval_dict = eval_classifier(target_eval.values, y_classes)
         return eval_dict
 
     def transform_new_data(self, df: pd.DataFrame) -> pd.DataFrame:

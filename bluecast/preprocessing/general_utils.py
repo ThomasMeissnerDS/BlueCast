@@ -209,7 +209,7 @@ class FeatureTypeDetector:
         :return: Returns casted dataframe
         """
         for key in self.detected_col_types:
-            if ignore_cols and key not in ignore_cols:
+            if ignore_cols and key not in ignore_cols and key in df.columns:
                 if self.detected_col_types[key] == "datetime[ns]":
                     df[key] = pd.to_datetime(df[key], yearfirst=True)
                 else:

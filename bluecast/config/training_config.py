@@ -14,7 +14,7 @@ class TrainingConfig:
     hypertuning_cv_folds: int = 1
     early_stopping_rounds: int = 10
     autotune_model: bool = True
-    calculate_shap_values: bool = False
+    calculate_shap_values: bool = True
 
 
 @dataclass

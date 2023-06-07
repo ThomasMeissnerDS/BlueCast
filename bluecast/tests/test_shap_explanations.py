@@ -1,6 +1,6 @@
-from blueprints.cast import BlueCast
-from config.training_config import TrainingConfig, XgboostTuneParamsConfig
-from tests.make_data.create_data import create_synthetic_dataframe
+from bluecast.blueprints.cast import BlueCast
+from bluecast.config.training_config import TrainingConfig, XgboostTuneParamsConfig
+from bluecast.tests.make_data.create_data import create_synthetic_dataframe
 
 
 def test_shap_explanations():

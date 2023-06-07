@@ -1,7 +1,7 @@
 import pandas as pd
 import pytest
 
-from preprocessing.encode_target_labels import TargetLabelEncoder
+from bluecast.preprocessing.encode_target_labels import TargetLabelEncoder
 
 
 @pytest.fixture

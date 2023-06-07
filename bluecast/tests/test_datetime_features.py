@@ -1,7 +1,7 @@
 import pandas as pd
 import pytest
 
-from preprocessing.datetime_features import date_converter
+from bluecast.preprocessing.datetime_features import date_converter
 
 
 @pytest.fixture

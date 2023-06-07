@@ -8,13 +8,13 @@ import xgboost as xgb
 from sklearn.metrics import matthews_corrcoef
 from sklearn.utils import class_weight
 
-from config.training_config import (
+from bluecast.config.training_config import (
     TrainingConfig,
     XgboostFinalParamConfig,
     XgboostTuneParamsConfig,
 )
-from ml_modelling.base_classes import BaseClassMlModel
-from preprocessing.general_utils import check_gpu_support, logger
+from bluecast.ml_modelling.base_classes import BaseClassMlModel
+from bluecast.preprocessing.general_utils import check_gpu_support, logger
 
 
 class XgboostModel(BaseClassMlModel):

@@ -1,7 +1,7 @@
 import numpy as np
 import pandas as pd
 
-from preprocessing.nulls_and_infs import fill_infinite_values, fill_nulls
+from bluecast.preprocessing.nulls_and_infs import fill_infinite_values, fill_nulls
 
 
 def test_fill_nulls():

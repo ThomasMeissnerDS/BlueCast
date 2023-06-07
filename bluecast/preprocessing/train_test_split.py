@@ -3,7 +3,7 @@ from datetime import datetime
 import pandas as pd
 from sklearn import model_selection
 
-from preprocessing.general_utils import logger
+from bluecast.preprocessing.general_utils import logger
 
 
 def train_test_split_cross(

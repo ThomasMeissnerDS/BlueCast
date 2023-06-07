@@ -1,6 +1,6 @@
 import pandas as pd
 
-from preprocessing.target_encoding import MultiClassTargetEncoder
+from bluecast.preprocessing.target_encoding import MultiClassTargetEncoder
 
 
 def test_multi_class_target_encoder():

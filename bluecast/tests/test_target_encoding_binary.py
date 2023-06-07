@@ -1,7 +1,7 @@
 import pandas as pd
 import pytest
 
-from preprocessing.target_encoding import BinaryClassTargetEncoder
+from bluecast.preprocessing.target_encoding import BinaryClassTargetEncoder
 
 
 @pytest.fixture
