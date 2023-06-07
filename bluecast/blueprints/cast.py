@@ -19,7 +19,10 @@ from bluecast.preprocessing.target_encoding import (
     BinaryClassTargetEncoder,
     MultiClassTargetEncoder,
 )
-from bluecast.preprocessing.train_test_split import train_test_split_cross, train_test_split_time
+from bluecast.preprocessing.train_test_split import (
+    train_test_split_cross,
+    train_test_split_time,
+)
 
 
 class BlueCast:
@@ -98,15 +101,11 @@ class BlueCast:
 
         if self.cat_columns is not None and self.class_problem == "binary":
             self.cat_encoder = BinaryClassTargetEncoder(self.cat_columns)
-            x_train = self.cat_encoder.fit_target_encode_binary_class(
-                x_train, y_train
-            )
+            x_train = self.cat_encoder.fit_target_encode_binary_class(x_train, y_train)
             x_test = self.cat_encoder.transform_target_encode_binary_class(x_test)
         elif self.cat_columns is not None and self.class_problem == "multiclass":
             self.cat_encoder = MultiClassTargetEncoder(self.cat_columns)
-            x_train = self.cat_encoder.fit_target_encode_multiclass(
-                x_train, y_train
-            )
+            x_train = self.cat_encoder.fit_target_encode_multiclass(x_train, y_train)
             x_test = self.cat_encoder.transform_target_encode_multiclass(x_test)
 
         if not self.ml_model:
@@ -122,7 +121,11 @@ class BlueCast:
         self.prediction_mode = True
 
     def fit_eval(
-        self, df: pd.DataFrame, df_eval: pd.DataFrame, target_eval: pd.Series, target_col: str
+        self,
+        df: pd.DataFrame,
+        df_eval: pd.DataFrame,
+        target_eval: pd.Series,
+        target_col: str,
     ) -> Dict[str, Any]:
         self.fit(df, target_col)
         y_probs, y_classes = self.predict(df_eval)

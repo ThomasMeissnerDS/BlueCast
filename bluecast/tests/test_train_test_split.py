@@ -1,6 +1,9 @@
 import pandas as pd
 
-from bluecast.preprocessing.train_test_split import train_test_split_cross, train_test_split_time
+from bluecast.preprocessing.train_test_split import (
+    train_test_split_cross,
+    train_test_split_time,
+)
 
 
 # Test train_test_split_cross function
