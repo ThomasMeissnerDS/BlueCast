@@ -1,7 +1,7 @@
 import numpy as np
 import pandas as pd
 
-from bluecast.preprocessing.general_utils import FeatureTypeDetector
+from bluecast.preprocessing.feature_types import FeatureTypeDetector
 
 
 def test_feature_type_detector():

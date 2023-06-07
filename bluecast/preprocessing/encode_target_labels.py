@@ -3,7 +3,7 @@ from typing import Dict
 
 import pandas as pd
 
-from bluecast.preprocessing.general_utils import logger
+from bluecast.general_utils.general_utils import logger
 
 
 class TargetLabelEncoder:

@@ -3,7 +3,7 @@ from typing import List, Optional, Union
 
 import pandas as pd
 
-from bluecast.preprocessing.general_utils import logger
+from bluecast.general_utils.general_utils import logger
 
 
 def date_converter(

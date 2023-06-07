@@ -4,7 +4,7 @@ from typing import Dict, List, Optional, Union
 import pandas as pd
 from category_encoders import OneHotEncoder, TargetEncoder
 
-from bluecast.preprocessing.general_utils import logger
+from bluecast.general_utils.general_utils import logger
 
 
 class BinaryClassTargetEncoder:

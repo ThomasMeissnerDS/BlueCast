@@ -13,8 +13,8 @@ from bluecast.config.training_config import (
     XgboostFinalParamConfig,
     XgboostTuneParamsConfig,
 )
+from bluecast.general_utils.general_utils import check_gpu_support, logger
 from bluecast.ml_modelling.base_classes import BaseClassMlModel
-from bluecast.preprocessing.general_utils import check_gpu_support, logger
 
 
 class XgboostModel(BaseClassMlModel):
@@ -88,7 +88,7 @@ class XgboostModel(BaseClassMlModel):
             d_train,
             num_boost_round=self.conf_params_xgboost.params["steps"],
             early_stopping_rounds=self.conf_training.early_stopping_rounds,
-            evals=eval_set
+            evals=eval_set,
         )
         print("Finished training")
         return self.model
@@ -197,7 +197,7 @@ class XgboostModel(BaseClassMlModel):
                     early_stopping_rounds=self.conf_training.early_stopping_rounds,
                     evals=eval_set,
                     callbacks=[pruning_callback],
-                    verbose_eval=self.conf_xgboost.model_verbosity
+                    verbose_eval=self.conf_xgboost.model_verbosity,
                 )
                 preds = model.predict(d_test)
                 pred_labels = np.asarray([np.argmax(line) for line in preds])

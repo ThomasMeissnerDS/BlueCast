@@ -10,10 +10,11 @@ from bluecast.config.training_config import (
 )
 from bluecast.evaluation.eval_metrics import eval_classifier
 from bluecast.evaluation.shap_values import shap_explanations
+from bluecast.general_utils.general_utils import check_gpu_support
 from bluecast.ml_modelling.xgboost import XgboostModel
 from bluecast.preprocessing.datetime_features import date_converter
 from bluecast.preprocessing.encode_target_labels import TargetLabelEncoder
-from bluecast.preprocessing.general_utils import FeatureTypeDetector, check_gpu_support
+from bluecast.preprocessing.feature_types import FeatureTypeDetector
 from bluecast.preprocessing.nulls_and_infs import fill_infinite_values
 from bluecast.preprocessing.target_encoding import (
     BinaryClassTargetEncoder,

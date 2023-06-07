@@ -4,7 +4,7 @@ from typing import Union
 import numpy as np
 import pandas as pd
 
-from bluecast.preprocessing.general_utils import logger
+from bluecast.general_utils.general_utils import logger
 
 
 def fill_infinite_values(df: pd.DataFrame, fill_with: Union[int, float] = 0):
