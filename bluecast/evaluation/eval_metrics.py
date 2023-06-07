@@ -39,8 +39,6 @@ def eval_classifier(y_true: np.ndarray, y_classes: np.ndarray) -> Dict[str, Any]
     full_classification_report = classification_report(y_true, y_classes)
     print(full_classification_report)
 
-    logger(f"The classification report is {full_classification_report}")
-
     evaluation_scores = {
         "matthews": matthews,
         "accuracy": accuracy,
