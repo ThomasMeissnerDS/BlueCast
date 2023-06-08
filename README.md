@@ -125,14 +125,16 @@ class MyCustomPreprocessing(CustomPreprocessing):
     def custom_function(self, df: pd.DataFrame) -> pd.DataFrame:
         df = df / 2
         df["custom_col"] = 5
-        return d
+        return df
+        
     def fit_transform(
         self, df: pd.DataFrame, target: pd.Series
     ) -> Tuple[pd.DataFrame, pd.Series]:
         df = self.custom_function(df)
         df = df.head(1000)
         target = target.head(1000)
-        return df, targe
+        return df, target
+        
     def transform(
         self,
         df: pd.DataFrame,
@@ -144,6 +146,7 @@ class MyCustomPreprocessing(CustomPreprocessing):
         if not predicton_mode and target:
             target = target.head(100)
         return df, targe
+
 custom_preprocessor = MyCustomPreprocessing()
 
 # Pass the custom configs to the BlueCast class
