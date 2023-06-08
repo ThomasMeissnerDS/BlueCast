@@ -16,6 +16,8 @@ as possible for the library.
 * [General usage](#general-usage)
   * [Basic usage](#basic-usage)
   * [Advanced usage](#advanced-usage)
+    * [Custom training configuration](#custom--training-configuration)
+    * [Custom preprocessing](#custom-preprocessing)
 * [Convenience features](#convenience-features)
 * [Code quality](#code-quality)
 * [Meta](#meta)
@@ -64,11 +66,14 @@ y_probs, y_classes = automl.predict(df_val)
 
 ### Advanced usage
 
+#### Custom  training configuration
+
 Despite e2eml, BlueCast allows easy customization. Users can adjust the
 configuration and just pass it to the `BlueCast` class. Here is an example:
 
 ```sh
 from bluecast.blueprints.cast import BlueCast
+from bluecast.config.training_config import TrainingConfig, XgboostTuneParamsConfig
 
 # Create a custom tuning config and adjust hyperparameter search space
 xgboost_param_config = XgboostTuneParamsConfig()
@@ -93,13 +98,78 @@ automl.fit(df_train, target_col="target")
 y_probs, y_classes = automl.predict(df_val)
 ```
 
+#### Custom preprocessing
+
+The `BlueCast` class also allows for custom preprocessing. This is done by
+an abstract class that can be inherited and passed into the `BlueCast` class.
+The custom preprocessing will be called before the model training or prediction
+starts and allows users to execute last computations (i.e. sub sampling
+or final calculations).
+
+```sh
+from bluecast.blueprints.cast import BlueCast
+from bluecast.preprocessing.custom import CustomPreprocessing
+
+# Create a custom tuning config and adjust hyperparameter search space
+xgboost_param_config = XgboostTuneParamsConfig()
+xgboost_param_config.steps_max = 100
+xgboost_param_config.num_leaves_max = 16
+# Create a custom training config and adjust general training parameters
+train_config = TrainingConfig()
+train_config.hyperparameter_tuning_rounds = 10
+train_config.autotune_model = False # we want to run just normal training, no hyperparameter tuning
+# We could even just overwrite the final Xgboost params using the XgboostFinalParamConfig class
+
+# add custom last mile computation
+    class MyCustomPreprocessing(CustomPreprocessing):
+        def custom_function(self, df: pd.DataFrame) -> pd.DataFrame:
+            df = df / 2
+            df["custom_col"] = 5
+            return df
+
+        def fit_transform(
+            self, df: pd.DataFrame, target: pd.Series
+        ) -> Tuple[pd.DataFrame, pd.Series]:
+            df = self.custom_function(df)
+            df = df.head(1000)
+            target = target.head(1000)
+            return df, target
+
+        def transform(
+            self,
+            df: pd.DataFrame,
+            target: Optional[pd.Series] = None,
+            predicton_mode: bool = False,
+        ) -> Tuple[pd.DataFrame, Optional[pd.Series]]:
+            df = self.custom_function(df)
+            df = df.head(100)
+            if not predicton_mode and target:
+                target = target.head(100)
+            return df, target
+
+    custom_preprocessor = MyCustomPreprocessing()
+
+# Pass the custom configs to the BlueCast class
+automl = BlueCast(
+        class_problem="binary",
+        target_column="target"
+        conf_training=train_config,
+        conf_xgboost=xgboost_param_config,
+        custom_preprocessor=custom_preprocessor,
+    )
+
+automl.fit(df_train, target_col="target")
+y_probs, y_classes = automl.predict(df_val)
+```
+
 ## Convenience features
 
 Despite being a lightweight library, BlueCast also includes some convenience
 with the following features:
 
 * automatic feature type detection and casting
-* automatic DataFrame schema detection: checks if unseen data has new or missing columns
+* automatic DataFrame schema detection: checks if unseen data has new or
+missing columns
 * categorical feature encoding
 * datetime feature encoding
 * automated GPU availability check and usage for Xgboost

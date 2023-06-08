@@ -20,6 +20,7 @@ from bluecast.evaluation.eval_metrics import eval_classifier
 from bluecast.evaluation.shap_values import shap_explanations
 from bluecast.general_utils.general_utils import check_gpu_support
 from bluecast.ml_modelling.xgboost import XgboostModel
+from bluecast.preprocessing.custom import CustomPreprocessing
 from bluecast.preprocessing.datetime_features import date_converter
 from bluecast.preprocessing.encode_target_labels import TargetLabelEncoder
 from bluecast.preprocessing.feature_types import FeatureTypeDetector
@@ -60,6 +61,7 @@ class BlueCast:
         date_columns: Optional[List[Union[str, float, int]]] = None,
         time_split_column: Optional[str] = None,
         ml_model: Optional[XgboostModel] = None,
+        custom_preprocessor: Optional[CustomPreprocessing] = None,
         conf_training: Optional[TrainingConfig] = None,
         conf_xgboost: Optional[XgboostTuneParamsConfig] = None,
         conf_params_xgboost: Optional[XgboostFinalParamConfig] = None,
@@ -80,6 +82,7 @@ class BlueCast:
         self.target_label_encoder: Optional[TargetLabelEncoder] = None
         self.schema_detector: Optional[SchemaDetector] = None
         self.ml_model: Optional[XgboostModel] = ml_model
+        self.custom_preprocessor = custom_preprocessor
         self.shap_values: Optional[np.ndarray] = None
 
     def fit(self, df: pd.DataFrame, target_col: str) -> None:
@@ -122,6 +125,12 @@ class BlueCast:
             self.cat_encoder = MultiClassTargetEncoder(self.cat_columns)
             x_train = self.cat_encoder.fit_target_encode_multiclass(x_train, y_train)
             x_test = self.cat_encoder.transform_target_encode_multiclass(x_test)
+
+        if self.custom_preprocessor:
+            x_train, y_train = self.custom_preprocessor.fit_transform(x_train, y_train)
+            x_test, y_test = self.custom_preprocessor.transform(
+                x_test, y_train, predicton_mode=False
+            )
 
         if not self.ml_model:
             self.ml_model = XgboostModel(
@@ -185,6 +194,9 @@ class BlueCast:
             and isinstance(self.cat_encoder, MultiClassTargetEncoder)
         ):
             df = self.cat_encoder.transform_target_encode_multiclass(df)
+
+        if self.custom_preprocessor:
+            df, _ = self.custom_preprocessor.transform(df, predicton_mode=True)
         return df
 
     def predict(self, df: pd.DataFrame) -> Tuple[np.ndarray, np.ndarray]:
@@ -203,7 +215,6 @@ class BlueCast:
         df = self.transform_new_data(df)
 
         print("Predicting...")
-        print(df.info())
         y_probs, y_classes = self.ml_model.predict(df)
 
         if self.feat_type_detector.cat_columns:

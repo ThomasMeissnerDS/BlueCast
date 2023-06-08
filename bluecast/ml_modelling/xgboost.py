@@ -279,6 +279,7 @@ class XgboostModel(BaseClassMlModel):
         logger(
             f"{datetime.utcnow()}: Start predicting on new data using Xgboost model."
         )
+        print("++++++++++++++++++++++++++++")
         d_test = xgb.DMatrix(df)
         if not self.model:
             raise Exception("No trained model has been found.")
