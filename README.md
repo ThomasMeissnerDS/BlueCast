@@ -11,8 +11,9 @@ as possible for the library.
 
 <!-- toc -->
 
-* [Installation for end users](#installation-for-end-users)
-* [Installation for developers](#installation-for-developers)
+* [Installation](#installation)
+  * [Installation for end users](#installation-for-end-users)
+  * [Installation for developers](#installation-for-developers)
 * [General usage](#general-usage)
   * [Basic usage](#basic-usage)
   * [Advanced usage](#advanced-usage)
@@ -24,7 +25,9 @@ as possible for the library.
 
 <!-- tocstop -->
 
-## Installation for end users
+## Installation
+
+### Installation for end users
 
 From PyPI:
 
@@ -36,7 +39,7 @@ Using a fresh environment with Python 3.9 or higher is recommended. We conscious
 do not support Python 3.8 or lower to prevent the usage of outdated Python versions
 and issues connected to it.
 
-## Installation for developers
+### Installation for developers
 
 * Clone the repository:
 * Create a new conda environment with Python 3.9 or higher
