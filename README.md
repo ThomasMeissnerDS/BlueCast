@@ -8,7 +8,6 @@
 [![python](https://img.shields.io/badge/Python-3.9-3776AB.svg?style=flat&logo=python&logoColor=white)](https://www.python.org)
 [![python](https://img.shields.io/badge/Python-3.10-3776AB.svg?style=flat&logo=python&logoColor=white)](https://www.python.org)
 [![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg?style=flat-square)](http://makeapullrequest.com)
-[![Downloads](https://pepy.tech/badge/global-chem)](https://pepy.tech/project/global-chem)
 
 A lightweight and fast auto-ml library. This is the successor of the
 e2eml automl library. While e2eml tried to cover many model
