@@ -17,9 +17,7 @@ def test_load_for_production():
         pickle.dump(dummy_instance, file)
 
     # Call the function to load the saved instance
-    loaded_instance = load_for_production(
-        file_name=file_name, file_type=file_type
-    )
+    loaded_instance = load_for_production(file_name=file_name, file_type=file_type)
 
     # Check if the loaded instance is equal to the original dummy instance
     assert loaded_instance == dummy_instance
