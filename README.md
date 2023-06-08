@@ -126,7 +126,7 @@ class MyCustomPreprocessing(CustomPreprocessing):
         df = df / 2
         df["custom_col"] = 5
         return df
-        
+
     def fit_transform(
         self, df: pd.DataFrame, target: pd.Series
     ) -> Tuple[pd.DataFrame, pd.Series]:
@@ -134,7 +134,7 @@ class MyCustomPreprocessing(CustomPreprocessing):
         df = df.head(1000)
         target = target.head(1000)
         return df, target
-        
+
     def transform(
         self,
         df: pd.DataFrame,
