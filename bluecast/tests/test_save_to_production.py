@@ -1,6 +1,5 @@
 import os
 import pickle
-from tempfile import TemporaryDirectory
 
 from bluecast.general_utils.general_utils import save_to_production
 
