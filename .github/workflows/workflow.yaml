@@ -37,9 +37,14 @@ jobs:
             python -m poetry install
       - name: Generate coverage report
         run: |
+          source ./.venv/bin/activate  # Activate the virtual environment
           pip install pytest
           pip install pytest-cov
           pytest --cov=./ --cov-report=xml
+      - name: List installed packages
+        run: |
+          python -m poetry lock
+          python -m poetry show --tree
       - name: Upload coverage to Codecov
         uses: codecov/codecov-action@v3
         with:
