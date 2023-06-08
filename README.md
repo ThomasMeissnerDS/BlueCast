@@ -99,6 +99,7 @@ Despite being a lightweight library, BlueCast also includes some convenience
 with the following features:
 
 * automatic feature type detection and casting
+* automatic DataFrame schema detection: checks if unseen data has new or missing columns
 * categorical feature encoding
 * datetime feature encoding
 * automated GPU availability check and usage for Xgboost
@@ -132,7 +133,7 @@ To ensure code quality, we use the following tools:
 * strong type hinting in the code base
 * unit tests using Pytest
 
-For contributors it is expected that all pre-commit and unit tests pass.
+For contributors, it is expected that all pre-commit and unit tests pass.
 For new features it is expected that unit tests are added.
 
 ## Meta

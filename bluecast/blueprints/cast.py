@@ -24,6 +24,7 @@ from bluecast.preprocessing.datetime_features import date_converter
 from bluecast.preprocessing.encode_target_labels import TargetLabelEncoder
 from bluecast.preprocessing.feature_types import FeatureTypeDetector
 from bluecast.preprocessing.nulls_and_infs import fill_infinite_values
+from bluecast.preprocessing.schema_checks import SchemaDetector
 from bluecast.preprocessing.target_encoding import (
     BinaryClassTargetEncoder,
     MultiClassTargetEncoder,
@@ -77,6 +78,7 @@ class BlueCast:
             Union[BinaryClassTargetEncoder, MultiClassTargetEncoder]
         ] = None
         self.target_label_encoder: Optional[TargetLabelEncoder] = None
+        self.schema_detector: Optional[SchemaDetector] = None
         self.ml_model: Optional[XgboostModel] = ml_model
         self.shap_values: Optional[np.ndarray] = None
 
@@ -107,6 +109,10 @@ class BlueCast:
             )
         else:
             x_train, x_test, y_train, y_test = train_test_split_cross(df, target_col)
+
+        self.schema_detector = SchemaDetector()
+        self.schema_detector.fit(x_train)
+        x_test = self.schema_detector.transform(x_test)
 
         if self.cat_columns is not None and self.class_problem == "binary":
             self.cat_encoder = BinaryClassTargetEncoder(self.cat_columns)
@@ -162,6 +168,9 @@ class BlueCast:
         df = fill_infinite_values(df)
         df = date_converter(df, self.date_columns)
 
+        if self.schema_detector:
+            df = self.schema_detector.transform(df)
+
         if (
             self.cat_columns
             and self.cat_encoder
@@ -194,6 +203,7 @@ class BlueCast:
         df = self.transform_new_data(df)
 
         print("Predicting...")
+        print(df.info())
         y_probs, y_classes = self.ml_model.predict(df)
 
         if self.feat_type_detector.cat_columns:
