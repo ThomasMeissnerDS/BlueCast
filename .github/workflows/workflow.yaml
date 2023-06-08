@@ -57,3 +57,5 @@ jobs:
           flags: pytest
           name: codecov-umbrella
           verbose: true
+      - name: Run pre-commit
+        uses: pre-commit/action@v2.0.3

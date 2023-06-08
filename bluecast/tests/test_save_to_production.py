@@ -1,7 +1,7 @@
 import os
-import pytest
 import pickle
 from tempfile import TemporaryDirectory
+
 from bluecast.general_utils.general_utils import save_to_production
 
 
@@ -22,7 +22,12 @@ def test_save_to_production():
         file_type = ".dat"
 
         # Call the function to save the instance
-        save_to_production(dummy_instance, file_path=file_path, file_name=file_name, file_type=file_type)
+        save_to_production(
+            dummy_instance,
+            file_path=file_path,
+            file_name=file_name,
+            file_type=file_type,
+        )
 
         # Construct the expected file path
         expected_file_path = os.path.join(file_path, file_name + file_type)
