@@ -6,7 +6,6 @@ from bluecast.general_utils.general_utils import load_for_production
 
 def test_load_for_production():
     # Define the file path, name, and type for the test file
-    file_path = "path/to/file/"
     file_name = "test_instance"
     file_type = ".dat"
 
@@ -14,19 +13,19 @@ def test_load_for_production():
     dummy_instance = "test_data"
 
     # Save the dummy instance to the file
-    with open(file_path + file_name + file_type, "wb") as file:
+    with open(file_name + file_type, "wb") as file:
         pickle.dump(dummy_instance, file)
 
     # Call the function to load the saved instance
     loaded_instance = load_for_production(
-        file_path=file_path, file_name=file_name, file_type=file_type
+        file_name=file_name, file_type=file_type
     )
 
     # Check if the loaded instance is equal to the original dummy instance
     assert loaded_instance == dummy_instance
 
     # Delete the test file
-    os.remove(file_path + file_name + file_type)
+    os.remove(file_name + file_type)
 
 
 def test_load_for_production_with_default_file_type():
