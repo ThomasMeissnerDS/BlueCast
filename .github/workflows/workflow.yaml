@@ -1,3 +1,6 @@
+name: codecov
+on: push
+
 steps:
   - uses: actions/checkout@master
   - uses: codecov/codecov-action@v3
