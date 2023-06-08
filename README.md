@@ -1,7 +1,7 @@
 # BlueCast
 
 [![codecov](https://codecov.io/gh/ThomasMeissnerDS/BlueCast/branch/main/graph/badge.svg?token=XRIS04O097)](https://codecov.io/gh/ThomasMeissnerDS/BlueCast)
-[![Known Vulnerabilities](https://snyk.io/test/github/{ThomasMeissnerDS}/{BlueCast}/badge.svg)]
+[![Known Vulnerabilities](https://snyk.io/test/github/ThomasMeissnerDS/BlueCast/badge.svg)]
 
 A lightweight and fast auto-ml library. This is the successor of the
 e2eml automl library. While e2eml tried to cover many model
