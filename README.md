@@ -121,33 +121,30 @@ train_config.autotune_model = False # we want to run just normal training, no hy
 # We could even just overwrite the final Xgboost params using the XgboostFinalParamConfig class
 
 # add custom last mile computation
-    class MyCustomPreprocessing(CustomPreprocessing):
-        def custom_function(self, df: pd.DataFrame) -> pd.DataFrame:
-            df = df / 2
-            df["custom_col"] = 5
-            return df
-
-        def fit_transform(
-            self, df: pd.DataFrame, target: pd.Series
-        ) -> Tuple[pd.DataFrame, pd.Series]:
-            df = self.custom_function(df)
-            df = df.head(1000)
-            target = target.head(1000)
-            return df, target
-
-        def transform(
-            self,
-            df: pd.DataFrame,
-            target: Optional[pd.Series] = None,
-            predicton_mode: bool = False,
-        ) -> Tuple[pd.DataFrame, Optional[pd.Series]]:
-            df = self.custom_function(df)
-            df = df.head(100)
-            if not predicton_mode and target:
-                target = target.head(100)
-            return df, target
-
-    custom_preprocessor = MyCustomPreprocessing()
+class MyCustomPreprocessing(CustomPreprocessing):
+    def custom_function(self, df: pd.DataFrame) -> pd.DataFrame:
+        df = df / 2
+        df["custom_col"] = 5
+        return d
+    def fit_transform(
+        self, df: pd.DataFrame, target: pd.Series
+    ) -> Tuple[pd.DataFrame, pd.Series]:
+        df = self.custom_function(df)
+        df = df.head(1000)
+        target = target.head(1000)
+        return df, targe
+    def transform(
+        self,
+        df: pd.DataFrame,
+        target: Optional[pd.Series] = None,
+        predicton_mode: bool = False,
+    ) -> Tuple[pd.DataFrame, Optional[pd.Series]]:
+        df = self.custom_function(df)
+        df = df.head(100)
+        if not predicton_mode and target:
+            target = target.head(100)
+        return df, targe
+custom_preprocessor = MyCustomPreprocessing()
 
 # Pass the custom configs to the BlueCast class
 automl = BlueCast(
