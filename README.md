@@ -145,8 +145,8 @@ class MyCustomPreprocessing(CustomPreprocessing):
         predicton_mode: bool = False,
     ) -> Tuple[pd.DataFrame, Optional[pd.Series]]:
         df = self.custom_function(df)
-        df = df.head(100)
-        if not predicton_mode and target:
+        if not predicton_mode and isinstance(target, pd.Series):
+            df = df.head(100)
             target = target.head(100)
         return df, targe
 
