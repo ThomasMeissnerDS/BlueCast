@@ -6,6 +6,11 @@
 # -- Project information -----------------------------------------------------
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#project-information
 
+import os
+import sys
+
+sys.path.append(os.path.abspath(".."))
+
 project = "BlueCast"
 copyright = "2023, Thomas Meißner"
 author = "Thomas Meißner"
