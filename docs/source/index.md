@@ -31,6 +31,8 @@ as possible for the library.
     * [Custom preprocessing](#custom-preprocessing)
 * [Convenience features](#convenience-features)
 * [Code quality](#code-quality)
+* [Documentation](#documentation)
+* [How to contribute](#how-to-contribute)
 * [Meta](#meta)
 
 <!-- tocstop -->
@@ -219,6 +221,10 @@ To ensure code quality, we use the following tools:
 For contributors, it is expected that all pre-commit and unit tests pass.
 For new features it is expected that unit tests are added.
 
+## Documentation
+
+Documentation is provided via [Read the Docs](https://bluecast.readthedocs.io/en/latest/)
+
 ## How to contribute
 
 Contributions are welcome. Please follow the following steps:
@@ -229,7 +235,7 @@ Contributions are welcome. Please follow the following steps:
 * Run pre-commit checks and unit tests (using Pytest)
 * Adjust the `docs/source/index.md` file
 * Copy paste the content of the `docs/source/index.md` file into the
-`README.md` file
+  `README.md` file
 * Push your changes and create a pull request
 
 If library or dev dependencies have to be changed, adjust the pyproject.toml.
