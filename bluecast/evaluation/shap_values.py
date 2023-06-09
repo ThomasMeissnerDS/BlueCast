@@ -2,7 +2,6 @@
 
 The implementation is flexible and can be used for almost any ML model. The implementation is based on the SHAP library.
 """
-import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 import shap
@@ -23,15 +22,12 @@ def shap_explanations(model, df: pd.DataFrame, explainer: str = "tree") -> np.nd
             tree_explainer = shap.TreeExplainer(model)
             model_shap_values = tree_explainer.shap_values(df)
             shap.summary_plot(model_shap_values, df, plot_type="bar", show=True)
-            plt.show()
         except AssertionError:
             model_shap_explainer = shap.KernelExplainer(model.predict, df)
             model_shap_values = model_shap_explainer.shap_values(df)
             shap.summary_plot(model_shap_values, df, show=True)
-            plt.show()
     else:
         model_shap_explainer = shap.KernelExplainer(model.predict, df)
         model_shap_values = model_shap_explainer.shap_values(df)
         shap.summary_plot(model_shap_values, df, show=True)
-        plt.show()
         return model_shap_values
