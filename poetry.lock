@@ -2522,4 +2522,4 @@ jupyter = []
 [metadata]
 lock-version = "2.0"
 python-versions = ">=3.9,<3.12"
-content-hash = "9da906500145f8742b093801b4284439821e57f9a3a3c178ebce9669d9bde57c"
+content-hash = "27133d36d2f573d3b8b452d21faebe2c6eb0cc65fa334c5f67086928f8f6c647"
