@@ -39,6 +39,7 @@ setuptools = "^51.1.0"
 twine = "^1.13.0"
 wheel = "^0.36.2"
 sphinx = "^6.2.1"
+sphinx-autobuild = ">=2020.9.1"
 
 [tool.poetry.extras]
 jupyter = ["ipython", "jupyter_core", "notebook"]
