@@ -219,6 +219,19 @@ To ensure code quality, we use the following tools:
 For contributors, it is expected that all pre-commit and unit tests pass.
 For new features it is expected that unit tests are added.
 
+## How to contribute
+
+Contributions are welcome. Please follow the following steps:
+
+* Create a new branch
+* Add your feature or fix
+* Add unit tests for new features
+* Run pre-commit checks and unit tests (using Pytest)
+* Adjust the `docs/source/index.md` file
+* Copy paste the content of the `docs/source/index.md` file into the
+`README.md` file
+* Push your changes and create a pull request
+
 ## Meta
 
 Creator: Thomas Meißner – [LinkedIn](https://www.linkedin.com/in/thomas-mei%C3%9Fner-m-a-3808b346)

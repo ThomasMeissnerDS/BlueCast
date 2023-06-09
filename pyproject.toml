@@ -40,6 +40,8 @@ twine = "^1.13.0"
 wheel = "^0.36.2"
 sphinx = "^6.2.1"
 sphinx-autobuild = ">=2020.9.1"
+sphinx-autoapi = ">=2.0.1.1"
+sphinx-rtd-theme = "^1.0.0"
 
 [tool.poetry.extras]
 jupyter = ["ipython", "jupyter_core", "notebook"]
