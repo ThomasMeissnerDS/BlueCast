@@ -32,7 +32,7 @@ xgboost = "^1.5.3"
 [tool.poetry.dev-dependencies]
 ipython = "^7.10.0"
 jupyter_core = "^4.7.0"
-myst-parser = "^0.14.0"
+myst-parser = ">=0.14.0"
 pre-commit = "^2.9.3"
 pytest = "^6.2.5"
 setuptools = "^51.1.0"
