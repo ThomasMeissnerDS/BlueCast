@@ -9,7 +9,8 @@
 import os
 import sys
 
-sys.path.append(os.path.abspath(".."))
+for x in os.walk('../../src'):
+    sys.path.insert(0, x[0])
 
 project = "BlueCast"
 copyright = "2023, Thomas Meißner"
