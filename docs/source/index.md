@@ -232,6 +232,22 @@ Contributions are welcome. Please follow the following steps:
 `README.md` file
 * Push your changes and create a pull request
 
+If library or dev dependencies have to be changed, adjust the pyproject.toml.
+For readthedocs it is also requited to update the
+`docs/srtd_requirements.txt` file. Simply run:
+
+```sh
+poetry export --with doc -f requirements.txt --output docs/rtd_requirements.txt
+```
+
+If readthedocs will be able to create the documentation can be tested via:
+
+```sh
+poetry run sphinx-autobuild docs/source docs/build/html
+```
+
+This will show a localhost link containing the documentation.
+
 ## Meta
 
 Creator: Thomas Meißner – [LinkedIn](https://www.linkedin.com/in/thomas-mei%C3%9Fner-m-a-3808b346)

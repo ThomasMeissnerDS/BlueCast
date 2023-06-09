@@ -5,6 +5,7 @@
 [![Code style: black](https://img.shields.io/badge/code%20style-black-000000.svg)](https://github.com/psf/black)
 [![Checked with mypy](http://www.mypy-lang.org/static/mypy_badge.svg)](http://mypy-lang.org/)
 [![pydocstyle](https://img.shields.io/badge/pydocstyle-enabled-AD4CD3)](http://www.pydocstyle.org/en/stable/)
+[![Documentation Status](https://readthedocs.org/projects/bluecast/badge/?version=latest)](https://bluecast.readthedocs.io/en/latest/?badge=latest)
 [![python](https://img.shields.io/badge/Python-3.9-3776AB.svg?style=flat&logo=python&logoColor=white)](https://www.python.org)
 [![python](https://img.shields.io/badge/Python-3.10-3776AB.svg?style=flat&logo=python&logoColor=white)](https://www.python.org)
 [![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg?style=flat-square)](http://makeapullrequest.com)
@@ -30,6 +31,7 @@ as possible for the library.
     * [Custom preprocessing](#custom-preprocessing)
 * [Convenience features](#convenience-features)
 * [Code quality](#code-quality)
+* [How to contribute](#how-to-contribute)
 * [Meta](#meta)
 
 <!-- tocstop -->
@@ -181,12 +183,12 @@ with the following features:
 
 * automatic feature type detection and casting
 * automatic DataFrame schema detection: checks if unseen data has new or
-missing columns
+  missing columns
 * categorical feature encoding
 * datetime feature encoding
 * automated GPU availability check and usage for Xgboost
-a fit_eval method to fit a model and evaluate it on a validation set
-to mimic production environment reality
+  a fit_eval method to fit a model and evaluate it on a validation set
+  to mimic production environment reality
 * functions to save and load a trained pipeline
 * shapley values
 
@@ -217,6 +219,35 @@ To ensure code quality, we use the following tools:
 
 For contributors, it is expected that all pre-commit and unit tests pass.
 For new features it is expected that unit tests are added.
+
+## How to contribute
+
+Contributions are welcome. Please follow the following steps:
+
+* Create a new branch
+* Add your feature or fix
+* Add unit tests for new features
+* Run pre-commit checks and unit tests (using Pytest)
+* Adjust the `docs/source/index.md` file
+* Copy paste the content of the `docs/source/index.md` file into the
+  `README.md` file
+* Push your changes and create a pull request
+
+If library or dev dependencies have to be changed, adjust the pyproject.toml.
+For readthedocs it is also requited to update the
+`docs/srtd_requirements.txt` file. Simply run:
+
+```sh
+poetry export --with doc -f requirements.txt --output docs/rtd_requirements.txt
+```
+
+If readthedocs will be able to create the documentation can be tested via:
+
+```sh
+poetry run sphinx-autobuild docs/source docs/build/html
+```
+
+This will show a localhost link containing the documentation.
 
 ## Meta
 
