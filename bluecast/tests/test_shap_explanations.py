@@ -1,8 +1,8 @@
-import pytest
 from unittest import mock
 
 import numpy as np
 import pandas as pd
+import pytest
 
 from bluecast.blueprints.cast import BlueCast
 from bluecast.config.training_config import TrainingConfig, XgboostTuneParamsConfig
@@ -18,7 +18,7 @@ def mock_model():
 
 @pytest.fixture
 def test_data():
-    return pd.DataFrame({'feature1': [1, 2, 3], 'feature2': [4, 5, 6]})
+    return pd.DataFrame({"feature1": [1, 2, 3], "feature2": [4, 5, 6]})
 
 
 def test_shap_explanations():
@@ -48,11 +48,7 @@ def test_shap_explanations_else(mock_model, test_data):
     explainer = "other"
     with mock.patch(
         "bluecast.evaluation.shap_values.shap.KernelExplainer"
-    ) as mock_kernel_explainer, mock.patch(
-        "bluecast.evaluation.shap_values.shap.summary_plot"
-    ) as mock_summary_plot, mock.patch(
-        "matplotlib.pyplot.show"
-    ) as mock_show:
+    ) as mock_kernel_explainer, mock.patch("matplotlib.pyplot.show") as mock_show:
         mock_kernel_explainer.return_value.shap_values.return_value = np.array(
             [[0.1, 0.2], [0.3, 0.4], [0.5, 0.6]]
         )

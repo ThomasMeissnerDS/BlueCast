@@ -10,7 +10,12 @@ def custom_preprocessing():
         def fit_transform(self, df: pd.DataFrame, target: pd.Series = None):
             return df, target
 
-        def transform(self, df: pd.DataFrame, target: pd.Series = None, predicton_mode: bool = False):
+        def transform(
+            self,
+            df: pd.DataFrame,
+            target: pd.Series = None,
+            predicton_mode: bool = False,
+        ):
             return df, target
 
     return (
