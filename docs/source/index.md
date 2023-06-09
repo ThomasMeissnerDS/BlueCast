@@ -30,6 +30,7 @@ as possible for the library.
   * [Advanced usage](#advanced-usage)
     * [Custom training configuration](#custom--training-configuration)
     * [Custom preprocessing](#custom-preprocessing)
+* [Custom ML model](#custom-ml-model)
 * [Convenience features](#convenience-features)
 * [Code quality](#code-quality)
 * [Documentation](#documentation)
@@ -176,6 +177,63 @@ automl = BlueCast(
 
 automl.fit(df_train, target_col="target")
 y_probs, y_classes = automl.predict(df_val)
+```
+
+## Custom ML model
+
+For some users it might just be convenient to use the BlueCast class to
+enjoy convenience features (details see below), but use a custom ML model.
+This is possible by passing a custom model to the BlueCast class. The needed properties
+are defined via the BaseClassMlModel class. Here is an example:
+
+```sh
+from bluecast.ml_modelling.base_classes import (
+    BaseClassMlModel,
+    PredictedClasses,  # just for linting checks
+    PredictedProbas,  # just for linting checks
+)
+
+
+class CustomModel(BaseClassMlModel):
+    def __init__(self):
+        self.model = None
+
+    def fit(
+        self,
+        x_train: pd.DataFrame,
+        x_test: pd.DataFrame,
+        y_train: pd.Series,
+        y_test: pd.Series,
+    ) -> None:
+        self.model = LogisticRegression()
+        self.model.fit(x_train, y_train)
+
+    def predict(self, df: pd.DataFrame) -> Tuple[PredictedProbas, PredictedClasses]:
+        predicted_probas = self.model.predict_proba(df)
+        predicted_classes = self.model.predict(df)
+        return predicted_probas, predicted_classes
+
+custom_model = CustomModel()
+
+# Create an instance of the BlueCast class with the custom model
+bluecast = BlueCast(
+    class_problem="binary",
+    target_column="target",
+    ml_model=custom_model,
+
+# Create some sample data for testing
+x_train = pd.DataFrame(
+    {"feature1": [i for i in range(10)], "feature2": [i for i in range(10)]}
+)
+y_train = pd.Series([0, 1, 0, 1, 0, 1, 0, 1, 0, 1])
+x_test = pd.DataFrame(
+    {"feature1": [i for i in range(10)], "feature2": [i for i in range(10)]}
+
+x_train["target"] = y_trai
+# Fit the BlueCast model using the custom model
+bluecast.fit(x_train, "target"
+# Predict on the test data using the custom model
+predicted_probas, predicted_classes = bluecast.predict(x_test)
 ```
 
 ## Convenience features

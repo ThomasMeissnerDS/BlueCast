@@ -60,7 +60,7 @@ class BlueCast:
         cat_columns: Optional[List[Union[str, float, int]]] = None,
         date_columns: Optional[List[Union[str, float, int]]] = None,
         time_split_column: Optional[str] = None,
-        ml_model: Optional[XgboostModel] = None,
+        ml_model: Optional[Union[XgboostModel, Any]] = None,
         custom_preprocessor: Optional[CustomPreprocessing] = None,
         conf_training: Optional[TrainingConfig] = None,
         conf_xgboost: Optional[XgboostTuneParamsConfig] = None,
