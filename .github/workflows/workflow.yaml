@@ -3,6 +3,7 @@ on:
   push:
     branches:
       - main
+      - develop
 jobs:
   run:
     runs-on: ${{ matrix.os }}
