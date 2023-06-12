@@ -7,6 +7,8 @@
 [![Checked with mypy](http://www.mypy-lang.org/static/mypy_badge.svg)](http://mypy-lang.org/)
 [![pydocstyle](https://img.shields.io/badge/pydocstyle-enabled-AD4CD3)](http://www.pydocstyle.org/en/stable/)
 [![Documentation Status](https://readthedocs.org/projects/bluecast/badge/?version=latest)](https://bluecast.readthedocs.io/en/latest/?badge=latest)
+[![PyPI version](https://badge.fury.io/py/bluecast.svg)](https://pypi.python.org/pypi/bluecast/)
+[![Optuna](https://img.shields.io/badge/Optuna-integrated-blue)](https://optuna.org)
 [![python](https://img.shields.io/badge/Python-3.9-3776AB.svg?style=flat&logo=python&logoColor=white)](https://www.python.org)
 [![python](https://img.shields.io/badge/Python-3.10-3776AB.svg?style=flat&logo=python&logoColor=white)](https://www.python.org)
 [![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg?style=flat-square)](http://makeapullrequest.com)
@@ -30,7 +32,7 @@ as possible for the library.
   * [Advanced usage](#advanced-usage)
     * [Custom training configuration](#custom--training-configuration)
     * [Custom preprocessing](#custom-preprocessing)
-* [Custom ML model](#custom-ml-model)
+  * [Custom ML model](#custom-ml-model)
 * [Convenience features](#convenience-features)
 * [Code quality](#code-quality)
 * [Documentation](#documentation)
@@ -179,7 +181,7 @@ automl.fit(df_train, target_col="target")
 y_probs, y_classes = automl.predict(df_val)
 ```
 
-## Custom ML model
+### Custom ML model
 
 For some users it might just be convenient to use the BlueCast class to
 enjoy convenience features (details see below), but use a custom ML model.
@@ -288,7 +290,7 @@ Documentation is provided via [Read the Docs](https://bluecast.readthedocs.io/en
 
 Contributions are welcome. Please follow the following steps:
 
-* Create a new branch
+* Create a new branch from develop branch
 * Add your feature or fix
 * Add unit tests for new features
 * Run pre-commit checks and unit tests (using Pytest)

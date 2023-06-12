@@ -3,7 +3,7 @@ from typing import Optional, Tuple
 import numpy as np
 import pandas as pd
 import pytest
-from sklearn.linear_model import LogisticRegression
+from sklearn.ensemble import RandomForestClassifier
 
 from bluecast.blueprints.cast import BlueCast
 from bluecast.config.training_config import TrainingConfig, XgboostTuneParamsConfig
@@ -88,7 +88,7 @@ class CustomModel(BaseClassMlModel):
         y_train: pd.Series,
         y_test: pd.Series,
     ) -> None:
-        self.model = LogisticRegression()
+        self.model = RandomForestClassifier()
         self.model.fit(x_train, y_train)
 
     def predict(self, df: pd.DataFrame) -> Tuple[PredictedProbas, PredictedClasses]:

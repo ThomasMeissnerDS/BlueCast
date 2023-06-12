@@ -106,12 +106,23 @@ class BlueCast:
         df = fill_infinite_values(df)
         df = date_converter(df, self.date_columns)
 
+        if not self.conf_training:
+            self.conf_training = TrainingConfig()
+
         if self.time_split_column is not None:
             x_train, x_test, y_train, y_test = train_test_split_time(
-                df, target_col, self.time_split_column
+                df,
+                target_col,
+                self.time_split_column,
+                train_size=self.conf_training.train_size,
             )
         else:
-            x_train, x_test, y_train, y_test = train_test_split_cross(df, target_col)
+            x_train, x_test, y_train, y_test = train_test_split_cross(
+                df,
+                target_col,
+                train_size=self.conf_training.train_size,
+                random_state=self.conf_training.global_random_state,
+            )
 
         self.schema_detector = SchemaDetector()
         self.schema_detector.fit(x_train)
