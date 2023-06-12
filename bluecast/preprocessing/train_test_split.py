@@ -18,7 +18,7 @@ def train_test_split_cross(
     target_col: str,
     train_size=0.80,
     random_state: int = 100,
-    stratify_col: str = None,
+    stratify: bool = False,
 ):
     """Split data into train and test. Stratification is possible."""
     logger(
@@ -26,12 +26,17 @@ def train_test_split_cross(
     )
     target = df[target_col].copy()
     df = df.drop(target_col, axis=1)
+    if stratify:
+        stratify_data = target
+    else:
+        stratify_data = None
+
     x_train, x_test, y_train, y_test = model_selection.train_test_split(
         df,
         target,
         train_size=train_size,
         random_state=random_state,
-        stratify=stratify_col,
+        stratify=stratify_data,
     )
     return x_train, x_test, y_train, y_test
 

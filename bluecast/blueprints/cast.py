@@ -122,6 +122,7 @@ class BlueCast:
                 target_col,
                 train_size=self.conf_training.train_size,
                 random_state=self.conf_training.global_random_state,
+                stratify=self.conf_training.train_split_stratify,
             )
 
         self.schema_detector = SchemaDetector()
