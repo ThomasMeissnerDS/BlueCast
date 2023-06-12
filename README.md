@@ -33,7 +33,7 @@ as possible for the library.
   * [Advanced usage](#advanced-usage)
     * [Custom training configuration](#custom--training-configuration)
     * [Custom preprocessing](#custom-preprocessing)
-  * [Custom ML model](#custom-ml-model)
+    * [Custom ML model](#custom-ml-model)
 * [Convenience features](#convenience-features)
 * [Code quality](#code-quality)
 * [Documentation](#documentation)
@@ -184,7 +184,7 @@ automl.fit(df_train, target_col="target")
 y_probs, y_classes = automl.predict(df_val)
 ```
 
-### Custom ML model
+#### Custom ML model
 
 For some users it might just be convenient to use the BlueCast class to
 enjoy convenience features (details see below), but use a custom ML model.
