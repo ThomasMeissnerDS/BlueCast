@@ -147,6 +147,7 @@ class MyCustomPreprocessing(CustomPreprocessing):
         df["custom_col"] = 5
         return df
 
+    # Please note: The base class enforces that the fit_transform method is implemented
     def fit_transform(
         self, df: pd.DataFrame, target: pd.Series
     ) -> Tuple[pd.DataFrame, pd.Series]:
@@ -155,6 +156,7 @@ class MyCustomPreprocessing(CustomPreprocessing):
         target = target.head(1000)
         return df, target
 
+    # Please note: The base class enforces that the fit_transform method is implemented
     def transform(
         self,
         df: pd.DataFrame,
