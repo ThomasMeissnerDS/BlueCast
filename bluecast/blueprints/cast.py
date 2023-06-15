@@ -141,7 +141,7 @@ class BlueCast:
         if self.custom_preprocessor:
             x_train, y_train = self.custom_preprocessor.fit_transform(x_train, y_train)
             x_test, y_test = self.custom_preprocessor.transform(
-                x_test, y_train, predicton_mode=False
+                x_test, y_test, predicton_mode=False
             )
 
         if not self.ml_model:
