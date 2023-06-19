@@ -61,4 +61,7 @@ def train_test_split_time(
     x_test = df.tail(test_length)
     y_train = x_train[target_col]
     y_test = x_test[target_col]
+    # remove target column from x_train and x_test
+    x_train = x_train.drop(target_col, axis=1)
+    x_test = x_test.drop(target_col, axis=1)
     return x_train, x_test, y_train, y_test
