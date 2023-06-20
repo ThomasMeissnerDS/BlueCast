@@ -7,6 +7,9 @@
 [![Checked with mypy](http://www.mypy-lang.org/static/mypy_badge.svg)](http://mypy-lang.org/)
 [![pydocstyle](https://img.shields.io/badge/pydocstyle-enabled-AD4CD3)](http://www.pydocstyle.org/en/stable/)
 [![Documentation Status](https://readthedocs.org/projects/bluecast/badge/?version=latest)](https://bluecast.readthedocs.io/en/latest/?badge=latest)
+[![PyPI version](https://badge.fury.io/py/bluecast.svg)](https://pypi.python.org/pypi/bluecast/)
+![Known Vulnerabilities](https://snyk.io/test/github/ThomasMeissnerDS/BlueCast/main/badge.svg)
+[![Optuna](https://img.shields.io/badge/Optuna-integrated-blue)](https://optuna.org)
 [![python](https://img.shields.io/badge/Python-3.9-3776AB.svg?style=flat&logo=python&logoColor=white)](https://www.python.org)
 [![python](https://img.shields.io/badge/Python-3.10-3776AB.svg?style=flat&logo=python&logoColor=white)](https://www.python.org)
 [![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg?style=flat-square)](http://makeapullrequest.com)
@@ -30,7 +33,7 @@ as possible for the library.
   * [Advanced usage](#advanced-usage)
     * [Custom training configuration](#custom--training-configuration)
     * [Custom preprocessing](#custom-preprocessing)
-* [Custom ML model](#custom-ml-model)
+    * [Custom ML model](#custom-ml-model)
 * [Convenience features](#convenience-features)
 * [Code quality](#code-quality)
 * [Documentation](#documentation)
@@ -119,9 +122,11 @@ y_probs, y_classes = automl.predict(df_val)
 
 The `BlueCast` class also allows for custom preprocessing. This is done by
 an abstract class that can be inherited and passed into the `BlueCast` class.
-The custom preprocessing will be called before the model training or prediction
-starts and allows users to execute last computations (i.e. sub sampling
-or final calculations).
+BlueCast provides two entry points to inject custom preprocessing. The
+attribute `custom_preprocessor` is called right after the train_test_split.
+The attribute `custom_last_mile_computation` will be called before the model
+training or prediction starts (when only numerical features are present anymore)
+and allows users to execute last computations (i.e. sub sampling or final calculations).
 
 ```sh
 from bluecast.blueprints.cast import BlueCast
@@ -137,13 +142,63 @@ train_config.hyperparameter_tuning_rounds = 10
 train_config.autotune_model = False # we want to run just normal training, no hyperparameter tuning
 # We could even just overwrite the final Xgboost params using the XgboostFinalParamConfig class
 
-# add custom last mile computation
 class MyCustomPreprocessing(CustomPreprocessing):
+    def __init__(self):
+        self.trained_patterns = {}
+
+    def fit_transform(
+        self, df: pd.DataFrame, target: pd.Series
+    ) -> Tuple[pd.DataFrame, pd.Series]:
+        num_columns = df.drop(['Beta', 'Gamma', 'Delta', 'Alpha', 'EJ'], axis=1).columns
+        cat_df = df[['Beta', 'Gamma', 'Delta', 'Alpha', 'EJ']].copy()
+
+        zscores = Zscores()
+        zscores.fit_all(df, ['Beta', 'Gamma', 'Delta', 'Alpha', 'EJ'])
+        df = zscores.transform_all(df, ['Beta', 'Gamma', 'Delta', 'Alpha', 'EJ'])
+        self.trained_patterns["zscores"] = zscores
+
+        imp_mean = SimpleImputer(missing_values=np.nan, strategy='median')
+        num_columns = df.drop(['Beta', 'Gamma', 'Delta', 'Alpha', 'EJ'], axis=1).columns
+        imp_mean.fit(df.loc[:, num_columns])
+        df = imp_mean.transform(df.loc[:, num_columns])
+        self.trained_patterns["imputation"] = imp_mean
+
+        df = pd.DataFrame(df, columns=num_columns).merge(cat_df, left_index=True, right_index=True, how="left")
+
+        df = df.drop(['Beta', 'Gamma', 'Delta', 'Alpha'], axis=1)
+
+        return df, target
+
+    def transform(
+        self,
+        df: pd.DataFrame,
+        target: Optional[pd.Series] = None,
+        predicton_mode: bool = False,
+    ) -> Tuple[pd.DataFrame, Optional[pd.Series]]:
+        num_columns = df.drop(['Beta', 'Gamma', 'Delta', 'Alpha', 'EJ'], axis=1).columns
+        cat_df = df[['Beta', 'Gamma', 'Delta', 'Alpha', 'EJ']].copy()
+
+        df = self.trained_patterns["zscores"].transform_all(df, ['Beta', 'Gamma', 'Delta', 'Alpha', 'EJ'])
+
+        imp_mean = self.trained_patterns["imputation"]
+        num_columns = df.drop(['Beta', 'Gamma', 'Delta', 'Alpha', 'EJ'], axis=1).columns
+        df.loc[:, num_columns] = df.loc[:, num_columns].replace([np.inf, -np.inf], np.nan)
+        df = imp_mean.transform(df.loc[:, num_columns])
+
+        df = pd.DataFrame(df, columns=num_columns).merge(cat_df, left_index=True, right_index=True, how="left")
+
+        df = df.drop(['Beta', 'Gamma', 'Delta', 'Alpha'], axis=1)
+
+        return df, target
+
+# add custom last mile computation
+class MyCustomLastMilePreprocessing(CustomPreprocessing):
     def custom_function(self, df: pd.DataFrame) -> pd.DataFrame:
         df = df / 2
         df["custom_col"] = 5
         return df
 
+    # Please note: The base class enforces that the fit_transform method is implemented
     def fit_transform(
         self, df: pd.DataFrame, target: pd.Series
     ) -> Tuple[pd.DataFrame, pd.Series]:
@@ -152,6 +207,7 @@ class MyCustomPreprocessing(CustomPreprocessing):
         target = target.head(1000)
         return df, target
 
+    # Please note: The base class enforces that the fit_transform method is implemented
     def transform(
         self,
         df: pd.DataFrame,
@@ -164,6 +220,7 @@ class MyCustomPreprocessing(CustomPreprocessing):
             target = target.head(100)
         return df, targe
 
+custom_last_mile_computation = MyCustomLastMilePreprocessing()
 custom_preprocessor = MyCustomPreprocessing()
 
 # Pass the custom configs to the BlueCast class
@@ -172,14 +229,15 @@ automl = BlueCast(
         target_column="target"
         conf_training=train_config,
         conf_xgboost=xgboost_param_config,
-        custom_preprocessor=custom_preprocessor,
+        custom_preprocessor=custom_preprocessor, # this takes place right after test_train_split
+        custom_last_mile_computation=custom_last_mile_computation, # last step before model training/prediction
     )
 
 automl.fit(df_train, target_col="target")
 y_probs, y_classes = automl.predict(df_val)
 ```
 
-## Custom ML model
+#### Custom ML model
 
 For some users it might just be convenient to use the BlueCast class to
 enjoy convenience features (details see below), but use a custom ML model.
@@ -236,6 +294,9 @@ bluecast.fit(x_train, "target"
 predicted_probas, predicted_classes = bluecast.predict(x_test)
 ```
 
+Please note that custom ML models require user defined hyperparameter tuning. Pre-defined
+configurations are not available for custom models.
+
 ## Convenience features
 
 Despite being a lightweight library, BlueCast also includes some convenience
@@ -288,7 +349,7 @@ Documentation is provided via [Read the Docs](https://bluecast.readthedocs.io/en
 
 Contributions are welcome. Please follow the following steps:
 
-* Create a new branch
+* Create a new branch from develop branch
 * Add your feature or fix
 * Add unit tests for new features
 * Run pre-commit checks and unit tests (using Pytest)

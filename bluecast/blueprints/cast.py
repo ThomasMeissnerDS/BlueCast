@@ -30,10 +30,7 @@ from bluecast.preprocessing.target_encoding import (
     BinaryClassTargetEncoder,
     MultiClassTargetEncoder,
 )
-from bluecast.preprocessing.train_test_split import (
-    train_test_split_cross,
-    train_test_split_time,
-)
+from bluecast.preprocessing.train_test_split import train_test_split
 
 
 class BlueCast:
@@ -51,6 +48,10 @@ class BlueCast:
     BlueCast will not split the data by time or order, but do a random split instead.
     :param :ml_model: Takes an instance of a XgboostModel class. If not provided, BlueCast will instantiate one.
     This is an API to pass any model class. Inherit the baseclass from ml_modelling.base_model.BaseModel.
+    :param custom_preprocessor: Takes an instance of a CustomPreprocessing class. Allows users to inject custom
+    preprocessing steps which take place right after the train test spit.
+    :param custom_last_mile_computation: Takes an instance of a CustomPreprocessing class. Allows users to inject custom
+    preprocessing steps which take place right before the model training.
     """
 
     def __init__(
@@ -61,6 +62,7 @@ class BlueCast:
         date_columns: Optional[List[Union[str, float, int]]] = None,
         time_split_column: Optional[str] = None,
         ml_model: Optional[Union[XgboostModel, Any]] = None,
+        custom_last_mile_computation: Optional[CustomPreprocessing] = None,
         custom_preprocessor: Optional[CustomPreprocessing] = None,
         conf_training: Optional[TrainingConfig] = None,
         conf_xgboost: Optional[XgboostTuneParamsConfig] = None,
@@ -82,14 +84,16 @@ class BlueCast:
         self.target_label_encoder: Optional[TargetLabelEncoder] = None
         self.schema_detector: Optional[SchemaDetector] = None
         self.ml_model: Optional[XgboostModel] = ml_model
+        self.custom_last_mile_computation = custom_last_mile_computation
         self.custom_preprocessor = custom_preprocessor
         self.shap_values: Optional[np.ndarray] = None
 
     def fit(self, df: pd.DataFrame, target_col: str) -> None:
         """Train a full ML pipeline."""
         check_gpu_support()
-        self.feat_type_detector = FeatureTypeDetector()
-        df = self.feat_type_detector.fit_transform_feature_types(df)
+        feat_type_detector = FeatureTypeDetector()
+        df = feat_type_detector.fit_transform_feature_types(df)
+        self.feat_type_detector = feat_type_detector
 
         if self.feat_type_detector.cat_columns:
             if self.target_column in self.feat_type_detector.cat_columns:
@@ -103,33 +107,58 @@ class BlueCast:
         self.cat_columns = self.feat_type_detector.cat_columns
         self.date_columns = self.feat_type_detector.date_columns
 
-        df = fill_infinite_values(df)
-        df = date_converter(df, self.date_columns)
+        if not self.conf_training:
+            self.conf_training = TrainingConfig()
 
-        if self.time_split_column is not None:
-            x_train, x_test, y_train, y_test = train_test_split_time(
-                df, target_col, self.time_split_column
+        x_train, x_test, y_train, y_test = train_test_split(
+            df,
+            target_col,
+            self.time_split_column,
+            self.conf_training.train_size,
+            self.conf_training.global_random_state,
+            self.conf_training.train_split_stratify,
+        )
+
+        if self.custom_preprocessor:
+            x_train, y_train = self.custom_preprocessor.fit_transform(x_train, y_train)
+            x_test, y_test = self.custom_preprocessor.transform(
+                x_test, y_test, predicton_mode=False
             )
-        else:
-            x_train, x_test, y_train, y_test = train_test_split_cross(df, target_col)
+            feat_type_detector = FeatureTypeDetector()
+            _ = feat_type_detector.fit_transform_feature_types(x_train)
+            x_train, y_train = x_train.reset_index(drop=True), y_train.reset_index(
+                drop=True
+            )
+            x_test, y_test = x_test.reset_index(drop=True), y_test.reset_index(
+                drop=True
+            )
+            if target_col in feat_type_detector.cat_columns:
+                feat_type_detector.cat_columns.remove(target_col)
+
+        x_train, x_test = fill_infinite_values(x_train), fill_infinite_values(x_test)
+        x_train, x_test = date_converter(x_train, self.date_columns), date_converter(
+            x_test, self.date_columns
+        )
 
         self.schema_detector = SchemaDetector()
         self.schema_detector.fit(x_train)
         x_test = self.schema_detector.transform(x_test)
 
         if self.cat_columns is not None and self.class_problem == "binary":
-            self.cat_encoder = BinaryClassTargetEncoder(self.cat_columns)
+            self.cat_encoder = BinaryClassTargetEncoder(feat_type_detector.cat_columns)
             x_train = self.cat_encoder.fit_target_encode_binary_class(x_train, y_train)
             x_test = self.cat_encoder.transform_target_encode_binary_class(x_test)
         elif self.cat_columns is not None and self.class_problem == "multiclass":
-            self.cat_encoder = MultiClassTargetEncoder(self.cat_columns)
+            self.cat_encoder = MultiClassTargetEncoder(feat_type_detector.cat_columns)
             x_train = self.cat_encoder.fit_target_encode_multiclass(x_train, y_train)
             x_test = self.cat_encoder.transform_target_encode_multiclass(x_test)
 
-        if self.custom_preprocessor:
-            x_train, y_train = self.custom_preprocessor.fit_transform(x_train, y_train)
-            x_test, y_test = self.custom_preprocessor.transform(
-                x_test, y_train, predicton_mode=False
+        if self.custom_last_mile_computation:
+            x_train, y_train = self.custom_last_mile_computation.fit_transform(
+                x_train, y_train
+            )
+            x_test, y_test = self.custom_last_mile_computation.transform(
+                x_test, y_test, predicton_mode=False
             )
 
         if not self.ml_model:
@@ -174,6 +203,11 @@ class BlueCast:
         df = self.feat_type_detector.transform_feature_types(
             df, ignore_cols=[self.target_column]
         )
+
+        if self.custom_preprocessor:
+            df, _ = self.custom_preprocessor.transform(df, predicton_mode=True)
+            df = df.reset_index(drop=True)
+
         df = fill_infinite_values(df)
         df = date_converter(df, self.date_columns)
 
@@ -195,8 +229,8 @@ class BlueCast:
         ):
             df = self.cat_encoder.transform_target_encode_multiclass(df)
 
-        if self.custom_preprocessor:
-            df, _ = self.custom_preprocessor.transform(df, predicton_mode=True)
+        if self.custom_last_mile_computation:
+            df, _ = self.custom_last_mile_computation.transform(df, predicton_mode=True)
         return df
 
     def predict(self, df: pd.DataFrame) -> Tuple[np.ndarray, np.ndarray]:

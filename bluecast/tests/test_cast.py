@@ -3,7 +3,7 @@ from typing import Optional, Tuple
 import numpy as np
 import pandas as pd
 import pytest
-from sklearn.linear_model import LogisticRegression
+from sklearn.ensemble import RandomForestClassifier
 
 from bluecast.blueprints.cast import BlueCast
 from bluecast.config.training_config import TrainingConfig, XgboostTuneParamsConfig
@@ -34,7 +34,7 @@ def test_blueprint_xgboost(synthetic_train_test_data):
     train_config.hyperparameter_tuning_rounds = 10
 
     # add custom last mile computation
-    class MyCustomPreprocessing(CustomPreprocessing):
+    class MyCustomLastMilePreprocessing(CustomPreprocessing):
         def custom_function(self, df: pd.DataFrame) -> pd.DataFrame:
             df = df / 2
             df["custom_col"] = 5
@@ -60,14 +60,14 @@ def test_blueprint_xgboost(synthetic_train_test_data):
                 target = target.head(100)
             return df, target
 
-    custom_preprocessor = MyCustomPreprocessing()
+    custom_last_mile_computation = MyCustomLastMilePreprocessing()
 
     automl = BlueCast(
         class_problem="binary",
         target_column="target",
         conf_training=train_config,
         conf_xgboost=xgboost_param_config,
-        custom_preprocessor=custom_preprocessor,
+        custom_last_mile_computation=custom_last_mile_computation,
     )
     automl.fit(df_train, target_col="target")
     print("Autotuning successful.")
@@ -88,7 +88,7 @@ class CustomModel(BaseClassMlModel):
         y_train: pd.Series,
         y_test: pd.Series,
     ) -> None:
-        self.model = LogisticRegression()
+        self.model = RandomForestClassifier()
         self.model.fit(x_train, y_train)
 
     def predict(self, df: pd.DataFrame) -> Tuple[PredictedProbas, PredictedClasses]:
