@@ -51,6 +51,10 @@ class BlueCast:
     BlueCast will not split the data by time or order, but do a random split instead.
     :param :ml_model: Takes an instance of a XgboostModel class. If not provided, BlueCast will instantiate one.
     This is an API to pass any model class. Inherit the baseclass from ml_modelling.base_model.BaseModel.
+    :param custom_preprocessor: Takes an instance of a CustomPreprocessing class. Allows users to inject custom
+    preprocessing steps which take place right after the train test spit.
+    :param custom_last_mile_computation: Takes an instance of a CustomPreprocessing class. Allows users to inject custom
+    preprocessing steps which take place right before the model training.
     """
 
     def __init__(
@@ -61,6 +65,7 @@ class BlueCast:
         date_columns: Optional[List[Union[str, float, int]]] = None,
         time_split_column: Optional[str] = None,
         ml_model: Optional[Union[XgboostModel, Any]] = None,
+        custom_last_mile_computation: Optional[CustomPreprocessing] = None,
         custom_preprocessor: Optional[CustomPreprocessing] = None,
         conf_training: Optional[TrainingConfig] = None,
         conf_xgboost: Optional[XgboostTuneParamsConfig] = None,
@@ -82,6 +87,7 @@ class BlueCast:
         self.target_label_encoder: Optional[TargetLabelEncoder] = None
         self.schema_detector: Optional[SchemaDetector] = None
         self.ml_model: Optional[XgboostModel] = ml_model
+        self.custom_last_mile_computation = custom_last_mile_computation
         self.custom_preprocessor = custom_preprocessor
         self.shap_values: Optional[np.ndarray] = None
 
@@ -103,9 +109,6 @@ class BlueCast:
         self.cat_columns = self.feat_type_detector.cat_columns
         self.date_columns = self.feat_type_detector.date_columns
 
-        df = fill_infinite_values(df)
-        df = date_converter(df, self.date_columns)
-
         if not self.conf_training:
             self.conf_training = TrainingConfig()
 
@@ -125,6 +128,18 @@ class BlueCast:
                 stratify=self.conf_training.train_split_stratify,
             )
 
+        if self.custom_preprocessor:
+            x_train, y_train = self.custom_preprocessor.fit_transform(x_train, y_train)
+            x_test, y_test = self.custom_preprocessor.transform(
+                x_test, y_test, predicton_mode=False
+            )
+
+        x_train = fill_infinite_values(x_train)
+        x_test = fill_infinite_values(x_test)
+
+        x_train = date_converter(x_train, self.date_columns)
+        x_test = date_converter(x_test, self.date_columns)
+
         self.schema_detector = SchemaDetector()
         self.schema_detector.fit(x_train)
         x_test = self.schema_detector.transform(x_test)
@@ -138,9 +153,9 @@ class BlueCast:
             x_train = self.cat_encoder.fit_target_encode_multiclass(x_train, y_train)
             x_test = self.cat_encoder.transform_target_encode_multiclass(x_test)
 
-        if self.custom_preprocessor:
-            x_train, y_train = self.custom_preprocessor.fit_transform(x_train, y_train)
-            x_test, y_test = self.custom_preprocessor.transform(
+        if self.custom_last_mile_computation:
+            x_train, y_train = self.custom_last_mile_computation.fit_transform(x_train, y_train)
+            x_test, y_test = self.custom_last_mile_computation.transform(
                 x_test, y_test, predicton_mode=False
             )
 
@@ -186,6 +201,10 @@ class BlueCast:
         df = self.feat_type_detector.transform_feature_types(
             df, ignore_cols=[self.target_column]
         )
+
+        if self.custom_preprocessor:
+            df, _ = self.custom_preprocessor.transform(df, predicton_mode=True)
+
         df = fill_infinite_values(df)
         df = date_converter(df, self.date_columns)
 
@@ -207,8 +226,8 @@ class BlueCast:
         ):
             df = self.cat_encoder.transform_target_encode_multiclass(df)
 
-        if self.custom_preprocessor:
-            df, _ = self.custom_preprocessor.transform(df, predicton_mode=True)
+        if self.custom_last_mile_computation:
+            df, _ = self.custom_last_mile_computation.transform(df, predicton_mode=True)
         return df
 
     def predict(self, df: pd.DataFrame) -> Tuple[np.ndarray, np.ndarray]:

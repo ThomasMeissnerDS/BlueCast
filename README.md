@@ -141,7 +141,7 @@ train_config.autotune_model = False # we want to run just normal training, no hy
 # We could even just overwrite the final Xgboost params using the XgboostFinalParamConfig class
 
 # add custom last mile computation
-class MyCustomPreprocessing(CustomPreprocessing):
+class MyCustomLastMilePreprocessing(CustomPreprocessing):
     def custom_function(self, df: pd.DataFrame) -> pd.DataFrame:
         df = df / 2
         df["custom_col"] = 5
@@ -169,7 +169,7 @@ class MyCustomPreprocessing(CustomPreprocessing):
             target = target.head(100)
         return df, targe
 
-custom_preprocessor = MyCustomPreprocessing()
+custom_last_mile_computation = MyCustomLastMilePreprocessing()
 
 # Pass the custom configs to the BlueCast class
 automl = BlueCast(
@@ -177,7 +177,7 @@ automl = BlueCast(
         target_column="target"
         conf_training=train_config,
         conf_xgboost=xgboost_param_config,
-        custom_preprocessor=custom_preprocessor,
+        custom_last_mile_computation=custom_last_mile_computation,
     )
 
 automl.fit(df_train, target_col="target")
