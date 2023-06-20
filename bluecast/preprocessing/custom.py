@@ -9,7 +9,8 @@ import pandas as pd
 class CustomPreprocessing(ABC):
     """This class is an entry point for last mile computations before model training or tuning. It is an abstract class
     and must be extended by the user. For fit_transform x_train and y_train are passed. For transform x_test and y_test
-    are passed in the BlueCast pipeline. Use prediction_mode = False to skip processing the missing targets."""
+    are passed in the BlueCast pipeline. Use prediction_mode = False to skip processing the missing targets.
+    """
 
     @abstractmethod
     def fit_transform(

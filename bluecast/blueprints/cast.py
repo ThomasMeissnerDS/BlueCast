@@ -154,7 +154,9 @@ class BlueCast:
             x_test = self.cat_encoder.transform_target_encode_multiclass(x_test)
 
         if self.custom_last_mile_computation:
-            x_train, y_train = self.custom_last_mile_computation.fit_transform(x_train, y_train)
+            x_train, y_train = self.custom_last_mile_computation.fit_transform(
+                x_train, y_train
+            )
             x_test, y_test = self.custom_last_mile_computation.transform(
                 x_test, y_test, predicton_mode=False
             )
