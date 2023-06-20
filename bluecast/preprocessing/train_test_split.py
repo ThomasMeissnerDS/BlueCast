@@ -6,6 +6,7 @@ The train-test split can be done in two ways:
     - Based on a provided order (i.e. time)
 """
 from datetime import datetime
+from typing import Optional
 
 import pandas as pd
 from sklearn import model_selection
@@ -38,6 +39,9 @@ def train_test_split_cross(
         random_state=random_state,
         stratify=stratify_data,
     )
+    if target_col in x_train.columns:
+        x_train = x_train.drop(target_col, axis=1)
+        x_test = x_test.drop(target_col, axis=1)
     return x_train, x_test, y_train, y_test
 
 
@@ -62,6 +66,33 @@ def train_test_split_time(
     y_train = x_train[target_col]
     y_test = x_test[target_col]
     # remove target column from x_train and x_test
-    x_train = x_train.drop(target_col, axis=1)
-    x_test = x_test.drop(target_col, axis=1)
+    if target_col in x_train.columns:
+        x_train = x_train.drop(target_col, axis=1)
+        x_test = x_test.drop(target_col, axis=1)
+    return x_train, x_test, y_train, y_test
+
+
+def train_test_split(
+    df: pd.DataFrame,
+    target_col: str,
+    split_by_col: Optional[str] = None,
+    train_size: float = 0.80,
+    random_state: int = 0,
+    stratify: bool = False,
+):
+    if split_by_col is not None:
+        x_train, x_test, y_train, y_test = train_test_split_time(
+            df,
+            target_col,
+            split_by_col,
+            train_size=train_size,
+        )
+    else:
+        x_train, x_test, y_train, y_test = train_test_split_cross(
+            df,
+            target_col,
+            train_size=train_size,
+            random_state=random_state,
+            stratify=stratify,
+        )
     return x_train, x_test, y_train, y_test

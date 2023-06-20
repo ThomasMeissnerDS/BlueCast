@@ -30,10 +30,7 @@ from bluecast.preprocessing.target_encoding import (
     BinaryClassTargetEncoder,
     MultiClassTargetEncoder,
 )
-from bluecast.preprocessing.train_test_split import (
-    train_test_split_cross,
-    train_test_split_time,
-)
+from bluecast.preprocessing.train_test_split import train_test_split
 
 
 class BlueCast:
@@ -94,8 +91,9 @@ class BlueCast:
     def fit(self, df: pd.DataFrame, target_col: str) -> None:
         """Train a full ML pipeline."""
         check_gpu_support()
-        self.feat_type_detector = FeatureTypeDetector()
-        df = self.feat_type_detector.fit_transform_feature_types(df)
+        feat_type_detector = FeatureTypeDetector()
+        df = feat_type_detector.fit_transform_feature_types(df)
+        self.feat_type_detector = feat_type_detector
 
         if self.feat_type_detector.cat_columns:
             if self.target_column in self.feat_type_detector.cat_columns:
@@ -112,44 +110,46 @@ class BlueCast:
         if not self.conf_training:
             self.conf_training = TrainingConfig()
 
-        if self.time_split_column is not None:
-            x_train, x_test, y_train, y_test = train_test_split_time(
-                df,
-                target_col,
-                self.time_split_column,
-                train_size=self.conf_training.train_size,
-            )
-        else:
-            x_train, x_test, y_train, y_test = train_test_split_cross(
-                df,
-                target_col,
-                train_size=self.conf_training.train_size,
-                random_state=self.conf_training.global_random_state,
-                stratify=self.conf_training.train_split_stratify,
-            )
+        x_train, x_test, y_train, y_test = train_test_split(
+            df,
+            target_col,
+            self.time_split_column,
+            self.conf_training.train_size,
+            self.conf_training.global_random_state,
+            self.conf_training.train_split_stratify,
+        )
 
         if self.custom_preprocessor:
             x_train, y_train = self.custom_preprocessor.fit_transform(x_train, y_train)
             x_test, y_test = self.custom_preprocessor.transform(
                 x_test, y_test, predicton_mode=False
             )
+            feat_type_detector = FeatureTypeDetector()
+            _ = feat_type_detector.fit_transform_feature_types(x_train)
+            x_train, y_train = x_train.reset_index(drop=True), y_train.reset_index(
+                drop=True
+            )
+            x_test, y_test = x_test.reset_index(drop=True), y_test.reset_index(
+                drop=True
+            )
+            if target_col in feat_type_detector.cat_columns:
+                feat_type_detector.cat_columns.remove(target_col)
 
-        x_train = fill_infinite_values(x_train)
-        x_test = fill_infinite_values(x_test)
-
-        x_train = date_converter(x_train, self.date_columns)
-        x_test = date_converter(x_test, self.date_columns)
+        x_train, x_test = fill_infinite_values(x_train), fill_infinite_values(x_test)
+        x_train, x_test = date_converter(x_train, self.date_columns), date_converter(
+            x_test, self.date_columns
+        )
 
         self.schema_detector = SchemaDetector()
         self.schema_detector.fit(x_train)
         x_test = self.schema_detector.transform(x_test)
 
         if self.cat_columns is not None and self.class_problem == "binary":
-            self.cat_encoder = BinaryClassTargetEncoder(self.cat_columns)
+            self.cat_encoder = BinaryClassTargetEncoder(feat_type_detector.cat_columns)
             x_train = self.cat_encoder.fit_target_encode_binary_class(x_train, y_train)
             x_test = self.cat_encoder.transform_target_encode_binary_class(x_test)
         elif self.cat_columns is not None and self.class_problem == "multiclass":
-            self.cat_encoder = MultiClassTargetEncoder(self.cat_columns)
+            self.cat_encoder = MultiClassTargetEncoder(feat_type_detector.cat_columns)
             x_train = self.cat_encoder.fit_target_encode_multiclass(x_train, y_train)
             x_test = self.cat_encoder.transform_target_encode_multiclass(x_test)
 
@@ -206,6 +206,7 @@ class BlueCast:
 
         if self.custom_preprocessor:
             df, _ = self.custom_preprocessor.transform(df, predicton_mode=True)
+            df = df.reset_index(drop=True)
 
         df = fill_infinite_values(df)
         df = date_converter(df, self.date_columns)

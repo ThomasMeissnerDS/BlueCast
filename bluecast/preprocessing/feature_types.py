@@ -4,7 +4,7 @@ Feature type detection and casting.
 This is a convenience class to detect and cast feature types in a DataFrame. It can be used to detect numerical,
 categorical and datetime columns. It also casts columns to a specific type.
 """
-from typing import Dict, List, Optional, Tuple, Union
+from typing import Dict, List, Tuple, Union
 
 import pandas as pd
 
@@ -17,13 +17,22 @@ class FeatureTypeDetector:
 
     def __init__(
         self,
-        num_columns: Optional[List[Union[str, int, float]]] = None,
-        cat_columns: Optional[List[Union[str, int, float]]] = None,
-        date_columns: Optional[List[Union[str, int, float]]] = None,
+        num_columns: List[Union[str, int, float]] = None,
+        cat_columns: List[Union[str, int, float]] = None,
+        date_columns: List[Union[str, int, float]] = None,
     ):
+        if not num_columns:
+            num_columns = []
         self.num_columns = num_columns
+
+        if not cat_columns:
+            cat_columns = []
         self.cat_columns = cat_columns
+
+        if not date_columns:
+            date_columns = []
         self.date_columns = date_columns
+
         self.detected_col_types: Dict[str, str] = {}
         self.num_dtypes = [
             "int8",
