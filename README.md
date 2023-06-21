@@ -363,7 +363,7 @@ For readthedocs it is also requited to update the
 `docs/srtd_requirements.txt` file. Simply run:
 
 ```sh
-poetry export --with doc -f requirements.txt --output docs/rtd_requirements.txt
+poetry export --with dev -f requirements.txt --output docs/rtd_requirements.txt
 ```
 
 If readthedocs will be able to create the documentation can be tested via:
