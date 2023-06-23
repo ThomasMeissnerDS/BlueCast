@@ -3,10 +3,18 @@ from typing import Optional, Tuple
 import numpy as np
 import pandas as pd
 import pytest
+import xgboost as xgb
 from sklearn.ensemble import RandomForestClassifier
+from sklearn.feature_selection import RFECV
+from sklearn.metrics import make_scorer, matthews_corrcoef
+from sklearn.model_selection import StratifiedKFold
 
 from bluecast.blueprints.cast import BlueCast
-from bluecast.config.training_config import TrainingConfig, XgboostTuneParamsConfig
+from bluecast.config.training_config import (
+    FeatureSelectionConfig,
+    TrainingConfig,
+    XgboostTuneParamsConfig,
+)
 from bluecast.ml_modelling.base_classes import (
     BaseClassMlModel,
     PredictedClasses,
@@ -32,6 +40,18 @@ def test_blueprint_xgboost(synthetic_train_test_data):
     xgboost_param_config.num_leaves_max = 16
     train_config = TrainingConfig()
     train_config.hyperparameter_tuning_rounds = 10
+
+    # add custom feature selection
+    custom_feat_sel = FeatureSelectionConfig()
+    # custom_feat_sel.execute_selection = False
+    custom_feat_sel.selection_strategy = RFECV(
+        estimator=xgb.XGBClassifier(),
+        step=1,
+        cv=StratifiedKFold(2, random_state=0, shuffle=True),
+        min_features_to_select=1,
+        scoring=make_scorer(matthews_corrcoef),
+        n_jobs=1,
+    )
 
     # add custom last mile computation
     class MyCustomLastMilePreprocessing(CustomPreprocessing):
@@ -68,6 +88,7 @@ def test_blueprint_xgboost(synthetic_train_test_data):
         conf_training=train_config,
         conf_xgboost=xgboost_param_config,
         custom_last_mile_computation=custom_last_mile_computation,
+        conf_feature_selection=custom_feat_sel,
     )
     automl.fit(df_train, target_col="target")
     print("Autotuning successful.")
@@ -101,20 +122,46 @@ def test_bluecast_with_custom_model():
     # Create an instance of the custom model
     custom_model = CustomModel()
 
+    # add custom feature selection
+    custom_feat_sel = FeatureSelectionConfig()
+    custom_feat_sel.selection_strategy = RFECV(
+        estimator=xgb.XGBClassifier(),
+        step=1,
+        cv=StratifiedKFold(2, random_state=0, shuffle=True),
+        min_features_to_select=5,
+        scoring=make_scorer(matthews_corrcoef),
+        n_jobs=1,
+    )
+
     # Create an instance of the BlueCast class with the custom model
     bluecast = BlueCast(
         class_problem="binary",
         target_column="target",
         ml_model=custom_model,
+        conf_feature_selection=custom_feat_sel,
     )
 
     # Create some sample data for testing
     x_train = pd.DataFrame(
-        {"feature1": [i for i in range(10)], "feature2": [i for i in range(10)]}
+        {
+            "feature1": [i for i in range(10)],
+            "feature2": [i for i in range(10)],
+            "feature3": [i for i in range(10)],
+            "feature4": [i for i in range(10)],
+            "feature5": [i for i in range(10)],
+            "feature6": [i for i in range(10)],
+        }
     )
     y_train = pd.Series([0, 1, 0, 1, 0, 1, 0, 1, 0, 1])
     x_test = pd.DataFrame(
-        {"feature1": [i for i in range(10)], "feature2": [i for i in range(10)]}
+        {
+            "feature1": [i for i in range(10)],
+            "feature2": [i for i in range(10)],
+            "feature3": [i for i in range(10)],
+            "feature4": [i for i in range(10)],
+            "feature5": [i for i in range(10)],
+            "feature6": [i for i in range(10)],
+        }
     )
 
     x_train["target"] = y_train
