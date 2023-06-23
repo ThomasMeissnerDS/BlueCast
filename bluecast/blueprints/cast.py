@@ -12,6 +12,7 @@ import numpy as np
 import pandas as pd
 
 from bluecast.config.training_config import (
+    FeatureSelectionConfig,
     TrainingConfig,
     XgboostFinalParamConfig,
     XgboostTuneParamsConfig,
@@ -23,6 +24,7 @@ from bluecast.ml_modelling.xgboost import XgboostModel
 from bluecast.preprocessing.custom import CustomPreprocessing
 from bluecast.preprocessing.datetime_features import date_converter
 from bluecast.preprocessing.encode_target_labels import TargetLabelEncoder
+from bluecast.preprocessing.feature_selection import FeatureSelector
 from bluecast.preprocessing.feature_types import FeatureTypeDetector
 from bluecast.preprocessing.nulls_and_infs import fill_infinite_values
 from bluecast.preprocessing.schema_checks import SchemaDetector
@@ -67,6 +69,7 @@ class BlueCast:
         conf_training: Optional[TrainingConfig] = None,
         conf_xgboost: Optional[XgboostTuneParamsConfig] = None,
         conf_params_xgboost: Optional[XgboostFinalParamConfig] = None,
+        conf_feature_selection: Optional[FeatureSelectionConfig] = None,
     ):
         self.class_problem = class_problem
         self.prediction_mode: bool = False
@@ -77,6 +80,8 @@ class BlueCast:
         self.conf_training = conf_training
         self.conf_xgboost = conf_xgboost
         self.conf_params_xgboost = conf_params_xgboost
+        self.conf_feature_selection = conf_feature_selection
+        self.feature_selector: Optional[FeatureSelector] = None
         self.feat_type_detector: Optional[FeatureTypeDetector] = None
         self.cat_encoder: Optional[
             Union[BinaryClassTargetEncoder, MultiClassTargetEncoder]
@@ -161,6 +166,18 @@ class BlueCast:
                 x_test, y_test, predicton_mode=False
             )
 
+        if not self.conf_feature_selection:
+            self.conf_feature_selection = FeatureSelectionConfig()
+
+        if self.conf_feature_selection.execute_selection:
+            self.feature_selector = FeatureSelector(
+                selection_strategy=self.conf_feature_selection.selection_strategy
+            )
+
+        if self.feature_selector and self.conf_feature_selection.execute_selection:
+            x_train = self.feature_selector.fit_transform(x_train, y_train)
+            x_test = self.feature_selector.transform(x_test)
+
         if not self.ml_model:
             self.ml_model = XgboostModel(
                 self.class_problem,
@@ -231,6 +248,13 @@ class BlueCast:
 
         if self.custom_last_mile_computation:
             df, _ = self.custom_last_mile_computation.transform(df, predicton_mode=True)
+
+        if not self.conf_feature_selection:
+            self.conf_feature_selection = FeatureSelectionConfig()
+
+        if self.feature_selector and self.conf_feature_selection.execute_selection:
+            df = self.feature_selector.transform(df)
+
         return df
 
     def predict(self, df: pd.DataFrame) -> Tuple[np.ndarray, np.ndarray]:

@@ -53,14 +53,20 @@ class XgboostModel(BaseClassMlModel):
         if not self.conf_training:
             self.conf_training = TrainingConfig()
             logger(f"{datetime.utcnow()}: Load default TrainingConfig.")
+        else:
+            logger(f"{datetime.utcnow()}: Found provided TrainingConfig.")
 
         if not self.conf_xgboost:
             self.conf_xgboost = XgboostTuneParamsConfig()
             logger(f"{datetime.utcnow()}: Load default XgboostTuneParamsConfig.")
+        else:
+            logger(f"{datetime.utcnow()}: Found provided XgboostTuneParamsConfig.")
 
         if not self.conf_params_xgboost:
             self.conf_params_xgboost = XgboostFinalParamConfig()
             logger(f"{datetime.utcnow()}: Load default XgboostFinalParamConfig.")
+        else:
+            logger(f"{datetime.utcnow()}: Found provided XgboostFinalParamConfig.")
 
     def fit(
         self,
@@ -81,21 +87,39 @@ class XgboostModel(BaseClassMlModel):
 
         print("Finished hyperparameter tuning")
 
+        print("Start training")
+        if self.conf_training.use_full_data_for_final_model:
+            logger(
+                f"""{datetime.utcnow()}: Union train and test data for final model training based on TrainingConfig
+             param 'use_full_data_for_final_model'"""
+            )
+            x_train = pd.concat([x_train, x_test])
+            y_train = pd.concat([y_train, y_test])
+
         if self.conf_params_xgboost.sample_weight:
             classes_weights = self.calculate_class_weights(y_train)
             d_train = xgb.DMatrix(x_train, label=y_train, weight=classes_weights)
         else:
             d_train = xgb.DMatrix(x_train, label=y_train)
+
         d_test = xgb.DMatrix(x_test, label=y_test)
         eval_set = [(d_train, "train"), (d_test, "test")]
 
-        self.model = xgb.train(
-            self.conf_params_xgboost.params,
-            d_train,
-            num_boost_round=self.conf_params_xgboost.params["steps"],
-            early_stopping_rounds=self.conf_training.early_stopping_rounds,
-            evals=eval_set,
-        )
+        if self.conf_training.hypertuning_cv_folds == 1:
+            self.model = xgb.train(
+                self.conf_params_xgboost.params,
+                d_train,
+                num_boost_round=self.conf_params_xgboost.params["steps"],
+                early_stopping_rounds=self.conf_training.early_stopping_rounds,
+                evals=eval_set,
+            )
+        else:
+            self.model = xgb.train(
+                self.conf_params_xgboost.params,
+                d_train,
+                num_boost_round=self.conf_params_xgboost.params["steps"],
+                evals=eval_set,
+            )
         print("Finished training")
         return self.model
 
@@ -214,7 +238,7 @@ class XgboostModel(BaseClassMlModel):
                     params=param,
                     dtrain=d_train,
                     num_boost_round=param["steps"],
-                    early_stopping_rounds=self.conf_training.early_stopping_rounds,
+                    # early_stopping_rounds=self.conf_training.early_stopping_rounds,
                     nfold=self.conf_training.hypertuning_cv_folds,
                     as_pandas=True,
                     seed=self.conf_training.global_random_state,

@@ -8,7 +8,6 @@
 [![pydocstyle](https://img.shields.io/badge/pydocstyle-enabled-AD4CD3)](http://www.pydocstyle.org/en/stable/)
 [![Documentation Status](https://readthedocs.org/projects/bluecast/badge/?version=latest)](https://bluecast.readthedocs.io/en/latest/?badge=latest)
 [![PyPI version](https://badge.fury.io/py/bluecast.svg)](https://pypi.python.org/pypi/bluecast/)
-![Known Vulnerabilities](https://snyk.io/test/github/ThomasMeissnerDS/BlueCast/main/badge.svg)
 [![Optuna](https://img.shields.io/badge/Optuna-integrated-blue)](https://optuna.org)
 [![python](https://img.shields.io/badge/Python-3.9-3776AB.svg?style=flat&logo=python&logoColor=white)](https://www.python.org)
 [![python](https://img.shields.io/badge/Python-3.10-3776AB.svg?style=flat&logo=python&logoColor=white)](https://www.python.org)
@@ -21,7 +20,7 @@ BlueCast focuses on a few model architectures (on default Xgboost
 only) and a few preprocessing options (only what is
 needed for Xgboost). This allows for a much faster development
 cycle and a much more stable codebase while also having as few dependencies
-as possible for the library. Despite being lightweight in its core BlueCast 
+as possible for the library. Despite being lightweight in its core BlueCast
 offers high customization options for advanced users.
 
 <!-- toc -->
@@ -34,6 +33,7 @@ offers high customization options for advanced users.
   * [Advanced usage](#advanced-usage)
     * [Custom training configuration](#custom--training-configuration)
     * [Custom preprocessing](#custom-preprocessing)
+    * [Custom feature selection](#custom-feature-selection)
     * [Custom ML model](#custom-ml-model)
 * [Convenience features](#convenience-features)
 * [Code quality](#code-quality)
@@ -236,6 +236,53 @@ automl = BlueCast(
 
 automl.fit(df_train, target_col="target")
 y_probs, y_classes = automl.predict(df_val)
+```
+
+#### Custom feature selection
+
+As of version 0.3 BlueCast added automated feature selection. Also this
+step can be customized. An instance of `RFECV` is expected for `selection_strategy`.
+Otherwise the pipeline will fail. To disable feature selection set `execute_selection`
+to `False`. To surpass the `RFECV` limitation a custom feature selection algorithm
+can also be passed as part of a custom last mile computation.
+
+```sh
+from bluecast.config.training_config import FeatureSelectionConfig
+from sklearn.feature_selection import RFECV
+from sklearn.metrics import make_scorer, matthews_corrcoef
+from sklearn.model_selection import StratifiedKFold
+
+# add custom feature selection
+custom_feat_sel = FeatureSelectionConfig()
+# custom_feat_sel.execute_selection = False
+custom_feat_sel.selection_strategy = RFECV(
+    estimator=xgb.XGBClassifier(),
+    step=1,
+    cv=StratifiedKFold(10, random_state=0, shuffle=True),
+    min_features_to_select=1,
+    scoring=make_scorer(matthews_corrcoef),
+    n_jobs=1,
+)
+
+# Create an instance of the BlueCast class with the custom model
+bluecast = BlueCast(
+    class_problem="binary",
+    target_column="target",
+    conf_feature_selection=custom_feat_sel,
+
+# Create some sample data for testing
+x_train = pd.DataFrame(
+    {"feature1": [i for i in range(10)], "feature2": [i for i in range(10)]}
+)
+y_train = pd.Series([0, 1, 0, 1, 0, 1, 0, 1, 0, 1])
+x_test = pd.DataFrame(
+    {"feature1": [i for i in range(10)], "feature2": [i for i in range(10)]}
+
+x_train["target"] = y_trai
+# Fit the BlueCast model using the custom model
+bluecast.fit(x_train, "target"
+# Predict on the test data using the custom model
+predicted_probas, predicted_classes = bluecast.predict(x_test)
 ```
 
 #### Custom ML model

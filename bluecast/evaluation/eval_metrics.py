@@ -17,6 +17,17 @@ from sklearn.metrics import (
 from bluecast.general_utils.general_utils import logger
 
 
+def balanced_log_loss(y_true, y_pred):
+    assert ((y_true == 0) | (y_true == 1)).all()
+    assert len(y_true) == len(y_pred)
+    assert y_pred.ndim == 1
+    eps = 1e-15
+    y_pred = y_pred.clip(eps, 1 - eps)
+    l0 = -np.log(1 - y_pred[y_true == 0])
+    l1 = -np.log(y_pred[y_true != 0])
+    return (l0.mean() + l1.mean()) / 2
+
+
 def eval_classifier(y_true: np.ndarray, y_classes: np.ndarray) -> Dict[str, Any]:
     try:
         matthews = matthews_corrcoef(y_true, y_classes)
@@ -39,6 +50,9 @@ def eval_classifier(y_true: np.ndarray, y_classes: np.ndarray) -> Dict[str, Any]
     f1_score_weighted = f1_score(y_true, y_classes, average="weighted", zero_division=0)
     print(f"The weighted F1 score is {f1_score_weighted}")
     logger(f"The weighted F1 score is {f1_score_weighted}")
+    bll = balanced_log_loss(y_true, y_classes)
+    print(f"The balanced logloss is {bll}")
+    logger(f"The balanced logloss is {bll}")
 
     full_classification_report = classification_report(y_true, y_classes)
     print(full_classification_report)
@@ -50,6 +64,7 @@ def eval_classifier(y_true: np.ndarray, y_classes: np.ndarray) -> Dict[str, Any]
         "f1_score_macro": f1_score_macro,
         "f1_score_micro": f1_score_micro,
         "f1_score_weighted": f1_score_weighted,
+        "balanced_logloss": bll,
         "classfication_report": full_classification_report,
         "confusion_matrix": confusion_matrix(y_true, y_classes),
     }
