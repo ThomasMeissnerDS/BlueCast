@@ -2,9 +2,8 @@ name: Codecov workflow
 on:
   push:
     branches:
-      - main
-      - develop
-      - development
+      - '**'
+
 jobs:
   run:
     runs-on: ${{ matrix.os }}
