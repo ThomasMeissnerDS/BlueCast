@@ -7,6 +7,13 @@ from bluecast.general_utils.general_utils import logger
 
 
 class FeatureSelector:
+    """Select top features based on selection_strategy defined in FeatureSelectionConfig.
+
+    On default cross-validated recursive feature elimination is used. In the config file a different
+    RFECV instance can be defined (using a  different classifier, scoring function, random seed etc.).
+    :param selection_strategy: Instance of FeatureSelectionConfig.selection_strategy
+    """
+
     def __init__(self, selection_strategy: FeatureSelectionConfig.selection_strategy):
         self.selected_features = None
         self.selection_strategy = selection_strategy
