@@ -118,7 +118,7 @@ class XgboostModel(BaseClassMlModel):
                 self.conf_params_xgboost.params,
                 d_train,
                 num_boost_round=self.conf_params_xgboost.params["steps"],
-                eval_set=[(d_train, "train"), (d_test, "test")],
+                evals=eval_set,
             )
         print("Finished training")
         return self.model
