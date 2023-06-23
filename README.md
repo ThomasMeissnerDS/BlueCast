@@ -21,7 +21,8 @@ BlueCast focuses on a few model architectures (on default Xgboost
 only) and a few preprocessing options (only what is
 needed for Xgboost). This allows for a much faster development
 cycle and a much more stable codebase while also having as few dependencies
-as possible for the library.
+as possible for the library. Despite being lightweight in its core BlueCast 
+offers high customization options for advanced users.
 
 <!-- toc -->
 
