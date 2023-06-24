@@ -240,17 +240,49 @@ y_probs, y_classes = automl.predict(df_val)
 
 #### Custom feature selection
 
-As of version 0.3 BlueCast added automated feature selection. Also this
-step can be customized. An instance of `RFECV` is expected for `selection_strategy`.
-Otherwise the pipeline will fail. To disable feature selection set `execute_selection`
-to `False`. To surpass the `RFECV` limitation a custom feature selection algorithm
-can also be passed as part of a custom last mile computation.
+BlueCast offers automated feature selection. On default the feature
+selection is disabled, but BlueCast raises a warning to inform the
+user about this option. The behaviour can be controlled via the
+`TrainingConfig`.
+
+```sh
+from bluecast.blueprints.cast import BlueCast
+from bluecast.preprocessing.custom import CustomPreprocessing
+from bluecast.config.training_config import TrainingConfig
+
+# Create a custom training config and adjust general training parameters
+train_config = TrainingConfig()
+train_config.hyperparameter_tuning_rounds = 10
+train_config.autotune_model = False # we want to run just normal training, no hyperparameter tuning
+train_config.enable_feature_selection = True
+
+# Pass the custom configs to the BlueCast class
+automl = BlueCast(
+        class_problem="binary",
+        target_column="target"
+        conf_training=train_config,
+    )
+
+automl.fit(df_train, target_col="target")
+y_probs, y_classes = automl.predict(df_val)
+```
+
+Also this step can be customized. An instance of `RFECV` is expected for `selection_strategy`.
+Otherwise the pipeline will fail. To surpass the `RFECV` limitation a custom feature
+selection algorithm can also be passed as part of a custom last mile computation.
+Here is an example adjusting the in-built solution via `RFECV`:
 
 ```sh
 from bluecast.config.training_config import FeatureSelectionConfig
+from bluecast.config.training_config import TrainingConfig
 from sklearn.feature_selection import RFECV
 from sklearn.metrics import make_scorer, matthews_corrcoef
 from sklearn.model_selection import StratifiedKFold
+
+
+# Create a custom training config and adjust general training parameters
+train_config = TrainingConfig()
+train_config.enable_feature_selection = True
 
 # add custom feature selection
 custom_feat_sel = FeatureSelectionConfig()
@@ -269,6 +301,7 @@ bluecast = BlueCast(
     class_problem="binary",
     target_column="target",
     conf_feature_selection=custom_feat_sel,
+    conf_training=train_config,
 
 # Create some sample data for testing
 x_train = pd.DataFrame(

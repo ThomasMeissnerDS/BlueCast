@@ -40,18 +40,8 @@ def test_blueprint_xgboost(synthetic_train_test_data):
     xgboost_param_config.num_leaves_max = 16
     train_config = TrainingConfig()
     train_config.hyperparameter_tuning_rounds = 10
-
-    # add custom feature selection
-    custom_feat_sel = FeatureSelectionConfig()
-    # custom_feat_sel.execute_selection = False
-    custom_feat_sel.selection_strategy = RFECV(
-        estimator=xgb.XGBClassifier(),
-        step=1,
-        cv=StratifiedKFold(2, random_state=0, shuffle=True),
-        min_features_to_select=1,
-        scoring=make_scorer(matthews_corrcoef),
-        n_jobs=1,
-    )
+    train_config.enable_feature_selection = True
+    train_config.hypertuning_cv_folds = 2
 
     # add custom last mile computation
     class MyCustomLastMilePreprocessing(CustomPreprocessing):
@@ -88,7 +78,6 @@ def test_blueprint_xgboost(synthetic_train_test_data):
         conf_training=train_config,
         conf_xgboost=xgboost_param_config,
         custom_last_mile_computation=custom_last_mile_computation,
-        conf_feature_selection=custom_feat_sel,
     )
     automl.fit(df_train, target_col="target")
     print("Autotuning successful.")
@@ -121,14 +110,19 @@ class CustomModel(BaseClassMlModel):
 def test_bluecast_with_custom_model():
     # Create an instance of the custom model
     custom_model = CustomModel()
+    train_config = TrainingConfig()
+    train_config.hyperparameter_tuning_rounds = 10
+    train_config.enable_feature_selection = True
+    train_config.hypertuning_cv_folds = 2
 
     # add custom feature selection
     custom_feat_sel = FeatureSelectionConfig()
+    # custom_feat_sel.execute_selection = False
     custom_feat_sel.selection_strategy = RFECV(
         estimator=xgb.XGBClassifier(),
         step=1,
         cv=StratifiedKFold(2, random_state=0, shuffle=True),
-        min_features_to_select=5,
+        min_features_to_select=1,
         scoring=make_scorer(matthews_corrcoef),
         n_jobs=1,
     )
@@ -138,6 +132,7 @@ def test_bluecast_with_custom_model():
         class_problem="binary",
         target_column="target",
         ml_model=custom_model,
+        conf_training=train_config,
         conf_feature_selection=custom_feat_sel,
     )
 

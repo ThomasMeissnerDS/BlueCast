@@ -115,6 +115,20 @@ class BlueCast:
         if not self.conf_training:
             self.conf_training = TrainingConfig()
 
+        if not self.conf_training.enable_feature_selection:
+            raise Warning(
+                """Feature selection is disabled. Update the TrainingConfig param 'enable_feature_selection'
+            to enable it or make use of a custom preprocessor to do it manually during the last mile computations step.
+            """
+            )
+
+        if self.conf_training.hypertuning_cv_folds == 1:
+            raise Warning(
+                """Cross validation is disabled. Update the TrainingConfig param 'hypertuning_cv_folds'
+            to enable it. Cross validation is disabled on defaylt to allow fast prototyping. For robust hyperparameter
+            tuning using at least 5 folds is recommended."""
+            )
+
         x_train, x_test, y_train, y_test = train_test_split(
             df,
             target_col,
@@ -169,12 +183,12 @@ class BlueCast:
         if not self.conf_feature_selection:
             self.conf_feature_selection = FeatureSelectionConfig()
 
-        if self.conf_feature_selection.execute_selection:
+        if self.conf_training.enable_feature_selection:
             self.feature_selector = FeatureSelector(
                 selection_strategy=self.conf_feature_selection.selection_strategy
             )
 
-        if self.feature_selector and self.conf_feature_selection.execute_selection:
+        if self.feature_selector and self.conf_training.enable_feature_selection:
             x_train = self.feature_selector.fit_transform(x_train, y_train)
             x_test = self.feature_selector.transform(x_test)
 
@@ -252,7 +266,10 @@ class BlueCast:
         if not self.conf_feature_selection:
             self.conf_feature_selection = FeatureSelectionConfig()
 
-        if self.feature_selector and self.conf_feature_selection.execute_selection:
+        if not self.conf_training:
+            self.conf_training = TrainingConfig()
+
+        if self.feature_selector and self.conf_training.enable_feature_selection:
             df = self.feature_selector.transform(df)
 
         return df
