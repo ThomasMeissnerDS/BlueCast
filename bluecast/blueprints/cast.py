@@ -119,12 +119,14 @@ class BlueCast:
         if not self.conf_training.enable_feature_selection:
             message = """Feature selection is disabled. Update the TrainingConfig param 'enable_feature_selection'
             to enable it or make use of a custom preprocessor to do it manually during the last mile computations step.
+            Feature selection is recommended for datasets with many features (>1000). For datasets with a small amount
+            of features feature selection is not recommended.
             """
             warnings.warn(message, UserWarning, stacklevel=2)
 
         if self.conf_training.hypertuning_cv_folds == 1:
             message = """Cross validation is disabled. Update the TrainingConfig param 'hypertuning_cv_folds'
-            to enable it. Cross validation is disabled on defaylt to allow fast prototyping. For robust hyperparameter
+            to enable it. Cross validation is disabled on default to allow fast prototyping. For robust hyperparameter
             tuning using at least 5 folds is recommended."""
             warnings.warn(message, UserWarning, stacklevel=2)
 
