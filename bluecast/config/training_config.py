@@ -29,6 +29,7 @@ class TrainingConfig:
     hypertuning_cv_folds: int = 1
     early_stopping_rounds: int = 10
     autotune_model: bool = True
+    enable_feature_selection: bool = False
     calculate_shap_values: bool = True
     train_size: float = 0.8
     train_split_stratify: bool = True
@@ -39,7 +40,6 @@ class TrainingConfig:
 class FeatureSelectionConfig:
     """Define feature selection parameters."""
 
-    execute_selection: bool = True
     selection_strategy: RFECV = RFECV(
         estimator=xgb.XGBClassifier(),
         step=1,
