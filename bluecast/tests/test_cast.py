@@ -40,8 +40,8 @@ def test_blueprint_xgboost(synthetic_train_test_data):
     xgboost_param_config.num_leaves_max = 16
     train_config = TrainingConfig()
     train_config.hyperparameter_tuning_rounds = 10
-    train_config.enable_feature_selection = True
-    train_config.hypertuning_cv_folds = 2
+    train_config.enable_feature_selection = False
+    train_config.hypertuning_cv_folds = 1
 
     # add custom last mile computation
     class MyCustomLastMilePreprocessing(CustomPreprocessing):

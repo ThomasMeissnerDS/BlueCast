@@ -6,6 +6,7 @@ Can deal with binary and multi-class classification problems.
 Hyperparameter tuning can be switched off or even strengthened via cross-validation. This behaviour can be controlled
 via the config class attributes from config.training_config module.
 """
+import warnings
 from typing import Any, Dict, List, Literal, Optional, Tuple, Union
 
 import numpy as np
@@ -116,18 +117,16 @@ class BlueCast:
             self.conf_training = TrainingConfig()
 
         if not self.conf_training.enable_feature_selection:
-            raise Warning(
-                """Feature selection is disabled. Update the TrainingConfig param 'enable_feature_selection'
+            message = """Feature selection is disabled. Update the TrainingConfig param 'enable_feature_selection'
             to enable it or make use of a custom preprocessor to do it manually during the last mile computations step.
             """
-            )
+            warnings.warn(message, UserWarning, stacklevel=2)
 
         if self.conf_training.hypertuning_cv_folds == 1:
-            raise Warning(
-                """Cross validation is disabled. Update the TrainingConfig param 'hypertuning_cv_folds'
+            message = """Cross validation is disabled. Update the TrainingConfig param 'hypertuning_cv_folds'
             to enable it. Cross validation is disabled on defaylt to allow fast prototyping. For robust hyperparameter
             tuning using at least 5 folds is recommended."""
-            )
+            warnings.warn(message, UserWarning, stacklevel=2)
 
         x_train, x_test, y_train, y_test = train_test_split(
             df,
