@@ -206,8 +206,12 @@ class BlueCast:
             )
 
         if self.conf_training.enable_feature_selection:
-            x_train, y_train = self.custom_feature_selector.fit_transform(x_train, y_train)
-            x_test, _ = self.custom_feature_selector.transform(x_test, predicton_mode=False)
+            x_train, y_train = self.custom_feature_selector.fit_transform(
+                x_train, y_train
+            )
+            x_test, _ = self.custom_feature_selector.transform(
+                x_test, predicton_mode=False
+            )
 
         if not self.ml_model:
             self.ml_model = XgboostModel(
