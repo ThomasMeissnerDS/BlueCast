@@ -206,8 +206,8 @@ class BlueCast:
             )
 
         if self.conf_training.enable_feature_selection:
-            x_train = self.custom_feature_selector.fit_transform(x_train, y_train)
-            x_test = self.custom_feature_selector.transform(x_test)
+            x_train, y_train = self.custom_feature_selector.fit_transform(x_train, y_train)
+            x_test, _ = self.custom_feature_selector.transform(x_test, predicton_mode=False)
 
         if not self.ml_model:
             self.ml_model = XgboostModel(
@@ -284,7 +284,7 @@ class BlueCast:
             df, _ = self.custom_last_mile_computation.transform(df, predicton_mode=True)
 
         if self.custom_feature_selector and self.conf_training.enable_feature_selection:
-            df = self.custom_feature_selector.transform(df)
+            df, _ = self.custom_feature_selector.transform(df, predicton_mode=True)
 
         return df
 
