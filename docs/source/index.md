@@ -297,7 +297,7 @@ class RFECVSelector(CustomPreprocessing):
             scoring=make_scorer(matthews_corrcoef),
             n_jobs=2,
         )
-            
+
     def fit_transform(self, df: pd.DataFrame, target: pd.Series) -> Tuple[pd.DataFrame, Optional[pd.Series]]:
         self.selection_strategy.fit(df, target)
         self.selected_features = self.selection_strategy.support_
@@ -310,7 +310,7 @@ class RFECVSelector(CustomPreprocessing):
                   predicton_mode: bool = False) -> Tuple[pd.DataFrame, Optional[pd.Series]]:
         df = df.loc[:, self.selected_features]
         return df, target
-        
+
 custom_feature_selector = RFECVSelector()
 
 # Create an instance of the BlueCast class with the custom model

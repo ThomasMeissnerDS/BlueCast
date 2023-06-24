@@ -1,15 +1,14 @@
 from datetime import datetime
+from typing import Optional, Tuple
 
 import pandas as pd
-
-from bluecast.general_utils.general_utils import logger
-from bluecast.preprocessing.custom import CustomPreprocessing
+import xgboost as xgb
 from sklearn.feature_selection import RFECV
 from sklearn.metrics import make_scorer, matthews_corrcoef
 from sklearn.model_selection import StratifiedKFold
-import xgboost as xgb
 
-from typing import Optional, Tuple
+from bluecast.general_utils.general_utils import logger
+from bluecast.preprocessing.custom import CustomPreprocessing
 
 
 class RFECVSelector(CustomPreprocessing):
@@ -31,7 +30,9 @@ class RFECVSelector(CustomPreprocessing):
             n_jobs=2,
         )
 
-    def fit_transform(self, df: pd.DataFrame, target: pd.Series) -> Tuple[pd.DataFrame, Optional[pd.Series]]:
+    def fit_transform(
+        self, df: pd.DataFrame, target: pd.Series
+    ) -> Tuple[pd.DataFrame, Optional[pd.Series]]:
         logger(
             f"{datetime.utcnow()}: Start feature selection as defined in FeatureSelectionConfig."
         )
@@ -41,9 +42,11 @@ class RFECVSelector(CustomPreprocessing):
         logger(f"{datetime.utcnow()}: Selected features are {df.columns}.")
         return df, target
 
-    def transform(self,
-                  df: pd.DataFrame,
-                  target: Optional[pd.Series] = None,
-                  predicton_mode: bool = False) -> Tuple[pd.DataFrame, Optional[pd.Series]]:
+    def transform(
+        self,
+        df: pd.DataFrame,
+        target: Optional[pd.Series] = None,
+        predicton_mode: bool = False,
+    ) -> Tuple[pd.DataFrame, Optional[pd.Series]]:
         df = df.loc[:, self.selected_features]
         return df, target

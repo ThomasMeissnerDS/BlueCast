@@ -66,7 +66,9 @@ class BlueCast:
         ml_model: Optional[Union[XgboostModel, Any]] = None,
         custom_last_mile_computation: Optional[CustomPreprocessing] = None,
         custom_preprocessor: Optional[CustomPreprocessing] = None,
-        custom_feature_selector: Optional[Union[RFECVSelector, CustomPreprocessing]] = None,
+        custom_feature_selector: Optional[
+            Union[RFECVSelector, CustomPreprocessing]
+        ] = None,
         conf_training: Optional[TrainingConfig] = None,
         conf_xgboost: Optional[XgboostTuneParamsConfig] = None,
         conf_params_xgboost: Optional[XgboostFinalParamConfig] = None,
@@ -107,8 +109,11 @@ class BlueCast:
             tuning using at least 5 folds is recommended."""
             warnings.warn(message, UserWarning, stacklevel=2)
 
-        if self.conf_training.enable_feature_selection and not self.custom_feature_selector:
-            message = """Feature selection is enabled but no feature selector has been provided. Falling back to 
+        if (
+            self.conf_training.enable_feature_selection
+            and not self.custom_feature_selector
+        ):
+            message = """Feature selection is enabled but no feature selector has been provided. Falling back to
             cross-validated feature elimination. Specifically for small datasets check the logs to verify that not too
             many features have been removed. Otherwise, consider disabling feature selection or providing a custom
             feature selector."""
@@ -196,7 +201,9 @@ class BlueCast:
             )
 
         if not self.custom_feature_selector:
-            self.custom_feature_selector = RFECVSelector(random_state=self.conf_training.global_random_state)
+            self.custom_feature_selector = RFECVSelector(
+                random_state=self.conf_training.global_random_state
+            )
 
         if self.conf_training.enable_feature_selection:
             x_train = self.custom_feature_selector.fit_transform(x_train, y_train)
@@ -240,6 +247,9 @@ class BlueCast:
         check_gpu_support()
         if not self.feat_type_detector:
             raise Exception("Feature type converter could not be found.")
+
+        if not self.conf_training:
+            raise Exception("Training configuration could not be found.")
 
         df = self.feat_type_detector.transform_feature_types(
             df, ignore_cols=[self.target_column]
