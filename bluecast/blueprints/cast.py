@@ -9,6 +9,7 @@ via the config class attributes from config.training_config module.
 import warnings
 from typing import Any, Dict, List, Literal, Optional, Tuple, Union
 
+from datetime import datetime
 import numpy as np
 import pandas as pd
 
@@ -19,7 +20,7 @@ from bluecast.config.training_config import (
 )
 from bluecast.evaluation.eval_metrics import eval_classifier
 from bluecast.evaluation.shap_values import shap_explanations
-from bluecast.general_utils.general_utils import check_gpu_support
+from bluecast.general_utils.general_utils import check_gpu_support, logger
 from bluecast.ml_modelling.xgboost import XgboostModel
 from bluecast.preprocessing.custom import CustomPreprocessing
 from bluecast.preprocessing.datetime_features import date_converter
@@ -307,7 +308,7 @@ class BlueCast:
         check_gpu_support()
         df = self.transform_new_data(df)
 
-        print("Predicting...")
+        logger(f"{datetime.utcnow()}: Predicting...")
         y_probs, y_classes = self.ml_model.predict(df)
 
         if self.feat_type_detector.cat_columns:
