@@ -243,7 +243,7 @@ class BlueCast:
         """
         self.fit(df, target_col)
         y_probs, y_classes = self.predict(df_eval)
-        eval_dict = eval_classifier(target_eval.values, y_classes)
+        eval_dict = eval_classifier(target_eval.values, y_probs, y_classes)
         return eval_dict
 
     def transform_new_data(self, df: pd.DataFrame) -> pd.DataFrame:

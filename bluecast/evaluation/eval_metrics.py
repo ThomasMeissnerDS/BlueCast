@@ -28,34 +28,28 @@ def balanced_log_loss(y_true, y_pred):
     return (l0.mean() + l1.mean()) / 2
 
 
-def eval_classifier(y_true: np.ndarray, y_classes: np.ndarray) -> Dict[str, Any]:
+def eval_classifier(y_true: np.ndarray, y_probs: np.ndarray, y_classes: np.ndarray) -> Dict[str, Any]:
     try:
         matthews = matthews_corrcoef(y_true, y_classes)
     except Exception:
         matthews = 0
 
-    print(f"The Matthew correlation is {matthews}")
     logger(f"The Matthew correlation is {matthews}")
-    print("-------------------")
     accuracy = accuracy_score(y_true, y_classes)
-    print(f"The accuracy is {accuracy}")
+    logger(f"The accuracy is {accuracy}")
     recall = recall_score(y_true, y_classes, average="weighted")
-    print(f"The recall is {recall}")
+    logger(f"The recall is {recall}")
     f1_score_macro = f1_score(y_true, y_classes, average="macro", zero_division=0)
-    print(f"The macro F1 score is {f1_score_macro}")
     logger(f"The macro F1 score is {f1_score_macro}")
     f1_score_micro = f1_score(y_true, y_classes, average="micro", zero_division=0)
-    print(f"The micro F1 score is {f1_score_micro}")
     logger(f"The micro F1 score is {f1_score_micro}")
     f1_score_weighted = f1_score(y_true, y_classes, average="weighted", zero_division=0)
-    print(f"The weighted F1 score is {f1_score_weighted}")
     logger(f"The weighted F1 score is {f1_score_weighted}")
-    bll = balanced_log_loss(y_true, y_classes)
-    print(f"The balanced logloss is {bll}")
+    bll = balanced_log_loss(y_true, y_probs)
     logger(f"The balanced logloss is {bll}")
 
     full_classification_report = classification_report(y_true, y_classes)
-    print(full_classification_report)
+    logger(full_classification_report)
 
     evaluation_scores = {
         "matthews": matthews,
