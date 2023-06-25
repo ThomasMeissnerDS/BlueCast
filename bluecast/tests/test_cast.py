@@ -10,11 +10,7 @@ from sklearn.metrics import make_scorer, matthews_corrcoef
 from sklearn.model_selection import StratifiedKFold
 
 from bluecast.blueprints.cast import BlueCast
-from bluecast.config.training_config import (
-    FeatureSelectionConfig,
-    TrainingConfig,
-    XgboostTuneParamsConfig,
-)
+from bluecast.config.training_config import TrainingConfig, XgboostTuneParamsConfig
 from bluecast.ml_modelling.base_classes import (
     BaseClassMlModel,
     PredictedClasses,
@@ -116,16 +112,38 @@ def test_bluecast_with_custom_model():
     train_config.hypertuning_cv_folds = 2
 
     # add custom feature selection
-    custom_feat_sel = FeatureSelectionConfig()
-    # custom_feat_sel.execute_selection = False
-    custom_feat_sel.selection_strategy = RFECV(
-        estimator=xgb.XGBClassifier(),
-        step=1,
-        cv=StratifiedKFold(2, random_state=0, shuffle=True),
-        min_features_to_select=1,
-        scoring=make_scorer(matthews_corrcoef),
-        n_jobs=1,
-    )
+    class RFECVSelector(CustomPreprocessing):
+        def __init__(self, random_state: int = 0):
+            super().__init__()
+            self.selected_features = None
+            self.random_state = random_state
+            self.selection_strategy: RFECV = RFECV(
+                estimator=xgb.XGBClassifier(),
+                step=1,
+                cv=StratifiedKFold(2, random_state=random_state, shuffle=True),
+                min_features_to_select=1,
+                scoring=make_scorer(matthews_corrcoef),
+                n_jobs=2,
+            )
+
+        def fit_transform(
+            self, df: pd.DataFrame, target: pd.Series
+        ) -> Tuple[pd.DataFrame, Optional[pd.Series]]:
+            self.selection_strategy.fit(df, target)
+            self.selected_features = self.selection_strategy.support_
+            df = df.loc[:, self.selected_features]
+            return df, target
+
+        def transform(
+            self,
+            df: pd.DataFrame,
+            target: Optional[pd.Series] = None,
+            predicton_mode: bool = False,
+        ) -> Tuple[pd.DataFrame, Optional[pd.Series]]:
+            df = df.loc[:, self.selected_features]
+            return df, target
+
+    custom_feature_selector = RFECVSelector()
 
     # Create an instance of the BlueCast class with the custom model
     bluecast = BlueCast(
@@ -133,7 +151,7 @@ def test_bluecast_with_custom_model():
         target_column="target",
         ml_model=custom_model,
         conf_training=train_config,
-        conf_feature_selection=custom_feat_sel,
+        custom_feature_selector=custom_feature_selector,
     )
 
     # Create some sample data for testing

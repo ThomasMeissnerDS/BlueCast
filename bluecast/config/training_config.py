@@ -7,11 +7,7 @@ Default configurations can be loaded, adjusted and passed into the blueprints.
 """
 from typing import Dict, Optional
 
-import xgboost as xgb
 from pydantic.dataclasses import dataclass
-from sklearn.feature_selection import RFECV
-from sklearn.metrics import make_scorer, matthews_corrcoef
-from sklearn.model_selection import StratifiedKFold
 
 
 class Config:
@@ -34,20 +30,7 @@ class TrainingConfig:
     train_size: float = 0.8
     train_split_stratify: bool = True
     use_full_data_for_final_model: bool = True
-
-
-@dataclass(config=Config)
-class FeatureSelectionConfig:
-    """Define feature selection parameters."""
-
-    selection_strategy: RFECV = RFECV(
-        estimator=xgb.XGBClassifier(),
-        step=1,
-        cv=StratifiedKFold(5, random_state=0, shuffle=True),
-        min_features_to_select=1,
-        scoring=make_scorer(matthews_corrcoef),
-        n_jobs=4,
-    )
+    min_features_to_select: int = 5
 
 
 @dataclass

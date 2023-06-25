@@ -21,7 +21,8 @@ only) and a few preprocessing options (only what is
 needed for Xgboost). This allows for a much faster development
 cycle and a much more stable codebase while also having as few dependencies
 as possible for the library. Despite being lightweight in its core BlueCast
-offers high customization options for advanced users.
+offers high customization options for advanced users. Find
+the full documentation [here](https://bluecast.readthedocs.io/en/latest/).
 
 <!-- toc -->
 
@@ -267,17 +268,16 @@ automl.fit(df_train, target_col="target")
 y_probs, y_classes = automl.predict(df_val)
 ```
 
-Also this step can be customized. An instance of `RFECV` is expected for `selection_strategy`.
-Otherwise the pipeline will fail. To surpass the `RFECV` limitation a custom feature
-selection algorithm can also be passed as part of a custom last mile computation.
-Here is an example adjusting the in-built solution via `RFECV`:
+Also this step can be customized. The following example shows how to:
 
 ```sh
 from bluecast.config.training_config import FeatureSelectionConfig
 from bluecast.config.training_config import TrainingConfig
+from bluecast.preprocessing.custom import CustomPreprocessing
 from sklearn.feature_selection import RFECV
 from sklearn.metrics import make_scorer, matthews_corrcoef
 from sklearn.model_selection import StratifiedKFold
+from typing import Optional, Tuple
 
 
 # Create a custom training config and adjust general training parameters
@@ -285,16 +285,34 @@ train_config = TrainingConfig()
 train_config.enable_feature_selection = True
 
 # add custom feature selection
-custom_feat_sel = FeatureSelectionConfig()
-# custom_feat_sel.execute_selection = False
-custom_feat_sel.selection_strategy = RFECV(
-    estimator=xgb.XGBClassifier(),
-    step=1,
-    cv=StratifiedKFold(10, random_state=0, shuffle=True),
-    min_features_to_select=1,
-    scoring=make_scorer(matthews_corrcoef),
-    n_jobs=1,
-)
+class RFECVSelector(CustomPreprocessing):
+    def __init__(self, random_state: int = 0):
+        super().__init__()
+        self.selected_features = None
+        self.random_state = random_state
+        self.selection_strategy: RFECV = RFECV(
+            estimator=xgb.XGBClassifier(),
+            step=1,
+            cv=StratifiedKFold(5, random_state=random_state, shuffle=True),
+            min_features_to_select=1,
+            scoring=make_scorer(matthews_corrcoef),
+            n_jobs=2,
+        )
+
+    def fit_transform(self, df: pd.DataFrame, target: pd.Series) -> Tuple[pd.DataFrame, Optional[pd.Series]]:
+        self.selection_strategy.fit(df, target)
+        self.selected_features = self.selection_strategy.support_
+        df = df.loc[:, self.selected_features]
+        return df, target
+
+    def transform(self,
+                  df: pd.DataFrame,
+                  target: Optional[pd.Series] = None,
+                  predicton_mode: bool = False) -> Tuple[pd.DataFrame, Optional[pd.Series]]:
+        df = df.loc[:, self.selected_features]
+        return df, target
+
+custom_feature_selector = RFECVSelector()
 
 # Create an instance of the BlueCast class with the custom model
 bluecast = BlueCast(
@@ -302,6 +320,7 @@ bluecast = BlueCast(
     target_column="target",
     conf_feature_selection=custom_feat_sel,
     conf_training=train_config,
+    custom_feature_selector=custom_feature_selector,
 
 # Create some sample data for testing
 x_train = pd.DataFrame(

@@ -1,24 +1,38 @@
 from datetime import datetime
+from typing import Optional, Tuple
 
 import pandas as pd
+import xgboost as xgb
+from sklearn.feature_selection import RFECV
+from sklearn.metrics import make_scorer, matthews_corrcoef
+from sklearn.model_selection import StratifiedKFold
 
-from bluecast.config.training_config import FeatureSelectionConfig
 from bluecast.general_utils.general_utils import logger
+from bluecast.preprocessing.custom import CustomPreprocessing
 
 
-class FeatureSelector:
+class RFECVSelector(CustomPreprocessing):
     """Select top features based on selection_strategy defined in FeatureSelectionConfig.
 
-    On default cross-validated recursive feature elimination is used. In the config file a different
-    RFECV instance can be defined (using a  different classifier, scoring function, random seed etc.).
-    :param selection_strategy: Instance of FeatureSelectionConfig.selection_strategy
+    On default cross-validated recursive feature elimination is used.
     """
 
-    def __init__(self, selection_strategy: FeatureSelectionConfig.selection_strategy):
+    def __init__(self, random_state: int = 0, min_features_to_select: int = 5):
+        super().__init__()
         self.selected_features = None
-        self.selection_strategy = selection_strategy
+        self.random_state = random_state
+        self.selection_strategy: RFECV = RFECV(
+            estimator=xgb.XGBClassifier(),
+            step=1,
+            cv=StratifiedKFold(5, random_state=random_state, shuffle=True),
+            min_features_to_select=min_features_to_select,
+            scoring=make_scorer(matthews_corrcoef),
+            n_jobs=2,
+        )
 
-    def fit_transform(self, df: pd.DataFrame, target: pd.Series) -> pd.DataFrame:
+    def fit_transform(
+        self, df: pd.DataFrame, target: pd.Series
+    ) -> Tuple[pd.DataFrame, Optional[pd.Series]]:
         logger(
             f"{datetime.utcnow()}: Start feature selection as defined in FeatureSelectionConfig."
         )
@@ -26,8 +40,13 @@ class FeatureSelector:
         self.selected_features = self.selection_strategy.support_
         df = df.loc[:, self.selected_features]
         logger(f"{datetime.utcnow()}: Selected features are {df.columns}.")
-        return df
+        return df, target
 
-    def transform(self, df: pd.DataFrame) -> pd.DataFrame:
+    def transform(
+        self,
+        df: pd.DataFrame,
+        target: Optional[pd.Series] = None,
+        predicton_mode: bool = False,
+    ) -> Tuple[pd.DataFrame, Optional[pd.Series]]:
         df = df.loc[:, self.selected_features]
-        return df
+        return df, target

@@ -7,25 +7,25 @@ Hyperparameter tuning can be switched off or even strengthened via cross-validat
 via the config class attributes from config.training_config module.
 """
 import warnings
+from datetime import datetime
 from typing import Any, Dict, List, Literal, Optional, Tuple, Union
 
 import numpy as np
 import pandas as pd
 
 from bluecast.config.training_config import (
-    FeatureSelectionConfig,
     TrainingConfig,
     XgboostFinalParamConfig,
     XgboostTuneParamsConfig,
 )
 from bluecast.evaluation.eval_metrics import eval_classifier
 from bluecast.evaluation.shap_values import shap_explanations
-from bluecast.general_utils.general_utils import check_gpu_support
+from bluecast.general_utils.general_utils import check_gpu_support, logger
 from bluecast.ml_modelling.xgboost import XgboostModel
 from bluecast.preprocessing.custom import CustomPreprocessing
 from bluecast.preprocessing.datetime_features import date_converter
 from bluecast.preprocessing.encode_target_labels import TargetLabelEncoder
-from bluecast.preprocessing.feature_selection import FeatureSelector
+from bluecast.preprocessing.feature_selection import RFECVSelector
 from bluecast.preprocessing.feature_types import FeatureTypeDetector
 from bluecast.preprocessing.nulls_and_infs import fill_infinite_values
 from bluecast.preprocessing.schema_checks import SchemaDetector
@@ -67,10 +67,12 @@ class BlueCast:
         ml_model: Optional[Union[XgboostModel, Any]] = None,
         custom_last_mile_computation: Optional[CustomPreprocessing] = None,
         custom_preprocessor: Optional[CustomPreprocessing] = None,
+        custom_feature_selector: Optional[
+            Union[RFECVSelector, CustomPreprocessing]
+        ] = None,
         conf_training: Optional[TrainingConfig] = None,
         conf_xgboost: Optional[XgboostTuneParamsConfig] = None,
         conf_params_xgboost: Optional[XgboostFinalParamConfig] = None,
-        conf_feature_selection: Optional[FeatureSelectionConfig] = None,
     ):
         self.class_problem = class_problem
         self.prediction_mode: bool = False
@@ -81,8 +83,6 @@ class BlueCast:
         self.conf_training = conf_training
         self.conf_xgboost = conf_xgboost
         self.conf_params_xgboost = conf_params_xgboost
-        self.conf_feature_selection = conf_feature_selection
-        self.feature_selector: Optional[FeatureSelector] = None
         self.feat_type_detector: Optional[FeatureTypeDetector] = None
         self.cat_encoder: Optional[
             Union[BinaryClassTargetEncoder, MultiClassTargetEncoder]
@@ -92,7 +92,53 @@ class BlueCast:
         self.ml_model: Optional[XgboostModel] = ml_model
         self.custom_last_mile_computation = custom_last_mile_computation
         self.custom_preprocessor = custom_preprocessor
+        self.custom_feature_selector = custom_feature_selector
         self.shap_values: Optional[np.ndarray] = None
+
+    def initial_checks(self, df: pd.DataFrame) -> None:
+        if not self.conf_training:
+            self.conf_training = TrainingConfig()
+        if not self.conf_training.enable_feature_selection:
+            message = """Feature selection is disabled. Update the TrainingConfig param 'enable_feature_selection'
+            to enable it or make use of a custom preprocessor to do it manually during the last mile computations step.
+            Feature selection is recommended for datasets with many features (>1000). For datasets with a small amount
+            of features feature selection is not recommended.
+            """
+            warnings.warn(message, UserWarning, stacklevel=2)
+
+        if self.conf_training.hypertuning_cv_folds == 1:
+            message = """Cross validation is disabled. Update the TrainingConfig param 'hypertuning_cv_folds'
+            to enable it. Cross validation is disabled on default to allow fast prototyping. For robust hyperparameter
+            tuning using at least 5 folds is recommended."""
+            warnings.warn(message, UserWarning, stacklevel=2)
+
+        if (
+            self.conf_training.enable_feature_selection
+            and not self.custom_feature_selector
+        ):
+            message = """Feature selection is enabled but no feature selector has been provided. Falling back to
+            cross-validated feature elimination. Specifically for small datasets check the logs to verify that not too
+            many features have been removed. Otherwise, consider disabling feature selection or providing a custom
+            feature selector."""
+            warnings.warn(message, UserWarning, stacklevel=2)
+        if not self.conf_xgboost:
+            message = """No XgboostTuneParamsConfig has been provided. Falling back to default values. Default values
+            have been chosen to speed up the prototyping. For robust hyperparameter tuning consider providing a custom
+            XgboostTuneParamsConfig with a deeper hyperparameter search space and a custom TrainingConfig to enable
+            cross-validation."""
+            warnings.warn(message, UserWarning, stacklevel=2)
+        if (
+            self.conf_training.min_features_to_select >= len(df.columns)
+            and self.conf_training.enable_feature_selection
+        ):
+            message = """The minimum number of features to select is greater or equal to the number of features in
+            the dataset while feature selection is enabled. Consider reducing the minimum number of features to
+            select or disabling feature selection via TrainingConfig."""
+            warnings.warn(message, UserWarning, stacklevel=2)
+        if self.target_column in df.columns:
+            message = """The target column is present in the dataset. Consider removing the target column from the
+            dataset to prevent leakage."""
+            warnings.warn(message, UserWarning, stacklevel=2)
 
     def fit(self, df: pd.DataFrame, target_col: str) -> None:
         """Train a full ML pipeline."""
@@ -116,19 +162,7 @@ class BlueCast:
         if not self.conf_training:
             self.conf_training = TrainingConfig()
 
-        if not self.conf_training.enable_feature_selection:
-            message = """Feature selection is disabled. Update the TrainingConfig param 'enable_feature_selection'
-            to enable it or make use of a custom preprocessor to do it manually during the last mile computations step.
-            Feature selection is recommended for datasets with many features (>1000). For datasets with a small amount
-            of features feature selection is not recommended.
-            """
-            warnings.warn(message, UserWarning, stacklevel=2)
-
-        if self.conf_training.hypertuning_cv_folds == 1:
-            message = """Cross validation is disabled. Update the TrainingConfig param 'hypertuning_cv_folds'
-            to enable it. Cross validation is disabled on default to allow fast prototyping. For robust hyperparameter
-            tuning using at least 5 folds is recommended."""
-            warnings.warn(message, UserWarning, stacklevel=2)
+        self.initial_checks(df)
 
         x_train, x_test, y_train, y_test = train_test_split(
             df,
@@ -181,17 +215,19 @@ class BlueCast:
                 x_test, y_test, predicton_mode=False
             )
 
-        if not self.conf_feature_selection:
-            self.conf_feature_selection = FeatureSelectionConfig()
-
-        if self.conf_training.enable_feature_selection:
-            self.feature_selector = FeatureSelector(
-                selection_strategy=self.conf_feature_selection.selection_strategy
+        if not self.custom_feature_selector:
+            self.custom_feature_selector = RFECVSelector(
+                random_state=self.conf_training.global_random_state,
+                min_features_to_select=self.conf_training.min_features_to_select,
             )
 
-        if self.feature_selector and self.conf_training.enable_feature_selection:
-            x_train = self.feature_selector.fit_transform(x_train, y_train)
-            x_test = self.feature_selector.transform(x_test)
+        if self.conf_training.enable_feature_selection:
+            x_train, y_train = self.custom_feature_selector.fit_transform(
+                x_train, y_train
+            )
+            x_test, _ = self.custom_feature_selector.transform(
+                x_test, predicton_mode=False
+            )
 
         if not self.ml_model:
             self.ml_model = XgboostModel(
@@ -223,7 +259,7 @@ class BlueCast:
         """
         self.fit(df, target_col)
         y_probs, y_classes = self.predict(df_eval)
-        eval_dict = eval_classifier(target_eval.values, y_classes)
+        eval_dict = eval_classifier(target_eval.values, y_probs, y_classes)
         return eval_dict
 
     def transform_new_data(self, df: pd.DataFrame) -> pd.DataFrame:
@@ -231,6 +267,9 @@ class BlueCast:
         check_gpu_support()
         if not self.feat_type_detector:
             raise Exception("Feature type converter could not be found.")
+
+        if not self.conf_training:
+            raise Exception("Training configuration could not be found.")
 
         df = self.feat_type_detector.transform_feature_types(
             df, ignore_cols=[self.target_column]
@@ -264,14 +303,8 @@ class BlueCast:
         if self.custom_last_mile_computation:
             df, _ = self.custom_last_mile_computation.transform(df, predicton_mode=True)
 
-        if not self.conf_feature_selection:
-            self.conf_feature_selection = FeatureSelectionConfig()
-
-        if not self.conf_training:
-            self.conf_training = TrainingConfig()
-
-        if self.feature_selector and self.conf_training.enable_feature_selection:
-            df = self.feature_selector.transform(df)
+        if self.custom_feature_selector and self.conf_training.enable_feature_selection:
+            df, _ = self.custom_feature_selector.transform(df, predicton_mode=True)
 
         return df
 
@@ -290,7 +323,7 @@ class BlueCast:
         check_gpu_support()
         df = self.transform_new_data(df)
 
-        print("Predicting...")
+        logger(f"{datetime.utcnow()}: Predicting...")
         y_probs, y_classes = self.ml_model.predict(df)
 
         if self.feat_type_detector.cat_columns:
