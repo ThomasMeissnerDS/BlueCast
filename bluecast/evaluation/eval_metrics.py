@@ -28,7 +28,9 @@ def balanced_log_loss(y_true, y_pred):
     return (l0.mean() + l1.mean()) / 2
 
 
-def eval_classifier(y_true: np.ndarray, y_probs: np.ndarray, y_classes: np.ndarray) -> Dict[str, Any]:
+def eval_classifier(
+    y_true: np.ndarray, y_probs: np.ndarray, y_classes: np.ndarray
+) -> Dict[str, Any]:
     try:
         matthews = matthews_corrcoef(y_true, y_classes)
     except Exception:

@@ -7,9 +7,9 @@ Hyperparameter tuning can be switched off or even strengthened via cross-validat
 via the config class attributes from config.training_config module.
 """
 import warnings
+from datetime import datetime
 from typing import Any, Dict, List, Literal, Optional, Tuple, Union
 
-from datetime import datetime
 import numpy as np
 import pandas as pd
 
@@ -95,7 +95,9 @@ class BlueCast:
         self.custom_feature_selector = custom_feature_selector
         self.shap_values: Optional[np.ndarray] = None
 
-    def initial_checks(self):
+    def initial_checks(self, df: pd.DataFrame) -> None:
+        if not self.conf_training:
+            self.conf_training = TrainingConfig()
         if not self.conf_training.enable_feature_selection:
             message = """Feature selection is disabled. Update the TrainingConfig param 'enable_feature_selection'
             to enable it or make use of a custom preprocessor to do it manually during the last mile computations step.
@@ -125,6 +127,18 @@ class BlueCast:
             XgboostTuneParamsConfig with a deeper hyperparameter search space and a custom TrainingConfig to enable
             cross-validation."""
             warnings.warn(message, UserWarning, stacklevel=2)
+        if (
+            self.conf_training.min_features_to_select >= len(df.columns)
+            and self.conf_training.enable_feature_selection
+        ):
+            message = """The minimum number of features to select is greater or equal to the number of features in
+            the dataset while feature selection is enabled. Consider reducing the minimum number of features to
+            select or disabling feature selection via TrainingConfig."""
+            warnings.warn(message, UserWarning, stacklevel=2)
+        if self.target_column in df.columns:
+            message = """The target column is present in the dataset. Consider removing the target column from the
+            dataset to prevent leakage."""
+            warnings.warn(message, UserWarning, stacklevel=2)
 
     def fit(self, df: pd.DataFrame, target_col: str) -> None:
         """Train a full ML pipeline."""
@@ -148,7 +162,7 @@ class BlueCast:
         if not self.conf_training:
             self.conf_training = TrainingConfig()
 
-        self.initial_checks()
+        self.initial_checks(df)
 
         x_train, x_test, y_train, y_test = train_test_split(
             df,
@@ -203,7 +217,8 @@ class BlueCast:
 
         if not self.custom_feature_selector:
             self.custom_feature_selector = RFECVSelector(
-                random_state=self.conf_training.global_random_state
+                random_state=self.conf_training.global_random_state,
+                min_features_to_select=self.conf_training.min_features_to_select,
             )
 
         if self.conf_training.enable_feature_selection:
