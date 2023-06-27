@@ -416,13 +416,14 @@ with the following features:
 * automatic feature type detection and casting
 * automatic DataFrame schema detection: checks if unseen data has new or
   missing columns
-* categorical feature encoding
+* categorical feature encoding (target encoding or directly in Xgboost)
 * datetime feature encoding
 * automated GPU availability check and usage for Xgboost
   a fit_eval method to fit a model and evaluate it on a validation set
   to mimic production environment reality
 * functions to save and load a trained pipeline
 * shapley values
+* warnings for potential misconfigurations
 
 The fit_eval method can be used like this:
 

@@ -332,7 +332,7 @@ class XgboostModel(BaseClassMlModel):
         logger(
             f"{datetime.utcnow()}: Start predicting on new data using Xgboost model."
         )
-        if not self.conf_params_xgboost or not self.conf_training:
+        if not self.conf_xgboost or not self.conf_training:
             raise ValueError("conf_params_xgboost or conf_training is None")
 
         d_test = xgb.DMatrix(

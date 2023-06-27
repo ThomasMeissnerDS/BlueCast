@@ -358,8 +358,8 @@ class BlueCast:
         if not self.feat_type_detector:
             raise Exception("Feature type converter could not be found.")
 
-        if not self.conf_params_xgboost or not self.conf_training:
-            raise ValueError("conf_params_xgboost or conf_training is None")
+        if not self.conf_training:
+            raise ValueError("conf_training is None")
 
         check_gpu_support()
         df = self.transform_new_data(df)
@@ -376,7 +376,5 @@ class BlueCast:
                 y_classes = self.target_label_encoder.label_encoder_reverse_transform(
                     pd.Series(y_classes)
                 )
-            elif self.conf_training.cat_encoding_via_ml_algorithm:
-                df[self.cat_columns] = df[self.cat_columns].astype("category")
 
         return y_probs, y_classes
