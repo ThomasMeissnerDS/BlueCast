@@ -42,7 +42,6 @@ def test_blueprint_xgboost(synthetic_train_test_data):
     # add custom last mile computation
     class MyCustomLastMilePreprocessing(CustomPreprocessing):
         def custom_function(self, df: pd.DataFrame) -> pd.DataFrame:
-            df = df / 2
             df["custom_col"] = 5
             return df
 

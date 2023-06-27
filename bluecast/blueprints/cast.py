@@ -135,9 +135,19 @@ class BlueCast:
             the dataset while feature selection is enabled. Consider reducing the minimum number of features to
             select or disabling feature selection via TrainingConfig."""
             warnings.warn(message, UserWarning, stacklevel=2)
-        if self.target_column in df.columns:
-            message = """The target column is present in the dataset. Consider removing the target column from the
-            dataset to prevent leakage."""
+        if (
+            self.conf_training.cat_encoding_via_ml_algorithm
+            and self.conf_training.calculate_shap_values
+        ):
+            self.conf_training.calculate_shap_values = False
+            message = """SHAP values cannot be calculated when categorical encoding via ML algorithm is enabled due to
+            incompatibility with the shap library. See this GitHub issue for more context:
+            https://github.com/slundberg/shap/issues/266
+
+            Calculation of Shap values has been changed to false.
+            Consider disabling categorical encoding via ML algorithm in the TrainingConfig if shap values are
+            required. Alternatively use Xgboost as a custom model and calculate shap values manually via
+            pred_contribs=True."""
             warnings.warn(message, UserWarning, stacklevel=2)
 
     def fit(self, df: pd.DataFrame, target_col: str) -> None:
@@ -198,14 +208,25 @@ class BlueCast:
         self.schema_detector.fit(x_train)
         x_test = self.schema_detector.transform(x_test)
 
-        if self.cat_columns is not None and self.class_problem == "binary":
+        if (
+            self.cat_columns is not None
+            and self.class_problem == "binary"
+            and not self.conf_training.cat_encoding_via_ml_algorithm
+        ):
             self.cat_encoder = BinaryClassTargetEncoder(feat_type_detector.cat_columns)
             x_train = self.cat_encoder.fit_target_encode_binary_class(x_train, y_train)
             x_test = self.cat_encoder.transform_target_encode_binary_class(x_test)
-        elif self.cat_columns is not None and self.class_problem == "multiclass":
+        elif (
+            self.cat_columns is not None
+            and self.class_problem == "multiclass"
+            and not self.conf_training.cat_encoding_via_ml_algorithm
+        ):
             self.cat_encoder = MultiClassTargetEncoder(feat_type_detector.cat_columns)
             x_train = self.cat_encoder.fit_target_encode_multiclass(x_train, y_train)
             x_test = self.cat_encoder.transform_target_encode_multiclass(x_test)
+        elif self.conf_training.cat_encoding_via_ml_algorithm:
+            x_train[self.cat_columns] = x_train[self.cat_columns].astype("category")
+            x_test[self.cat_columns] = x_test[self.cat_columns].astype("category")
 
         if self.custom_last_mile_computation:
             x_train, y_train = self.custom_last_mile_computation.fit_transform(
@@ -290,6 +311,7 @@ class BlueCast:
             and self.cat_encoder
             and self.class_problem == "binary"
             and isinstance(self.cat_encoder, BinaryClassTargetEncoder)
+            and not self.conf_training.cat_encoding_via_ml_algorithm
         ):
             df = self.cat_encoder.transform_target_encode_binary_class(df)
         elif (
@@ -297,8 +319,11 @@ class BlueCast:
             and self.cat_encoder
             and self.class_problem == "multiclass"
             and isinstance(self.cat_encoder, MultiClassTargetEncoder)
+            and not self.conf_training.cat_encoding_via_ml_algorithm
         ):
             df = self.cat_encoder.transform_target_encode_multiclass(df)
+        elif self.conf_training.cat_encoding_via_ml_algorithm:
+            df[self.cat_columns] = df[self.cat_columns].astype("category")
 
         if self.custom_last_mile_computation:
             df, _ = self.custom_last_mile_computation.transform(df, predicton_mode=True)
@@ -320,6 +345,9 @@ class BlueCast:
         if not self.feat_type_detector:
             raise Exception("Feature type converter could not be found.")
 
+        if not self.conf_params_xgboost or not self.conf_training:
+            raise ValueError("conf_params_xgboost or conf_training is None")
+
         check_gpu_support()
         df = self.transform_new_data(df)
 
@@ -335,5 +363,7 @@ class BlueCast:
                 y_classes = self.target_label_encoder.label_encoder_reverse_transform(
                     pd.Series(y_classes)
                 )
+            elif self.conf_training.cat_encoding_via_ml_algorithm:
+                df[self.cat_columns] = df[self.cat_columns].astype("category")
 
         return y_probs, y_classes

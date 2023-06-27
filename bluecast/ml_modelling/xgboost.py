@@ -98,11 +98,24 @@ class XgboostModel(BaseClassMlModel):
 
         if self.conf_params_xgboost.sample_weight:
             classes_weights = self.calculate_class_weights(y_train)
-            d_train = xgb.DMatrix(x_train, label=y_train, weight=classes_weights)
+            d_train = xgb.DMatrix(
+                x_train,
+                label=y_train,
+                weight=classes_weights,
+                enable_categorical=self.conf_training.cat_encoding_via_ml_algorithm,
+            )
         else:
-            d_train = xgb.DMatrix(x_train, label=y_train)
+            d_train = xgb.DMatrix(
+                x_train,
+                label=y_train,
+                enable_categorical=self.conf_training.cat_encoding_via_ml_algorithm,
+            )
 
-        d_test = xgb.DMatrix(x_test, label=y_test)
+        d_test = xgb.DMatrix(
+            x_test,
+            label=y_test,
+            enable_categorical=self.conf_training.cat_encoding_via_ml_algorithm,
+        )
         eval_set = [(d_train, "train"), (d_test, "test")]
 
         if self.conf_training.hypertuning_cv_folds == 1:
@@ -135,7 +148,14 @@ class XgboostModel(BaseClassMlModel):
         An alternative config can be provided to overwrite the hyperparameter search space.
         """
         logger(f"{datetime.utcnow()}: Start hyperparameter tuning of Xgboost model.")
-        d_test = xgb.DMatrix(x_test, label=y_test)
+        if not self.conf_params_xgboost or not self.conf_training:
+            raise ValueError("conf_params_xgboost or conf_training is None")
+
+        d_test = xgb.DMatrix(
+            x_test,
+            label=y_test,
+            enable_categorical=self.conf_training.cat_encoding_via_ml_algorithm,
+        )
         train_on = check_gpu_support()
 
         self.check_load_confs()
@@ -210,9 +230,18 @@ class XgboostModel(BaseClassMlModel):
             sample_weight = trial.suggest_categorical("sample_weight", [True, False])
             if sample_weight:
                 classes_weights = self.calculate_class_weights(y_train)
-                d_train = xgb.DMatrix(x_train, label=y_train, weight=classes_weights)
+                d_train = xgb.DMatrix(
+                    x_train,
+                    label=y_train,
+                    weight=classes_weights,
+                    enable_categorical=self.conf_training.cat_encoding_via_ml_algorithm,
+                )
             else:
-                d_train = xgb.DMatrix(x_train, label=y_train)
+                d_train = xgb.DMatrix(
+                    x_train,
+                    label=y_train,
+                    enable_categorical=self.conf_training.cat_encoding_via_ml_algorithm,
+                )
 
             pruning_callback = optuna.integration.XGBoostPruningCallback(
                 trial, "test-mlogloss"
@@ -303,8 +332,14 @@ class XgboostModel(BaseClassMlModel):
         logger(
             f"{datetime.utcnow()}: Start predicting on new data using Xgboost model."
         )
-        print("++++++++++++++++++++++++++++")
-        d_test = xgb.DMatrix(df)
+        if not self.conf_params_xgboost or not self.conf_training:
+            raise ValueError("conf_params_xgboost or conf_training is None")
+
+        d_test = xgb.DMatrix(
+            df,
+            enable_categorical=self.conf_training.cat_encoding_via_ml_algorithm,
+        )
+
         if not self.model:
             raise Exception("No trained model has been found.")
 

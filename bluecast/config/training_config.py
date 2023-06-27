@@ -31,6 +31,7 @@ class TrainingConfig:
     train_split_stratify: bool = True
     use_full_data_for_final_model: bool = True
     min_features_to_select: int = 5
+    cat_encoding_via_ml_algorithm: bool = True
 
 
 @dataclass
