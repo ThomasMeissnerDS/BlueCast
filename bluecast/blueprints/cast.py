@@ -149,6 +149,19 @@ class BlueCast:
             required. Alternatively use Xgboost as a custom model and calculate shap values manually via
             pred_contribs=True."""
             warnings.warn(message, UserWarning, stacklevel=2)
+        if self.conf_training.cat_encoding_via_ml_algorithm and self.ml_model:
+            message = """Categorical encoding via ML algorithm is enabled. Make sure to handle categorical features
+            within the provided ml model or consider disabling categorical encoding via ML algorithm in the
+            TrainingConfig alternatively."""
+            warnings.warn(message, UserWarning, stacklevel=2)
+        if (
+            self.conf_training.cat_encoding_via_ml_algorithm
+            and self.custom_last_mile_computation
+        ):
+            message = """Categorical encoding via ML algorithm is enabled. Make sure to handle categorical features
+            within the provided last mile computation or consider disabling categorical encoding via ML algorithm in the
+            TrainingConfig alternatively."""
+            warnings.warn(message, UserWarning, stacklevel=2)
 
     def fit(self, df: pd.DataFrame, target_col: str) -> None:
         """Train a full ML pipeline."""

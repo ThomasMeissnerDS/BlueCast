@@ -32,6 +32,7 @@ the full documentation [here](https://bluecast.readthedocs.io/en/latest/).
 * [General usage](#general-usage)
   * [Basic usage](#basic-usage)
   * [Advanced usage](#advanced-usage)
+    * [Categorical encoding](#categorical-encoding)
     * [Custom training configuration](#custom--training-configuration)
     * [Custom preprocessing](#custom-preprocessing)
     * [Custom feature selection](#custom-feature-selection)
@@ -87,6 +88,16 @@ y_probs, y_classes = automl.predict(df_val)
 ```
 
 ### Advanced usage
+
+#### Categorical encoding
+
+By default, BlueCast uses the Xgboost's inbuilt category encoding.
+This behaviour can be changed in the TrainingConfig by setting `cat_encoding_via_ml_algorithm`
+to False. This will change the expectations of `custom_last_mile_computation` though.
+If `cat_encoding_via_ml_algorithm` is set to False, `custom_last_mile_computation`
+will receive numerical features only as target encoding will apply before. If `cat_encoding_via_ml_algorithm`
+is True (default setting) `custom_last_mile_computation` will receive categorical
+features as well.
 
 #### Custom  training configuration
 
