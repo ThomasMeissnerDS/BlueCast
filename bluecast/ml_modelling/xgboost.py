@@ -131,6 +131,7 @@ class XgboostModel(BaseClassMlModel):
                 self.conf_params_xgboost.params,
                 d_train,
                 num_boost_round=self.conf_params_xgboost.params["steps"],
+                early_stopping_rounds=self.conf_training.early_stopping_rounds,
                 evals=eval_set,
             )
         print("Finished training")
@@ -267,7 +268,7 @@ class XgboostModel(BaseClassMlModel):
                     params=param,
                     dtrain=d_train,
                     num_boost_round=param["steps"],
-                    # early_stopping_rounds=self.conf_training.early_stopping_rounds,
+                    #early_stopping_rounds=self.conf_training.early_stopping_rounds,
                     nfold=self.conf_training.hypertuning_cv_folds,
                     as_pandas=True,
                     seed=self.conf_training.global_random_state,
