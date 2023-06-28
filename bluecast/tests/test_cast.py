@@ -74,7 +74,12 @@ def test_blueprint_xgboost(synthetic_train_test_data):
         conf_xgboost=xgboost_param_config,
         custom_last_mile_computation=custom_last_mile_computation,
     )
-    automl.fit(df_train, target_col="target")
+    automl.fit_eval(
+        df_train,
+        df_train.drop("target", axis=1),
+        df_train["target"],
+        target_col="target",
+    )
     print("Autotuning successful.")
     y_probs, y_classes = automl.predict(df_val.drop("target", axis=1))
     print("Predicting successful.")
