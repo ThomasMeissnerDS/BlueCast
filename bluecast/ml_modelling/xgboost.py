@@ -188,6 +188,9 @@ class XgboostModel(BaseClassMlModel):
                 "lambda": trial.suggest_float(
                     "lambda", self.conf_xgboost.lambda_min, self.conf_xgboost.lambda_max
                 ),
+                "gamma": trial.suggest_float(
+                    "gamma", self.conf_xgboost.gamma_min, self.conf_xgboost.gamma_max
+                ),
                 "num_leaves": trial.suggest_int(
                     "num_leaves",
                     self.conf_xgboost.num_leaves_min,
@@ -268,7 +271,7 @@ class XgboostModel(BaseClassMlModel):
                     params=param,
                     dtrain=d_train,
                     num_boost_round=param["steps"],
-                    #early_stopping_rounds=self.conf_training.early_stopping_rounds,
+                    # early_stopping_rounds=self.conf_training.early_stopping_rounds,
                     nfold=self.conf_training.hypertuning_cv_folds,
                     as_pandas=True,
                     seed=self.conf_training.global_random_state,
@@ -315,6 +318,7 @@ class XgboostModel(BaseClassMlModel):
             ],  # maximum depth of the decision trees being trained
             "alpha": xgboost_best_param["alpha"],
             "lambda": xgboost_best_param["lambda"],
+            "gamma": xgboost_best_param["gamma"],
             "num_leaves": xgboost_best_param["num_leaves"],
             "subsample": xgboost_best_param["subsample"],
             "colsample_bytree": xgboost_best_param["colsample_bytree"],

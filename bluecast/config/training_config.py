@@ -31,7 +31,7 @@ class TrainingConfig:
     train_split_stratify: bool = True
     use_full_data_for_final_model: bool = True
     min_features_to_select: int = 5
-    cat_encoding_via_ml_algorithm: bool = True
+    cat_encoding_via_ml_algorithm: bool = False
 
 
 @dataclass
@@ -40,10 +40,12 @@ class XgboostTuneParamsConfig:
 
     max_depth_min: int = 2
     max_depth_max: int = 3
-    alpha_min: float = 1.0
+    alpha_min: float = 0.0
     alpha_max: float = 1e3
     lambda_min: float = 1.0
     lambda_max: float = 1e3
+    gamma_min: float = 0.0
+    gamma_max: float = 1e3
     num_leaves_min: int = 2
     num_leaves_max: int = 64
     sub_sample_min: float = 0.3
