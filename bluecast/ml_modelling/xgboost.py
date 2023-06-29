@@ -131,7 +131,7 @@ class XgboostModel(BaseClassMlModel):
                 self.conf_params_xgboost.params,
                 d_train,
                 num_boost_round=self.conf_params_xgboost.params["steps"],
-                early_stopping_rounds=self.conf_training.early_stopping_rounds,
+                # early_stopping_rounds=self.conf_training.early_stopping_rounds,
                 evals=eval_set,
             )
         print("Finished training")
@@ -188,8 +188,8 @@ class XgboostModel(BaseClassMlModel):
                 "lambda": trial.suggest_float(
                     "lambda", self.conf_xgboost.lambda_min, self.conf_xgboost.lambda_max
                 ),
-                "gamma": trial.suggest_float(
-                    "gamma", self.conf_xgboost.gamma_min, self.conf_xgboost.gamma_max
+                "min_child_weight": trial.suggest_float(
+                    "min_child_weight", self.conf_xgboost.min_child_weight_min, self.conf_xgboost.min_child_weight_max
                 ),
                 "num_leaves": trial.suggest_int(
                     "num_leaves",
@@ -211,24 +211,9 @@ class XgboostModel(BaseClassMlModel):
                     self.conf_xgboost.col_sample_by_level_min,
                     self.conf_xgboost.col_sample_by_level_max,
                 ),
-                "colsample_bynode": trial.suggest_float(
-                    "colsample_bynode",
-                    self.conf_xgboost.col_sample_by_node_min,
-                    self.conf_xgboost.col_sample_by_node_max,
-                ),
-                "min_child_samples": trial.suggest_int(
-                    "min_child_samples",
-                    self.conf_xgboost.min_child_samples_min,
-                    self.conf_xgboost.min_child_samples_max,
-                ),
                 "eta": self.conf_xgboost.eta,
                 "steps": trial.suggest_int(
                     "steps", self.conf_xgboost.steps_min, self.conf_xgboost.steps_max
-                ),
-                "num_parallel_tree": trial.suggest_int(
-                    "num_parallel_tree",
-                    self.conf_xgboost.num_parallel_tree_min,
-                    self.conf_xgboost.num_parallel_tree_max,
                 ),
             }
             sample_weight = trial.suggest_categorical("sample_weight", [True, False])
@@ -318,16 +303,13 @@ class XgboostModel(BaseClassMlModel):
             ],  # maximum depth of the decision trees being trained
             "alpha": xgboost_best_param["alpha"],
             "lambda": xgboost_best_param["lambda"],
-            "gamma": xgboost_best_param["gamma"],
             "num_leaves": xgboost_best_param["num_leaves"],
             "subsample": xgboost_best_param["subsample"],
             "colsample_bytree": xgboost_best_param["colsample_bytree"],
             "colsample_bylevel": xgboost_best_param["colsample_bylevel"],
-            "colsample_bynode": xgboost_best_param["colsample_bynode"],
-            "min_child_samples": xgboost_best_param["min_child_samples"],
+            "min_child_weight": xgboost_best_param["min_child_weight"],
             "eta": self.conf_xgboost.eta,
             "steps": xgboost_best_param["steps"],
-            "num_parallel_tree": xgboost_best_param["num_parallel_tree"],
         }
         print("Best params: ", self.conf_params_xgboost.params)
         self.conf_params_xgboost.sample_weight = xgboost_best_param["sample_weight"]
