@@ -92,12 +92,7 @@ y_probs, y_classes = automl.predict(df_val)
 
 #### Explanatory analysis
 
-BlueCast offers a simple way to get a first overview of the data. This is
-
-#### Enable cross-validation
-
-While the default behaviour of BlueCast is to use a simple
-train-test-split, cross-validation can be enabled easily:
+BlueCast offers a simple way to get a first overview of the data:
 
 ```sh
 from bluecast.eda.analyse import (
@@ -136,6 +131,31 @@ correlation_to_target(train_data.loc[
             :, feat_type_detector.num_columns
         ],
         "EC1",)
+```
+
+#### Enable cross-validation
+
+While the default behaviour of BlueCast is to use a simple
+train-test-split, cross-validation can be enabled easily:
+
+```sh
+from bluecast.blueprints.cast import BlueCast
+from bluecast.config.training_config import TrainingConfig, XgboostTuneParamsConfig
+
+
+# Create a custom training config and adjust general training parameters
+train_config = TrainingConfig()
+train_config.hypertuning_cv_folds = 5 # default is 1
+
+# Pass the custom configs to the BlueCast class
+automl = BlueCast(
+        class_problem="binary",
+        target_column="target"
+        conf_training=train_config,
+    )
+
+automl.fit(df_train, target_col="target")
+y_probs, y_classes = automl.predict(df_val)
 ```
 
 #### Categorical encoding
