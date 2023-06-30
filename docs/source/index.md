@@ -32,8 +32,9 @@ the full documentation [here](https://bluecast.readthedocs.io/en/latest/).
 * [General usage](#general-usage)
   * [Basic usage](#basic-usage)
   * [Advanced usage](#advanced-usage)
+    * [Explanatory analysis](#explanatory-analysis)
+    * [Enable cross-validation](#enable-cross-validation)
     * [Categorical encoding](#categorical-encoding)
-    * [Custom training configuration](#custom--training-configuration)
     * [Custom preprocessing](#custom-preprocessing)
     * [Custom feature selection](#custom-feature-selection)
     * [Custom ML model](#custom-ml-model)
@@ -89,29 +90,52 @@ y_probs, y_classes = automl.predict(df_val)
 
 ### Advanced usage
 
+#### Explanatory analysis
+
+BlueCast offers a simple way to get a first overview of the data. This is
+
 #### Enable cross-validation
 
 While the default behaviour of BlueCast is to use a simple
 train-test-split, cross-validation can be enabled easily:
 
 ```sh
-from bluecast.blueprints.cast import BlueCast
-from bluecast.config.training_config import TrainingConfig, XgboostTuneParamsConfig
+from bluecast.eda.analyse import (
+    bi_variate_plots,
+    correlation_heatmap,
+    correlation_to_target,
+    univariate_plots,
+)
 
+from bluecast.preprocessing.feature_types import FeatureTypeDetector
 
-# Create a custom training config and adjust general training parameters
-train_config = TrainingConfig()
-train_config.hypertuning_cv_folds = 5 # default is 1
+# Here we automatically detect the numeric columns
+feat_type_detector = FeatureTypeDetector()
+train_data = feat_type_detector.fit_transform_feature_types(train_data)
 
-# Pass the custom configs to the BlueCast class
-automl = BlueCast(
-        class_problem="binary",
-        target_column="target"
-        conf_training=train_config,
+# show univariate plots
+univariate_plots(
+        train_data.loc[
+            :, feat_type_detector.num_columns  # here the target column EC1 is already included
+        ],
+        "EC1",
     )
 
-automl.fit(df_train, target_col="target")
-y_probs, y_classes = automl.predict(df_val)
+# show bi-variate plots
+bi_variate_plots(train_data.loc[
+            :, feat_type_detector.num_columns
+        ],
+        "EC1")
+
+# show correlation heatmap
+correlation_heatmap(train_data.loc[
+            :, feat_type_detector.num_columns])
+
+# show correlation to target
+correlation_to_target(train_data.loc[
+            :, feat_type_detector.num_columns
+        ],
+        "EC1",)
 ```
 
 #### Categorical encoding

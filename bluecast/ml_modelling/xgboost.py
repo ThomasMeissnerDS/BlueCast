@@ -189,7 +189,9 @@ class XgboostModel(BaseClassMlModel):
                     "lambda", self.conf_xgboost.lambda_min, self.conf_xgboost.lambda_max
                 ),
                 "min_child_weight": trial.suggest_float(
-                    "min_child_weight", self.conf_xgboost.min_child_weight_min, self.conf_xgboost.min_child_weight_max
+                    "min_child_weight",
+                    self.conf_xgboost.min_child_weight_min,
+                    self.conf_xgboost.min_child_weight_max,
                 ),
                 "num_leaves": trial.suggest_int(
                     "num_leaves",
@@ -268,7 +270,7 @@ class XgboostModel(BaseClassMlModel):
 
         algorithm = "xgboost"
         sampler = optuna.samplers.TPESampler(
-            multivariate=True, seed=self.conf_training.global_random_state
+            multivariate=False, seed=self.conf_training.global_random_state
         )
         study = optuna.create_study(
             direction="minimize",

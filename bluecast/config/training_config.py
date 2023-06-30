@@ -39,7 +39,7 @@ class XgboostTuneParamsConfig:
     """Define hyperparameter tuning search space."""
 
     max_depth_min: int = 2
-    max_depth_max: int = 3
+    max_depth_max: int = 6
     alpha_min: float = 0.0
     alpha_max: float = 10.0
     lambda_min: float = 0.0
