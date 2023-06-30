@@ -31,6 +31,7 @@ class TrainingConfig:
     train_split_stratify: bool = True
     use_full_data_for_final_model: bool = True
     min_features_to_select: int = 5
+    cat_encoding_via_ml_algorithm: bool = False
 
 
 @dataclass
@@ -38,11 +39,11 @@ class XgboostTuneParamsConfig:
     """Define hyperparameter tuning search space."""
 
     max_depth_min: int = 2
-    max_depth_max: int = 3
-    alpha_min: float = 1.0
-    alpha_max: float = 1e3
-    lambda_min: float = 1.0
-    lambda_max: float = 1e3
+    max_depth_max: int = 6
+    alpha_min: float = 0.0
+    alpha_max: float = 10.0
+    lambda_min: float = 0.0
+    lambda_max: float = 10.0
     num_leaves_min: int = 2
     num_leaves_max: int = 64
     sub_sample_min: float = 0.3
@@ -51,15 +52,11 @@ class XgboostTuneParamsConfig:
     col_sample_by_tree_max: float = 1.0
     col_sample_by_level_min: float = 0.3
     col_sample_by_level_max: float = 1.0
-    col_sample_by_node_min: float = 0.3
-    col_sample_by_node_max: float = 1.0
-    min_child_samples_min: int = 2
-    min_child_samples_max: int = 1000
+    min_child_weight_min: float = 0.0
+    min_child_weight_max: float = 10.0
     eta: float = 0.1
     steps_min: int = 2
     steps_max: int = 50000
-    num_parallel_tree_min: int = 1
-    num_parallel_tree_max: int = 3
     model_verbosity: int = 0
     model_objective: str = "multi:softprob"
     model_eval_metric: str = "mlogloss"

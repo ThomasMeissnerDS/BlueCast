@@ -32,7 +32,9 @@ the full documentation [here](https://bluecast.readthedocs.io/en/latest/).
 * [General usage](#general-usage)
   * [Basic usage](#basic-usage)
   * [Advanced usage](#advanced-usage)
-    * [Custom training configuration](#custom--training-configuration)
+    * [Explanatory analysis](#explanatory-analysis)
+    * [Enable cross-validation](#enable-cross-validation)
+    * [Categorical encoding](#categorical-encoding)
     * [Custom preprocessing](#custom-preprocessing)
     * [Custom feature selection](#custom-feature-selection)
     * [Custom ML model](#custom-ml-model)
@@ -87,6 +89,66 @@ y_probs, y_classes = automl.predict(df_val)
 ```
 
 ### Advanced usage
+
+#### Explanatory analysis
+
+BlueCast offers a simple way to get a first overview of the data. This is
+
+#### Enable cross-validation
+
+While the default behaviour of BlueCast is to use a simple
+train-test-split, cross-validation can be enabled easily:
+
+```sh
+from bluecast.eda.analyse import (
+    bi_variate_plots,
+    correlation_heatmap,
+    correlation_to_target,
+    univariate_plots,
+)
+
+from bluecast.preprocessing.feature_types import FeatureTypeDetector
+
+# Here we automatically detect the numeric columns
+feat_type_detector = FeatureTypeDetector()
+train_data = feat_type_detector.fit_transform_feature_types(train_data)
+
+# show univariate plots
+univariate_plots(
+        train_data.loc[
+            :, feat_type_detector.num_columns  # here the target column EC1 is already included
+        ],
+        "EC1",
+    )
+
+# show bi-variate plots
+bi_variate_plots(train_data.loc[
+            :, feat_type_detector.num_columns
+        ],
+        "EC1")
+
+# show correlation heatmap
+correlation_heatmap(train_data.loc[
+            :, feat_type_detector.num_columns])
+
+# show correlation to target
+correlation_to_target(train_data.loc[
+            :, feat_type_detector.num_columns
+        ],
+        "EC1",)
+```
+
+#### Categorical encoding
+
+By default, BlueCast uses target encoding.
+This behaviour can be changed in the TrainingConfig by setting `cat_encoding_via_ml_algorithm`
+to True. This will change the expectations of `custom_last_mile_computation` though.
+If `cat_encoding_via_ml_algorithm` is set to False, `custom_last_mile_computation`
+will receive numerical features only as target encoding will apply before. If `cat_encoding_via_ml_algorithm`
+is True (default setting) `custom_last_mile_computation` will receive categorical
+features as well, because Xgboost#s inbuilt categorical encoding will be used.
+
+```sh
 
 #### Custom  training configuration
 
@@ -405,13 +467,14 @@ with the following features:
 * automatic feature type detection and casting
 * automatic DataFrame schema detection: checks if unseen data has new or
   missing columns
-* categorical feature encoding
+* categorical feature encoding (target encoding or directly in Xgboost)
 * datetime feature encoding
 * automated GPU availability check and usage for Xgboost
   a fit_eval method to fit a model and evaluate it on a validation set
   to mimic production environment reality
 * functions to save and load a trained pipeline
 * shapley values
+* warnings for potential misconfigurations
 
 The fit_eval method can be used like this:
 
