@@ -89,15 +89,42 @@ y_probs, y_classes = automl.predict(df_val)
 
 ### Advanced usage
 
+#### Enable cross-validation
+
+While the default behaviour of BlueCast is to use a simple
+train-test-split, cross-validation can be enabled easily:
+
+```sh
+from bluecast.blueprints.cast import BlueCast
+from bluecast.config.training_config import TrainingConfig, XgboostTuneParamsConfig
+
+
+# Create a custom training config and adjust general training parameters
+train_config = TrainingConfig()
+train_config.hypertuning_cv_folds = 5 # default is 1
+
+# Pass the custom configs to the BlueCast class
+automl = BlueCast(
+        class_problem="binary",
+        target_column="target"
+        conf_training=train_config,
+    )
+
+automl.fit(df_train, target_col="target")
+y_probs, y_classes = automl.predict(df_val)
+```
+
 #### Categorical encoding
 
-By default, BlueCast uses the Xgboost's inbuilt category encoding.
+By default, BlueCast uses target encoding.
 This behaviour can be changed in the TrainingConfig by setting `cat_encoding_via_ml_algorithm`
-to False. This will change the expectations of `custom_last_mile_computation` though.
+to True. This will change the expectations of `custom_last_mile_computation` though.
 If `cat_encoding_via_ml_algorithm` is set to False, `custom_last_mile_computation`
 will receive numerical features only as target encoding will apply before. If `cat_encoding_via_ml_algorithm`
 is True (default setting) `custom_last_mile_computation` will receive categorical
-features as well.
+features as well, because Xgboost#s inbuilt categorical encoding will be used.
+
+```sh
 
 #### Custom  training configuration
 
