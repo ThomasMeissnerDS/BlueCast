@@ -45,7 +45,7 @@ class XgboostTuneParamsConfig:
     lambda_min: float = 0.0
     lambda_max: float = 10.0
     num_leaves_min: int = 2
-    num_leaves_max: int = 256
+    num_leaves_max: int = 64
     sub_sample_min: float = 0.3
     sub_sample_max: float = 1.0
     col_sample_by_tree_min: float = 0.3
@@ -57,7 +57,7 @@ class XgboostTuneParamsConfig:
     eta_min: float = 0.001
     eta_max: float = 0.3
     steps_min: int = 2
-    steps_max: int = 50000
+    steps_max: int = 1000
     model_verbosity: int = 0
     model_objective: str = "multi:softprob"
     model_eval_metric: str = "mlogloss"
