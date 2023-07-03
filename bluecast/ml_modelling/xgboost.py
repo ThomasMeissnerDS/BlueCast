@@ -269,7 +269,9 @@ class XgboostModel(BaseClassMlModel):
                     shuffle=self.conf_training.shuffle_during_training,
                 )
 
-                return result["test-mlogloss-mean"].mean() + (result["test-mlogloss-mean"].std() ** 0.7)
+                return result["test-mlogloss-mean"].mean() + (
+                    result["test-mlogloss-mean"].std() ** 0.7
+                )
 
         algorithm = "xgboost"
         sampler = optuna.samplers.TPESampler(
