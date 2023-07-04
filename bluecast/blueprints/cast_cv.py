@@ -9,6 +9,8 @@ from bluecast.config.training_config import (
     XgboostFinalParamConfig,
     XgboostTuneParamsConfig,
 )
+from bluecast.preprocessing.custom import CustomPreprocessing
+from bluecast.preprocessing.feature_selection import RFECVSelector
 
 
 class BlueCastCV:
@@ -23,11 +25,19 @@ class BlueCastCV:
         conf_training: Optional[TrainingConfig] = None,
         conf_xgboost: Optional[XgboostTuneParamsConfig] = None,
         conf_params_xgboost: Optional[XgboostFinalParamConfig] = None,
+        custom_last_mile_computation: Optional[CustomPreprocessing] = None,
+        custom_preprocessor: Optional[CustomPreprocessing] = None,
+        custom_feature_selector: Optional[
+            Union[RFECVSelector, CustomPreprocessing]
+        ] = None,
     ):
         self.class_problem = class_problem
         self.conf_xgboost = conf_xgboost
         self.conf_training = conf_training
         self.conf_params_xgboost = conf_params_xgboost
+        self.custom_preprocessor = custom_preprocessor
+        self.custom_feature_selector = custom_feature_selector
+        self.custom_last_mile_computation = custom_last_mile_computation
         self.bluecast_models: List[BlueCast] = []
         self.stratifier = stratifier
 
@@ -73,6 +83,9 @@ class BlueCastCV:
                 conf_training=self.conf_training,
                 conf_xgboost=self.conf_xgboost,
                 conf_params_xgboost=self.conf_params_xgboost,
+                custom_preprocessor=self.custom_preprocessor,
+                custom_feature_selector=self.custom_feature_selector,
+                custom_last_mile_computation=self.custom_last_mile_computation,
             )
             automl.fit(X_train, target_col=target_col)
             self.bluecast_models.append(automl)
@@ -108,6 +121,9 @@ class BlueCastCV:
                 conf_training=self.conf_training,
                 conf_xgboost=self.conf_xgboost,
                 conf_params_xgboost=self.conf_params_xgboost,
+                custom_preprocessor=self.custom_preprocessor,
+                custom_feature_selector=self.custom_feature_selector,
+                custom_last_mile_computation=self.custom_last_mile_computation,
             )
             automl.fit_eval(X_train, X_val, y_val, target_col=target_col)
             self.bluecast_models.append(automl)
