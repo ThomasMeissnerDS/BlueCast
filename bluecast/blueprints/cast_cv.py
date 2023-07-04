@@ -15,6 +15,7 @@ class BlueCastCV:
     """Wrapper to train and predict multiple blueCast intsances.
 
     A custom splitter can be provided."""
+
     def __init__(
         self,
         class_problem: Literal["binary", "multiclass"] = "binary",
@@ -25,21 +26,10 @@ class BlueCastCV:
     ):
         self.class_problem = class_problem
         self.conf_xgboost = conf_xgboost
-
         self.conf_training = conf_training
-        if not self.conf_training:
-            self.conf_training = TrainingConfig()
-
         self.conf_params_xgboost = conf_params_xgboost
         self.bluecast_models: List[BlueCast] = []
-
         self.stratifier = stratifier
-        if not self.stratifier:
-            self.stratifier = StratifiedKFold(
-                n_splits=5,
-                shuffle=True,
-                random_state=self.conf_training.global_random_state,
-            )
 
     def prepare_data(
         self, df: pd.DataFrame, target: str
@@ -54,6 +44,16 @@ class BlueCastCV:
 
         Input df is expected the target column."""
         X, y = self.prepare_data(df, target_col)
+
+        if not self.conf_training:
+            self.conf_training = TrainingConfig()
+
+        if not self.stratifier:
+            self.stratifier = StratifiedKFold(
+                n_splits=5,
+                shuffle=True,
+                random_state=self.conf_training.global_random_state,
+            )
 
         for fn, (trn_idx, val_idx) in enumerate(self.stratifier.split(X, y)):
             X_train, X_val = X.iloc[trn_idx], X.iloc[val_idx]
@@ -77,9 +77,7 @@ class BlueCastCV:
             automl.fit(X_train, target_col=target_col)
             self.bluecast_models.append(automl)
 
-    def fit_eval(
-        self, df: pd.DataFrame, target_col: str
-    ) -> None:
+    def fit_eval(self, df: pd.DataFrame, target_col: str) -> None:
         """Fit multiple BlueCast instances on different data splits.
 
         Input df is expected the target column. Evaluation is executed on out-of-fold dataset
@@ -88,6 +86,13 @@ class BlueCastCV:
 
         if not self.conf_training:
             self.conf_training = TrainingConfig()
+
+        if not self.stratifier:
+            self.stratifier = StratifiedKFold(
+                n_splits=5,
+                shuffle=True,
+                random_state=self.conf_training.global_random_state,
+            )
 
         for fn, (trn_idx, val_idx) in enumerate(self.stratifier.split(X, y)):
             X_train, X_val = X.iloc[trn_idx], X.iloc[val_idx]
@@ -124,4 +129,7 @@ class BlueCastCV:
         if return_sub_models_preds:
             return df.loc[:, prob_cols], df.loc[:, class_cols]
         else:
-            return df.loc[:, prob_cols].mean(axis=1), df.loc[:, prob_cols].mean(axis=1) > 0.5
+            return (
+                df.loc[:, prob_cols].mean(axis=1),
+                df.loc[:, prob_cols].mean(axis=1) > 0.5,
+            )
