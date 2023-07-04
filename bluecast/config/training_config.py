@@ -29,7 +29,7 @@ class TrainingConfig:
     calculate_shap_values: bool = True
     train_size: float = 0.8
     train_split_stratify: bool = True
-    use_full_data_for_final_model: bool = True
+    use_full_data_for_final_model: bool = False
     min_features_to_select: int = 5
     cat_encoding_via_ml_algorithm: bool = False
 

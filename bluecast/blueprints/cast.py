@@ -44,9 +44,9 @@ class BlueCast:
     :param :class_problem: Takes a string containing the class problem type. Either "binary" or "multiclass".
     :param :target_column: Takes a string containing the name of the target column.
     :param :cat_columns: Takes a list of strings containing the names of the categorical columns. If not provided,
-    BlueCast will infer these automaically.
+    BlueCast will infer these automatically.
     :param :date_columns: Takes a list of strings containing the names of the date columns. If not provided,
-    BlueCast will infer these automaically.
+    BlueCast will infer these automatically.
     :param :time_split_column: Takes a string containing the name of the time split column. If not provided,
     BlueCast will not split the data by time or order, but do a random split instead.
     :param :ml_model: Takes an instance of a XgboostModel class. If not provided, BlueCast will instantiate one.
