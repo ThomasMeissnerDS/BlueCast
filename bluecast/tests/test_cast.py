@@ -34,10 +34,6 @@ def test_blueprint_xgboost(synthetic_train_test_data):
     xgboost_param_config = XgboostTuneParamsConfig()
     xgboost_param_config.steps_max = 100
     xgboost_param_config.num_leaves_max = 16
-    train_config = TrainingConfig()
-    train_config.hyperparameter_tuning_rounds = 10
-    train_config.enable_feature_selection = False
-    train_config.hypertuning_cv_folds = 1
 
     # add custom last mile computation
     class MyCustomLastMilePreprocessing(CustomPreprocessing):
@@ -70,7 +66,6 @@ def test_blueprint_xgboost(synthetic_train_test_data):
     automl = BlueCast(
         class_problem="binary",
         target_column="target",
-        conf_training=train_config,
         conf_xgboost=xgboost_param_config,
         custom_last_mile_computation=custom_last_mile_computation,
     )
