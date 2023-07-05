@@ -4,6 +4,7 @@ import pandas as pd
 import pytest
 from sklearn.model_selection import StratifiedKFold
 
+from bluecast.blueprints.cast import BlueCast
 from bluecast.blueprints.cast_cv import BlueCastCV
 from bluecast.config.training_config import TrainingConfig, XgboostTuneParamsConfig
 from bluecast.tests.make_data.create_data import create_synthetic_dataframe
@@ -58,3 +59,10 @@ def test_blueprint_cv_xgboost(synthetic_train_test_data):
         target_col="target",
     )
     assert automl_cv.stratifier
+
+    # Assert that the bluecast_models attribute is updated
+    assert len(automl_cv.bluecast_models) > 0
+
+    # Check if each model in bluecast_models is an instance of BlueCast
+    for model in automl_cv.bluecast_models:
+        assert isinstance(model, BlueCast)
