@@ -2,6 +2,7 @@ from typing import Tuple
 
 import pandas as pd
 import pytest
+from sklearn.model_selection import StratifiedKFold
 
 from bluecast.blueprints.cast_cv import BlueCastCV
 from bluecast.config.training_config import TrainingConfig, XgboostTuneParamsConfig
@@ -25,8 +26,14 @@ def test_blueprint_cv_xgboost(synthetic_train_test_data):
     train_config = TrainingConfig()
     train_config.hyperparameter_tuning_rounds = 10
 
+    skf = StratifiedKFold(
+        n_splits=3,
+        shuffle=True,
+        random_state=5,
+    )
+
     automl_cv = BlueCastCV(
-        conf_xgboost=xgboost_param_config, conf_training=train_config
+        conf_xgboost=xgboost_param_config, conf_training=train_config, stratifier=skf
     )
     automl_cv.fit_eval(
         df_train,
@@ -37,3 +44,6 @@ def test_blueprint_cv_xgboost(synthetic_train_test_data):
     print("Predicting successful.")
     assert len(y_probs) == len(df_val.index)
     assert len(y_classes) == len(df_val.index)
+    y_probs, y_classes = automl_cv.predict(df_val.drop("target", axis=1), return_sub_models_preds=True)
+    assert isinstance(y_probs, pd.DataFrame)
+    assert isinstance(y_classes, pd.DataFrame)

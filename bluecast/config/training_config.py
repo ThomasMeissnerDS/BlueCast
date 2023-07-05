@@ -33,7 +33,7 @@ class TrainingConfig:
     :param train_size: Train size to use for train-test split.
     :param train_split_stratify: Whether to stratify the train-test split. Not used when custom ML model is passed.
     :param use_full_data_for_final_model: Whether to use the full data for the final model. This might cause overfitting.
-    Not used when custom ML model is passed.
+        Not used when custom ML model is passed.
     :param min_features_to_select: Minimum number of features to select. Only used when enable_feature_selection is
         True.
     :param cat_encoding_via_ml_algorithm: Whether to use an ML algorithm for categorical encoding. If True, the
