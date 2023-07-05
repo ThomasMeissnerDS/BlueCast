@@ -27,8 +27,10 @@ def test_blueprint_cv_xgboost(synthetic_train_test_data):
     train_config = TrainingConfig()
     train_config.hyperparameter_tuning_rounds = 10
 
+    nb_models = 3
+
     skf = StratifiedKFold(
-        n_splits=3,
+        n_splits=nb_models,
         shuffle=True,
         random_state=5,
     )
@@ -61,7 +63,7 @@ def test_blueprint_cv_xgboost(synthetic_train_test_data):
     assert automl_cv.stratifier
 
     # Assert that the bluecast_models attribute is updated
-    assert len(automl_cv.bluecast_models) > 0
+    assert len(automl_cv.bluecast_models) == nb_models
 
     # Check if each model in bluecast_models is an instance of BlueCast
     for model in automl_cv.bluecast_models:
