@@ -34,10 +34,6 @@ def test_blueprint_xgboost(synthetic_train_test_data):
     xgboost_param_config = XgboostTuneParamsConfig()
     xgboost_param_config.steps_max = 100
     xgboost_param_config.num_leaves_max = 16
-    train_config = TrainingConfig()
-    train_config.hyperparameter_tuning_rounds = 10
-    train_config.enable_feature_selection = False
-    train_config.hypertuning_cv_folds = 1
 
     # add custom last mile computation
     class MyCustomLastMilePreprocessing(CustomPreprocessing):
@@ -70,7 +66,6 @@ def test_blueprint_xgboost(synthetic_train_test_data):
     automl = BlueCast(
         class_problem="binary",
         target_column="target",
-        conf_training=train_config,
         conf_xgboost=xgboost_param_config,
         custom_last_mile_computation=custom_last_mile_computation,
     )
@@ -147,7 +142,35 @@ def test_bluecast_with_custom_model():
             df = df.loc[:, self.selected_features]
             return df, target
 
+    class MyCustomPreprocessor(CustomPreprocessing):
+        def __init__(self, random_state: int = 0):
+            super().__init__()
+            self.selected_features = None
+            self.random_state = random_state
+            self.selection_strategy: RFECV = RFECV(
+                estimator=xgb.XGBClassifier(),
+                step=1,
+                cv=StratifiedKFold(2, random_state=random_state, shuffle=True),
+                min_features_to_select=1,
+                scoring=make_scorer(matthews_corrcoef),
+                n_jobs=2,
+            )
+
+        def fit_transform(
+            self, df: pd.DataFrame, target: pd.Series
+        ) -> Tuple[pd.DataFrame, Optional[pd.Series]]:
+            return df, target
+
+        def transform(
+            self,
+            df: pd.DataFrame,
+            target: Optional[pd.Series] = None,
+            predicton_mode: bool = False,
+        ) -> Tuple[pd.DataFrame, Optional[pd.Series]]:
+            return df, target
+
     custom_feature_selector = RFECVSelector()
+    custum_preproc = MyCustomPreprocessor()
 
     # Create an instance of the BlueCast class with the custom model
     bluecast = BlueCast(
@@ -156,6 +179,7 @@ def test_bluecast_with_custom_model():
         ml_model=custom_model,
         conf_training=train_config,
         custom_feature_selector=custom_feature_selector,
+        custom_preprocessor=custum_preproc,
     )
 
     # Create some sample data for testing
