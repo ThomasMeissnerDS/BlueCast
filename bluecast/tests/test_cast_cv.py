@@ -49,3 +49,12 @@ def test_blueprint_cv_xgboost(synthetic_train_test_data):
     )
     assert isinstance(y_probs, pd.DataFrame)
     assert isinstance(y_classes, pd.DataFrame)
+
+    automl_cv = BlueCastCV(
+        conf_xgboost=xgboost_param_config, conf_training=train_config, stratifier=None
+    )
+    automl_cv.fit_eval(
+        df_train,
+        target_col="target",
+    )
+    assert automl_cv.stratifier
