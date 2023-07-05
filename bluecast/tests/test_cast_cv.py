@@ -53,6 +53,9 @@ def test_blueprint_cv_xgboost(synthetic_train_test_data):
     assert isinstance(y_probs, pd.DataFrame)
     assert isinstance(y_classes, pd.DataFrame)
 
+    # Assert that the bluecast_models attribute is updated
+    assert len(automl_cv.bluecast_models) == nb_models
+
     automl_cv = BlueCastCV(
         conf_xgboost=xgboost_param_config, conf_training=train_config, stratifier=None
     )
@@ -63,7 +66,7 @@ def test_blueprint_cv_xgboost(synthetic_train_test_data):
     assert automl_cv.stratifier
 
     # Assert that the bluecast_models attribute is updated
-    assert len(automl_cv.bluecast_models) == nb_models
+    assert len(automl_cv.bluecast_models) == 5
 
     # Check if each model in bluecast_models is an instance of BlueCast
     for model in automl_cv.bluecast_models:
