@@ -16,7 +16,30 @@ class Config:
 
 @dataclass
 class TrainingConfig:
-    """Define general training parameters."""
+    """Define general training parameters.
+
+    :param global_random_state: Global random state to use for reproducibility.
+    :param shuffle_during_training: Whether to shuffle the data during training when hypertuning_cv_folds > 1.
+    :param hyperparameter_tuning_rounds: Number of hyperparameter tuning rounds. Not used when custom ML model is passed.
+    :param hyperparameter_tuning_max_runtime_secs: Maximum runtime in seconds for hyperparameter tuning. Not used when
+        custom ML model is passed.
+    :param hypertuning_cv_folds: Number of cross-validation folds to use for hyperparameter tuning. Not used when
+        custom ML model is passed.
+    :param early_stopping_rounds: Number of early stopping rounds. Not used when custom ML model is passed.
+    :param autotune_model: Whether to autotune the model. Not used when custom ML model is passed.
+    :param enable_feature_selection: Whether to enable recursive feature selection.
+    :param calculate_shap_values: Whether to calculate shap values. Also used when custom ML model is passed. Not
+    compatible with all ML models. See SHAP documentation for more details.
+    :param train_size: Train size to use for train-test split.
+    :param train_split_stratify: Whether to stratify the train-test split. Not used when custom ML model is passed.
+    :param use_full_data_for_final_model: Whether to use the full data for the final model. This might cause overfitting.
+    Not used when custom ML model is passed.
+    :param min_features_to_select: Minimum number of features to select. Only used when enable_feature_selection is
+        True.
+    :param cat_encoding_via_ml_algorithm: Whether to use an ML algorithm for categorical encoding. If True, the
+        categorical encoding is done via a ML algorithm. If False, the categorical encoding is done via a  target
+        encoding in the preprocessing steps. See the ReadMe for more details.
+    """
 
     global_random_state: int = 10
     shuffle_during_training: bool = True
@@ -29,7 +52,7 @@ class TrainingConfig:
     calculate_shap_values: bool = True
     train_size: float = 0.8
     train_split_stratify: bool = True
-    use_full_data_for_final_model: bool = True
+    use_full_data_for_final_model: bool = False
     min_features_to_select: int = 5
     cat_encoding_via_ml_algorithm: bool = False
 
@@ -54,12 +77,14 @@ class XgboostTuneParamsConfig:
     col_sample_by_level_max: float = 1.0
     min_child_weight_min: float = 0.0
     min_child_weight_max: float = 10.0
-    eta: float = 0.1
+    eta_min: float = 0.001
+    eta_max: float = 0.3
     steps_min: int = 2
-    steps_max: int = 50000
+    steps_max: int = 1000
     model_verbosity: int = 0
     model_objective: str = "multi:softprob"
     model_eval_metric: str = "mlogloss"
+    booster: str = "gbtree"
 
 
 @dataclass

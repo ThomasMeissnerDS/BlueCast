@@ -131,7 +131,7 @@ class XgboostModel(BaseClassMlModel):
                 self.conf_params_xgboost.params,
                 d_train,
                 num_boost_round=self.conf_params_xgboost.params["steps"],
-                # early_stopping_rounds=self.conf_training.early_stopping_rounds,
+                early_stopping_rounds=self.conf_training.early_stopping_rounds,
                 evals=eval_set,
             )
         print("Finished training")
@@ -173,10 +173,14 @@ class XgboostModel(BaseClassMlModel):
         def objective(trial):
             param = {
                 "objective": self.conf_xgboost.model_objective,
+                "booster": self.conf_xgboost.booster,
                 "eval_metric": self.conf_xgboost.model_eval_metric,
                 "verbose": self.conf_xgboost.model_verbosity,
                 "tree_method": train_on,
                 "num_class": y_train.nunique(),
+                "eta": trial.suggest_float(
+                    "eta", self.conf_xgboost.eta_min, self.conf_xgboost.eta_max
+                ),
                 "max_depth": trial.suggest_int(
                     "max_depth",
                     self.conf_xgboost.max_depth_min,
@@ -213,7 +217,6 @@ class XgboostModel(BaseClassMlModel):
                     self.conf_xgboost.col_sample_by_level_min,
                     self.conf_xgboost.col_sample_by_level_max,
                 ),
-                "eta": self.conf_xgboost.eta,
                 "steps": trial.suggest_int(
                     "steps", self.conf_xgboost.steps_min, self.conf_xgboost.steps_max
                 ),
@@ -266,7 +269,9 @@ class XgboostModel(BaseClassMlModel):
                     shuffle=self.conf_training.shuffle_during_training,
                 )
 
-                return result["test-mlogloss-mean"].mean()
+                return result["test-mlogloss-mean"].mean() + (
+                    result["test-mlogloss-mean"].std() ** 0.7
+                )
 
         algorithm = "xgboost"
         sampler = optuna.samplers.TPESampler(
@@ -296,6 +301,7 @@ class XgboostModel(BaseClassMlModel):
         xgboost_best_param = study.best_trial.params
         self.conf_params_xgboost.params = {
             "objective": self.conf_xgboost.model_objective,  # OR  'binary:logistic' #the loss function being used
+            "booster": self.conf_xgboost.booster,
             "eval_metric": self.conf_xgboost.model_eval_metric,
             "verbose": self.conf_xgboost.model_verbosity,
             "tree_method": train_on,  # use GPU for training
@@ -310,7 +316,7 @@ class XgboostModel(BaseClassMlModel):
             "colsample_bytree": xgboost_best_param["colsample_bytree"],
             "colsample_bylevel": xgboost_best_param["colsample_bylevel"],
             "min_child_weight": xgboost_best_param["min_child_weight"],
-            "eta": self.conf_xgboost.eta,
+            "eta": xgboost_best_param["eta"],
             "steps": xgboost_best_param["steps"],
         }
         print("Best params: ", self.conf_params_xgboost.params)

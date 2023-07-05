@@ -34,7 +34,9 @@ the full documentation [here](https://bluecast.readthedocs.io/en/latest/).
   * [Advanced usage](#advanced-usage)
     * [Explanatory analysis](#explanatory-analysis)
     * [Enable cross-validation](#enable-cross-validation)
+    * [Use multi-model blended pipeline](#use-multi-model-blended-pipeline)
     * [Categorical encoding](#categorical-encoding)
+    * [Custom training configuration](#custom--training-configuration)
     * [Custom preprocessing](#custom-preprocessing)
     * [Custom feature selection](#custom-feature-selection)
     * [Custom ML model](#custom-ml-model)
@@ -158,6 +160,35 @@ automl.fit(df_train, target_col="target")
 y_probs, y_classes = automl.predict(df_val)
 ```
 
+#### Use multi-model blended pipeline
+
+By default, BlueCast trains a single model. However, it is possible to
+train multiple models with one call for extra robustness. `BlueCastCV`
+has a `fit` and a `fit_eval` method. The `fit_eval` method trains the
+models, but also provides out-of-fold validation. Also `BlueCastCV`
+allows to pass custom configurations.
+
+```sh
+from bluecast.blueprints.cast import BlueCastCV
+from bluecast.config.training_config import TrainingConfig, XgboostTuneParamsConfig
+
+# Pass the custom configs to the BlueCast class
+automl = BlueCastCV(
+        class_problem="binary",
+        #conf_training=train_config,
+        #conf_xgboost=xgboost_param_config,
+        #custom_preprocessor=custom_preprocessor, # this takes place right after test_train_split
+        #custom_last_mile_computation=custom_last_mile_computation, # last step before model training/prediction
+        #custom_feature_selector=custom_feature_selector,
+    )
+
+# this class has a train method:
+# automl.fit(df_train, target_col="target")
+
+automl.fit_eval(df_train, target_col="target")
+y_probs, y_classes = automl.predict(df_val)
+```
+
 #### Categorical encoding
 
 By default, BlueCast uses target encoding.
@@ -166,9 +197,7 @@ to True. This will change the expectations of `custom_last_mile_computation` tho
 If `cat_encoding_via_ml_algorithm` is set to False, `custom_last_mile_computation`
 will receive numerical features only as target encoding will apply before. If `cat_encoding_via_ml_algorithm`
 is True (default setting) `custom_last_mile_computation` will receive categorical
-features as well, because Xgboost#s inbuilt categorical encoding will be used.
-
-```sh
+features as well, because Xgboost's inbuilt categorical encoding will be used.
 
 #### Custom  training configuration
 
