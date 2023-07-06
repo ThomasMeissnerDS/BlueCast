@@ -133,6 +133,16 @@ correlation_to_target(train_data.loc[
             :, feat_type_detector.num_columns
         ],
         "EC1",)
+
+# show feature space after principal component analysis
+plot_pca(train_data.loc[
+            :, feat_type_detector.num_columns
+        ], "target")
+
+# show feature space after t-SNE
+plot_tsne(train_data.loc[
+            :, feat_type_detector.num_columns
+        ], "target", perplexity=30, random_state=0)
 ```
 
 #### Enable cross-validation

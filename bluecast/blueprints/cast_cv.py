@@ -9,6 +9,7 @@ from bluecast.config.training_config import (
     XgboostFinalParamConfig,
     XgboostTuneParamsConfig,
 )
+from bluecast.ml_modelling.xgboost import XgboostModel
 from bluecast.preprocessing.custom import CustomPreprocessing
 from bluecast.preprocessing.feature_selection import RFECVSelector
 
@@ -30,6 +31,7 @@ class BlueCastCV:
         custom_feature_selector: Optional[
             Union[RFECVSelector, CustomPreprocessing]
         ] = None,
+        ml_model: Optional[Union[XgboostModel, Any]] = None,
     ):
         self.class_problem = class_problem
         self.conf_xgboost = conf_xgboost
@@ -40,6 +42,7 @@ class BlueCastCV:
         self.custom_last_mile_computation = custom_last_mile_computation
         self.bluecast_models: List[BlueCast] = []
         self.stratifier = stratifier
+        self.ml_model = ml_model
 
     def prepare_data(
         self, df: pd.DataFrame, target: str
@@ -86,6 +89,7 @@ class BlueCastCV:
                 custom_preprocessor=self.custom_preprocessor,
                 custom_feature_selector=self.custom_feature_selector,
                 custom_last_mile_computation=self.custom_last_mile_computation,
+                ml_model=self.ml_model,
             )
             automl.fit(X_train, target_col=target_col)
             self.bluecast_models.append(automl)
@@ -124,6 +128,7 @@ class BlueCastCV:
                 custom_preprocessor=self.custom_preprocessor,
                 custom_feature_selector=self.custom_feature_selector,
                 custom_last_mile_computation=self.custom_last_mile_computation,
+                ml_model=self.ml_model,
             )
             automl.fit_eval(X_train, X_val, y_val, target_col=target_col)
             self.bluecast_models.append(automl)
