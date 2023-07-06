@@ -2,6 +2,8 @@ import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 import seaborn as sns
+from sklearn.decomposition import PCA
+from sklearn.manifold import TSNE
 
 
 def univariate_plots(df: pd.DataFrame, target: str) -> None:
@@ -130,4 +132,57 @@ def correlation_to_target(df: pd.DataFrame, target: str) -> None:
     sns.set_palette("PuBuGn_d")
     sns.heatmap(corrs_sorted.to_frame(), cmap="coolwarm", annot=True, fmt=".2f")
     plt.title("Correlation with EC1")
+    plt.show()
+
+
+def plot_pca(df: pd.DataFrame, target: str) -> None:
+    """
+    Plots PCA for the dataframe.
+
+    Expects numeric columns only.
+    """
+    pca = PCA(n_components=2)
+
+    pca_df = pd.DataFrame(pca.fit_transform(df.drop([target], axis=1)))
+    pca_df[target] = df[target].values
+    fig, ax = plt.subplots(ncols=1, figsize=(10, 5))
+    explained_variance = round(sum(pca.explained_variance_ratio_), 2)
+
+    # Define a custom color palette with distinct colors for the target variable
+    target_palette = sns.color_palette("hls", len(df[target].unique()))
+
+    for _i, col in enumerate([target]):
+        sns.scatterplot(data=pca_df, x=0, y=1, hue=col, ax=ax, palette=target_palette)
+        ax.set_xticks([])
+        ax.set_yticks([])
+        ax.set_xlabel("Component 1")
+        ax.set_ylabel("Component 2")
+
+    fig.suptitle(f"PCA \n explained variance :{explained_variance}", y=1.1)
+    plt.show()
+
+
+def plot_tsne(df: pd.DataFrame, target: str, perplexity=50, random_state=42) -> None:
+    """
+    Plots t-SNE for the dataframe.
+
+    Expects numeric columns only.
+    """
+    tsne = TSNE(n_components=2, perplexity=perplexity, random_state=random_state)
+
+    tsne_df = pd.DataFrame(tsne.fit_transform(df.drop([target], axis=1)))
+    tsne_df[target] = df[target].values
+    fig, ax = plt.subplots(ncols=1, figsize=(10, 5))
+
+    # Define a custom color palette with distinct colors for the target variable
+    target_palette = sns.color_palette("hls", len(df[target].unique()))
+
+    for _i, col in enumerate([target]):
+        sns.scatterplot(data=tsne_df, x=0, y=1, hue=col, ax=ax, palette=target_palette)
+        ax.set_xticks([])
+        ax.set_yticks([])
+        ax.set_xlabel("Component 1")
+        ax.set_ylabel("Component 2")
+
+    fig.suptitle("t-SNE", y=1.1)
     plt.show()
