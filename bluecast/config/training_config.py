@@ -69,8 +69,8 @@ class XgboostTuneParamsConfig:
     alpha_max: float = 10.0
     lambda_min: float = 0.0
     lambda_max: float = 10.0
-    max_leaves_min: int = 2
-    max_leaves_max: int = 256
+    max_leaves_min: int = 0
+    max_leaves_max: int = 0
     sub_sample_min: float = 0.3
     sub_sample_max: float = 1.0
     col_sample_by_tree_min: float = 0.3
