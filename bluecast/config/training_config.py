@@ -70,7 +70,7 @@ class XgboostTuneParamsConfig:
     lambda_min: float = 0.0
     lambda_max: float = 10.0
     max_leaves_min: int = 2
-    max_leaves_max: int = 64
+    max_leaves_max: int = 256
     sub_sample_min: float = 0.3
     sub_sample_max: float = 1.0
     col_sample_by_tree_min: float = 0.3
@@ -96,7 +96,6 @@ class XgboostFinalParamConfig:
     params = {
         "objective": "multi:softprob",  # OR  'binary:logistic' #the loss function being used
         "eval_metric": "mlogloss",
-        "verbose": 0,
         "tree_method": "exact",  # use GPU for training
         "num_class": 2,
         "max_depth": 3,  # maximum depth of the decision trees being trained
