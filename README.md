@@ -221,7 +221,7 @@ from bluecast.config.training_config import TrainingConfig, XgboostTuneParamsCon
 # Create a custom tuning config and adjust hyperparameter search space
 xgboost_param_config = XgboostTuneParamsConfig()
 xgboost_param_config.steps_max = 100
-xgboost_param_config.num_leaves_max = 16
+xgboost_param_config.max_leaves_max = 16
 # Create a custom training config and adjust general training parameters
 train_config = TrainingConfig()
 train_config.hyperparameter_tuning_rounds = 10
@@ -258,7 +258,7 @@ from bluecast.preprocessing.custom import CustomPreprocessing
 # Create a custom tuning config and adjust hyperparameter search space
 xgboost_param_config = XgboostTuneParamsConfig()
 xgboost_param_config.steps_max = 100
-xgboost_param_config.num_leaves_max = 16
+xgboost_param_config.max_leaves_max = 16
 # Create a custom training config and adjust general training parameters
 train_config = TrainingConfig()
 train_config.hyperparameter_tuning_rounds = 10
