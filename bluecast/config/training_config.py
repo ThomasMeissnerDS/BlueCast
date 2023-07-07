@@ -39,6 +39,7 @@ class TrainingConfig:
     :param cat_encoding_via_ml_algorithm: Whether to use an ML algorithm for categorical encoding. If True, the
         categorical encoding is done via a ML algorithm. If False, the categorical encoding is done via a  target
         encoding in the preprocessing steps. See the ReadMe for more details.
+    :param show_detailed_tuning_logs: Whether to show detailed tuning logs. Not used when custom ML model is passed.
     """
 
     global_random_state: int = 10
@@ -55,6 +56,7 @@ class TrainingConfig:
     use_full_data_for_final_model: bool = False
     min_features_to_select: int = 5
     cat_encoding_via_ml_algorithm: bool = False
+    show_detailed_tuning_logs: bool = False
 
 
 @dataclass
@@ -67,8 +69,8 @@ class XgboostTuneParamsConfig:
     alpha_max: float = 10.0
     lambda_min: float = 0.0
     lambda_max: float = 10.0
-    num_leaves_min: int = 2
-    num_leaves_max: int = 64
+    max_leaves_min: int = 2
+    max_leaves_max: int = 64
     sub_sample_min: float = 0.3
     sub_sample_max: float = 1.0
     col_sample_by_tree_min: float = 0.3
@@ -100,7 +102,7 @@ class XgboostFinalParamConfig:
         "max_depth": 3,  # maximum depth of the decision trees being trained
         "alpha": 0.1,
         "lambda": 0.1,
-        "num_leaves": 16,
+        "max_leaves": 16,
         "subsample": 0.8,
         "colsample_bytree": 0.8,
         "colsample_bylevel": 0.8,
