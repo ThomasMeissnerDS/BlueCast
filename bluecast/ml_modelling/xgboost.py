@@ -41,7 +41,6 @@ class XgboostModel(BaseClassMlModel):
 
     def calculate_class_weights(self, y: pd.Series) -> Dict[str, float]:
         """Calculate class weights of target column."""
-        logger(f"{datetime.utcnow()}: Start calculating target class weights.")
         classes_weights = class_weight.compute_sample_weight(
             class_weight="balanced", y=y
         )
@@ -81,6 +80,9 @@ class XgboostModel(BaseClassMlModel):
 
         if not self.conf_params_xgboost or not self.conf_training:
             raise ValueError("conf_params_xgboost or conf_training is None")
+
+        if not self.conf_training.show_detailed_tuning_logs:
+            optuna.logging.set_verbosity(optuna.logging.WARNING)
 
         if self.conf_training.autotune_model:
             self.autotune(x_train, x_test, y_train, y_test)
@@ -175,7 +177,6 @@ class XgboostModel(BaseClassMlModel):
                 "objective": self.conf_xgboost.model_objective,
                 "booster": self.conf_xgboost.booster,
                 "eval_metric": self.conf_xgboost.model_eval_metric,
-                "verbose": self.conf_xgboost.model_verbosity,
                 "tree_method": train_on,
                 "num_class": y_train.nunique(),
                 "eta": trial.suggest_float(
@@ -197,10 +198,10 @@ class XgboostModel(BaseClassMlModel):
                     self.conf_xgboost.min_child_weight_min,
                     self.conf_xgboost.min_child_weight_max,
                 ),
-                "num_leaves": trial.suggest_int(
-                    "num_leaves",
-                    self.conf_xgboost.num_leaves_min,
-                    self.conf_xgboost.num_leaves_max,
+                "max_leaves": trial.suggest_int(
+                    "max_leaves",
+                    self.conf_xgboost.max_leaves_min,
+                    self.conf_xgboost.max_leaves_max,
                 ),
                 "subsample": trial.suggest_float(
                     "subsample",
@@ -241,12 +242,15 @@ class XgboostModel(BaseClassMlModel):
                 trial, "test-mlogloss"
             )
 
+            steps = param["steps"]
+            del param["steps"]
+
             if self.conf_training.hypertuning_cv_folds == 1:
                 eval_set = [(d_train, "train"), (d_test, "test")]
                 model = xgb.train(
                     param,
                     d_train,
-                    num_boost_round=param["steps"],
+                    num_boost_round=steps,
                     early_stopping_rounds=self.conf_training.early_stopping_rounds,
                     evals=eval_set,
                     callbacks=[pruning_callback],
@@ -260,7 +264,7 @@ class XgboostModel(BaseClassMlModel):
                 result = xgb.cv(
                     params=param,
                     dtrain=d_train,
-                    num_boost_round=param["steps"],
+                    num_boost_round=steps,
                     # early_stopping_rounds=self.conf_training.early_stopping_rounds,
                     nfold=self.conf_training.hypertuning_cv_folds,
                     as_pandas=True,
@@ -311,7 +315,7 @@ class XgboostModel(BaseClassMlModel):
             ],  # maximum depth of the decision trees being trained
             "alpha": xgboost_best_param["alpha"],
             "lambda": xgboost_best_param["lambda"],
-            "num_leaves": xgboost_best_param["num_leaves"],
+            "max_leaves": xgboost_best_param["max_leaves"],
             "subsample": xgboost_best_param["subsample"],
             "colsample_bytree": xgboost_best_param["colsample_bytree"],
             "colsample_bylevel": xgboost_best_param["colsample_bylevel"],
