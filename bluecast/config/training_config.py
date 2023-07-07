@@ -78,7 +78,7 @@ class XgboostTuneParamsConfig:
     col_sample_by_level_min: float = 0.3
     col_sample_by_level_max: float = 1.0
     min_child_weight_min: float = 0.0
-    min_child_weight_max: float = 10.0
+    min_child_weight_max: float = 5.0
     eta_min: float = 0.001
     eta_max: float = 0.3
     steps_min: int = 2
