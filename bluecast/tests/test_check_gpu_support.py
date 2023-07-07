@@ -17,7 +17,7 @@ def test_check_gpu_support(monkeypatch):
     """
 
     def mock_train(params, d_train):
-        assert params == {"tree_method": "gpu_hist", "steps": 2}
+        assert params == {"tree_method": "gpu_hist"}
         assert np.array_equal(d_train.get_label(), np.array([0, 1, 0, 1, 0]))
         return None
 
