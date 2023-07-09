@@ -82,7 +82,7 @@ class XgboostTuneParamsConfig:
     eta_min: float = 0.001
     eta_max: float = 0.3
     steps_min: int = 2
-    steps_max: int = 1000
+    steps_max: int = 5000
     model_verbosity: int = 0
     model_objective: str = "multi:softprob"
     model_eval_metric: str = "mlogloss"

@@ -1,12 +1,13 @@
 [tool.poetry]
 name = "bluecast"
-version = "0.10.2"
+version = "0.11"
 description = "A lightweight and fast automl framework"
 authors = ["Thomas Meißner <meissnercorporation@gmx.de>"]
 license = "GPL-3.0-only"
 classifiers = [
     "Programming Language :: Python :: 3.9",
     "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
 ]
 homepage = "https://github.com/ThomasMeissnerDS/BlueCast"
 repository = "https://github.com/ThomasMeissnerDS/BlueCast"
