@@ -21,8 +21,14 @@ from bluecast.general_utils.general_utils import logger
 
 
 def balanced_log_loss(y_true, y_pred):
-    nc = np.bincount(y_true)
-    return log_loss(y_true, y_pred, sample_weight=1/nc[y_true], eps=1e-15)
+    assert ((y_true == 0) | (y_true == 1)).all()
+    assert len(y_true) == len(y_pred)
+    assert y_pred.ndim == 1
+    eps = 1e-15
+    y_pred = y_pred.clip(eps, 1 - eps)
+    l0 = -np.log(1 - y_pred[y_true == 0])
+    l1 = -np.log(y_pred[y_true != 0])
+    return (l0.mean() + l1.mean()) / 2
 
 
 def eval_classifier(
