@@ -44,7 +44,7 @@ class TrainingConfig:
 
     global_random_state: int = 10
     shuffle_during_training: bool = True
-    hyperparameter_tuning_rounds: int = 100
+    hyperparameter_tuning_rounds: int = 200
     hyperparameter_tuning_max_runtime_secs: int = 3600
     hypertuning_cv_folds: int = 1
     early_stopping_rounds: int = 10
@@ -82,7 +82,7 @@ class XgboostTuneParamsConfig:
     eta_min: float = 0.001
     eta_max: float = 0.3
     steps_min: int = 2
-    steps_max: int = 5000
+    steps_max: int = 1000
     model_verbosity: int = 0
     model_objective: str = "multi:softprob"
     model_eval_metric: str = "mlogloss"
