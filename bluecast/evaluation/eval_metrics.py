@@ -10,12 +10,11 @@ from sklearn.metrics import (
     classification_report,
     confusion_matrix,
     f1_score,
+    log_loss,
     matthews_corrcoef,
     recall_score,
     roc_auc_score,
-    log_loss,
 )
-
 
 from bluecast.general_utils.general_utils import logger
 

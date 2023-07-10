@@ -57,6 +57,7 @@ class TrainingConfig:
     min_features_to_select: int = 5
     cat_encoding_via_ml_algorithm: bool = False
     show_detailed_tuning_logs: bool = False
+    optuna_sampler_n_startup_trials: int = 10
 
 
 @dataclass
