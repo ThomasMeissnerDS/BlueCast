@@ -282,7 +282,9 @@ class XgboostModel(BaseClassMlModel):
 
         algorithm = "xgboost"
         sampler = optuna.samplers.TPESampler(
-            multivariate=False, seed=self.conf_training.global_random_state
+            multivariate=True,
+            seed=self.conf_training.global_random_state,
+            n_startup_trials=self.conf_training.optuna_sampler_n_startup_trials,
         )
         study = optuna.create_study(
             direction="minimize",

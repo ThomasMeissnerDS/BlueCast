@@ -10,8 +10,10 @@ from sklearn.metrics import (
     classification_report,
     confusion_matrix,
     f1_score,
+    log_loss,
     matthews_corrcoef,
     recall_score,
+    roc_auc_score,
 )
 
 from bluecast.general_utils.general_utils import logger
@@ -49,6 +51,10 @@ def eval_classifier(
     logger(f"The weighted F1 score is {f1_score_weighted}")
     bll = balanced_log_loss(y_true, y_probs)
     logger(f"The balanced logloss is {bll}")
+    roc_auc = roc_auc_score(y_true, y_probs)
+    logger(f"The ROC auc score is {roc_auc}")
+    logloss = log_loss(y_true, y_probs)
+    logger(f"The log loss score is {logloss}")
 
     full_classification_report = classification_report(y_true, y_classes)
     logger(full_classification_report)
@@ -60,7 +66,9 @@ def eval_classifier(
         "f1_score_macro": f1_score_macro,
         "f1_score_micro": f1_score_micro,
         "f1_score_weighted": f1_score_weighted,
+        "log_loss": log_loss,
         "balanced_logloss": bll,
+        "roc_auc": roc_auc,
         "classfication_report": full_classification_report,
         "confusion_matrix": confusion_matrix(y_true, y_classes),
     }

@@ -44,7 +44,7 @@ class TrainingConfig:
 
     global_random_state: int = 10
     shuffle_during_training: bool = True
-    hyperparameter_tuning_rounds: int = 100
+    hyperparameter_tuning_rounds: int = 200
     hyperparameter_tuning_max_runtime_secs: int = 3600
     hypertuning_cv_folds: int = 1
     early_stopping_rounds: int = 10
@@ -57,6 +57,7 @@ class TrainingConfig:
     min_features_to_select: int = 5
     cat_encoding_via_ml_algorithm: bool = False
     show_detailed_tuning_logs: bool = False
+    optuna_sampler_n_startup_trials: int = 10
 
 
 @dataclass
@@ -69,8 +70,8 @@ class XgboostTuneParamsConfig:
     alpha_max: float = 10.0
     lambda_min: float = 0.0
     lambda_max: float = 10.0
-    max_leaves_min: int = 2
-    max_leaves_max: int = 256
+    max_leaves_min: int = 0
+    max_leaves_max: int = 0
     sub_sample_min: float = 0.3
     sub_sample_max: float = 1.0
     col_sample_by_tree_min: float = 0.3
@@ -78,7 +79,7 @@ class XgboostTuneParamsConfig:
     col_sample_by_level_min: float = 0.3
     col_sample_by_level_max: float = 1.0
     min_child_weight_min: float = 0.0
-    min_child_weight_max: float = 10.0
+    min_child_weight_max: float = 5.0
     eta_min: float = 0.001
     eta_max: float = 0.3
     steps_min: int = 2
