@@ -94,6 +94,7 @@ class BlueCast:
         self.custom_preprocessor = custom_preprocessor
         self.custom_feature_selector = custom_feature_selector
         self.shap_values: Optional[np.ndarray] = None
+        self.eval_metrics: Optional[Dict[str, Any]] = None
 
     def initial_checks(self, df: pd.DataFrame) -> None:
         if not self.conf_training:
@@ -294,6 +295,7 @@ class BlueCast:
         self.fit(df, target_col)
         y_probs, y_classes = self.predict(df_eval)
         eval_dict = eval_classifier(target_eval.values, y_probs, y_classes)
+        self.eval_metrics = eval_dict
         return eval_dict
 
     def transform_new_data(self, df: pd.DataFrame) -> pd.DataFrame:
