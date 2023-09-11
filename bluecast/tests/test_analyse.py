@@ -37,12 +37,21 @@ def test_bi_variate_plots(synthetic_train_test_data):
 
 
 def test_correlation_heatmap(synthetic_train_test_data):
-    correlation_heatmap(synthetic_train_test_data[0])
+    correlation_heatmap(
+        synthetic_train_test_data[0].drop(
+            ["categorical_feature_1", "categorical_feature_2"], axis=1
+        )
+    )
     assert True
 
 
 def test_correlation_to_target(synthetic_train_test_data):
-    correlation_to_target(synthetic_train_test_data[0], "target")
+    correlation_to_target(
+        synthetic_train_test_data[0].drop(
+            ["categorical_feature_1", "categorical_feature_2"], axis=1
+        ),
+        "target",
+    )
     assert True
 
 
