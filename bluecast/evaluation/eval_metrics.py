@@ -50,17 +50,18 @@ def eval_classifier(
     logger(f"The micro F1 score is {f1_score_micro}")
     f1_score_weighted = f1_score(y_true, y_classes, average="weighted", zero_division=0)
     logger(f"The weighted F1 score is {f1_score_weighted}")
-    bll = balanced_log_loss(y_true, y_probs)
-    logger(f"The balanced logloss is {bll}")
-    roc_auc = roc_auc_score(y_true, y_probs)
-    logger(f"The ROC auc score is {roc_auc}")
 
     if pd.Series(y_classes).nunique() <= 2:
-        logloss = log_loss(y_true, y_probs)
-        logger(f"The log loss score is {logloss}")
+        bll = balanced_log_loss(y_true, y_probs)
+        logger(f"The balanced logloss is {bll}")
     else:
         logger(f"Skip blanced logloss as number of classes is {pd.Series(y_classes).nunique()}.")
         logloss = 99
+
+    roc_auc = roc_auc_score(y_true, y_probs)
+    logger(f"The ROC auc score is {roc_auc}")
+    logloss = log_loss(y_true, y_probs)
+    logger(f"The log loss score is {logloss}")
 
     full_classification_report = classification_report(y_true, y_classes)
     logger(full_classification_report)
