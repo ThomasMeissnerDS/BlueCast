@@ -5,6 +5,7 @@ This is called as part of the fit_eval function.
 from typing import Any, Dict
 
 import numpy as np
+import pandas as pd
 from sklearn.metrics import (
     accuracy_score,
     classification_report,
@@ -49,9 +50,20 @@ def eval_classifier(
     logger(f"The micro F1 score is {f1_score_micro}")
     f1_score_weighted = f1_score(y_true, y_classes, average="weighted", zero_division=0)
     logger(f"The weighted F1 score is {f1_score_weighted}")
-    bll = balanced_log_loss(y_true, y_probs)
-    logger(f"The balanced logloss is {bll}")
-    roc_auc = roc_auc_score(y_true, y_probs)
+
+    if pd.Series(y_classes).nunique() <= 2:
+        bll = balanced_log_loss(y_true, y_probs)
+        logger(f"The balanced logloss is {bll}")
+    else:
+        bll = 99
+        logger(
+            f"Skip blanced logloss as number of classes is {pd.Series(y_classes).nunique()}."
+        )
+
+    if pd.Series(y_classes).nunique() <= 2:
+        roc_auc = roc_auc_score(y_true, y_probs)
+    else:
+        roc_auc = roc_auc_score(y_true, y_probs, multi_class="ovr")
     logger(f"The ROC auc score is {roc_auc}")
     logloss = log_loss(y_true, y_probs)
     logger(f"The log loss score is {logloss}")

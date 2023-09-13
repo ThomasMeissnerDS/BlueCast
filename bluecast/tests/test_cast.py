@@ -17,7 +17,10 @@ from bluecast.ml_modelling.base_classes import (
     PredictedProbas,
 )
 from bluecast.preprocessing.custom import CustomPreprocessing
-from bluecast.tests.make_data.create_data import create_synthetic_dataframe
+from bluecast.tests.make_data.create_data import (
+    create_synthetic_dataframe,
+    create_synthetic_multiclass_dataframe,
+)
 
 
 @pytest.fixture
@@ -27,7 +30,16 @@ def synthetic_train_test_data() -> Tuple[pd.DataFrame, pd.DataFrame]:
     return df_train, df_val
 
 
-def test_blueprint_xgboost(synthetic_train_test_data):
+@pytest.fixture
+def synthetic_multiclass_train_test_data() -> Tuple[pd.DataFrame, pd.DataFrame]:
+    df_train = create_synthetic_multiclass_dataframe(2000, random_state=20)
+    df_val = create_synthetic_multiclass_dataframe(2000, random_state=200)
+    return df_train, df_val
+
+
+def test_blueprint_xgboost(
+    synthetic_train_test_data, synthetic_multiclass_train_test_data
+):
     """Test that tests the BlueCast class"""
     df_train = synthetic_train_test_data[0]
     df_val = synthetic_train_test_data[1]
@@ -65,6 +77,28 @@ def test_blueprint_xgboost(synthetic_train_test_data):
 
     automl = BlueCast(
         class_problem="binary",
+        target_column="target",
+        conf_xgboost=xgboost_param_config,
+        custom_last_mile_computation=custom_last_mile_computation,
+    )
+    automl.fit_eval(
+        df_train,
+        df_train.drop("target", axis=1),
+        df_train["target"],
+        target_col="target",
+    )
+    print("Autotuning successful.")
+    y_probs, y_classes = automl.predict(df_val.drop("target", axis=1))
+    print("Predicting successful.")
+    assert len(y_probs) == len(df_val.index)
+    assert len(y_classes) == len(df_val.index)
+
+    # Test multiclass pipeline
+    df_train = synthetic_multiclass_train_test_data[0]
+    df_val = synthetic_multiclass_train_test_data[1]
+
+    automl = BlueCast(
+        class_problem="multiclass",
         target_column="target",
         conf_xgboost=xgboost_param_config,
         custom_last_mile_computation=custom_last_mile_computation,
