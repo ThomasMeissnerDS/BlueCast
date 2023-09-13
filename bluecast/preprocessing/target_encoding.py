@@ -97,6 +97,9 @@ class MultiClassTargetEncoder:
         if self.target_col in self.cat_columns:
             x_obj = x.loc[:, self.cat_columns].drop(self.target_col).copy()
             x = x.loc[:, ~x.columns.isin(self.cat_columns)]
+        else:
+            x_obj = x.loc[:, self.cat_columns].copy()
+            x = x.loc[:, ~x.columns.isin(self.cat_columns)]
         for class_ in self.class_names:
             target_enc = self.encoders[f"multiclass_target_encoder_all_cols_{class_}"]
             temp = target_enc.transform(x_obj)
