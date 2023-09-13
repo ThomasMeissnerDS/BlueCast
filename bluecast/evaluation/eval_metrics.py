@@ -55,10 +55,11 @@ def eval_classifier(
     roc_auc = roc_auc_score(y_true, y_probs)
     logger(f"The ROC auc score is {roc_auc}")
 
-    if pd.Series(y_classes).nunique() == 2:
+    if pd.Series(y_classes).nunique() <= 2:
         logloss = log_loss(y_true, y_probs)
         logger(f"The log loss score is {logloss}")
     else:
+        logger(f"Skip blanced logloss as number of classes is {pd.Series(y_classes).nunique()}.")
         logloss = 99
 
     full_classification_report = classification_report(y_true, y_classes)
