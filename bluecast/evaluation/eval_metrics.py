@@ -55,8 +55,8 @@ def eval_classifier(
         bll = balanced_log_loss(y_true, y_probs)
         logger(f"The balanced logloss is {bll}")
     else:
+        bll = 99
         logger(f"Skip blanced logloss as number of classes is {pd.Series(y_classes).nunique()}.")
-        logloss = 99
 
     if pd.Series(y_classes).nunique() <= 2:
         roc_auc = roc_auc_score(y_true, y_probs)
