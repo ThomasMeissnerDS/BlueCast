@@ -7,7 +7,7 @@ pipeline.
 """
 
 from datetime import datetime
-from typing import Dict
+from typing import Dict, Optional, Union
 
 import pandas as pd
 
@@ -41,12 +41,23 @@ class TargetLabelEncoder:
         return cat_mapping
 
     def label_encoder_transform(
-        self, targets: pd.DataFrame, mapping: Dict[str, int]
+        self,
+        targets: pd.DataFrame,
+        mapping: Dict[str, int],
+        target_col: Optional[Union[str, int, float]] = None,
     ) -> pd.DataFrame:
         """Transform target column from categorical to numerical representation."""
         logger(f"{datetime.utcnow()}: Start encoding target labels.")
+        if (
+            isinstance(target_col, str)
+            or isinstance(target_col, int)
+            or isinstance(target_col, float)
+        ):
+            col = target_col
+        else:
+            col = targets.name
+
         targets = targets.astype("category")
-        col = targets.name
         if isinstance(targets, pd.Series):
             targets = targets.to_frame()
         mapping = self.target_label_mapping
@@ -61,9 +72,13 @@ class TargetLabelEncoder:
         targets = self.label_encoder_transform(targets, self.target_label_mapping)
         return targets
 
-    def transform_target_labels(self, targets: pd.DataFrame) -> pd.DataFrame:
+    def transform_target_labels(
+        self, targets: pd.DataFrame, target_col: Optional[Union[str, int, float]] = None
+    ) -> pd.DataFrame:
         """Transform the target column based on already created mappings."""
-        targets = self.label_encoder_transform(targets, self.target_label_mapping)
+        targets = self.label_encoder_transform(
+            targets, self.target_label_mapping, target_col
+        )
         return targets
 
     def label_encoder_reverse_transform(self, targets: pd.Series) -> pd.DataFrame:
