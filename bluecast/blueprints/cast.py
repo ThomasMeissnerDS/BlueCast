@@ -296,7 +296,19 @@ class BlueCast:
         """
         self.fit(df, target_col)
         y_probs, y_classes = self.predict(df_eval)
-        eval_dict = eval_classifier(target_eval.values, y_probs, y_classes)
+
+        if self.feat_type_detector:
+            if self.target_label_encoder and self.feat_type_detector:
+                eval_df = pd.DataFrame(target_eval.values, columns=[target_col])
+                y_true = self.target_label_encoder.transform_target_labels(
+                    eval_df, target_col
+                )
+            else:
+                y_true = target_eval.values
+        else:
+            y_true = target_eval.values
+
+        eval_dict = eval_classifier(y_true, y_probs, y_classes)
         self.eval_metrics = eval_dict
         return eval_dict
 

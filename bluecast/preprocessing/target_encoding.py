@@ -72,11 +72,10 @@ class MultiClassTargetEncoder:
         y_onehot = enc.transform(y)
         self.class_names = y_onehot.columns.to_list()
         if self.target_col in self.cat_columns:
-            x_obj = x.loc[:, self.cat_columns].drop(self.target_col).copy()
-            x = x.loc[:, ~x.columns.isin(self.cat_columns)]
-        else:
-            x_obj = x.loc[:, self.cat_columns].copy()
-            x = x.loc[:, ~x.columns.isin(self.cat_columns)]
+            self.cat_columns.remove(self.target_col)
+
+        x_obj = x.loc[:, self.cat_columns].copy()
+        x = x.loc[:, ~x.columns.isin(self.cat_columns)]
         for class_ in self.class_names:
             target_enc = TargetEncoder()
             target_enc.fit(x_obj, y_onehot[class_])
@@ -94,12 +93,9 @@ class MultiClassTargetEncoder:
         )
         algorithm = "multiclass_target_encoding_onehotter"
         enc = self.encoders[f"{algorithm}_all_cols"]
-        if self.target_col in self.cat_columns:
-            x_obj = x.loc[:, self.cat_columns].drop(self.target_col).copy()
-            x = x.loc[:, ~x.columns.isin(self.cat_columns)]
-        else:
-            x_obj = x.loc[:, self.cat_columns].copy()
-            x = x.loc[:, ~x.columns.isin(self.cat_columns)]
+
+        x_obj = x.loc[:, self.cat_columns].copy()
+        x = x.loc[:, ~x.columns.isin(self.cat_columns)]
         for class_ in self.class_names:
             target_enc = self.encoders[f"multiclass_target_encoder_all_cols_{class_}"]
             temp = target_enc.transform(x_obj)
