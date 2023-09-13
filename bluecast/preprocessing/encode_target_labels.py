@@ -34,7 +34,8 @@ class TargetLabelEncoder:
         if isinstance(targets, pd.Series):
             targets = targets.to_frame()
 
-        values = targets[col].unique()
+        values = sorted(targets[col].unique().tolist())
+
         cat_mapping = {}
         for label, cat in enumerate(values):
             cat_mapping[cat] = label

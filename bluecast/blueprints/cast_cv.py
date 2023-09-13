@@ -142,15 +142,46 @@ class BlueCastCV:
         class_cols: list[str] = []
         for fn, pipeline in enumerate(self.bluecast_models):
             y_probs, y_classes = pipeline.predict(df.loc[:, or_cols])
-            df[f"proba_{fn}"] = y_probs
-            df[f"classes_{fn}"] = y_classes
-            prob_cols.append(f"proba_{fn}")
-            class_cols.append(f"classes_{fn}")
+            if self.class_problem == "multiclass":
+                proba_cols = [
+                    f"class_{col}_proba_model_{fn}" for col in range(y_probs.shape[1])
+                ]
+                df[proba_cols] = y_probs
+                df[f"classes_{fn}"] = y_classes
+                for col in proba_cols:
+                    prob_cols.append(col)
+                class_cols.append(f"classes_{fn}")
 
-        if return_sub_models_preds:
-            return df.loc[:, prob_cols], df.loc[:, class_cols]
+            else:
+                df[f"proba_{fn}"] = y_probs
+                df[f"classes_{fn}"] = y_classes
+                prob_cols.append(f"proba_{fn}")
+                class_cols.append(f"classes_{fn}")
+
+        if self.class_problem == "multiclass":
+            if return_sub_models_preds:
+                return df.loc[:, prob_cols], df.loc[:, class_cols]
+            else:
+                classes = df.loc[:, class_cols].mode(axis=1)[0].astype(int)
+
+                if self.bluecast_models[0].feat_type_detector:
+                    if (
+                        self.bluecast_models[0].target_label_encoder
+                        and self.bluecast_models[0].feat_type_detector
+                    ):
+                        classes = self.bluecast_models[
+                            0
+                        ].target_label_encoder.label_encoder_reverse_transform(classes)
+
+                return (
+                    df.loc[:, prob_cols].mean(axis=1),
+                    classes,
+                )
         else:
-            return (
-                df.loc[:, prob_cols].mean(axis=1),
-                df.loc[:, prob_cols].mean(axis=1) > 0.5,
-            )
+            if return_sub_models_preds:
+                return df.loc[:, prob_cols], df.loc[:, class_cols]
+            else:
+                return (
+                    df.loc[:, prob_cols].mean(axis=1),
+                    df.loc[:, prob_cols].mean(axis=1) > 0.5,
+                )
