@@ -5,6 +5,7 @@ This is called as part of the fit_eval function.
 from typing import Any, Dict
 
 import numpy as np
+import pandas as pd
 from sklearn.metrics import (
     accuracy_score,
     classification_report,
@@ -53,8 +54,12 @@ def eval_classifier(
     logger(f"The balanced logloss is {bll}")
     roc_auc = roc_auc_score(y_true, y_probs)
     logger(f"The ROC auc score is {roc_auc}")
-    logloss = log_loss(y_true, y_probs)
-    logger(f"The log loss score is {logloss}")
+
+    if pd.Series(y_classes).nunique() == 2:
+        logloss = log_loss(y_true, y_probs)
+        logger(f"The log loss score is {logloss}")
+    else:
+        logloss = 99
 
     full_classification_report = classification_report(y_true, y_classes)
     logger(full_classification_report)
