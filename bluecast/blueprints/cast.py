@@ -96,7 +96,7 @@ class BlueCast:
         self.shap_values: Optional[np.ndarray] = None
         self.eval_metrics: Optional[Dict[str, Any]] = None
 
-    def initial_checks(self, df: pd.DataFrame) -> None:
+    def initial_checks(self, df: pd.DataFrame, targets: pd. Series) -> None:
         if not self.conf_training:
             self.conf_training = TrainingConfig()
         if not self.conf_training.enable_feature_selection:
@@ -164,6 +164,16 @@ class BlueCast:
             TrainingConfig alternatively."""
             warnings.warn(message, UserWarning, stacklevel=2)
 
+        nb_unique_targets = targets.nunique()
+        if self.class_problem == "binary" and nb_unique_targets > 2:
+            message = """Detected more than 2 unique labels in target column even though class_problem is set to 'binary'.
+            Set class_problem during instantiation of BlueCast or BlueCastCV to 'multiclass' instead."""
+            raise ValueError(message)
+        if self.class_problem == "multiclass" and nb_unique_targets <= 2:
+            message = """Detected less than 3 unique labels in target column even though class_problem is set to 'multiclass'.
+            Set class_problem during instantiation of BlueCast or BlueCastCV to 'binary' instead."""
+            raise ValueError(message)
+
     def fit(self, df: pd.DataFrame, target_col: str) -> None:
         """Train a full ML pipeline."""
         check_gpu_support()
@@ -186,7 +196,7 @@ class BlueCast:
         if not self.conf_training:
             self.conf_training = TrainingConfig()
 
-        self.initial_checks(df)
+        self.initial_checks(df, df[target_col])
 
         x_train, x_test, y_train, y_test = train_test_split(
             df,
