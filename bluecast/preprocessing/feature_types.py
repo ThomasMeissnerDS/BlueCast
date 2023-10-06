@@ -6,7 +6,6 @@ categorical and datetime columns. It also casts columns to a specific type.
 """
 from typing import Dict, List, Tuple, Union
 
-import numpy as np
 import pandas as pd
 
 
