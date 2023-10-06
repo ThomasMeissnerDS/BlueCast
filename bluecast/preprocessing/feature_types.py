@@ -6,6 +6,7 @@ categorical and datetime columns. It also casts columns to a specific type.
 """
 from typing import Dict, List, Tuple, Union
 
+import numpy as np
 import pandas as pd
 
 
@@ -83,7 +84,7 @@ class FeatureTypeDetector:
             for col in self.date_columns:
                 if col not in self.num_columns:
                     try:
-                        df.loc[:, col] = pd.to_datetime(df[col], yearfirst=True)
+                        df[col] = pd.to_datetime(df[col], yearfirst=True)
                         date_columns.append(col)
                         self.detected_col_types[str(col)] = "datetime[ns]"
                     except Exception:
@@ -95,7 +96,7 @@ class FeatureTypeDetector:
             for col in no_bool_cols:
                 if col not in self.num_columns:
                     try:
-                        df.loc[:, col] = pd.to_datetime(df[col], yearfirst=True)
+                        df[col] = pd.to_datetime(df[col], yearfirst=True)
                         date_columns.append(col)
                         self.detected_col_types[str(col)] = "datetime[ns]"
                     except Exception:

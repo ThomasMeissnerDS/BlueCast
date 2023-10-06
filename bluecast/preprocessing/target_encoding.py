@@ -45,7 +45,7 @@ class BinaryClassTargetEncoder:
         )
         enc = self.encoders["target_encoder_all_cols"]
         x.loc[:, self.cat_columns] = enc.transform(x[self.cat_columns])
-        x.loc[:, self.cat_columns] = x.loc[:, self.cat_columns].astype(float)
+        x[self.cat_columns] = x[self.cat_columns].astype(float)
         return x
 
 

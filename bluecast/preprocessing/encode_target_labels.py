@@ -63,7 +63,7 @@ class TargetLabelEncoder:
             targets = targets.to_frame()
         mapping = self.target_label_mapping
         targets.loc[:, col] = targets.loc[:, col].apply(lambda x: mapping.get(x, 999))
-        targets.loc[:, col] = targets.loc[:, col].astype("int")
+        targets[col] = targets[col].astype("int")
         return targets
 
     def fit_transform_target_labels(self, targets: pd.DataFrame) -> pd.DataFrame:
