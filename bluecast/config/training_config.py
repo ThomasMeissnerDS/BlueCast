@@ -85,6 +85,7 @@ class XgboostTuneParamsConfig:
     steps_min: int = 2
     steps_max: int = 1000
     model_verbosity: int = 0
+    model_verbosity_during_final_training: int = 0
     model_objective: str = "multi:softprob"
     model_eval_metric: str = "mlogloss"
     booster: str = "gbtree"

@@ -33,7 +33,8 @@ class BinaryClassTargetEncoder:
         """Fit target encoder and transform column."""
         logger(f"{datetime.utcnow()}: Start fitting binary target encoder.")
         enc = TargetEncoder(cols=self.cat_columns)
-        x[self.cat_columns] = enc.fit_transform(x[self.cat_columns], y)
+        x.loc[:, self.cat_columns] = enc.fit_transform(x[self.cat_columns], y)
+        x[self.cat_columns] = x[self.cat_columns].astype(float)
         self.encoders["target_encoder_all_cols"] = enc
         return x
 
@@ -43,7 +44,8 @@ class BinaryClassTargetEncoder:
             f"{datetime.utcnow()}: Start transforming categories with binary target encoder."
         )
         enc = self.encoders["target_encoder_all_cols"]
-        x[self.cat_columns] = enc.transform(x[self.cat_columns])
+        x.loc[:, self.cat_columns] = enc.transform(x[self.cat_columns])
+        x[self.cat_columns] = x[self.cat_columns].astype(float)
         return x
 
 
