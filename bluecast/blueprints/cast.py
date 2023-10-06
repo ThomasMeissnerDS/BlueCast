@@ -220,6 +220,7 @@ class BlueCast:
 
         self.schema_detector = SchemaDetector()
         self.schema_detector.fit(x_train)
+        x_train = self.schema_detector.transform(x_train)
         x_test = self.schema_detector.transform(x_test)
 
         if (

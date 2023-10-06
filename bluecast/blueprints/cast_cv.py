@@ -115,7 +115,7 @@ class BlueCastCV:
             X_train, X_val = X.iloc[trn_idx], X.iloc[val_idx]
             y_train, y_val = y.iloc[trn_idx], y.iloc[val_idx]
 
-            X_train[target_col] = y_train
+            X_train.loc[:, target_col] = y_train
 
             self.conf_training.global_random_state += fn
 
