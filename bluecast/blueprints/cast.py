@@ -20,6 +20,7 @@ from bluecast.config.training_config import (
 )
 from bluecast.evaluation.eval_metrics import eval_classifier
 from bluecast.evaluation.shap_values import shap_explanations
+from bluecast.experimentation.tracking import ExperimentTracker
 from bluecast.general_utils.general_utils import check_gpu_support, logger
 from bluecast.ml_modelling.xgboost import XgboostModel
 from bluecast.preprocessing.custom import CustomPreprocessing
@@ -55,6 +56,8 @@ class BlueCast:
     preprocessing steps which take place right after the train test spit.
     :param custom_last_mile_computation: Takes an instance of a CustomPreprocessing class. Allows users to inject custom
     preprocessing steps which take place right before the model training.
+    :param experiment_tracker: Takes an instance of an ExperimentTracker class. If not provided this will be initialized
+    automatically.
     """
 
     def __init__(
@@ -73,6 +76,7 @@ class BlueCast:
         conf_training: Optional[TrainingConfig] = None,
         conf_xgboost: Optional[XgboostTuneParamsConfig] = None,
         conf_params_xgboost: Optional[XgboostFinalParamConfig] = None,
+        experiment_tracker: Optional[ExperimentTracker] = None,
     ):
         self.class_problem = class_problem
         self.prediction_mode: bool = False
@@ -95,6 +99,11 @@ class BlueCast:
         self.custom_feature_selector = custom_feature_selector
         self.shap_values: Optional[np.ndarray] = None
         self.eval_metrics: Optional[Dict[str, Any]] = None
+
+        if experiment_tracker:
+            self.experiment_tracker = experiment_tracker
+        else:
+            self.experiment_tracker = ExperimentTracker()
 
     def initial_checks(self, df: pd.DataFrame) -> None:
         if not self.conf_training:
