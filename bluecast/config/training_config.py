@@ -7,8 +7,8 @@ Default configurations can be loaded, adjusted and passed into the blueprints.
 """
 from typing import Dict, Optional
 
-from pydantic.dataclasses import dataclass
 from pydantic import BaseModel
+from pydantic.dataclasses import dataclass
 
 
 class Config:
