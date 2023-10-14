@@ -70,7 +70,7 @@ def test_retrieve_results_as_df(experiment_tracker):
 
     # Check if the retrieved data matches the added data
     assert results_df["experiment_id"].tolist() == [1]
-    assert results_df["score_category"].tolist() == ["hyperparameter_tuning"]
+    assert results_df["score_category"].tolist() == ["cv_score"]
     assert results_df["eval_scores"].tolist() == [0.95]
     assert results_df["metric_used"].tolist() == ["accuracy"]
     assert results_df["metric_higher_is_better"].tolist() == [True]
