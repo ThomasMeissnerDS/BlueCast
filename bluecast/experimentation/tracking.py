@@ -20,9 +20,8 @@ class ExperimentTracker(BaseClassExperimentTracker):
     def add_results(
         self,
         experiment_id: Union[int, str, float],
-        experiment_name: Union[int, str, float],
         score_category: Literal["hyperparameter_tuning", "oof_score"],
-        training_configs: TrainingConfig,
+        training_config: TrainingConfig,
         model_parameters: Dict[
             Union[str, int, float, None], Union[str, int, float, None]
         ],
@@ -31,9 +30,8 @@ class ExperimentTracker(BaseClassExperimentTracker):
         metric_higher_is_better: bool,
     ) -> None:
         self.experiment_id.append(experiment_id)
-        self.experiment_name.append(experiment_name)
         self.score_category.append(score_category)
-        self.training_configs.append(training_configs.dump(mode="json"))
+        self.training_configs.append(training_config.model_dump(mode="json"))
         self.model_parameters.append(model_parameters)
         self.eval_scores.append(eval_scores)
         self.metric_used.append(metric_used)
@@ -50,10 +48,6 @@ class ExperimentTracker(BaseClassExperimentTracker):
                 "eval_scores": self.eval_scores,
                 "metric_used": self.metric_used,
                 "metric_higher_is_better": self.metric_higher_is_better,
-                # section where we make use of values in the training config
-                "experiment_name": [
-                    conf.experiment_name for conf in self.training_configs
-                ],
             }
         )
         results_df = results_df.merge(

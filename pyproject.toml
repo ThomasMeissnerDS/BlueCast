@@ -25,7 +25,7 @@ numpy = "<1.24.0" # otherwise: AttributeError: module 'numpy' has no attribute '
 optuna = ">=2.8.0"
 pandas = ">=1.1.5"
 plotly = "^5"
-pydantic = "^1.8.2"
+pydantic = ">=2.0.0"
 seaborn = ">=0.10.0"
 scikit-learn = "^1.0.1"
 shap = "^0"

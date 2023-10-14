@@ -7,6 +7,7 @@ Default configurations can be loaded, adjusted and passed into the blueprints.
 """
 from typing import Dict, Optional
 
+from pydantic.dataclasses import dataclass
 from pydantic import BaseModel
 
 
@@ -90,7 +91,8 @@ class XgboostTuneParamsConfig(BaseModel):
     booster: str = "gbtree"
 
 
-class XgboostFinalParamConfig(BaseModel):
+@dataclass
+class XgboostFinalParamConfig:
     """Define final hyper parameters."""
 
     params = {
