@@ -71,7 +71,7 @@ def test_blueprint_cv_xgboost(synthetic_train_test_data):
     assert automl_cv.stratifier
     assert (
         len(automl_cv.experiment_tracker.experiment_id)
-        <= train_config.hyperparameter_tuning_rounds
+        <= train_config.hyperparameter_tuning_rounds * 5  # 5 = default split
     )  # due to Optuna pruning
     assert automl_cv.experiment_tracker.experiment_id[-1] == 9
 
