@@ -33,7 +33,7 @@ class ExperimentTracker(BaseClassExperimentTracker):
         self.experiment_id.append(experiment_id)
         self.experiment_name.append(experiment_name)
         self.score_category.append(score_category)
-        self.training_configs.append(training_configs)
+        self.training_configs.append(training_configs.dump(mode="json"))
         self.model_parameters.append(model_parameters)
         self.eval_scores.append(eval_scores)
         self.metric_used.append(metric_used)
@@ -41,6 +41,7 @@ class ExperimentTracker(BaseClassExperimentTracker):
 
     def retrieve_results_as_df(self) -> pd.DataFrame:
         model_parameters_df = pd.DataFrame(self.model_parameters)
+        training_df = pd.DataFrame(self.training_configs)
 
         results_df = pd.DataFrame(
             {
@@ -53,49 +54,10 @@ class ExperimentTracker(BaseClassExperimentTracker):
                 "experiment_name": [
                     conf.experiment_name for conf in self.training_configs
                 ],
-                "shuffle_during_training": [
-                    conf.shuffle_during_training for conf in self.training_configs
-                ],
-                "hyperparameter_tuning_rounds": [
-                    conf.hyperparameter_tuning_rounds for conf in self.training_configs
-                ],
-                "hyperparameter_tuning_max_runtime_secs": [
-                    conf.hyperparameter_tuning_max_runtime_secs
-                    for conf in self.training_configs
-                ],
-                "hypertuning_cv_folds": [
-                    conf.hypertuning_cv_folds for conf in self.training_configs
-                ],
-                "global_random_state": [
-                    conf.global_random_state for conf in self.training_configs
-                ],
-                "early_stopping_rounds": [
-                    conf.early_stopping_rounds for conf in self.training_configs
-                ],
-                "autotune_model": [
-                    conf.autotune_model for conf in self.training_configs
-                ],
-                "enable_feature_selection": [
-                    conf.enable_feature_selection for conf in self.training_configs
-                ],
-                "train_size": [conf.train_size for conf in self.training_configs],
-                "train_split_stratify": [
-                    conf.train_split_stratify for conf in self.training_configs
-                ],
-                "use_full_data_for_final_model": [
-                    conf.use_full_data_for_final_model for conf in self.training_configs
-                ],
-                "min_features_to_select": [
-                    conf.min_features_to_select for conf in self.training_configs
-                ],
-                "cat_encoding_via_ml_algorithm": [
-                    conf.cat_encoding_via_ml_algorithm for conf in self.training_configs
-                ],
-                "optuna_sampler_n_startup_trials": [
-                    conf.optuna_sampler_n_startup_trials
-                    for conf in self.training_configs
-                ],
             }
+        )
+        results_df = results_df.merge(
+            training_df, how="left", left_index=True, right_index=True
         )
 
         results_df = results_df.merge(

@@ -7,15 +7,14 @@ Default configurations can be loaded, adjusted and passed into the blueprints.
 """
 from typing import Dict, Optional
 
-from pydantic.dataclasses import dataclass
+from pydantic import BaseModel
 
 
 class Config:
     arbitrary_types_allowed = True
 
 
-@dataclass
-class TrainingConfig:
+class TrainingConfig(BaseModel):
     """Define general training parameters.
 
     :param global_random_state: Global random state to use for reproducibility.
@@ -61,8 +60,7 @@ class TrainingConfig:
     experiment_name: str = "new experiment"
 
 
-@dataclass
-class XgboostTuneParamsConfig:
+class XgboostTuneParamsConfig(BaseModel):
     """Define hyperparameter tuning search space."""
 
     max_depth_min: int = 2
@@ -92,8 +90,7 @@ class XgboostTuneParamsConfig:
     booster: str = "gbtree"
 
 
-@dataclass
-class XgboostFinalParamConfig:
+class XgboostFinalParamConfig(BaseModel):
     """Define final hyper parameters."""
 
     params = {
