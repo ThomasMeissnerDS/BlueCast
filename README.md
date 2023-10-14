@@ -40,6 +40,7 @@ the full documentation [here](https://bluecast.readthedocs.io/en/latest/).
     * [Custom preprocessing](#custom-preprocessing)
     * [Custom feature selection](#custom-feature-selection)
     * [Custom ML model](#custom-ml-model)
+    * [Using the inbuilt ExperientTracker](#using-the-inbuilt-experienttracker)
 * [Convenience features](#convenience-features)
 * [Code quality](#code-quality)
 * [Documentation](#documentation)
@@ -515,6 +516,36 @@ predicted_probas, predicted_classes = bluecast.predict(x_test)
 
 Please note that custom ML models require user defined hyperparameter tuning. Pre-defined
 configurations are not available for custom models.
+
+#### Using the inbuilt ExperientTracker
+
+For experimentation environments it can be useful to store all variables
+and results from model runs.
+BlueCast has an inbuilt experiment tracker to enhance the provided insights.
+No setup is required. BlueCast will automatically store all necessary data
+after each hyperparameter tuning trial.
+
+```sh
+# instantiate and train BlueCast
+from bluecast.blueprints.cast import BlueCast
+
+automl = BlueCast(
+        class_problem="binary",
+        target_column="target"
+    )
+
+automl.fit_eval(df_train, df_eval, y_eval, target_col="target")
+
+# access the experiment tracker
+tracker = automl.experiment_tracker
+
+# see all stored information as a Pandas DataFrame
+tracker_df = tracker.retrieve_results_as_df()
+```
+
+Please note that the number of stored experiments will probably be lower
+than the number of started hyperparameter tuning trials. The experiment tracker
+is skipped whenever Optuna prunes a trial.
 
 ## Convenience features
 
