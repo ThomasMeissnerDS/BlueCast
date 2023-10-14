@@ -44,6 +44,7 @@ the full documentation [here](https://bluecast.readthedocs.io/en/latest/).
 * [Convenience features](#convenience-features)
 * [Code quality](#code-quality)
 * [Documentation](#documentation)
+* [Kaggle competition results and example notebooks](#kaggle-competition-results-and-example-notebooks)
 * [How to contribute](#how-to-contribute)
 * [Meta](#meta)
 
@@ -595,6 +596,16 @@ For new features it is expected that unit tests are added.
 ## Documentation
 
 Documentation is provided via [Read the Docs](https://bluecast.readthedocs.io/en/latest/)
+
+## Kaggle competition results and example notebooks
+
+Even though BlueCast has been designed to be a lightweight
+automl framework, it still offers the possibilities to
+reach very good performance. We tested BlueCast in Kaggle
+competitions to show case the libraries capabilities
+feature- and performance-wise.
+
+* ICR top 20% finish with over 6000 participants ([notebook](https://www.kaggle.com/code/thomasmeiner/icr-bluecast-automl-almost-bronze-ranks))
 
 ## How to contribute
 
