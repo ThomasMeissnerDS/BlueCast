@@ -152,7 +152,7 @@ train-test-split, cross-validation can be enabled easily:
 
 ```sh
 from bluecast.blueprints.cast import BlueCast
-from bluecast.config.training_config import TrainingConfig, XgboostTuneParamsConfig
+from bluecast.config.training_config import TrainingConfig
 
 
 # Create a custom training config and adjust general training parameters
@@ -234,7 +234,6 @@ automl = BlueCast(
         target_column="target"
         conf_training=train_config,
         conf_xgboost=xgboost_param_config,
-
     )
 
 automl.fit(df_train, target_col="target")
@@ -392,7 +391,6 @@ y_probs, y_classes = automl.predict(df_val)
 Also this step can be customized. The following example shows how to:
 
 ```sh
-from bluecast.config.training_config import FeatureSelectionConfig
 from bluecast.config.training_config import TrainingConfig
 from bluecast.preprocessing.custom import CustomPreprocessing
 from sklearn.feature_selection import RFECV
