@@ -113,7 +113,10 @@ def test_blueprint_xgboost(
     print("Predicting successful.")
     assert len(y_probs) == len(df_val.index)
     assert len(y_classes) == len(df_val.index)
-    assert automl.experiment_tracker.experiment_id == 0
+    assert (
+        len(automl.experiment_tracker.experiment_id)
+        <= automl.conf_training.hyperparameter_tuning_rounds
+    )
 
 
 class CustomModel(BaseClassMlModel):
@@ -250,3 +253,5 @@ def test_bluecast_with_custom_model():
     # Assert the expected results
     assert isinstance(predicted_probas, np.ndarray)
     assert isinstance(predicted_classes, np.ndarray)
+    print(bluecast.experiment_tracker.experiment_id)
+    assert len(bluecast.experiment_tracker.experiment_id) == 0  # due to custom model
