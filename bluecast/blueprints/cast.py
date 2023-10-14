@@ -282,6 +282,7 @@ class BlueCast:
                 conf_training=self.conf_training,
                 conf_xgboost=self.conf_xgboost,
                 conf_params_xgboost=self.conf_params_xgboost,
+                experiment_tracker=self.experiment_tracker,
             )
         self.ml_model.fit(x_train, x_test, y_train, y_test)
         if self.conf_training and self.conf_training.calculate_shap_values:

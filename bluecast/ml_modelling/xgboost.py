@@ -282,8 +282,12 @@ class XgboostModel(BaseClassMlModel):
                 matthew = matthews_corrcoef(y_test, pred_labels) * -1
 
                 # track results
+                if len(self.experiment_tracker.experiment_id) == 0:
+                    new_id = 0
+                else:
+                    new_id = self.experiment_tracker.experiment_id[-1] + 1
                 self.experiment_tracker.add_results(
-                    experiment_id=self.experiment_tracker.experiment_id[-1] + 1,
+                    experiment_id=new_id,
                     score_category="simple_train_test_score",
                     training_config=self.conf_training,
                     model_parameters=param,
@@ -310,8 +314,12 @@ class XgboostModel(BaseClassMlModel):
                 )
 
                 # track results
+                if len(self.experiment_tracker.experiment_id) == 0:
+                    new_id = 0
+                else:
+                    new_id = self.experiment_tracker.experiment_id[-1] + 1
                 self.experiment_tracker.add_results(
-                    experiment_id=self.experiment_tracker.experiment_id[-1] + 1,
+                    experiment_id=new_id,
                     score_category="cv_score",
                     training_config=self.conf_training,
                     model_parameters=param,

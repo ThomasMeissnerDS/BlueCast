@@ -113,6 +113,7 @@ def test_blueprint_xgboost(
     print("Predicting successful.")
     assert len(y_probs) == len(df_val.index)
     assert len(y_classes) == len(df_val.index)
+    assert automl.experiment_tracker.experiment_id == 0
 
 
 class CustomModel(BaseClassMlModel):
