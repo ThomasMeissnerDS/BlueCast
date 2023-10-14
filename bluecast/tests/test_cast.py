@@ -45,7 +45,6 @@ def test_blueprint_xgboost(
     df_val = synthetic_train_test_data[1]
     xgboost_param_config = XgboostTuneParamsConfig()
     xgboost_param_config.steps_max = 100
-    xgboost_param_config.num_leaves_max = 16
 
     # add custom last mile computation
     class MyCustomLastMilePreprocessing(CustomPreprocessing):
