@@ -41,7 +41,9 @@ def test_blueprint_cv_xgboost(synthetic_train_test_data):
         df_train,
         target_col="target",
     )
-    assert automl_cv.experiment_tracker.experiment_id == 2
+    print(automl_cv.experiment_tracker.experiment_id)
+    assert len(automl_cv.experiment_tracker.experiment_id) == train_config.hyperparameter_tuning_rounds
+    assert automl_cv.experiment_tracker.experiment_id[-1] == 9
     print("Autotuning successful.")
     y_probs, y_classes = automl_cv.predict(df_val.drop("target", axis=1))
     print("Predicting successful.")
@@ -64,7 +66,8 @@ def test_blueprint_cv_xgboost(synthetic_train_test_data):
         target_col="target",
     )
     assert automl_cv.stratifier
-    assert automl_cv.experiment_tracker.experiment_id == 4
+    assert len(automl_cv.experiment_tracker.experiment_id) == train_config.hyperparameter_tuning_rounds
+    assert automl_cv.experiment_tracker.experiment_id[-1] == 9
 
     # Assert that the bluecast_models attribute is updated
     assert len(automl_cv.bluecast_models) == 5
