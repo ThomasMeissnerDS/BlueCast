@@ -23,7 +23,6 @@ def test_blueprint_cv_xgboost(synthetic_train_test_data):
     df_val = synthetic_train_test_data[1]
     xgboost_param_config = XgboostTuneParamsConfig()
     xgboost_param_config.steps_max = 100
-    xgboost_param_config.num_leaves_max = 16
     train_config = TrainingConfig()
     train_config.hyperparameter_tuning_rounds = 10
 

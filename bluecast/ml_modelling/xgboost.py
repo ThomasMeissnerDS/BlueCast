@@ -168,7 +168,7 @@ class XgboostModel(BaseClassMlModel):
         if (
             not self.conf_params_xgboost
             or not self.conf_training
-            or self.experiment_tracker
+            or not self.experiment_tracker
         ):
             raise ValueError(
                 "conf_params_xgboost, conf_training or experiment_tracker is None"
