@@ -10,7 +10,9 @@ class ExperimentTracker(BaseClassExperimentTracker):
     def __init__(self):
         self.experiment_id: List[Union[int, str, float]] = []
         self.experiment_name: List[Union[int, str, float]] = []
-        self.score_category: List[Literal["hyperparameter_tuning", "oof_score"]] = []
+        self.score_category: List[
+            Literal["simple_train_test_score", "cv_score", "oof_score"]
+        ] = []
         self.training_configs: List[TrainingConfig] = []
         self.model_parameters: List[Dict[Union[str, int, float, None]]] = []
         self.eval_scores: List[Union[float, int, None]] = []
@@ -20,7 +22,7 @@ class ExperimentTracker(BaseClassExperimentTracker):
     def add_results(
         self,
         experiment_id: Union[int, str, float],
-        score_category: Literal["hyperparameter_tuning", "oof_score"],
+        score_category: Literal["simple_train_test_score", "cv_score", "oof_score"],
         training_config: TrainingConfig,
         model_parameters: Dict[
             Union[str, int, float, None], Union[str, int, float, None]

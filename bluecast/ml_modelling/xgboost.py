@@ -19,6 +19,7 @@ from bluecast.config.training_config import (
     XgboostFinalParamConfig,
     XgboostTuneParamsConfig,
 )
+from bluecast.experimentation.tracking import ExperimentTracker
 from bluecast.general_utils.general_utils import check_gpu_support, logger
 from bluecast.ml_modelling.base_classes import BaseClassMlModel
 
@@ -32,12 +33,14 @@ class XgboostModel(BaseClassMlModel):
         conf_training: Optional[TrainingConfig] = None,
         conf_xgboost: Optional[XgboostTuneParamsConfig] = None,
         conf_params_xgboost: Optional[XgboostFinalParamConfig] = None,
+        experiment_tracker: Optional[ExperimentTracker] = None,
     ):
         self.model: Optional[xgb.XGBClassifier] = None
         self.class_problem = class_problem
         self.conf_training = conf_training
         self.conf_xgboost = conf_xgboost
         self.conf_params_xgboost = conf_params_xgboost
+        self.experiment_tracker = experiment_tracker
 
     def calculate_class_weights(self, y: pd.Series) -> Dict[str, float]:
         """Calculate class weights of target column."""
@@ -78,8 +81,14 @@ class XgboostModel(BaseClassMlModel):
         logger(f"{datetime.utcnow()}: Start fitting Xgboost model.")
         self.check_load_confs()
 
-        if not self.conf_params_xgboost or not self.conf_training:
-            raise ValueError("conf_params_xgboost or conf_training is None")
+        if (
+            not self.conf_params_xgboost
+            or not self.conf_training
+            or not self.experiment_tracker
+        ):
+            raise ValueError(
+                "conf_params_xgboost, conf_training or experiment_tracker is None"
+            )
 
         if not self.conf_training.show_detailed_tuning_logs:
             optuna.logging.set_verbosity(optuna.logging.WARNING)
@@ -156,8 +165,14 @@ class XgboostModel(BaseClassMlModel):
         An alternative config can be provided to overwrite the hyperparameter search space.
         """
         logger(f"{datetime.utcnow()}: Start hyperparameter tuning of Xgboost model.")
-        if not self.conf_params_xgboost or not self.conf_training:
-            raise ValueError("conf_params_xgboost or conf_training is None")
+        if (
+            not self.conf_params_xgboost
+            or not self.conf_training
+            or self.experiment_tracker
+        ):
+            raise ValueError(
+                "conf_params_xgboost, conf_training or experiment_tracker is None"
+            )
 
         d_test = xgb.DMatrix(
             x_test,
@@ -172,9 +187,10 @@ class XgboostModel(BaseClassMlModel):
             not self.conf_params_xgboost
             or not self.conf_training
             or not self.conf_xgboost
+            or not self.experiment_tracker
         ):
             raise ValueError(
-                "At least one of the configs is None, which is not allowed"
+                "At least one of the configs or experiment_tracker is None, which is not allowed"
             )
 
         def objective(trial):
@@ -264,6 +280,17 @@ class XgboostModel(BaseClassMlModel):
                 preds = model.predict(d_test)
                 pred_labels = np.asarray([np.argmax(line) for line in preds])
                 matthew = matthews_corrcoef(y_test, pred_labels) * -1
+
+                # track results
+                self.experiment_tracker.add_results(
+                    experiment_id=self.experiment_tracker.experiment_id[-1] + 1,
+                    score_category="simple_train_test_score",
+                    training_config=self.conf_training,
+                    model_parameters=param,
+                    eval_scores=matthew,
+                    metric_used="matthew",
+                    metric_higher_is_better=True,
+                )
                 return matthew
             else:
                 result = xgb.cv(
@@ -278,9 +305,22 @@ class XgboostModel(BaseClassMlModel):
                     shuffle=self.conf_training.shuffle_during_training,
                 )
 
-                return result["test-mlogloss-mean"].mean() + (
+                adjusted_score = result["test-mlogloss-mean"].mean() + (
                     result["test-mlogloss-mean"].std() ** 0.7
                 )
+
+                # track results
+                self.experiment_tracker.add_results(
+                    experiment_id=self.experiment_tracker.experiment_id[-1] + 1,
+                    score_category="cv_score",
+                    training_config=self.conf_training,
+                    model_parameters=param,
+                    eval_scores=adjusted_score,
+                    metric_used="adjusted ml logloss",
+                    metric_higher_is_better=False,
+                )
+
+                return adjusted_score
 
         algorithm = "xgboost"
         sampler = optuna.samplers.TPESampler(

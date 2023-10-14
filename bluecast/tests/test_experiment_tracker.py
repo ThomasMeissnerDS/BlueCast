@@ -12,7 +12,7 @@ def experiment_tracker():
 def test_add_results(experiment_tracker):
     # Add some sample data
     experiment_id = 1
-    score_category = "hyperparameter_tuning"
+    score_category = "cv_score"
     training_config = (
         TrainingConfig()
     )  # You may need to create a valid TrainingConfig instance
@@ -33,7 +33,7 @@ def test_add_results(experiment_tracker):
 
     # Check if the data was added correctly
     assert experiment_tracker.experiment_id == [1]
-    assert experiment_tracker.score_category == ["hyperparameter_tuning"]
+    assert experiment_tracker.score_category == ["cv_score"]
     assert experiment_tracker.training_configs == [
         training_config.model_dump(mode="json")
     ]
@@ -46,7 +46,7 @@ def test_add_results(experiment_tracker):
 def test_retrieve_results_as_df(experiment_tracker):
     # Add some sample data
     experiment_id = 1
-    score_category = "hyperparameter_tuning"
+    score_category = "cv_score"
     training_config = (
         TrainingConfig()
     )  # You may need to create a valid TrainingConfig instance

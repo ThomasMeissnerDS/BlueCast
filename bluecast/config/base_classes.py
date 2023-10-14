@@ -16,7 +16,7 @@ class BaseClassExperimentTracker(ABC):
     def add_results(
         self,
         experiment_id: Union[int, str, float],
-        score_category: Literal["hyperparameter_tuning", "oof_score"],
+        score_category: Literal["simple_train_test_score", "cv_score", "oof_score"],
         training_config: TrainingConfig,
         model_parameters: Dict[
             Union[str, int, float, None], Union[str, int, float, None]
