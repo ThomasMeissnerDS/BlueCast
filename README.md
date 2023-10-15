@@ -90,6 +90,18 @@ automl.fit(df_train, target_col="target")
 y_probs, y_classes = automl.predict(df_val)
 ```
 
+BlueCast has simple utilities to save and load your pipeline:
+
+```sh
+from bluecast.general_utils.general_utils import save_to_production, load_for_production
+
+# save pipeline including tracker
+save_to_production(automl, "/kaggle/working/", "bluecast_cv_pipeline")
+
+# in production or for further experiments this can be loaded again
+automl = load_for_production("/kaggle/working/", "bluecast_cv_pipeline")
+```
+
 ### Advanced usage
 
 #### Explanatory analysis
@@ -517,6 +529,15 @@ predicted_probas, predicted_classes = bluecast.predict(x_test)
 
 Please note that custom ML models require user defined hyperparameter tuning. Pre-defined
 configurations are not available for custom models.
+Also note that the calculation of SHAP values only works with tree based models by
+default. For other model architectures disable SHAP values in the TrainingConfig
+via:
+
+`train_config.calculate_shap_values = True`
+
+Just instantiate a new instance of the TrainingConfig, update the param as above
+and pass the config as an argument to the BlueCast instance during instantiation.
+Feature importance can be added in the custom model definition.
 
 #### Using the inbuilt ExperientTracker
 
