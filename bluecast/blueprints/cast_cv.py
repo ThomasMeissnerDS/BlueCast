@@ -16,9 +16,11 @@ from bluecast.preprocessing.feature_selection import RFECVSelector
 
 
 class BlueCastCV:
-    """Wrapper to train and predict multiple blueCast intsances.
+    """Wrapper to train and predict multiple blueCast intstances.
 
-    A custom splitter can be provided."""
+    Check the BlueCast class documentation for additional parameter details.
+    A custom splitter can be provided.
+    """
 
     def __init__(
         self,

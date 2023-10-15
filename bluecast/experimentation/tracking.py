@@ -8,6 +8,14 @@ from bluecast.config.training_config import TrainingConfig
 
 
 class ExperimentTracker(BaseClassExperimentTracker):
+    """
+    Default implementation of ExperimentTracker used in BlueCast
+    and BlueCastCV pipelines. This triggers automatically as long
+    as the default Xgboost model is used. For custom ml models
+    ueers need to create an own Tracker. The base class from
+    bluecast.config.base_classes can be used as an inspiration.
+    """
+
     def __init__(self):
         self.experiment_id: List[Union[int, str, float]] = []
         self.experiment_name: List[Union[int, str, float]] = []
@@ -33,6 +41,19 @@ class ExperimentTracker(BaseClassExperimentTracker):
         metric_used: str,
         metric_higher_is_better: bool,
     ) -> None:
+        """
+        Add an individual experiment result into the tracker.
+
+        :param experiment_id: Sequential id. Make sure add an increment.
+        :param score_category: Chose one of ["simple_train_test_score", "cv_score", "oof_score"].
+            "simple_train_test_score" is the default where a simple train-test split is done. "cv_score" is called
+            when cross validation has been enabled in the TrainingConfig.
+        :param training_config: TrainingConfig instance from bluecast.config.training_config.
+        :param model_parameters: Dictionary with parameters of ml model (i.e. learning rate)
+        :param eval_scores: The actual score of the experiment.
+        :param metric_used: The name of the eval metric.
+        :param metric_higher_is_better: True or False.
+        """
         self.experiment_id.append(experiment_id)
         self.score_category.append(score_category)
         try:
@@ -46,6 +67,12 @@ class ExperimentTracker(BaseClassExperimentTracker):
         self.created_at.append(datetime.utcnow())
 
     def retrieve_results_as_df(self) -> pd.DataFrame:
+        """
+        Convert ExperimentTracker information into a Pandas DataFrame.
+
+        In the default implementation this contains TrainingConfig, XgboostConfig, hyperparameters, eval metric
+        and score.
+        """
         model_parameters_df = pd.DataFrame(self.model_parameters)
         training_df = pd.DataFrame(self.training_configs)
 

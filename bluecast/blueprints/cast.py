@@ -45,19 +45,19 @@ class BlueCast:
     :param :class_problem: Takes a string containing the class problem type. Either "binary" or "multiclass".
     :param :target_column: Takes a string containing the name of the target column.
     :param :cat_columns: Takes a list of strings containing the names of the categorical columns. If not provided,
-    BlueCast will infer these automatically.
+        BlueCast will infer these automatically.
     :param :date_columns: Takes a list of strings containing the names of the date columns. If not provided,
-    BlueCast will infer these automatically.
+        BlueCast will infer these automatically.
     :param :time_split_column: Takes a string containing the name of the time split column. If not provided,
-    BlueCast will not split the data by time or order, but do a random split instead.
+        BlueCast will not split the data by time or order, but do a random split instead.
     :param :ml_model: Takes an instance of a XgboostModel class. If not provided, BlueCast will instantiate one.
-    This is an API to pass any model class. Inherit the baseclass from ml_modelling.base_model.BaseModel.
+        This is an API to pass any model class. Inherit the baseclass from ml_modelling.base_model.BaseModel.
     :param custom_preprocessor: Takes an instance of a CustomPreprocessing class. Allows users to inject custom
-    preprocessing steps which take place right after the train test spit.
+        preprocessing steps which take place right after the train test spit.
     :param custom_last_mile_computation: Takes an instance of a CustomPreprocessing class. Allows users to inject custom
-    preprocessing steps which take place right before the model training.
+        preprocessing steps which take place right before the model training.
     :param experiment_tracker: Takes an instance of an ExperimentTracker class. If not provided this will be initialized
-    automatically.
+        automatically.
     """
 
     def __init__(

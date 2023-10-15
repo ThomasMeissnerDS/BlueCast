@@ -40,6 +40,7 @@ class TrainingConfig(BaseModel):
         categorical encoding is done via a ML algorithm. If False, the categorical encoding is done via a  target
         encoding in the preprocessing steps. See the ReadMe for more details.
     :param show_detailed_tuning_logs: Whether to show detailed tuning logs. Not used when custom ML model is passed.
+    :param experiment_name: Name of the experiment. Will be logged inside the ExperimentTracker.
     """
 
     global_random_state: int = 10

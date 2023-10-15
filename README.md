@@ -13,9 +13,7 @@
 [![python](https://img.shields.io/badge/Python-3.10-3776AB.svg?style=flat&logo=python&logoColor=white)](https://www.python.org)
 [![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg?style=flat-square)](http://makeapullrequest.com)
 
-A lightweight and fast auto-ml library. This is the successor of the
-e2eml automl library. While e2eml tried to cover many model
-architectures and a lot of different preprocessing options,
+A lightweight and fast auto-ml library.
 BlueCast focuses on a few model architectures (on default Xgboost
 only) and a few preprocessing options (only what is
 needed for Xgboost). This allows for a much faster development
@@ -486,6 +484,8 @@ class CustomModel(BaseClassMlModel):
     ) -> None:
         self.model = LogisticRegression()
         self.model.fit(x_train, y_train)
+        # if you wih to track experiments using an own ExperimentTracker add it here
+        # or in the fit method itself
 
     def predict(self, df: pd.DataFrame) -> Tuple[PredictedProbas, PredictedClasses]:
         predicted_probas = self.model.predict_proba(df)
