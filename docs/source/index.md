@@ -13,9 +13,7 @@
 [![python](https://img.shields.io/badge/Python-3.10-3776AB.svg?style=flat&logo=python&logoColor=white)](https://www.python.org)
 [![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg?style=flat-square)](http://makeapullrequest.com)
 
-A lightweight and fast auto-ml library. This is the successor of the
-e2eml automl library. While e2eml tried to cover many model
-architectures and a lot of different preprocessing options,
+A lightweight and fast auto-ml library.
 BlueCast focuses on a few model architectures (on default Xgboost
 only) and a few preprocessing options (only what is
 needed for Xgboost). This allows for a much faster development
@@ -40,9 +38,11 @@ the full documentation [here](https://bluecast.readthedocs.io/en/latest/).
     * [Custom preprocessing](#custom-preprocessing)
     * [Custom feature selection](#custom-feature-selection)
     * [Custom ML model](#custom-ml-model)
+    * [Using the inbuilt ExperientTracker](#using-the-inbuilt-experienttracker)
 * [Convenience features](#convenience-features)
 * [Code quality](#code-quality)
 * [Documentation](#documentation)
+* [Kaggle competition results and example notebooks](#kaggle-competition-results-and-example-notebooks)
 * [How to contribute](#how-to-contribute)
 * [Meta](#meta)
 
@@ -88,6 +88,18 @@ automl = BlueCast(
 
 automl.fit(df_train, target_col="target")
 y_probs, y_classes = automl.predict(df_val)
+```
+
+BlueCast has simple utilities to save and load your pipeline:
+
+```sh
+from bluecast.general_utils.general_utils import save_to_production, load_for_production
+
+# save pipeline including tracker
+save_to_production(automl, "/kaggle/working/", "bluecast_cv_pipeline")
+
+# in production or for further experiments this can be loaded again
+automl = load_for_production("/kaggle/working/", "bluecast_cv_pipeline")
 ```
 
 ### Advanced usage
@@ -152,7 +164,7 @@ train-test-split, cross-validation can be enabled easily:
 
 ```sh
 from bluecast.blueprints.cast import BlueCast
-from bluecast.config.training_config import TrainingConfig, XgboostTuneParamsConfig
+from bluecast.config.training_config import TrainingConfig
 
 
 # Create a custom training config and adjust general training parameters
@@ -234,7 +246,6 @@ automl = BlueCast(
         target_column="target"
         conf_training=train_config,
         conf_xgboost=xgboost_param_config,
-
     )
 
 automl.fit(df_train, target_col="target")
@@ -392,7 +403,6 @@ y_probs, y_classes = automl.predict(df_val)
 Also this step can be customized. The following example shows how to:
 
 ```sh
-from bluecast.config.training_config import FeatureSelectionConfig
 from bluecast.config.training_config import TrainingConfig
 from bluecast.preprocessing.custom import CustomPreprocessing
 from sklearn.feature_selection import RFECV
@@ -486,6 +496,8 @@ class CustomModel(BaseClassMlModel):
     ) -> None:
         self.model = LogisticRegression()
         self.model.fit(x_train, y_train)
+        # if you wih to track experiments using an own ExperimentTracker add it here
+        # or in the fit method itself
 
     def predict(self, df: pd.DataFrame) -> Tuple[PredictedProbas, PredictedClasses]:
         predicted_probas = self.model.predict_proba(df)
@@ -517,6 +529,53 @@ predicted_probas, predicted_classes = bluecast.predict(x_test)
 
 Please note that custom ML models require user defined hyperparameter tuning. Pre-defined
 configurations are not available for custom models.
+Also note that the calculation of SHAP values only works with tree based models by
+default. For other model architectures disable SHAP values in the TrainingConfig
+via:
+
+`train_config.calculate_shap_values = True`
+
+Just instantiate a new instance of the TrainingConfig, update the param as above
+and pass the config as an argument to the BlueCast instance during instantiation.
+Feature importance can be added in the custom model definition.
+
+#### Using the inbuilt ExperientTracker
+
+For experimentation environments it can be useful to store all variables
+and results from model runs.
+BlueCast has an inbuilt experiment tracker to enhance the provided insights.
+No setup is required. BlueCast will automatically store all necessary data
+after each hyperparameter tuning trial.
+
+```sh
+# instantiate and train BlueCast
+from bluecast.blueprints.cast import BlueCast
+
+automl = BlueCast(
+        class_problem="binary",
+        target_column="target"
+    )
+
+automl.fit_eval(df_train, df_eval, y_eval, target_col="target")
+
+# access the experiment tracker
+tracker = automl.experiment_tracker
+
+# see all stored information as a Pandas DataFrame
+tracker_df = tracker.retrieve_results_as_df()
+```
+
+Now from here you could even feed selected columns back into a BlueCast
+instance and try to predict the eval_score to check the get the feature
+importance of your experiment data! Maybe you uncover hidden patterns
+for your model training.
+
+Please note that the number of stored experiments will probably be lower
+than the number of started hyperparameter tuning trials. The experiment tracker
+is skipped whenever Optuna prunes a trial.
+The experiment triggers whenever the `fit` or `fit_eval` methods of a BlueCast
+class instance are called (also within BlueCastCV). This means for custom
+models the tracker will not trigger automatically and has to be added manually.
 
 ## Convenience features
 
@@ -566,6 +625,17 @@ For new features it is expected that unit tests are added.
 ## Documentation
 
 Documentation is provided via [Read the Docs](https://bluecast.readthedocs.io/en/latest/)
+
+## Kaggle competition results and example notebooks
+
+Even though BlueCast has been designed to be a lightweight
+automl framework, it still offers the possibilities to
+reach very good performance. We tested BlueCast in Kaggle
+competitions to show case the libraries capabilities
+feature- and performance-wise.
+
+* ICR top 20% finish with over 6000 participants ([notebook](https://www.kaggle.com/code/thomasmeiner/icr-bluecast-automl-almost-bronze-ranks))
+* An advanced example covering lots of functionalities ([notebook](https://www.kaggle.com/code/thomasmeiner/ps3e23-automl-eda-outlier-detection/notebook))
 
 ## How to contribute
 
