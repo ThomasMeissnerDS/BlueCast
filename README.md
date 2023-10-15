@@ -635,6 +635,7 @@ competitions to show case the libraries capabilities
 feature- and performance-wise.
 
 * ICR top 20% finish with over 6000 participants ([notebook](https://www.kaggle.com/code/thomasmeiner/icr-bluecast-automl-almost-bronze-ranks))
+* An advanced example covering lots of functionalities ([notebook](https://www.kaggle.com/code/thomasmeiner/ps3e23-automl-eda-outlier-detection/notebook))
 
 ## How to contribute
 
