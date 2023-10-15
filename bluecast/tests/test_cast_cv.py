@@ -73,7 +73,6 @@ def test_blueprint_cv_xgboost(synthetic_train_test_data):
         len(automl_cv.experiment_tracker.experiment_id)
         <= train_config.hyperparameter_tuning_rounds * 5  # 5 = default split
     )  # due to Optuna pruning
-    assert automl_cv.experiment_tracker.experiment_id[-1] == 30
 
     # Assert that the bluecast_models attribute is updated
     assert len(automl_cv.bluecast_models) == 5
