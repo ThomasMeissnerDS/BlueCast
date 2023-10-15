@@ -23,7 +23,6 @@ def test_blueprint_cv_xgboost(synthetic_train_test_data):
     df_val = synthetic_train_test_data[1]
     xgboost_param_config = XgboostTuneParamsConfig()
     xgboost_param_config.steps_max = 100
-    xgboost_param_config.num_leaves_max = 16
     train_config = TrainingConfig()
     train_config.hyperparameter_tuning_rounds = 10
 
@@ -42,6 +41,12 @@ def test_blueprint_cv_xgboost(synthetic_train_test_data):
         df_train,
         target_col="target",
     )
+    print(automl_cv.experiment_tracker.experiment_id)
+    assert (
+        len(automl_cv.experiment_tracker.experiment_id)
+        <= train_config.hyperparameter_tuning_rounds * nb_models
+    )
+    assert automl_cv.experiment_tracker.experiment_id[-1] == 22
     print("Autotuning successful.")
     y_probs, y_classes = automl_cv.predict(df_val.drop("target", axis=1))
     print("Predicting successful.")
@@ -64,6 +69,10 @@ def test_blueprint_cv_xgboost(synthetic_train_test_data):
         target_col="target",
     )
     assert automl_cv.stratifier
+    assert (
+        len(automl_cv.experiment_tracker.experiment_id)
+        <= train_config.hyperparameter_tuning_rounds * 5  # 5 = default split
+    )  # due to Optuna pruning
 
     # Assert that the bluecast_models attribute is updated
     assert len(automl_cv.bluecast_models) == 5

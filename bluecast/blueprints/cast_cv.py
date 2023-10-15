@@ -9,15 +9,18 @@ from bluecast.config.training_config import (
     XgboostFinalParamConfig,
     XgboostTuneParamsConfig,
 )
+from bluecast.experimentation.tracking import ExperimentTracker
 from bluecast.ml_modelling.xgboost import XgboostModel
 from bluecast.preprocessing.custom import CustomPreprocessing
 from bluecast.preprocessing.feature_selection import RFECVSelector
 
 
 class BlueCastCV:
-    """Wrapper to train and predict multiple blueCast intsances.
+    """Wrapper to train and predict multiple blueCast intstances.
 
-    A custom splitter can be provided."""
+    Check the BlueCast class documentation for additional parameter details.
+    A custom splitter can be provided.
+    """
 
     def __init__(
         self,
@@ -26,6 +29,7 @@ class BlueCastCV:
         conf_training: Optional[TrainingConfig] = None,
         conf_xgboost: Optional[XgboostTuneParamsConfig] = None,
         conf_params_xgboost: Optional[XgboostFinalParamConfig] = None,
+        experiment_tracker: Optional[ExperimentTracker] = None,
         custom_last_mile_computation: Optional[CustomPreprocessing] = None,
         custom_preprocessor: Optional[CustomPreprocessing] = None,
         custom_feature_selector: Optional[
@@ -43,6 +47,11 @@ class BlueCastCV:
         self.bluecast_models: List[BlueCast] = []
         self.stratifier = stratifier
         self.ml_model = ml_model
+
+        if experiment_tracker:
+            self.experiment_tracker = experiment_tracker
+        else:
+            self.experiment_tracker = ExperimentTracker()
 
     def prepare_data(
         self, df: pd.DataFrame, target: str
@@ -86,6 +95,7 @@ class BlueCastCV:
                 conf_training=self.conf_training,
                 conf_xgboost=self.conf_xgboost,
                 conf_params_xgboost=self.conf_params_xgboost,
+                experiment_tracker=self.experiment_tracker,
                 custom_preprocessor=self.custom_preprocessor,
                 custom_feature_selector=self.custom_feature_selector,
                 custom_last_mile_computation=self.custom_last_mile_computation,
@@ -93,6 +103,9 @@ class BlueCastCV:
             )
             automl.fit(X_train, target_col=target_col)
             self.bluecast_models.append(automl)
+
+            # overwrite experiment tracker to pass it into next iteration
+            self.experiment_tracker = automl.experiment_tracker
 
     def fit_eval(self, df: pd.DataFrame, target_col: str) -> None:
         """Fit multiple BlueCast instances on different data splits.
@@ -125,6 +138,7 @@ class BlueCastCV:
                 conf_training=self.conf_training,
                 conf_xgboost=self.conf_xgboost,
                 conf_params_xgboost=self.conf_params_xgboost,
+                experiment_tracker=self.experiment_tracker,
                 custom_preprocessor=self.custom_preprocessor,
                 custom_feature_selector=self.custom_feature_selector,
                 custom_last_mile_computation=self.custom_last_mile_computation,
@@ -132,6 +146,9 @@ class BlueCastCV:
             )
             automl.fit_eval(X_train, X_val, y_val, target_col=target_col)
             self.bluecast_models.append(automl)
+
+            # overwrite experiment tracker to pass it into next iteration
+            self.experiment_tracker = automl.experiment_tracker
 
     def predict(
         self, df: pd.DataFrame, return_sub_models_preds: bool = False

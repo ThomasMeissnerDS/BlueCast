@@ -7,6 +7,7 @@ Default configurations can be loaded, adjusted and passed into the blueprints.
 """
 from typing import Dict, Optional
 
+from pydantic import BaseModel
 from pydantic.dataclasses import dataclass
 
 
@@ -14,8 +15,7 @@ class Config:
     arbitrary_types_allowed = True
 
 
-@dataclass
-class TrainingConfig:
+class TrainingConfig(BaseModel):
     """Define general training parameters.
 
     :param global_random_state: Global random state to use for reproducibility.
@@ -40,6 +40,7 @@ class TrainingConfig:
         categorical encoding is done via a ML algorithm. If False, the categorical encoding is done via a  target
         encoding in the preprocessing steps. See the ReadMe for more details.
     :param show_detailed_tuning_logs: Whether to show detailed tuning logs. Not used when custom ML model is passed.
+    :param experiment_name: Name of the experiment. Will be logged inside the ExperimentTracker.
     """
 
     global_random_state: int = 10
@@ -58,10 +59,10 @@ class TrainingConfig:
     cat_encoding_via_ml_algorithm: bool = False
     show_detailed_tuning_logs: bool = False
     optuna_sampler_n_startup_trials: int = 10
+    experiment_name: str = "new experiment"
 
 
-@dataclass
-class XgboostTuneParamsConfig:
+class XgboostTuneParamsConfig(BaseModel):
     """Define hyperparameter tuning search space."""
 
     max_depth_min: int = 2
