@@ -544,9 +544,17 @@ tracker = automl.experiment_tracker
 tracker_df = tracker.retrieve_results_as_df()
 ```
 
+Now from here you could even feed selected columns back into a BlueCast
+instance and try to predict the eval_score to check the get the feature
+importance of your experiment data! Maybe you uncover hidden patterns
+for your model training.
+
 Please note that the number of stored experiments will probably be lower
 than the number of started hyperparameter tuning trials. The experiment tracker
 is skipped whenever Optuna prunes a trial.
+The experiment triggers whenever the `fit` or `fit_eval` methods of a BlueCast
+class instance are called (also within BlueCastCV). This means for custom
+models the tracker will not trigger automatically and has to be added manually.
 
 ## Convenience features
 

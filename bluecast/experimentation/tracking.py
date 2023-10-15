@@ -1,3 +1,4 @@
+from datetime import datetime
 from typing import Dict, List, Literal, Union
 
 import pandas as pd
@@ -18,6 +19,7 @@ class ExperimentTracker(BaseClassExperimentTracker):
         self.eval_scores: List[Union[float, int, None]] = []
         self.metric_used: List[str] = []  # TODO: Split by metrics in eval_results?
         self.metric_higher_is_better: List[bool] = []
+        self.created_at: List[datetime.datetime] = []
 
     def add_results(
         self,
@@ -33,11 +35,15 @@ class ExperimentTracker(BaseClassExperimentTracker):
     ) -> None:
         self.experiment_id.append(experiment_id)
         self.score_category.append(score_category)
-        self.training_configs.append(training_config.model_dump(mode="json"))
+        try:
+            self.training_configs.append(training_config.model_dump(mode="json"))
+        except AttributeError:  # triggers for older Pydantic versions
+            self.training_configs.append(training_config.dict())
         self.model_parameters.append(model_parameters)
         self.eval_scores.append(eval_scores)
         self.metric_used.append(metric_used)
         self.metric_higher_is_better.append(metric_higher_is_better)
+        self.created_at.append(datetime.utcnow())
 
     def retrieve_results_as_df(self) -> pd.DataFrame:
         model_parameters_df = pd.DataFrame(self.model_parameters)
