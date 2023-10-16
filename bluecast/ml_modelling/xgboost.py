@@ -4,6 +4,7 @@ This module contains a wrapper for the Xgboost classification model. It can be u
 It also calculates class weights for imbalanced datasets. The weights may or may not be used deepending on the
 hyperparameter tuning.
 """
+from copy import deepcopy
 from datetime import datetime
 from typing import Dict, Literal, Optional, Tuple
 
@@ -97,10 +98,7 @@ class XgboostModel(BaseClassMlModel):
             self.autotune(x_train, x_test, y_train, y_test)
             print("Finished hyperparameter tuning")
 
-        if (
-            self.conf_training.autotune_model
-            and self.conf_training.enable_grid_search_fine_tuning
-        ):
+        if self.conf_training.enable_grid_search_fine_tuning:
             self.fine_tune(x_train, x_test, y_train, y_test)
             print("Finished Grid search fine tuning")
 
@@ -431,20 +429,29 @@ class XgboostModel(BaseClassMlModel):
                 trial, "test-mlogloss"
             )
             # copy best params to not overwrite them
-            tuned_params = self.conf_params_xgboost.params
+            tuned_params = deepcopy(self.conf_params_xgboost.params)
+            print(tuned_params)
             alpha_space = trial.suggest_float(
-                "alpha", self.conf_xgboost.alpha_min, self.conf_xgboost.alpha_max
+                "alpha",
+                self.conf_params_xgboost.params["alpha"] * 0.9,
+                self.conf_params_xgboost.params["alpha"] * 1.1,
             )
             lambda_space = trial.suggest_float(
-                "lambda", self.conf_xgboost.lambda_min, self.conf_xgboost.lambda_max
+                "lambda",
+                self.conf_params_xgboost.params["lambda"] * 0.9,
+                self.conf_params_xgboost.params["lambda"] * 1.1,
             )
             eta_space = trial.suggest_float(
-                "eta", self.conf_xgboost.eta_min, self.conf_xgboost.eta_max
+                "eta",
+                self.conf_params_xgboost.params["eta"] * 0.9,
+                self.conf_params_xgboost.params["eta"] * 1.1,
             )
 
             tuned_params["alpha"] = alpha_space
             tuned_params["lambda"] = lambda_space
             tuned_params["eta"] = eta_space
+
+            print(tuned_params)
 
             steps = tuned_params["steps"]
             del tuned_params["steps"]
@@ -520,24 +527,24 @@ class XgboostModel(BaseClassMlModel):
             and isinstance(self.conf_params_xgboost.params["eta"], float)
         ):
             search_space = {
-                "n_estimators_grid": np.linspace(
+                "alpha": np.linspace(
                     self.conf_params_xgboost.params["alpha"]
                     * 0.9,  # TODO: fix design flaw in config and get rid of nested dict
                     self.conf_params_xgboost.params["alpha"] * 1.1,
                     5,
-                    dtype=int,
+                    dtype=float,
                 ),
-                "max_depth_grid": np.linspace(
+                "lambda": np.linspace(
                     self.conf_params_xgboost.params["lambda"] * 0.9,
                     self.conf_params_xgboost.params["lambda"] * 1.1,
                     5,
-                    dtype=int,
+                    dtype=float,
                 ),
-                "eta_depth_grid": np.linspace(
+                "eta": np.linspace(
                     self.conf_params_xgboost.params["eta"] * 0.9,
                     self.conf_params_xgboost.params["eta"] * 1.1,
                     5,
-                    dtype=int,
+                    dtype=float,
                 ),
             }
         else:
