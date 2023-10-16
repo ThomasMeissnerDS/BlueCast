@@ -48,3 +48,37 @@ def test_fine_tune_runs_without_errors(xgboost_model):
         or (xgboost_model.conf_params_xgboost.params["lambda"] != 0.1)
         or (xgboost_model.conf_params_xgboost.params["eta"] != 0.1)
     )
+
+
+def test_fine_tune_runs_without_errors_using_cv(xgboost_model):
+    xgboost_params = XgboostFinalParamConfig()
+
+    xgboost_model.conf_params_xgboost = xgboost_params
+    xgboost_model.conf_training = TrainingConfig()
+    xgboost_model.conf_xgboost = XgboostTuneParamsConfig()
+    print(xgboost_model.conf_params_xgboost.params)
+    xgboost_model.experiment_tracker = ExperimentTracker()
+    xgboost_model.conf_training.autotune_model = False
+    xgboost_model.conf_training.hypertuning_cv_folds = 5  # enable cross validation
+
+    df_train, df_val = create_synthetic_dataframe(
+        2000, random_state=20
+    ), create_synthetic_dataframe(2000, random_state=200)
+    df_train = df_train.drop(
+        ["categorical_feature_1", "categorical_feature_2", "datetime_feature"], axis=1
+    )
+    df_val = df_val.drop(
+        ["categorical_feature_1", "categorical_feature_2", "datetime_feature"], axis=1
+    )
+
+    x_train = df_train.drop("target", axis=1)
+    y_train = df_train["target"]
+    x_test = df_val.drop("target", axis=1)
+    y_test = df_val["target"]
+
+    xgboost_model.fine_tune(x_train, x_test, y_train, y_test)
+    assert (
+        (xgboost_model.conf_params_xgboost.params["alpha"] != 0.1)
+        or (xgboost_model.conf_params_xgboost.params["lambda"] != 0.1)
+        or (xgboost_model.conf_params_xgboost.params["eta"] != 0.1)
+    )
