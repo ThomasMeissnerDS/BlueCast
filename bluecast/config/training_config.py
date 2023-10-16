@@ -42,6 +42,9 @@ class TrainingConfig(BaseModel):
     :param show_detailed_tuning_logs: Whether to show detailed tuning logs. Not used when custom ML model is passed.
     :param enable_grid_search_fine_tuning: After hyperparameter tuning run Gridsearch tuning on a fine-grained grid
         based on the previous hyperparameter tuning. Only possible when autotune_model is True.
+    :param gridsearch_nb_parameters_per_grid: Decides how many steps the grid shall have per parameter.
+    :param gridsearch_tuning_max_runtime_secs: Sets the maximum time in seconds the tuning shall run. This will finish
+        the latest trial nd will exceed this limit though.
     :param experiment_name: Name of the experiment. Will be logged inside the ExperimentTracker.
     """
 
@@ -63,6 +66,7 @@ class TrainingConfig(BaseModel):
     optuna_sampler_n_startup_trials: int = 10
     enable_grid_search_fine_tuning: bool = False
     gridsearch_tuning_max_runtime_secs: int = 3600
+    gridsearch_nb_parameters_per_grid: int = 5
     experiment_name: str = "new experiment"
 
 

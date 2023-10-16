@@ -531,19 +531,19 @@ class XgboostModel(BaseClassMlModel):
                     self.conf_params_xgboost.params["alpha"]
                     * 0.9,  # TODO: fix design flaw in config and get rid of nested dict
                     self.conf_params_xgboost.params["alpha"] * 1.1,
-                    5,
+                    self.conf_training.gridsearch_nb_parameters_per_grid,
                     dtype=float,
                 ),
                 "lambda": np.linspace(
                     self.conf_params_xgboost.params["lambda"] * 0.9,
                     self.conf_params_xgboost.params["lambda"] * 1.1,
-                    5,
+                    self.conf_training.gridsearch_nb_parameters_per_grid,
                     dtype=float,
                 ),
                 "eta": np.linspace(
                     self.conf_params_xgboost.params["eta"] * 0.9,
                     self.conf_params_xgboost.params["eta"] * 1.1,
-                    5,
+                    self.conf_training.gridsearch_nb_parameters_per_grid,
                     dtype=float,
                 ),
             }

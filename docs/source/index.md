@@ -32,6 +32,7 @@ the full documentation [here](https://bluecast.readthedocs.io/en/latest/).
   * [Advanced usage](#advanced-usage)
     * [Explanatory analysis](#explanatory-analysis)
     * [Enable cross-validation](#enable-cross-validation)
+    * [Gaining extra performance](#gaining-extra-performance)
     * [Use multi-model blended pipeline](#use-multi-model-blended-pipeline)
     * [Categorical encoding](#categorical-encoding)
     * [Custom training configuration](#custom--training-configuration)
@@ -181,6 +182,43 @@ automl = BlueCast(
 automl.fit(df_train, target_col="target")
 y_probs, y_classes = automl.predict(df_val)
 ```
+
+#### Gaining extra performance
+
+By deault BlueCast uses Optuna's Bayesian hyperparameter optimization.
+However Bayesian methods give an estimate an do not necessarly find
+the ideal spot. Thus BlueCast has an optional GridSearch setting
+that allows BlueCast to refine some of the parameters Optuna has found.
+
+```sh
+from bluecast.blueprints.cast import BlueCast
+from bluecast.config.training_config import TrainingConfig
+
+
+# Create a custom training config and adjust general training parameters
+train_config = TrainingConfig()
+train_config.hypertuning_cv_folds = 5 # default is 1
+train_config.enable_grid_search_fine_tuning = True # default is False
+
+# Pass the custom configs to the BlueCast class
+automl = BlueCast(
+        class_problem="binary",
+        target_column="target"
+        conf_training=train_config,
+    )
+
+automl.fit(df_train, target_col="target")
+y_probs, y_classes = automl.predict(df_val)
+```
+
+This comes with a tradeoff of longer runtime. This behaviour can be further
+controlled with two parameters:
+
+* `gridsearch_nb_parameters_per_grid`: Decides how
+  many steps the grid shall have per parameter
+* `gridsearch_tuning_max_runtime_secs`: Sets the maximum time in seconds
+  the tuning shall run. This will finish the latest trial nd will exceed
+  this limit though.
 
 #### Use multi-model blended pipeline
 
