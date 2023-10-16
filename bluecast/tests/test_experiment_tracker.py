@@ -74,3 +74,65 @@ def test_retrieve_results_as_df(experiment_tracker):
     assert results_df["eval_scores"].tolist() == [0.95]
     assert results_df["metric_used"].tolist() == ["accuracy"]
     assert results_df["metric_higher_is_better"].tolist() == [True]
+
+
+def test_get_best_score_empty(experiment_tracker):
+    # Ensure it raises an exception when no results have been added
+    with pytest.raises(
+        ValueError, match="No results have been found in experiment tracker"
+    ):
+        experiment_tracker.get_best_score()
+
+
+def test_get_best_score_higher_is_better(experiment_tracker):
+    # Add some sample data with a higher-is-better metric
+    experiment_id = 1
+    score_category = "cv_score"
+    training_config = (
+        TrainingConfig()
+    )  # You may need to create a valid TrainingConfig instance
+    model_parameters = {"param1": 1, "param2": "abc"}
+    eval_scores = 0.95
+    metric_used = "accuracy"
+    metric_higher_is_better = True
+
+    experiment_tracker.add_results(
+        experiment_id,
+        score_category,
+        training_config,
+        model_parameters,
+        eval_scores,
+        metric_used,
+        metric_higher_is_better,
+    )
+
+    # Ensure the best score is correctly computed
+    best_score = experiment_tracker.get_best_score()
+    assert best_score == 0.95
+
+
+def test_get_best_score_lower_is_better(experiment_tracker):
+    # Add some sample data with a lower-is-better metric
+    experiment_id = 1
+    score_category = "cv_score"
+    training_config = (
+        TrainingConfig()
+    )  # You may need to create a valid TrainingConfig instance
+    model_parameters = {"param1": 1, "param2": "abc"}
+    eval_scores = 0.95
+    metric_used = "loss"  # Assuming "loss" is a metric that is lower-is-better
+    metric_higher_is_better = False
+
+    experiment_tracker.add_results(
+        experiment_id,
+        score_category,
+        training_config,
+        model_parameters,
+        eval_scores,
+        metric_used,
+        metric_higher_is_better,
+    )
+
+    # Ensure the best score is correctly computed
+    best_score = experiment_tracker.get_best_score()
+    assert best_score == 0.95
