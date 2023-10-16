@@ -40,6 +40,8 @@ class TrainingConfig(BaseModel):
         categorical encoding is done via a ML algorithm. If False, the categorical encoding is done via a  target
         encoding in the preprocessing steps. See the ReadMe for more details.
     :param show_detailed_tuning_logs: Whether to show detailed tuning logs. Not used when custom ML model is passed.
+    :param enable_grid_search_fine_tuning: After hyperparameter tuning run Gridsearch tuning on a fine-grained grid
+        based on the previous hyperparameter tuning. Only possible when autotune_model is True.
     :param experiment_name: Name of the experiment. Will be logged inside the ExperimentTracker.
     """
 
@@ -59,6 +61,8 @@ class TrainingConfig(BaseModel):
     cat_encoding_via_ml_algorithm: bool = False
     show_detailed_tuning_logs: bool = False
     optuna_sampler_n_startup_trials: int = 10
+    enable_grid_search_fine_tuning: bool = False
+    gridsearch_tuning_max_runtime_secs: int = 3600
     experiment_name: str = "new experiment"
 
 

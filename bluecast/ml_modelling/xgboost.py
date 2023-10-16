@@ -95,10 +95,16 @@ class XgboostModel(BaseClassMlModel):
 
         if self.conf_training.autotune_model:
             self.autotune(x_train, x_test, y_train, y_test)
+            print("Finished hyperparameter tuning")
 
-        print("Finished hyperparameter tuning")
+        if (
+            self.conf_training.autotune_model
+            and self.conf_training.enable_grid_search_fine_tuning
+        ):
+            self.fine_tune(x_train, x_test, y_train, y_test)
+            print("Finished Grid search fine tuning")
 
-        print("Start training")
+        print("Start final model training")
         if self.conf_training.use_full_data_for_final_model:
             logger(
                 f"""{datetime.utcnow()}: Union train and test data for final model training based on TrainingConfig
@@ -380,6 +386,187 @@ class XgboostModel(BaseClassMlModel):
         }
         print("Best params: ", self.conf_params_xgboost.params)
         self.conf_params_xgboost.sample_weight = xgboost_best_param["sample_weight"]
+
+    def fine_tune(
+        self,
+        x_train: pd.DataFrame,
+        x_test: pd.DataFrame,
+        y_train: pd.Series,
+        y_test: pd.Series,
+    ) -> None:
+        logger(f"{datetime.utcnow()}: Start grid search fine tuning of Xgboost model.")
+        if (
+            not self.conf_params_xgboost
+            or not self.conf_training
+            or not self.conf_xgboost
+            or not self.experiment_tracker
+        ):
+            raise ValueError(
+                "At least one of the configs or experiment_tracker is None, which is not allowed"
+            )
+
+        d_test = xgb.DMatrix(
+            x_test,
+            label=y_test,
+            enable_categorical=self.conf_training.cat_encoding_via_ml_algorithm,
+        )
+
+        def objective(trial):
+            if self.conf_params_xgboost.sample_weight:
+                classes_weights = self.calculate_class_weights(y_train)
+                d_train = xgb.DMatrix(
+                    x_train,
+                    label=y_train,
+                    weight=classes_weights,
+                    enable_categorical=self.conf_training.cat_encoding_via_ml_algorithm,
+                )
+            else:
+                d_train = xgb.DMatrix(
+                    x_train,
+                    label=y_train,
+                    enable_categorical=self.conf_training.cat_encoding_via_ml_algorithm,
+                )
+
+            pruning_callback = optuna.integration.XGBoostPruningCallback(
+                trial, "test-mlogloss"
+            )
+            # copy best params to not overwrite them
+            tuned_params = self.conf_params_xgboost.params
+            alpha_space = trial.suggest_float(
+                "alpha", self.conf_xgboost.alpha_min, self.conf_xgboost.alpha_max
+            )
+            lambda_space = trial.suggest_float(
+                "lambda", self.conf_xgboost.lambda_min, self.conf_xgboost.lambda_max
+            )
+            eta_space = trial.suggest_float(
+                "eta", self.conf_xgboost.eta_min, self.conf_xgboost.eta_max
+            )
+
+            tuned_params["alpha"] = alpha_space
+            tuned_params["lambda"] = lambda_space
+            tuned_params["eta"] = eta_space
+
+            steps = tuned_params["steps"]
+            del tuned_params["steps"]
+
+            if self.conf_training.hypertuning_cv_folds == 1:
+                eval_set = [(d_train, "train"), (d_test, "test")]
+                model = xgb.train(
+                    tuned_params,
+                    d_train,
+                    num_boost_round=steps,
+                    early_stopping_rounds=self.conf_training.early_stopping_rounds,
+                    evals=eval_set,
+                    callbacks=[pruning_callback],
+                    verbose_eval=self.conf_xgboost.model_verbosity,
+                )
+                preds = model.predict(d_test)
+                pred_labels = np.asarray([np.argmax(line) for line in preds])
+                matthew = matthews_corrcoef(y_test, pred_labels) * -1
+
+                # track results
+                if len(self.experiment_tracker.experiment_id) == 0:
+                    new_id = 0
+                else:
+                    new_id = self.experiment_tracker.experiment_id[-1] + 1
+                self.experiment_tracker.add_results(
+                    experiment_id=new_id,
+                    score_category="simple_train_test_score",
+                    training_config=self.conf_training,
+                    model_parameters=tuned_params,
+                    eval_scores=matthew,
+                    metric_used="matthew",
+                    metric_higher_is_better=True,
+                )
+                return matthew
+            else:
+                result = xgb.cv(
+                    params=tuned_params,
+                    dtrain=d_train,
+                    num_boost_round=steps,
+                    # early_stopping_rounds=self.conf_training.early_stopping_rounds,
+                    nfold=self.conf_training.hypertuning_cv_folds,
+                    as_pandas=True,
+                    seed=self.conf_training.global_random_state,
+                    callbacks=[pruning_callback],
+                    shuffle=self.conf_training.shuffle_during_training,
+                )
+
+                adjusted_score = result["test-mlogloss-mean"].mean() + (
+                    result["test-mlogloss-mean"].std() ** 0.7
+                )
+
+                # track results
+                if len(self.experiment_tracker.experiment_id) == 0:
+                    new_id = 0
+                else:
+                    new_id = self.experiment_tracker.experiment_id[-1] + 1
+                self.experiment_tracker.add_results(
+                    experiment_id=new_id,
+                    score_category="cv_score",
+                    training_config=self.conf_training,
+                    model_parameters=tuned_params,
+                    eval_scores=adjusted_score,
+                    metric_used="adjusted ml logloss",
+                    metric_higher_is_better=False,
+                )
+
+                return adjusted_score
+
+        self.check_load_confs()
+        if (
+            isinstance(self.conf_params_xgboost.params["alpha"], float)
+            and isinstance(self.conf_params_xgboost.params["lambda"], float)
+            and isinstance(self.conf_params_xgboost.params["eta"], float)
+        ):
+            search_space = {
+                "n_estimators_grid": np.linspace(
+                    self.conf_params_xgboost.params["alpha"]
+                    * 0.9,  # TODO: fix design flaw in config and get rid of nested dict
+                    self.conf_params_xgboost.params["alpha"] * 1.1,
+                    5,
+                    dtype=int,
+                ),
+                "max_depth_grid": np.linspace(
+                    self.conf_params_xgboost.params["lambda"] * 0.9,
+                    self.conf_params_xgboost.params["lambda"] * 1.1,
+                    5,
+                    dtype=int,
+                ),
+                "eta_depth_grid": np.linspace(
+                    self.conf_params_xgboost.params["eta"] * 0.9,
+                    self.conf_params_xgboost.params["eta"] * 1.1,
+                    5,
+                    dtype=int,
+                ),
+            }
+        else:
+            ValueError("Some parameters are not floats or strings")
+
+        study = optuna.create_study(
+            direction="minimize", sampler=optuna.samplers.GridSampler(search_space)
+        )
+        study.optimize(
+            objective,
+            n_trials=125,
+            timeout=self.conf_training.gridsearch_tuning_max_runtime_secs,
+            gc_after_trial=True,
+            show_progress_bar=True,
+        )
+
+        try:
+            fig = optuna.visualization.plot_optimization_history(study)
+            fig.show()
+            fig = optuna.visualization.plot_param_importances(study)
+            fig.show()
+        except (ZeroDivisionError, RuntimeError, ValueError):
+            pass
+
+        xgboost_grid_best_param = study.best_trial.params
+        self.conf_params_xgboost.params["alpha"] = xgboost_grid_best_param["alpha"]
+        self.conf_params_xgboost.params["lambda"] = xgboost_grid_best_param["lambda"]
+        self.conf_params_xgboost.params["eta"] = xgboost_grid_best_param["eta"]
+        print("Best params: ", self.conf_params_xgboost.params)
 
     def predict(self, df: pd.DataFrame) -> Tuple[np.ndarray, np.ndarray]:
         """Predict on unseen data."""
