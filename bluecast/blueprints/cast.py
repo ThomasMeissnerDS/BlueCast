@@ -105,6 +105,9 @@ class BlueCast:
         else:
             self.experiment_tracker = ExperimentTracker()
 
+        if not self.conf_params_xgboost:
+            self.conf_params_xgboost = XgboostFinalParamConfig()
+
     def initial_checks(self, df: pd.DataFrame) -> None:
         if not self.conf_training:
             self.conf_training = TrainingConfig()
