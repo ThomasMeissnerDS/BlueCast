@@ -107,7 +107,7 @@ def test_get_best_score_higher_is_better(experiment_tracker):
     )
 
     # Ensure the best score is correctly computed
-    best_score = experiment_tracker.get_best_score()
+    best_score = experiment_tracker.get_best_score(target_metric="accuracy")
     assert best_score == 0.95
 
 
@@ -134,5 +134,5 @@ def test_get_best_score_lower_is_better(experiment_tracker):
     )
 
     # Ensure the best score is correctly computed
-    best_score = experiment_tracker.get_best_score()
+    best_score = experiment_tracker.get_best_score(target_metric="loss")
     assert best_score == 0.95
