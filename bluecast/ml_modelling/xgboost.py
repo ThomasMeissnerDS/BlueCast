@@ -296,7 +296,7 @@ class XgboostModel(BaseClassMlModel):
                     training_config=self.conf_training,
                     model_parameters=param,
                     eval_scores=matthew,
-                    metric_used="matthew",
+                    metric_used="matthew_inverse",
                     metric_higher_is_better=False,
                 )
                 return matthew
@@ -478,7 +478,7 @@ class XgboostModel(BaseClassMlModel):
                     training_config=self.conf_training,
                     model_parameters=tuned_params,
                     eval_scores=matthew,
-                    metric_used="matthew",
+                    metric_used="matthew_inverse",
                     metric_higher_is_better=False,
                 )
                 return matthew
@@ -546,8 +546,20 @@ class XgboostModel(BaseClassMlModel):
         else:
             ValueError("Some parameters are not floats or strings")
 
-        if self.conf_training.autotune_model:
-            best_score_cv = self.experiment_tracker.get_best_score()
+        if (
+            self.conf_training.autotune_model
+            and self.conf_training.hypertuning_cv_folds == 1
+        ):
+            best_score_cv = self.experiment_tracker.get_best_score(
+                target_metric="matthew_inverse"
+            )
+        elif (
+            self.conf_training.autotune_model
+            and self.conf_training.hypertuning_cv_folds > 1
+        ):
+            best_score_cv = self.experiment_tracker.get_best_score(
+                target_metric="adjusted ml logloss"
+            )
         else:
             best_score_cv = np.inf
 
@@ -556,7 +568,8 @@ class XgboostModel(BaseClassMlModel):
         )
         study.optimize(
             objective,
-            n_trials=125,
+            n_trials=self.conf_training.gridsearch_nb_parameters_per_grid
+            ** len(search_space.keys()),
             timeout=self.conf_training.gridsearch_tuning_max_runtime_secs,
             gc_after_trial=True,
             show_progress_bar=True,
@@ -570,8 +583,20 @@ class XgboostModel(BaseClassMlModel):
         except (ZeroDivisionError, RuntimeError, ValueError):
             pass
 
-        if self.conf_training.autotune_model:
-            best_score_cv_grid = self.experiment_tracker.get_best_score()
+        if (
+            self.conf_training.autotune_model
+            and self.conf_training.hypertuning_cv_folds == 1
+        ):
+            best_score_cv_grid = self.experiment_tracker.get_best_score(
+                target_metric="matthew_inverse"
+            )
+        elif (
+            self.conf_training.autotune_model
+            and self.conf_training.hypertuning_cv_folds > 1
+        ):
+            best_score_cv = self.experiment_tracker.get_best_score(
+                target_metric="madjusted ml logloss"
+            )
         else:
             best_score_cv_grid = np.inf
 

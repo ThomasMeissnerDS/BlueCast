@@ -94,7 +94,7 @@ class ExperimentTracker(BaseClassExperimentTracker):
         )
         return results_df
 
-    def get_best_score(self) -> Union[int, float]:
+    def get_best_score(self, target_metric: str) -> Union[int, float]:
         """Expects results in the tracker"""
 
         results_df = pd.DataFrame(
@@ -110,6 +110,10 @@ class ExperimentTracker(BaseClassExperimentTracker):
             raise ValueError("No results have been found in experiment tracker")
 
         if self.metric_higher_is_better:
-            return results_df["eval_scores"].max()
+            return results_df.loc[results_df["metric_used"] == target_metric][
+                "eval_scores"
+            ].max()
         else:
-            return results_df["eval_scores"].min()
+            return results_df.loc[results_df["metric_used"] == target_metric][
+                "eval_scores"
+            ].min()

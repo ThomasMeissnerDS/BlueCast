@@ -323,6 +323,35 @@ class BlueCast:
             y_true, y_probs, y_classes
         )  # TODO: add experiment tracker
         self.eval_metrics = eval_dict
+
+        if not self.conf_training:
+            raise ValueError("Could not find any training config")
+
+        if not self.conf_params_xgboost:
+            raise ValueError("Could not find Xgboost params")
+
+        # enrich experiment tracker
+        for metric, higher_is_better in zip(
+            [
+                "accuracy",
+                "recall",
+                "f1_score_weighted",
+                "log_loss",
+                "balanced_logloss",
+                "roc_auc",
+                "matthews",
+            ],
+            [True, True, True, False, False, True, True],
+        ):
+            self.experiment_tracker.add_results(
+                experiment_id=self.experiment_tracker.experiment_id[-1],
+                score_category="oof_score",
+                training_config=self.conf_training,
+                model_parameters=self.conf_params_xgboost.params,  # noqa
+                eval_scores=self.eval_metrics["accuracy"],
+                metric_used=metric,
+                metric_higher_is_better=higher_is_better,
+            )
         return eval_dict
 
     def transform_new_data(self, df: pd.DataFrame) -> pd.DataFrame:
