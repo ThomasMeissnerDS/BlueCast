@@ -297,7 +297,7 @@ class XgboostModel(BaseClassMlModel):
                     model_parameters=param,
                     eval_scores=matthew,
                     metric_used="matthew",
-                    metric_higher_is_better=True,
+                    metric_higher_is_better=False,
                 )
                 return matthew
             else:
@@ -479,7 +479,7 @@ class XgboostModel(BaseClassMlModel):
                     model_parameters=tuned_params,
                     eval_scores=matthew,
                     metric_used="matthew",
-                    metric_higher_is_better=True,
+                    metric_higher_is_better=False,
                 )
                 return matthew
             else:
@@ -587,7 +587,7 @@ class XgboostModel(BaseClassMlModel):
             )
             logger(f"Best params: {self.conf_params_xgboost.params}")
         else:
-            logger(f"Grid search could not improve eval metric of {best_score_cv}.")
+            logger(f"Grid search could not improve eval metric of {best_score_cv}. Best score reached was {best_score_cv_grid}")
 
     def predict(self, df: pd.DataFrame) -> Tuple[np.ndarray, np.ndarray]:
         """Predict on unseen data."""
