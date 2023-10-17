@@ -107,7 +107,7 @@ class ExperimentTracker(BaseClassExperimentTracker):
         if results_df.empty:
             raise ValueError("No results have been found in experiment tracker")
 
-        if self.metric_higher_is_better:
+        if self.metric_higher_is_better[-1]:
             return results_df.loc[results_df["metric_used"] == target_metric][
                 "eval_scores"
             ].max()
