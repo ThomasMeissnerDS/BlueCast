@@ -5,7 +5,7 @@ the configuration parameters. The configuration parameters are used in the train
 pipeline. Pydantic dataclasses are used to allow users a pythonic way to define the configuration parameters.
 Default configurations can be loaded, adjusted and passed into the blueprints.
 """
-from typing import Dict, Optional, Union
+from typing import Dict, Optional
 
 from pydantic import BaseModel
 from pydantic.dataclasses import dataclass
@@ -104,7 +104,7 @@ class XgboostTuneParamsConfig(BaseModel):
 class XgboostFinalParamConfig:
     """Define final hyper parameters."""
 
-    params: Dict[Union[str, int, float, None], Union[str, int, float, None]] = {
+    params = {
         "objective": "multi:softprob",  # OR  'binary:logistic' #the loss function being used
         "eval_metric": "mlogloss",
         "tree_method": "exact",  # use GPU for training

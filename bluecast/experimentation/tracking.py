@@ -1,5 +1,5 @@
 from datetime import datetime
-from typing import Dict, List, Literal, Union
+from typing import Any, Dict, List, Literal, Union
 
 import pandas as pd
 
@@ -34,9 +34,7 @@ class ExperimentTracker(BaseClassExperimentTracker):
         experiment_id: Union[int, str, float],
         score_category: Literal["simple_train_test_score", "cv_score", "oof_score"],
         training_config: TrainingConfig,
-        model_parameters: Dict[
-            Union[str, int, float, None], Union[str, int, float, None]
-        ],
+        model_parameters: Dict[Any, Any],
         eval_scores: Union[float, int, None],
         metric_used: str,
         metric_higher_is_better: bool,
