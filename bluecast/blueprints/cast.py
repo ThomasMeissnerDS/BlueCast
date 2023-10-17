@@ -319,7 +319,9 @@ class BlueCast:
         else:
             y_true = target_eval.values
 
-        eval_dict = eval_classifier(y_true, y_probs, y_classes) # TODO: add experiment tracker
+        eval_dict = eval_classifier(
+            y_true, y_probs, y_classes
+        )  # TODO: add experiment tracker
         self.eval_metrics = eval_dict
         return eval_dict
 

@@ -587,7 +587,9 @@ class XgboostModel(BaseClassMlModel):
             )
             logger(f"Best params: {self.conf_params_xgboost.params}")
         else:
-            logger(f"Grid search could not improve eval metric of {best_score_cv}. Best score reached was {best_score_cv_grid}")
+            logger(
+                f"Grid search could not improve eval metric of {best_score_cv}. Best score reached was {best_score_cv_grid}"
+            )
 
     def predict(self, df: pd.DataFrame) -> Tuple[np.ndarray, np.ndarray]:
         """Predict on unseen data."""
