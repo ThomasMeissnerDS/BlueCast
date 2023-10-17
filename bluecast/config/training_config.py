@@ -81,6 +81,8 @@ class XgboostTuneParamsConfig(BaseModel):
     lambda_max: float = 10.0
     gamma_min: float = 0.0
     gamma_max: float = 10.0
+    subsample_min: float = 0.0
+    subsample_max: float = 10.0
     max_leaves_min: int = 0
     max_leaves_max: int = 0
     sub_sample_min: float = 0.3
@@ -113,11 +115,10 @@ class XgboostFinalParamConfig:
         "alpha": 0.1,
         "lambda": 0.1,
         "gamma": 0.0,
+        "subsample": 1.0,
         "max_leaves": 16,
-        "subsample": 0.8,
         "colsample_bytree": 0.8,
         "colsample_bylevel": 0.8,
-        "colsample_bynode": 0.8,
         "eta": 0.1,
         "steps": 1000,
         "num_parallel_tree": 1,
