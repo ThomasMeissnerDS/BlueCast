@@ -81,7 +81,7 @@ def test_get_best_score_empty(experiment_tracker):
     with pytest.raises(
         ValueError, match="No results have been found in experiment tracker"
     ):
-        experiment_tracker.get_best_score()
+        experiment_tracker.get_best_score(target_metric="loss")
 
 
 def test_get_best_score_higher_is_better(experiment_tracker):

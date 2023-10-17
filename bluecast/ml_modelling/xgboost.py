@@ -594,8 +594,8 @@ class XgboostModel(BaseClassMlModel):
             self.conf_training.autotune_model
             and self.conf_training.hypertuning_cv_folds > 1
         ):
-            best_score_cv = self.experiment_tracker.get_best_score(
-                target_metric="madjusted ml logloss"
+            best_score_cv_grid = self.experiment_tracker.get_best_score(
+                target_metric="adjusted ml logloss"
             )
         else:
             best_score_cv_grid = np.inf
