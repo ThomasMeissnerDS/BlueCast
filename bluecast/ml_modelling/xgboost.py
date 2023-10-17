@@ -218,10 +218,8 @@ class XgboostModel(BaseClassMlModel):
                 "lambda": trial.suggest_float(
                     "lambda", self.conf_xgboost.lambda_min, self.conf_xgboost.lambda_max
                 ),
-                "min_child_weight": trial.suggest_float(
-                    "min_child_weight",
-                    self.conf_xgboost.min_child_weight_min,
-                    self.conf_xgboost.min_child_weight_max,
+                "gamma": trial.suggest_float(
+                    "gamma", self.conf_xgboost.lambda_min, self.conf_xgboost.lambda_max
                 ),
                 "max_leaves": trial.suggest_int(
                     "max_leaves",
@@ -373,11 +371,11 @@ class XgboostModel(BaseClassMlModel):
             ],  # maximum depth of the decision trees being trained
             "alpha": xgboost_best_param["alpha"],
             "lambda": xgboost_best_param["lambda"],
+            "gamma": xgboost_best_param["gamma"],
             "max_leaves": xgboost_best_param["max_leaves"],
             "subsample": xgboost_best_param["subsample"],
             "colsample_bytree": xgboost_best_param["colsample_bytree"],
             "colsample_bylevel": xgboost_best_param["colsample_bylevel"],
-            "min_child_weight": xgboost_best_param["min_child_weight"],
             "eta": xgboost_best_param["eta"],
             "steps": xgboost_best_param["steps"],
         }
@@ -439,15 +437,15 @@ class XgboostModel(BaseClassMlModel):
                 self.conf_params_xgboost.params["lambda"] * 0.9,
                 self.conf_params_xgboost.params["lambda"] * 1.1,
             )
-            eta_space = trial.suggest_float(
-                "eta",
-                self.conf_params_xgboost.params["eta"] * 0.9,
-                self.conf_params_xgboost.params["eta"] * 1.1,
+            gamma_space = trial.suggest_float(
+                "gamma",
+                self.conf_params_xgboost.params["gamma"] * 0.9,
+                self.conf_params_xgboost.params["gamma"] * 1.1,
             )
 
             tuned_params["alpha"] = alpha_space
             tuned_params["lambda"] = lambda_space
-            tuned_params["eta"] = eta_space
+            tuned_params["gamma"] = gamma_space
 
             steps = tuned_params["steps"]
             del tuned_params["steps"]
@@ -520,7 +518,7 @@ class XgboostModel(BaseClassMlModel):
         if (
             isinstance(self.conf_params_xgboost.params["alpha"], float)
             and isinstance(self.conf_params_xgboost.params["lambda"], float)
-            and isinstance(self.conf_params_xgboost.params["eta"], float)
+            and isinstance(self.conf_params_xgboost.params["gamma"], float)
         ):
             search_space = {
                 "alpha": np.linspace(
@@ -536,9 +534,9 @@ class XgboostModel(BaseClassMlModel):
                     self.conf_training.gridsearch_nb_parameters_per_grid,
                     dtype=float,
                 ),
-                "eta": np.linspace(
-                    self.conf_params_xgboost.params["eta"] * 0.9,
-                    self.conf_params_xgboost.params["eta"] * 1.1,
+                "gamma": np.linspace(
+                    self.conf_params_xgboost.params["gamma"] * 0.9,
+                    self.conf_params_xgboost.params["gamma"] * 1.1,
                     self.conf_training.gridsearch_nb_parameters_per_grid,
                     dtype=float,
                 ),
@@ -606,7 +604,7 @@ class XgboostModel(BaseClassMlModel):
             self.conf_params_xgboost.params["lambda"] = xgboost_grid_best_param[
                 "lambda"
             ]
-            self.conf_params_xgboost.params["eta"] = xgboost_grid_best_param["eta"]
+            self.conf_params_xgboost.params["gamma"] = xgboost_grid_best_param["gamma"]
             logger(
                 f"Grid search improved eval metric from {best_score_cv} to {best_score_cv_grid}."
             )

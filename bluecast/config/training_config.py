@@ -79,6 +79,8 @@ class XgboostTuneParamsConfig(BaseModel):
     alpha_max: float = 10.0
     lambda_min: float = 0.0
     lambda_max: float = 10.0
+    gamma_min: float = 0.0
+    gamma_max: float = 10.0
     max_leaves_min: int = 0
     max_leaves_max: int = 0
     sub_sample_min: float = 0.3
@@ -87,8 +89,6 @@ class XgboostTuneParamsConfig(BaseModel):
     col_sample_by_tree_max: float = 1.0
     col_sample_by_level_min: float = 0.3
     col_sample_by_level_max: float = 1.0
-    min_child_weight_min: float = 0.0
-    min_child_weight_max: float = 5.0
     eta_min: float = 0.001
     eta_max: float = 0.3
     steps_min: int = 2
@@ -112,12 +112,12 @@ class XgboostFinalParamConfig:
         "max_depth": 3,  # maximum depth of the decision trees being trained
         "alpha": 0.1,
         "lambda": 0.1,
+        "gamma": 0.0,
         "max_leaves": 16,
         "subsample": 0.8,
         "colsample_bytree": 0.8,
         "colsample_bylevel": 0.8,
         "colsample_bynode": 0.8,
-        "min_child_samples": 100,
         "eta": 0.1,
         "steps": 1000,
         "num_parallel_tree": 1,
