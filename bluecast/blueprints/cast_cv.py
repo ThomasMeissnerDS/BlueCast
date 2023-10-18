@@ -87,7 +87,7 @@ class BlueCastCV:
             y_train = y_train.reset_index(drop=True)
             X_train[target_col] = y_train.values
 
-            self.conf_training.global_random_state += fn
+            self.conf_training.global_random_state += fn + 1000
 
             automl = BlueCast(
                 class_problem=self.class_problem,

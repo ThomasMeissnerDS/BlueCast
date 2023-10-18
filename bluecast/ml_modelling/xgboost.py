@@ -299,6 +299,10 @@ class XgboostModel(BaseClassMlModel):
                 )
                 return matthew
             else:
+                random_seed = trial.suggest_categorical(
+                    "random_seed",
+                    [self.conf_training.global_random_state + i for i in range(100)],
+                )
                 result = xgb.cv(
                     params=param,
                     dtrain=d_train,
@@ -306,7 +310,7 @@ class XgboostModel(BaseClassMlModel):
                     # early_stopping_rounds=self.conf_training.early_stopping_rounds,
                     nfold=self.conf_training.hypertuning_cv_folds,
                     as_pandas=True,
-                    seed=self.conf_training.global_random_state,
+                    seed=random_seed,
                     callbacks=[pruning_callback],
                     shuffle=self.conf_training.shuffle_during_training,
                 )
@@ -360,6 +364,7 @@ class XgboostModel(BaseClassMlModel):
             pass
 
         xgboost_best_param = study.best_trial.params
+        self.conf_training.global_random_state = xgboost_best_param["random_seed"]
         self.conf_params_xgboost.params = {
             "objective": self.conf_xgboost.model_objective,  # OR  'binary:logistic' #the loss function being used
             "booster": self.conf_xgboost.booster,
