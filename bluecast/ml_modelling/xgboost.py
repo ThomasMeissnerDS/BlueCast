@@ -364,7 +364,9 @@ class XgboostModel(BaseClassMlModel):
             pass
 
         xgboost_best_param = study.best_trial.params
-        self.conf_training.global_random_state = xgboost_best_param["random_seed"]
+        if self.conf_training.hypertuning_cv_folds > 1:
+            self.conf_training.global_random_state = xgboost_best_param["random_seed"]
+
         self.conf_params_xgboost.params = {
             "objective": self.conf_xgboost.model_objective,  # OR  'binary:logistic' #the loss function being used
             "booster": self.conf_xgboost.booster,
