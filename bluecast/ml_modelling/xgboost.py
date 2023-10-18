@@ -405,6 +405,9 @@ class XgboostModel(BaseClassMlModel):
             label=y_test,
             enable_categorical=self.conf_training.cat_encoding_via_ml_algorithm,
         )
+        self.conf_training.global_random_state += (
+            1000  # to have correct tracking information and different splits
+        )
 
         def objective(trial):
             if self.conf_params_xgboost.sample_weight:
@@ -613,6 +616,8 @@ class XgboostModel(BaseClassMlModel):
             logger(
                 f"Grid search could not improve eval metric of {best_score_cv}. Best score reached was {best_score_cv_grid}"
             )
+
+        self.conf_training.global_random_state -= 1000  # back to original setting
 
     def predict(self, df: pd.DataFrame) -> Tuple[np.ndarray, np.ndarray]:
         """Predict on unseen data."""
