@@ -114,6 +114,9 @@ from bluecast.eda.analyse import (
     bi_variate_plots,
     correlation_heatmap,
     correlation_to_target,
+    plot_pca,
+    plot_theil_u_heatmap,
+    plot_tsne,
     univariate_plots,
 )
 
@@ -156,6 +159,9 @@ plot_pca(train_data.loc[
 plot_tsne(train_data.loc[
             :, feat_type_detector.num_columns
         ], "target", perplexity=30, random_state=0)
+
+# show a heatmap of assocations between categorical variables
+theil_matrix = plot_theil_u_heatmap(train_data, feat_type_detector.cat_columns)
 ```
 
 #### Enable cross-validation

@@ -114,6 +114,9 @@ from bluecast.eda.analyse import (
     bi_variate_plots,
     correlation_heatmap,
     correlation_to_target,
+    plot_pca,
+    plot_theil_u_heatmap,
+    plot_tsne,
     univariate_plots,
 )
 
@@ -156,6 +159,9 @@ plot_pca(train_data.loc[
 plot_tsne(train_data.loc[
             :, feat_type_detector.num_columns
         ], "target", perplexity=30, random_state=0)
+
+# show a heatmap of assocations between categorical variables
+theil_matrix = plot_theil_u_heatmap(train_data, feat_type_detector.cat_columns)
 ```
 
 #### Enable cross-validation
@@ -185,10 +191,13 @@ y_probs, y_classes = automl.predict(df_val)
 
 #### Gaining extra performance
 
-By deault BlueCast uses Optuna's Bayesian hyperparameter optimization.
-However Bayesian methods give an estimate an do not necessarly find
-the ideal spot. Thus BlueCast has an optional GridSearch setting
+By default BlueCast uses Optuna's Bayesian hyperparameter optimization,
+however Bayesian methods give an estimate and do not necessarly find
+the ideal spot, thus BlueCast has an optional GridSearch setting
 that allows BlueCast to refine some of the parameters Optuna has found.
+This can be enabled by setting `enable_grid_search_fine_tuning` to True.
+This fine-tuning step uses a different random seed than the autotuning
+routine (seed from the settings + 1000).
 
 ```sh
 from bluecast.blueprints.cast import BlueCast
@@ -199,6 +208,8 @@ from bluecast.config.training_config import TrainingConfig
 train_config = TrainingConfig()
 train_config.hypertuning_cv_folds = 5 # default is 1
 train_config.enable_grid_search_fine_tuning = True # default is False
+train_config.gridsearch_tuning_max_runtime_secs = 3600 # max runtime in secs
+train_config.gridsearch_nb_parameters_per_grid = 5 # increasing this means X^3 trials atm
 
 # Pass the custom configs to the BlueCast class
 automl = BlueCast(

@@ -1,3 +1,4 @@
+import random
 from typing import Tuple
 
 import pandas as pd
@@ -8,6 +9,7 @@ from bluecast.eda.analyse import (
     correlation_heatmap,
     correlation_to_target,
     plot_pca,
+    plot_theil_u_heatmap,
     plot_tsne,
     univariate_plots,
 )
@@ -19,6 +21,20 @@ def synthetic_train_test_data() -> Tuple[pd.DataFrame, pd.DataFrame]:
     df_train = create_synthetic_dataframe(2000, random_state=20)
     df_val = create_synthetic_dataframe(2000, random_state=200)
     return df_train, df_val
+
+
+@pytest.fixture()
+def synthetic_categorical_data() -> pd.DataFrame:
+    data = {
+        "Category1": [random.choice(["A", "B", "C"]) for _ in range(100)],
+        "Category2": [random.choice(["X", "Y", "Z"]) for _ in range(100)],
+        "Category3": [random.choice(["Red", "Green", "Blue"]) for _ in range(100)],
+        "Category4": [random.choice(["High", "Medium", "Low"]) for _ in range(100)],
+    }
+
+    # Create the DataFrame
+    df = pd.DataFrame(data)
+    return df
 
 
 def test_univariate_plots(synthetic_train_test_data):
@@ -87,3 +103,10 @@ def test_plot_tsne(synthetic_train_test_data):
         random_state=0,
     )
     assert True
+
+
+def test_plot_theil_u_heatmap(synthetic_categorical_data):
+    columns_of_interest = synthetic_categorical_data.columns.to_list()
+    theil_matrix = plot_theil_u_heatmap(synthetic_categorical_data, columns_of_interest)
+    assert True
+    assert theil_matrix[0, 0] == 1.0
