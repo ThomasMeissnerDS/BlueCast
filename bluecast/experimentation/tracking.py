@@ -1,5 +1,5 @@
 from datetime import datetime
-from typing import Dict, List, Literal, Union
+from typing import Any, Dict, List, Literal, Union
 
 import pandas as pd
 
@@ -34,9 +34,7 @@ class ExperimentTracker(BaseClassExperimentTracker):
         experiment_id: Union[int, str, float],
         score_category: Literal["simple_train_test_score", "cv_score", "oof_score"],
         training_config: TrainingConfig,
-        model_parameters: Dict[
-            Union[str, int, float, None], Union[str, int, float, None]
-        ],
+        model_parameters: Dict[Any, Any],
         eval_scores: Union[float, int, None],
         metric_used: str,
         metric_higher_is_better: bool,
@@ -93,3 +91,27 @@ class ExperimentTracker(BaseClassExperimentTracker):
             model_parameters_df, how="left", left_index=True, right_index=True
         )
         return results_df
+
+    def get_best_score(self, target_metric: str) -> Union[int, float]:
+        """Expects results in the tracker"""
+
+        results_df = pd.DataFrame(
+            {
+                "experiment_id": self.experiment_id,
+                "score_category": self.score_category,
+                "eval_scores": self.eval_scores,
+                "metric_used": self.metric_used,
+                "metric_higher_is_better": self.metric_higher_is_better,
+            }
+        )
+        if results_df.empty:
+            raise ValueError("No results have been found in experiment tracker")
+
+        if self.metric_higher_is_better[-1]:
+            return results_df.loc[results_df["metric_used"] == target_metric][
+                "eval_scores"
+            ].max()
+        else:
+            return results_df.loc[results_df["metric_used"] == target_metric][
+                "eval_scores"
+            ].min()

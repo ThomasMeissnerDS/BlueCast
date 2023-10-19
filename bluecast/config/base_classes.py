@@ -1,5 +1,5 @@
 from abc import ABC, abstractmethod
-from typing import Dict, Literal, Union
+from typing import Any, Dict, Literal, Union
 
 import pandas as pd
 
@@ -18,9 +18,7 @@ class BaseClassExperimentTracker(ABC):
         experiment_id: Union[int, str, float],
         score_category: Literal["simple_train_test_score", "cv_score", "oof_score"],
         training_config: TrainingConfig,
-        model_parameters: Dict[
-            Union[str, int, float, None], Union[str, int, float, None]
-        ],
+        model_parameters: Dict[Any, Any],
         eval_scores: Union[float, int, None],
         metric_used: str,
         metric_higher_is_better: bool,

@@ -146,6 +146,7 @@ def test_bluecast_with_custom_model():
     train_config.hyperparameter_tuning_rounds = 10
     train_config.enable_feature_selection = True
     train_config.hypertuning_cv_folds = 2
+    train_config.enable_grid_search_fine_tuning = True
 
     # add custom feature selection
     class RFECVSelector(CustomPreprocessing):

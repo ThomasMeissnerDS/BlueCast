@@ -40,6 +40,11 @@ class TrainingConfig(BaseModel):
         categorical encoding is done via a ML algorithm. If False, the categorical encoding is done via a  target
         encoding in the preprocessing steps. See the ReadMe for more details.
     :param show_detailed_tuning_logs: Whether to show detailed tuning logs. Not used when custom ML model is passed.
+    :param enable_grid_search_fine_tuning: After hyperparameter tuning run Gridsearch tuning on a fine-grained grid
+        based on the previous hyperparameter tuning. Only possible when autotune_model is True.
+    :param gridsearch_nb_parameters_per_grid: Decides how many steps the grid shall have per parameter.
+    :param gridsearch_tuning_max_runtime_secs: Sets the maximum time in seconds the tuning shall run. This will finish
+        the latest trial nd will exceed this limit though.
     :param experiment_name: Name of the experiment. Will be logged inside the ExperimentTracker.
     """
 
@@ -59,6 +64,9 @@ class TrainingConfig(BaseModel):
     cat_encoding_via_ml_algorithm: bool = False
     show_detailed_tuning_logs: bool = False
     optuna_sampler_n_startup_trials: int = 10
+    enable_grid_search_fine_tuning: bool = False
+    gridsearch_tuning_max_runtime_secs: int = 3600
+    gridsearch_nb_parameters_per_grid: int = 5
     experiment_name: str = "new experiment"
 
 
@@ -71,6 +79,10 @@ class XgboostTuneParamsConfig(BaseModel):
     alpha_max: float = 10.0
     lambda_min: float = 0.0
     lambda_max: float = 10.0
+    gamma_min: float = 0.0
+    gamma_max: float = 10.0
+    subsample_min: float = 0.0
+    subsample_max: float = 10.0
     max_leaves_min: int = 0
     max_leaves_max: int = 0
     sub_sample_min: float = 0.3
@@ -79,8 +91,6 @@ class XgboostTuneParamsConfig(BaseModel):
     col_sample_by_tree_max: float = 1.0
     col_sample_by_level_min: float = 0.3
     col_sample_by_level_max: float = 1.0
-    min_child_weight_min: float = 0.0
-    min_child_weight_max: float = 5.0
     eta_min: float = 0.001
     eta_max: float = 0.3
     steps_min: int = 2
@@ -104,12 +114,11 @@ class XgboostFinalParamConfig:
         "max_depth": 3,  # maximum depth of the decision trees being trained
         "alpha": 0.1,
         "lambda": 0.1,
+        "gamma": 0.0,
+        "subsample": 1.0,
         "max_leaves": 16,
-        "subsample": 0.8,
         "colsample_bytree": 0.8,
         "colsample_bylevel": 0.8,
-        "colsample_bynode": 0.8,
-        "min_child_samples": 100,
         "eta": 0.1,
         "steps": 1000,
         "num_parallel_tree": 1,
