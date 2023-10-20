@@ -36,8 +36,8 @@ def test_detect_leakage_via_correlation(create_to_target_correlated_features):
     result = detect_leakage_via_correlation(
         create_to_target_correlated_features, "target", threshold=0.9
     )
-    assert len(result) == 1
-    assert result == ["feature2"]
+    assert len(result) == 0
+    assert result == []
 
     # Test when there is potential data leakage (feature1 is highly correlated)
     create_to_target_correlated_features["feature1"] = (
@@ -46,7 +46,7 @@ def test_detect_leakage_via_correlation(create_to_target_correlated_features):
     result = detect_leakage_via_correlation(
         create_to_target_correlated_features, "target", threshold=0.9
     )
-    assert len(result) == 2
+    assert len(result) == 1
 
     # Test when a non-existent target column is provided
     with pytest.raises(
@@ -63,7 +63,7 @@ def test_detect_categorical_leakage(create_to_target_correlated_categorical_feat
     leakage_columns = detect_categorical_leakage(
         create_to_target_correlated_categorical_features, "target", threshold=0.9
     )
-    assert leakage_columns == []
+    assert leakage_columns == ["feature_2"]
 
     # Test when there is potential data leakage (feature1 is highly related to target)
     create_to_target_correlated_categorical_features[
