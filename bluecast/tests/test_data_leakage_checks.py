@@ -24,7 +24,7 @@ def create_to_target_correlated_categorical_features() -> pd.DataFrame:
     data = pd.DataFrame(
         {
             "target": ["A", "B", "C", "A", "B"],
-            "feature1": ["X", "Y", "Z", "X", "Y"],
+            "feature1": ["X", "Y", "Z", "M", "O"],
             "feature2": ["N", "N", "N", "N", "N"],
         }
     )
