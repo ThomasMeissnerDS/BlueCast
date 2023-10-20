@@ -40,16 +40,16 @@ def detect_categorical_leakage(
 
     :param data: The DataFrame containing the data.
     :param target_column: The name of the target column.
-
     :param threshold: The threshold for Theil's U. Columns with U greater than or equal to this threshold
       will be considered potential data leakage.
-
     :returns: A list of column names with Theil's U greater than or equal to the threshold.
     """
     if target_column not in data.columns:
         raise ValueError(
             f"The target column '{target_column}' is not found in the DataFrame."
         )
+    else:
+        data[target_column] = data[target_column].astype(str)
 
     leakage_columns = []
     for column in data.columns:
