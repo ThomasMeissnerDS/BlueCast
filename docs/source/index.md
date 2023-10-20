@@ -120,6 +120,7 @@ from bluecast.eda.analyse import (
     plot_tsne,
     univariate_plots,
     check_unique_values,
+    plot_null_percentage
 )
 
 from bluecast.preprocessing.feature_types import FeatureTypeDetector
