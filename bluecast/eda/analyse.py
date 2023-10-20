@@ -238,3 +238,30 @@ def plot_theil_u_heatmap(data: pd.DataFrame, columns: List[Union[str, int, float
 
     plt.show()
     return theil_matrix
+
+
+def plot_null_percentage(dataframe: pd.DataFrame) -> None:
+    # Calculate the percentage of null values for each column
+    null_percentage = (dataframe.isnull().mean() * 100).round(2)
+
+    # Create a bar plot to visualize the null percentages
+    plt.figure(figsize=(12, 6))
+    bars = plt.bar(null_percentage.index, null_percentage.values)
+    plt.title("Percentage of Null Values in Each Column")
+    plt.xlabel("Columns")
+    plt.ylabel("Percentage of Null Values")
+    plt.xticks(rotation=90)
+    plt.tight_layout()
+
+    # Add annotations to the bars
+    for bar, percentage in zip(bars, null_percentage.values):
+        plt.text(
+            bar.get_x() + bar.get_width() / 2 - 0.15,  # Adjust x-position for centering
+            bar.get_height() + 1,  # Adjust y-position for vertical alignment
+            f"{percentage}%",  # Display the percentage
+            ha="center",  # Horizontal alignment
+            va="bottom",  # Vertical alignment
+        )
+
+    # Show the plot
+    plt.show()

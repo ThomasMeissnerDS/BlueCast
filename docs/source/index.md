@@ -128,40 +128,46 @@ train_data = feat_type_detector.fit_transform_feature_types(train_data)
 
 # show univariate plots
 univariate_plots(
-        train_data.loc[
-            :, feat_type_detector.num_columns  # here the target column EC1 is already included
-        ],
+        train_data.loc[:, feat_type_detector.num_columns],  # here the target column EC1 is already included
         "EC1",
     )
 
 # show bi-variate plots
-bi_variate_plots(train_data.loc[
-            :, feat_type_detector.num_columns
-        ],
-        "EC1")
+bi_variate_plots(
+    train_data.loc[:, feat_type_detector.num_columns],
+      "EC1"
+      )
 
 # show correlation heatmap
-correlation_heatmap(train_data.loc[
-            :, feat_type_detector.num_columns])
+correlation_heatmap(train_data.loc[:, feat_type_detector.num_columns])
 
 # show correlation to target
-correlation_to_target(train_data.loc[
-            :, feat_type_detector.num_columns
-        ],
-        "EC1",)
+correlation_to_target(
+    train_data.loc[:, feat_type_detector.num_columns],
+      "EC1",
+      )
 
 # show feature space after principal component analysis
-plot_pca(train_data.loc[
-            :, feat_type_detector.num_columns
-        ], "target")
+plot_pca(
+    train_data.loc[:, feat_type_detector.num_columns],
+    "target"
+    )
 
 # show feature space after t-SNE
-plot_tsne(train_data.loc[
-            :, feat_type_detector.num_columns
-        ], "target", perplexity=30, random_state=0)
+plot_tsne(
+    train_data.loc[:, feat_type_detector.num_columns],
+    "target",
+    perplexity=30,
+    random_state=0
+    )
 
 # show a heatmap of assocations between categorical variables
 theil_matrix = plot_theil_u_heatmap(train_data, feat_type_detector.cat_columns)
+
+# plot the percentage of Nulls for all features
+plot_null_percentage(
+    train_data.loc[:, feat_type_detector.num_columns],
+    )
 ```
 
 #### Enable cross-validation
