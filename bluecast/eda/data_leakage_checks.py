@@ -1,3 +1,4 @@
+import warnings
 from typing import List, Union
 
 import pandas as pd
@@ -29,6 +30,14 @@ def detect_leakage_via_correlation(
     # Exclude the target column itself from potential leakage
     potential_leakage.remove(target_column)
 
+    if len(potential_leakage) > 0:
+        warnings.warn(
+            f"Potential target leakage detected. Consider dropping the feature(s): {potential_leakage}",
+            stacklevel=2,
+        )
+    else:
+        print("No leakage has been detected")
+
     return potential_leakage
 
 
@@ -58,5 +67,13 @@ def detect_categorical_leakage(
         u = theil_u(data[column], data[target_column])
         if u >= threshold:
             leakage_columns.append(column)
+
+    if len(leakage_columns) > 0:
+        warnings.warn(
+            f"Potential target leakage or constant categorical columns detected. Consider dropping the feature(s): {leakage_columns}",
+            stacklevel=2,
+        )
+    else:
+        print("No leakage has been detected")
 
     return leakage_columns
