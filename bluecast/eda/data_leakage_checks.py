@@ -11,7 +11,8 @@ def detect_leakage_via_correlation(
 ) -> List[Union[str, float, int, None]]:
     """
     Detect data leakage by checking for high correlations between the target column
-    and other columns in the DataFrame.
+    and other columns in the DataFrame. The target column must be part of the provided
+    DataFrame.
 
     :param data: The DataFrame containing the data (numerical columns only for features)
     :param target_column: The name of the target column to check for correlations.
@@ -46,6 +47,7 @@ def detect_categorical_leakage(
 ) -> List[Union[str, float, int, None]]:
     """
     Detect data leakage by calculating Theil's U for categorical variables with respect to the target.
+    The target column must be part of the provided DataFrame.
 
     :param data: The DataFrame containing the data.
     :param target_column: The name of the target column.

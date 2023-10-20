@@ -14,6 +14,7 @@ from sklearn.manifold import TSNE
 def univariate_plots(df: pd.DataFrame, target: str) -> None:
     """
     Plots univariate plots for all the columns in the dataframe.
+    The target column must be part of the provided DataFrame.
 
     Expects numeric columns only.
     """
@@ -47,6 +48,7 @@ def univariate_plots(df: pd.DataFrame, target: str) -> None:
 def bi_variate_plots(df: pd.DataFrame, target: str) -> None:
     """
     Plots bivariate plots for all column combinations in the dataframe.
+    The target column must be part of the provided DataFrame.
 
     Expects numeric columns only.
     """
@@ -119,6 +121,7 @@ def correlation_heatmap(df: pd.DataFrame) -> None:
 def correlation_to_target(df: pd.DataFrame, target: str) -> None:
     """
     Plots correlations for all the columns in the dataframe in relation to the target column.
+    The target column must be part of the provided DataFrame.
 
     Expects numeric columns only.
     """
@@ -142,7 +145,7 @@ def correlation_to_target(df: pd.DataFrame, target: str) -> None:
 
 def plot_pca(df: pd.DataFrame, target: str) -> None:
     """
-    Plots PCA for the dataframe.
+    Plots PCA for the dataframe. The target column must be part of the provided DataFrame.
 
     Expects numeric columns only.
     """
@@ -169,7 +172,7 @@ def plot_pca(df: pd.DataFrame, target: str) -> None:
 
 def plot_tsne(df: pd.DataFrame, target: str, perplexity=50, random_state=42) -> None:
     """
-    Plots t-SNE for the dataframe.
+    Plots t-SNE for the dataframe. The target column must be part of the provided DataFrame.
 
     Expects numeric columns only.
     """
