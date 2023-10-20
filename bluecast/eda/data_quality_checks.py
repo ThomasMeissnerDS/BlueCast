@@ -1,11 +1,13 @@
-from typing import Union
+from typing import List, Union
 
 import pandas as pd
+
+from bluecast.eda.analyse import theil_u
 
 
 def detect_leakage_via_correlation(
     data: pd.DataFrame, target_column: Union[str, float, int], threshold: float = 0.9
-) -> bool:
+) -> List[Union[str, float, int, None]]:
     """
     Detect data leakage by checking for high correlations between the target column
     and other columns in the DataFrame.
@@ -27,10 +29,34 @@ def detect_leakage_via_correlation(
     # Exclude the target column itself from potential leakage
     potential_leakage.remove(target_column)
 
-    if len(potential_leakage) > 0:
-        print("Potential data leakage detected. High correlation with columns:")
-        print(potential_leakage)
-        return True
-    else:
-        print("No data leakage detected.")
-        return False
+    return potential_leakage
+
+
+def detect_categorical_leakage(
+    data: pd.DataFrame, target_column: Union[str, float, int], threshold: float = 0.9
+) -> List[Union[str, float, int, None]]:
+    """
+    Detect data leakage by calculating Theil's U for categorical variables with respect to the target.
+
+    :param data: The DataFrame containing the data.
+    :param target_column: The name of the target column.
+
+    :param threshold: The threshold for Theil's U. Columns with U greater than or equal to this threshold
+      will be considered potential data leakage.
+
+    :returns: A list of column names with Theil's U greater than or equal to the threshold.
+    """
+    if target_column not in data.columns:
+        raise ValueError(
+            f"The target column '{target_column}' is not found in the DataFrame."
+        )
+
+    leakage_columns = []
+    for column in data.columns:
+        if column == target_column:
+            continue
+        u = theil_u(data[column], data[target_column])
+        if u >= threshold:
+            leakage_columns.append(column)
+
+    return leakage_columns
