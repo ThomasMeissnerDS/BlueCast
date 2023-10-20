@@ -31,6 +31,7 @@ the full documentation [here](https://bluecast.readthedocs.io/en/latest/).
   * [Basic usage](#basic-usage)
   * [Advanced usage](#advanced-usage)
     * [Explanatory analysis](#explanatory-analysis)
+    * [Leakage detection](#leakage-detection)
     * [Enable cross-validation](#enable-cross-validation)
     * [Gaining extra performance](#gaining-extra-performance)
     * [Use multi-model blended pipeline](#use-multi-model-blended-pipeline)
@@ -118,6 +119,7 @@ from bluecast.eda.analyse import (
     plot_theil_u_heatmap,
     plot_tsne,
     univariate_plots,
+    check_unique_values,
 )
 
 from bluecast.preprocessing.feature_types import FeatureTypeDetector
@@ -168,6 +170,33 @@ theil_matrix = plot_theil_u_heatmap(train_data, feat_type_detector.cat_columns)
 plot_null_percentage(
     train_data.loc[:, feat_type_detector.num_columns],
     )
+
+# detect columns with a very high share of unique values
+many_unique_cols = check_unique_values(train_data, feat_type_detector.cat_columns)
+```
+
+#### Leakage detection
+
+With big data and complex pipelines data leakage can easily sneak in.
+To detect leakage BlueCast offers two functions:
+
+```sh
+from bluecast.eda.data_leakage_checks import (
+    detect_categorical_leakage,
+    detect_leakage_via_correlation,
+)
+
+
+# Detect leakage of numeric columns based on correlation
+result = detect_leakage_via_correlation(
+        train_data.loc[:, feat_type_detector.num_columns], "target", threshold=0.9
+    )
+
+# Detect leakage of categorical columns based on Theil's U
+result = detect_categorical_leakage(
+        train_data.loc[:, feat_type_detector.cat_columns], "target", threshold=0.9
+    )
+
 ```
 
 #### Enable cross-validation

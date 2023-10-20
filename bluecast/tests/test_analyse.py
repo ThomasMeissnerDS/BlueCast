@@ -6,6 +6,7 @@ import pytest
 
 from bluecast.eda.analyse import (
     bi_variate_plots,
+    check_unique_values,
     correlation_heatmap,
     correlation_to_target,
     plot_null_percentage,
@@ -48,6 +49,25 @@ def create_data_with_nulls() -> pd.DataFrame:
     }
 
     df = pd.DataFrame(data)
+    return df
+
+
+@pytest.fixture
+def create_data_with_many_uniques() -> pd.DataFrame:
+    df = pd.DataFrame(
+        {
+            "col1": [1, 2, 3, 4],
+            "col2": [1, 2, 3, 4],
+            "col3": [1, 2, 3, 4],
+            "col4": [1, 2, 3, 4],
+            "col5": [1, 2, 3, 4],
+            "col6": [1, 2, 3, 4],
+            "col7": [1, 2, 3, 4],
+            "col8": [1, 2, 3, 4],
+            "col9": [1, 2, 3, 4],
+            "col10": [1, 2, 3, 4],
+        }
+    )
     return df
 
 
@@ -129,3 +149,39 @@ def test_plot_theil_u_heatmap(synthetic_categorical_data):
 def test_plot_null_percentage(create_data_with_nulls):
     plot_null_percentage(create_data_with_nulls)
     assert True
+
+
+def test_check_unique_values(create_data_with_many_uniques):
+    # Test with threshold of 0.9
+    assert (
+        check_unique_values(
+            create_data_with_many_uniques, ["col1", "col2", "col3"], 0.9
+        )
+        == []
+    )
+
+    # Test with threshold of 0.8
+    assert check_unique_values(
+        create_data_with_many_uniques, ["col1", "col2", "col3"], 0.8
+    ) == ["col1", "col2", "col3"]
+
+    # Test with threshold of 0.5
+    assert check_unique_values(
+        create_data_with_many_uniques, ["col1", "col2", "col3"], 0.5
+    ) == ["col1", "col2", "col3"]
+
+    # Test with threshold of 0.1
+    assert check_unique_values(
+        create_data_with_many_uniques, ["col1", "col2", "col3"], 0.1
+    ) == [
+        "col1",
+        "col2",
+        "col3",
+        "col4",
+        "col5",
+        "col6",
+        "col7",
+        "col8",
+        "col9",
+        "col10",
+    ]

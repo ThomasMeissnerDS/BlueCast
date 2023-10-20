@@ -265,3 +265,23 @@ def plot_null_percentage(dataframe: pd.DataFrame) -> None:
 
     # Show the plot
     plt.show()
+
+
+def check_unique_values(
+    df: pd.DataFrame, columns: List[Union[str, int, float]], threshold: float
+) -> List[Union[str, int, float]]:
+    """
+    Check if the columns have an amount of unique values that is almost the number of total rows (being above the defined threshold)
+
+    :param df: The pandas DataFrame to check
+    :param columns: A list of column names to check
+    :param threshold: The threshold to check against
+    :returns: A list of column names that have a high amount of unique values
+    """
+    total_rows = len(df.index)
+    lots_uniques = []
+    for column in columns:
+        unique_values = len(df[column].unique())
+        if unique_values / total_rows >= threshold:
+            lots_uniques.append(column)
+    return lots_uniques
