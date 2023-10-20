@@ -31,6 +31,7 @@ the full documentation [here](https://bluecast.readthedocs.io/en/latest/).
   * [Basic usage](#basic-usage)
   * [Advanced usage](#advanced-usage)
     * [Explanatory analysis](#explanatory-analysis)
+    * [Leakage detection](#leakage-detection)
     * [Enable cross-validation](#enable-cross-validation)
     * [Gaining extra performance](#gaining-extra-performance)
     * [Use multi-model blended pipeline](#use-multi-model-blended-pipeline)
@@ -114,7 +115,12 @@ from bluecast.eda.analyse import (
     bi_variate_plots,
     correlation_heatmap,
     correlation_to_target,
+    plot_pca,
+    plot_theil_u_heatmap,
+    plot_tsne,
     univariate_plots,
+    check_unique_values,
+    plot_null_percentage
 )
 
 from bluecast.preprocessing.feature_types import FeatureTypeDetector
@@ -125,37 +131,73 @@ train_data = feat_type_detector.fit_transform_feature_types(train_data)
 
 # show univariate plots
 univariate_plots(
-        train_data.loc[
-            :, feat_type_detector.num_columns  # here the target column EC1 is already included
-        ],
+        train_data.loc[:, feat_type_detector.num_columns],  # here the target column EC1 is already included
         "EC1",
     )
 
 # show bi-variate plots
-bi_variate_plots(train_data.loc[
-            :, feat_type_detector.num_columns
-        ],
-        "EC1")
+bi_variate_plots(
+    train_data.loc[:, feat_type_detector.num_columns],
+      "EC1"
+      )
 
 # show correlation heatmap
-correlation_heatmap(train_data.loc[
-            :, feat_type_detector.num_columns])
+correlation_heatmap(train_data.loc[:, feat_type_detector.num_columns])
 
 # show correlation to target
-correlation_to_target(train_data.loc[
-            :, feat_type_detector.num_columns
-        ],
-        "EC1",)
+correlation_to_target(
+    train_data.loc[:, feat_type_detector.num_columns],
+      "EC1",
+      )
 
 # show feature space after principal component analysis
-plot_pca(train_data.loc[
-            :, feat_type_detector.num_columns
-        ], "target")
+plot_pca(
+    train_data.loc[:, feat_type_detector.num_columns],
+    "target"
+    )
 
 # show feature space after t-SNE
-plot_tsne(train_data.loc[
-            :, feat_type_detector.num_columns
-        ], "target", perplexity=30, random_state=0)
+plot_tsne(
+    train_data.loc[:, feat_type_detector.num_columns],
+    "target",
+    perplexity=30,
+    random_state=0
+    )
+
+# show a heatmap of assocations between categorical variables
+theil_matrix = plot_theil_u_heatmap(train_data, feat_type_detector.cat_columns)
+
+# plot the percentage of Nulls for all features
+plot_null_percentage(
+    train_data.loc[:, feat_type_detector.num_columns],
+    )
+
+# detect columns with a very high share of unique values
+many_unique_cols = check_unique_values(train_data, feat_type_detector.cat_columns)
+```
+
+#### Leakage detection
+
+With big data and complex pipelines data leakage can easily sneak in.
+To detect leakage BlueCast offers two functions:
+
+```sh
+from bluecast.eda.data_leakage_checks import (
+    detect_categorical_leakage,
+    detect_leakage_via_correlation,
+)
+
+
+# Detect leakage of numeric columns based on correlation
+result = detect_leakage_via_correlation(
+        train_data.loc[:, feat_type_detector.num_columns], "target", threshold=0.9
+    )
+
+# Detect leakage of categorical columns based on Theil's U
+result = detect_categorical_leakage(
+        train_data.loc[:, feat_type_detector.cat_columns], "target", threshold=0.9
+    )
+
 ```
 
 #### Enable cross-validation
@@ -185,10 +227,13 @@ y_probs, y_classes = automl.predict(df_val)
 
 #### Gaining extra performance
 
-By deault BlueCast uses Optuna's Bayesian hyperparameter optimization.
-However Bayesian methods give an estimate an do not necessarly find
-the ideal spot. Thus BlueCast has an optional GridSearch setting
+By default BlueCast uses Optuna's Bayesian hyperparameter optimization,
+however Bayesian methods give an estimate and do not necessarly find
+the ideal spot, thus BlueCast has an optional GridSearch setting
 that allows BlueCast to refine some of the parameters Optuna has found.
+This can be enabled by setting `enable_grid_search_fine_tuning` to True.
+This fine-tuning step uses a different random seed than the autotuning
+routine (seed from the settings + 1000).
 
 ```sh
 from bluecast.blueprints.cast import BlueCast
@@ -199,6 +244,8 @@ from bluecast.config.training_config import TrainingConfig
 train_config = TrainingConfig()
 train_config.hypertuning_cv_folds = 5 # default is 1
 train_config.enable_grid_search_fine_tuning = True # default is False
+train_config.gridsearch_tuning_max_runtime_secs = 3600 # max runtime in secs
+train_config.gridsearch_nb_parameters_per_grid = 5 # increasing this means X^3 trials atm
 
 # Pass the custom configs to the BlueCast class
 automl = BlueCast(

@@ -11,11 +11,17 @@ def check_gpu_support() -> str:
     data = np.random.rand(50, 2)
     label = np.random.randint(2, size=50)
     d_train = xgb.DMatrix(data, label=label)
-    params = {"tree_method": "gpu_hist"}
+
+    if int(xgb.__version__[0]):
+        gpu_param = "gpu"
+    else:
+        gpu_param = "gpu_hist"
+
+    params = {"tree_method": gpu_param}
     try:
         xgb.train(params, d_train, num_boost_round=2)
         print("Xgboost uses GPU.")
-        return "gpu_hist"
+        return gpu_param
     except Exception:
         print("Xgboost uses CPU.")
         return "exact"

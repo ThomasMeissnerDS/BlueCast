@@ -1,6 +1,11 @@
+import math
+from collections import Counter
+from typing import List, Union
+
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
+import scipy.stats as ss
 import seaborn as sns
 from sklearn.decomposition import PCA
 from sklearn.manifold import TSNE
@@ -9,6 +14,7 @@ from sklearn.manifold import TSNE
 def univariate_plots(df: pd.DataFrame, target: str) -> None:
     """
     Plots univariate plots for all the columns in the dataframe.
+    The target column must be part of the provided DataFrame.
 
     Expects numeric columns only.
     """
@@ -42,6 +48,7 @@ def univariate_plots(df: pd.DataFrame, target: str) -> None:
 def bi_variate_plots(df: pd.DataFrame, target: str) -> None:
     """
     Plots bivariate plots for all column combinations in the dataframe.
+    The target column must be part of the provided DataFrame.
 
     Expects numeric columns only.
     """
@@ -114,6 +121,7 @@ def correlation_heatmap(df: pd.DataFrame) -> None:
 def correlation_to_target(df: pd.DataFrame, target: str) -> None:
     """
     Plots correlations for all the columns in the dataframe in relation to the target column.
+    The target column must be part of the provided DataFrame.
 
     Expects numeric columns only.
     """
@@ -137,7 +145,7 @@ def correlation_to_target(df: pd.DataFrame, target: str) -> None:
 
 def plot_pca(df: pd.DataFrame, target: str) -> None:
     """
-    Plots PCA for the dataframe.
+    Plots PCA for the dataframe. The target column must be part of the provided DataFrame.
 
     Expects numeric columns only.
     """
@@ -164,7 +172,7 @@ def plot_pca(df: pd.DataFrame, target: str) -> None:
 
 def plot_tsne(df: pd.DataFrame, target: str, perplexity=50, random_state=42) -> None:
     """
-    Plots t-SNE for the dataframe.
+    Plots t-SNE for the dataframe. The target column must be part of the provided DataFrame.
 
     Expects numeric columns only.
     """
@@ -186,3 +194,97 @@ def plot_tsne(df: pd.DataFrame, target: str, perplexity=50, random_state=42) -> 
 
     fig.suptitle("t-SNE", y=1.1)
     plt.show()
+
+
+def conditional_entropy(x, y):
+    # entropy of x given y
+    y_counter = Counter(y)
+    xy_counter = Counter(list(zip(x, y)))
+    total_occurrences = sum(y_counter.values())
+    entropy = 0
+    for xy in xy_counter.keys():
+        p_xy = xy_counter[xy] / total_occurrences
+        p_y = y_counter[xy[1]] / total_occurrences
+        entropy += p_xy * math.log(p_y / p_xy)
+    return entropy
+
+
+def theil_u(x, y):
+    s_xy = conditional_entropy(x, y)
+    x_counter = Counter(x)
+    total_occurrences = sum(x_counter.values())
+    p_x = list(map(lambda n: n / total_occurrences, x_counter.values()))
+    s_x = ss.entropy(p_x)
+    if s_x == 0:
+        return 1
+    else:
+        return (s_x - s_xy) / s_x
+
+
+def plot_theil_u_heatmap(data: pd.DataFrame, columns: List[Union[str, int, float]]):
+    """Plot a heatmap for categorical data using Theil's U."""
+    theil_matrix = np.zeros((len(columns), len(columns)))
+
+    for i in range(len(columns)):
+        for j in range(len(columns)):
+            theil_matrix[i, j] = theil_u(data[columns[i]], data[columns[j]])
+
+    plt.figure(figsize=(len(columns), len(columns)))
+    sns.heatmap(
+        theil_matrix,
+        annot=True,
+        xticklabels=columns,
+        yticklabels=columns,
+        cmap="coolwarm",
+    )
+    plt.title("Theil's U Heatmap")
+
+    plt.show()
+    return theil_matrix
+
+
+def plot_null_percentage(dataframe: pd.DataFrame) -> None:
+    # Calculate the percentage of null values for each column
+    null_percentage = (dataframe.isnull().mean() * 100).round(2)
+
+    # Create a bar plot to visualize the null percentages
+    plt.figure(figsize=(12, 6))
+    bars = plt.bar(null_percentage.index, null_percentage.values)
+    plt.title("Percentage of Null Values in Each Column")
+    plt.xlabel("Columns")
+    plt.ylabel("Percentage of Null Values")
+    plt.xticks(rotation=90)
+    plt.tight_layout()
+
+    # Add annotations to the bars
+    for bar, percentage in zip(bars, null_percentage.values):
+        plt.text(
+            bar.get_x() + bar.get_width() / 2 - 0.15,  # Adjust x-position for centering
+            bar.get_height() + 1,  # Adjust y-position for vertical alignment
+            f"{percentage}%",  # Display the percentage
+            ha="center",  # Horizontal alignment
+            va="bottom",  # Vertical alignment
+        )
+
+    # Show the plot
+    plt.show()
+
+
+def check_unique_values(
+    df: pd.DataFrame, columns: List[Union[str, int, float]], threshold: float
+) -> List[Union[str, int, float]]:
+    """
+    Check if the columns have an amount of unique values that is almost the number of total rows (being above the defined threshold)
+
+    :param df: The pandas DataFrame to check
+    :param columns: A list of column names to check
+    :param threshold: The threshold to check against
+    :returns: A list of column names that have a high amount of unique values
+    """
+    total_rows = len(df.index)
+    lots_uniques = []
+    for column in columns:
+        unique_values = len(df[column].unique())
+        if unique_values / total_rows >= threshold:
+            lots_uniques.append(column)
+    return lots_uniques
