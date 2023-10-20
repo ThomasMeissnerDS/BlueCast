@@ -1,7 +1,7 @@
 import pandas as pd
 import pytest
 
-from bluecast.eda.data_quality_checks import (
+from bluecast.eda.data_leakage_checks import (
     detect_categorical_leakage,
     detect_leakage_via_correlation,
 )
