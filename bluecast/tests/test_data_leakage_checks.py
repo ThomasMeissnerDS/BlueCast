@@ -63,7 +63,7 @@ def test_detect_categorical_leakage(create_to_target_correlated_categorical_feat
     leakage_columns = detect_categorical_leakage(
         create_to_target_correlated_categorical_features, "target", threshold=0.9
     )
-    assert leakage_columns == ["feature_2"]
+    assert leakage_columns == ["feature2"]
 
     # Test when there is potential data leakage (feature1 is highly related to target)
     create_to_target_correlated_categorical_features[
