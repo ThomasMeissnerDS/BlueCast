@@ -22,7 +22,7 @@ from sklearn.metrics import (
 from bluecast.general_utils.general_utils import logger
 
 
-def plot_lift_chart(y_probs: np.array, y_true: np.array, num_bins: int = 100) -> None:
+def plot_lift_chart(y_probs: np.array, y_true: np.array, num_bins: int = 20) -> None:
     # Check if the length of the predicted probabilities matches the length of actual outcomes
     if len(y_probs) != len(y_true):
         raise ValueError(
