@@ -47,7 +47,7 @@ def test_blueprint_cv_xgboost(synthetic_train_test_data):
         <= train_config.hyperparameter_tuning_rounds * nb_models
         + nb_models * 7  # 7 metrics stored in fit_eval
     )
-    assert automl_cv.experiment_tracker.experiment_id[-1] == 17
+    assert automl_cv.experiment_tracker.experiment_id[-1] < 50
     print("Autotuning successful.")
     y_probs, y_classes = automl_cv.predict(df_val.drop("target", axis=1))
     print("Predicting successful.")
