@@ -2,6 +2,7 @@
 
 This is called as part of the fit_eval function.
 """
+import warnings
 from typing import Any, Dict
 
 import matplotlib.pyplot as plt
@@ -169,10 +170,18 @@ def eval_classifier(
 
     if pd.Series(y_classes).nunique() <= 2:
         plot_roc_auc(y_true, y_probs)
-        plot_lift_chart(y_probs, y_true)
+        try:
+            plot_lift_chart(y_probs, y_true)
+        except ValueError:
+            warnings.warn(
+                """Failed to create lift chart. This indicates an issue with the classifier.
+            Check if there is any varance in the predicted probabilities.""",
+                stacklevel=2,
+            )
+        plot_probability_distribution(y_probs)
     else:
         logger(
-            f"Skip ROC AUC curve and lift chart as number of classes is {pd.Series(y_classes).nunique()}."
+            f"Skip ROC AUC curve as number of classes is {pd.Series(y_classes).nunique()}."
         )
 
     evaluation_scores = {

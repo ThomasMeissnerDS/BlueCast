@@ -19,6 +19,8 @@ class TrainingConfig(BaseModel):
     """Define general training parameters.
 
     :param global_random_state: Global random state to use for reproducibility.
+    :param increase_random_state_in_bluecast_cv_by: In BlueCastCV multiple models are trained. Define by how much the
+        random state changes with each additional model.
     :param shuffle_during_training: Whether to shuffle the data during training when hypertuning_cv_folds > 1.
     :param hyperparameter_tuning_rounds: Number of hyperparameter tuning rounds. Not used when custom ML model is passed.
     :param hyperparameter_tuning_max_runtime_secs: Maximum runtime in seconds for hyperparameter tuning. Not used when
@@ -49,6 +51,7 @@ class TrainingConfig(BaseModel):
     """
 
     global_random_state: int = 10
+    increase_random_state_in_bluecast_cv_by: int = 33
     shuffle_during_training: bool = True
     hyperparameter_tuning_rounds: int = 200
     hyperparameter_tuning_max_runtime_secs: int = 3600
