@@ -677,6 +677,7 @@ with the following features:
   to mimic production environment reality
 * functions to save and load a trained pipeline
 * shapley values
+* ROC AUC curve & lift chart
 * warnings for potential misconfigurations
 
 The fit_eval method can be used like this:
