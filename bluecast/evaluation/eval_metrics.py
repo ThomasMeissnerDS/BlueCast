@@ -93,6 +93,29 @@ def plot_roc_auc(
     plt.show()
 
 
+def plot_probability_distribution(
+    y_probs: np.array, num_bins: int = 20, title: str = "Probability Distribution"
+) -> None:
+    """
+    Plot the distribution of predicted probabilities as a histogram using Matplotlib.
+
+    Parameters:
+    :param y_probs: NumPy array of predicted probabilities.
+    :param num_bins: Number of bins for the histogram (default is 20).
+    :param title: Title for the plot (default is "Probability Distribution").
+    """
+    # Create a histogram of the probabilities
+    plt.hist(y_probs, bins=num_bins, edgecolor="k", alpha=0.7)
+
+    # Set plot labels and title
+    plt.xlabel("Probability")
+    plt.ylabel("Frequency")
+    plt.title(title)
+
+    # Display the plot
+    plt.show()
+
+
 def balanced_log_loss(y_true, y_pred):
     assert ((y_true == 0) | (y_true == 1)).all()
     assert len(y_true) == len(y_pred)
