@@ -10,6 +10,7 @@ from bluecast.config.training_config import (
     XgboostTuneParamsConfig,
 )
 from bluecast.experimentation.tracking import ExperimentTracker
+from bluecast.general_utils.general_utils import logger
 from bluecast.ml_modelling.xgboost import XgboostModel
 from bluecast.preprocessing.custom import CustomPreprocessing
 from bluecast.preprocessing.feature_selection import RFECVSelector
@@ -87,7 +88,12 @@ class BlueCastCV:
             y_train = y_train.reset_index(drop=True)
             X_train[target_col] = y_train.values
 
-            self.conf_training.global_random_state += fn + 1000
+            self.conf_training.global_random_state += (
+                self.conf_training.increase_random_state_in_bluecast_cv_by
+            )
+            logger(
+                f"Start fitting model number {fn} with random seed {self.conf_training.global_random_state}"
+            )
 
             automl = BlueCast(
                 class_problem=self.class_problem,
@@ -130,7 +136,12 @@ class BlueCastCV:
 
             X_train.loc[:, target_col] = y_train
 
-            self.conf_training.global_random_state += fn
+            self.conf_training.global_random_state += (
+                self.conf_training.increase_random_state_in_bluecast_cv_by
+            )
+            logger(
+                f"Start fitting model number {fn} with random seed {self.conf_training.global_random_state}"
+            )
 
             automl = BlueCast(
                 class_problem=self.class_problem,

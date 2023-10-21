@@ -2,8 +2,10 @@
 
 This is called as part of the fit_eval function.
 """
+import warnings
 from typing import Any, Dict
 
+import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 from sklearn.metrics import (
@@ -15,9 +17,104 @@ from sklearn.metrics import (
     matthews_corrcoef,
     recall_score,
     roc_auc_score,
+    roc_curve,
 )
 
 from bluecast.general_utils.general_utils import logger
+
+
+def plot_lift_chart(y_probs: np.array, y_true: np.array, num_bins: int = 20) -> None:
+    # Check if the length of the predicted probabilities matches the length of actual outcomes
+    if len(y_probs) != len(y_true):
+        raise ValueError(
+            "The length of predicted probabilities and actual outcomes must be the same."
+        )
+
+    # Create a DataFrame for easy sorting
+    data = pd.DataFrame({"Predicted Probability": y_probs, "Actual Outcome": y_true})
+    data["Bucket"] = pd.qcut(data["Predicted Probability"], num_bins, duplicates="drop")
+
+    # Calculate the lift values for each bucket
+    lift_values = data.groupby("Bucket").agg({"Actual Outcome": ["count", "sum"]})
+    lift_values.columns = ["Total Count", "Positive Count"]
+    lift_values["Negative Count"] = (
+        lift_values["Total Count"] - lift_values["Positive Count"]
+    )
+    lift_values["Bucket Lift"] = (
+        lift_values["Positive Count"] / lift_values["Total Count"]
+    ).cumsum()
+
+    # Calculate the baseline lift (if predictions were random)
+    random_lift = data["Actual Outcome"].sum() / len(data)
+
+    # Create the lift chart
+    plt.figure(figsize=(8, 6))
+    plt.plot(
+        range(1, num_bins + 1),
+        lift_values["Bucket Lift"],
+        marker="o",
+        label="Model Lift",
+    )
+    plt.axhline(y=random_lift, color="red", linestyle="--", label="Random Lift")
+    plt.xlabel("Bucket")
+    plt.ylabel("Lift")
+    plt.title("Lift Chart")
+    plt.legend()
+    plt.grid()
+    plt.show()
+
+
+def plot_roc_auc(
+    y_true: np.array, predicted_probabilities: np.array, title="ROC Curve"
+) -> None:
+    """
+    Plot the ROC curve and calculate the AUC (Area Under the Curve).
+
+    :param y_true: True labels (0 or 1) for the binary classification problem.
+    :param predicted_probabilities: Predicted probabilities for the positive class.
+    :param title: Title for the ROC curve plot.
+    """
+
+    # Compute the ROC curve
+    fpr, tpr, thresholds = roc_curve(y_true, predicted_probabilities)
+
+    # Calculate AUC
+    auc = roc_auc_score(y_true, predicted_probabilities)
+
+    # Plot ROC curve
+    plt.figure(figsize=(8, 6))
+    plt.plot(fpr, tpr, label=f"AUC = {auc:.2f}")
+    plt.plot([0, 1], [0, 1], "k--")
+    plt.xlim([0.0, 1.0])
+    plt.ylim([0.0, 1.0])
+    plt.xlabel("False Positive Rate (FPR)")
+    plt.ylabel("True Positive Rate (TPR)")
+    plt.title(title)
+    plt.legend(loc="lower right")
+    plt.show()
+
+
+def plot_probability_distribution(
+    y_probs: np.array, num_bins: int = 20, title: str = "Probability Distribution"
+) -> None:
+    """
+    Plot the distribution of predicted probabilities as a histogram using Matplotlib.
+
+    Parameters:
+    :param y_probs: NumPy array of predicted probabilities.
+    :param num_bins: Number of bins for the histogram (default is 20).
+    :param title: Title for the plot (default is "Probability Distribution").
+    """
+    # Create a histogram of the probabilities
+    plt.hist(y_probs, bins=num_bins, edgecolor="k", alpha=0.7)
+
+    # Set plot labels and title
+    plt.xlabel("Probability")
+    plt.ylabel("Frequency")
+    plt.title(title)
+
+    # Display the plot
+    plt.show()
 
 
 def balanced_log_loss(y_true, y_pred):
@@ -70,6 +167,22 @@ def eval_classifier(
 
     full_classification_report = classification_report(y_true, y_classes)
     logger(full_classification_report)
+
+    if pd.Series(y_classes).nunique() <= 2:
+        plot_roc_auc(y_true, y_probs)
+        try:
+            plot_lift_chart(y_probs, y_true)
+        except ValueError:
+            warnings.warn(
+                """Failed to create lift chart. This indicates an issue with the classifier.
+            Check if there is any varance in the predicted probabilities.""",
+                stacklevel=2,
+            )
+        plot_probability_distribution(y_probs)
+    else:
+        logger(
+            f"Skip ROC AUC curve as number of classes is {pd.Series(y_classes).nunique()}."
+        )
 
     evaluation_scores = {
         "matthews": matthews,
