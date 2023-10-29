@@ -717,11 +717,12 @@ Documentation is provided via [Read the Docs](https://bluecast.readthedocs.io/en
 Even though BlueCast has been designed to be a lightweight
 automl framework, it still offers the possibilities to
 reach very good performance. We tested BlueCast in Kaggle
-competitions to show case the libraries capabilities
+competitions to showcase the libraries capabilities
 feature- and performance-wise.
 
 * ICR top 20% finish with over 6000 participants ([notebook](https://www.kaggle.com/code/thomasmeiner/icr-bluecast-automl-almost-bronze-ranks))
 * An advanced example covering lots of functionalities ([notebook](https://www.kaggle.com/code/thomasmeiner/ps3e23-automl-eda-outlier-detection/notebook))
+* PS3E23: Predict software defects top 12% finish ([notebook](https://www.kaggle.com/code/thomasmeiner/ps3e23-automl-eda-outlier-detection?scriptVersionId=145650820))
 
 ## How to contribute
 
