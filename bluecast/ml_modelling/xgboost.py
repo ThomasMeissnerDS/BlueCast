@@ -24,6 +24,7 @@ from bluecast.config.training_config import (
 from bluecast.experimentation.tracking import ExperimentTracker
 from bluecast.general_utils.general_utils import check_gpu_support, logger
 from bluecast.ml_modelling.base_classes import BaseClassMlModel
+from bluecast.preprocessing.custom import CustomPreprocessing
 
 
 class XgboostModel(BaseClassMlModel):
@@ -36,6 +37,7 @@ class XgboostModel(BaseClassMlModel):
         conf_xgboost: Optional[XgboostTuneParamsConfig] = None,
         conf_params_xgboost: Optional[XgboostFinalParamConfig] = None,
         experiment_tracker: Optional[ExperimentTracker] = None,
+        custom_in_fold_preprocessor: Optional[CustomPreprocessing] = None,
     ):
         self.model: Optional[xgb.XGBClassifier] = None
         self.class_problem = class_problem
@@ -43,6 +45,7 @@ class XgboostModel(BaseClassMlModel):
         self.conf_xgboost = conf_xgboost
         self.conf_params_xgboost = conf_params_xgboost
         self.experiment_tracker = experiment_tracker
+        self.custom_in_fold_preprocessor = custom_in_fold_preprocessor
 
     def calculate_class_weights(self, y: pd.Series) -> Dict[str, float]:
         """Calculate class weights of target column."""
@@ -179,11 +182,6 @@ class XgboostModel(BaseClassMlModel):
                 "conf_params_xgboost, conf_training or experiment_tracker is None"
             )
 
-        d_test = xgb.DMatrix(
-            x_test,
-            label=y_test,
-            enable_categorical=self.conf_training.cat_encoding_via_ml_algorithm,
-        )
         train_on = check_gpu_support()
 
         self.check_load_confs()
@@ -270,6 +268,11 @@ class XgboostModel(BaseClassMlModel):
             del param["steps"]
 
             if self.conf_training.hypertuning_cv_folds == 1:
+                d_test = xgb.DMatrix(
+                    x_test,
+                    label=y_test,
+                    enable_categorical=self.conf_training.cat_encoding_via_ml_algorithm,
+                )
                 eval_set = [(d_train, "train"), (d_test, "test")]
                 model = xgb.train(
                     param,
@@ -321,6 +324,29 @@ class XgboostModel(BaseClassMlModel):
                         y_train.iloc[trn_idx],
                         y_train.iloc[val_idx],
                     )
+                    if self.custom_in_fold_preprocessor:
+                        (
+                            X_train_fold,
+                            y_train_fold,
+                        ) = self.custom_in_fold_preprocessor.fit_transform(
+                            X_train_fold, y_train_fold
+                        )
+                        (
+                            X_test_fold,
+                            y_test_fold,
+                        ) = self.custom_in_fold_preprocessor.transform(x_test, y_test)
+                        (
+                            X_val_fold,
+                            y_val_fold,
+                        ) = self.custom_in_fold_preprocessor.transform(
+                            X_val_fold, y_val_fold, predicton_mode=False
+                        )
+
+                        d_test = xgb.DMatrix(
+                            X_test_fold,
+                            label=y_val_fold,
+                            enable_categorical=self.conf_training.cat_encoding_via_ml_algorithm,
+                        )
 
                     if sample_weight:
                         classes_weights = self.calculate_class_weights(y_train_fold)

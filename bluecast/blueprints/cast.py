@@ -52,6 +52,10 @@ class BlueCast:
         BlueCast will not split the data by time or order, but do a random split instead.
     :param :ml_model: Takes an instance of a XgboostModel class. If not provided, BlueCast will instantiate one.
         This is an API to pass any model class. Inherit the baseclass from ml_modelling.base_model.BaseModel.
+    :param custom_in_fold_preprocessor: Takes an instance of a CustomPreprocessing class. Allows users to eeecute
+        preprocessing after the train test split within cv folds. This will be executed only if precise_cv_tuning in
+        the conf_Training is True. Custom ML models need to implement this themselves. This step is only useful when
+        the proprocessing step has a high chance of overfitting otherwise (i.e: oversampling techniques).
     :param custom_preprocessor: Takes an instance of a CustomPreprocessing class. Allows users to inject custom
         preprocessing steps which take place right after the train test spit.
     :param custom_last_mile_computation: Takes an instance of a CustomPreprocessing class. Allows users to inject custom
@@ -68,6 +72,7 @@ class BlueCast:
         date_columns: Optional[List[Union[str, float, int]]] = None,
         time_split_column: Optional[str] = None,
         ml_model: Optional[Union[XgboostModel, Any]] = None,
+        custom_in_fold_preprocessor: Optional[CustomPreprocessing] = None,
         custom_last_mile_computation: Optional[CustomPreprocessing] = None,
         custom_preprocessor: Optional[CustomPreprocessing] = None,
         custom_feature_selector: Optional[
@@ -94,6 +99,7 @@ class BlueCast:
         self.target_label_encoder: Optional[TargetLabelEncoder] = None
         self.schema_detector: Optional[SchemaDetector] = None
         self.ml_model: Optional[XgboostModel] = ml_model
+        self.custom_in_fold_preprocessor = custom_in_fold_preprocessor
         self.custom_last_mile_computation = custom_last_mile_computation
         self.custom_preprocessor = custom_preprocessor
         self.custom_feature_selector = custom_feature_selector
@@ -289,7 +295,7 @@ class BlueCast:
             )
         self.ml_model.fit(x_train, x_test, y_train, y_test)
         if self.conf_training and self.conf_training.calculate_shap_values:
-            self.shap_values = shap_explanations(self.ml_model.model, x_test, "tree")
+            self.shap_values = shap_explanations(self.ml_model.model, x_test)
         self.prediction_mode = True
 
     def fit_eval(
