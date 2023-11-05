@@ -30,7 +30,8 @@ class TrainingConfig(BaseModel):
     :param precise_cv_tuning: If enabled will switch from using Xgboost's own cv method to a custom cross validation
         routine. This is needed when the in-fold preprocessing is necessary that would cause overfitting with usual cv.
         This has a much longer runtime as Optuna's pruning call is missing and all trials will run until the end.
-    :param early_stopping_rounds: Number of early stopping rounds. Not used when custom ML model is passed.
+    :param early_stopping_rounds: Number of early stopping rounds. Not used when custom ML model is passed. Also
+        not used when hypertuning_cv_folds is greater than 1.
     :param autotune_model: Whether to autotune the model. Not used when custom ML model is passed.
     :param enable_feature_selection: Whether to enable recursive feature selection.
     :param calculate_shap_values: Whether to calculate shap values. Also used when custom ML model is passed. Not

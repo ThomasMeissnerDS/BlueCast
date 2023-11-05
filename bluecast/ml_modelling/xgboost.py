@@ -260,6 +260,12 @@ class XgboostModel(BaseClassMlModel):
                     enable_categorical=self.conf_training.cat_encoding_via_ml_algorithm,
                 )
 
+            d_test = xgb.DMatrix(
+                x_test,
+                label=y_test,
+                enable_categorical=self.conf_training.cat_encoding_via_ml_algorithm,
+            )
+
             pruning_callback = optuna.integration.XGBoostPruningCallback(
                 trial, "test-mlogloss"
             )
@@ -306,10 +312,15 @@ class XgboostModel(BaseClassMlModel):
                 self.conf_training.hypertuning_cv_folds > 1
                 and self.conf_training.precise_cv_tuning
             ):
+                random_seed = trial.suggest_categorical(
+                    "random_seed",
+                    [self.conf_training.global_random_state + i for i in range(100)],
+                )
+
                 stratifier = StratifiedKFold(
-                    n_splits=5,
+                    n_splits=self.conf_training.hypertuning_cv_folds,
                     shuffle=True,
-                    random_state=self.conf_training.global_random_state,
+                    random_state=random_seed,
                 )
 
                 fold_losses = []
@@ -368,7 +379,7 @@ class XgboostModel(BaseClassMlModel):
                         param,
                         d_train,
                         num_boost_round=steps,
-                        early_stopping_rounds=self.conf_training.early_stopping_rounds,
+                        # early_stopping_rounds=self.conf_training.early_stopping_rounds,
                         evals=eval_set,
                         callbacks=[pruning_callback],
                         verbose_eval=self.conf_xgboost.model_verbosity,
