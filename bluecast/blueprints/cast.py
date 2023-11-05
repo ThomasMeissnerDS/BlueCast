@@ -339,6 +339,9 @@ class BlueCast:
         if not self.conf_params_xgboost:
             raise ValueError("Could not find Xgboost params")
 
+        if len(self.experiment_tracker.experiment_id) == 0:
+            self.experiment_tracker.experiment_id.append(0)
+
         # enrich experiment tracker
         for metric, higher_is_better in zip(
             [
