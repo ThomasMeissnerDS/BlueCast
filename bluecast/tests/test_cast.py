@@ -142,7 +142,7 @@ def test_blueprint_xgboost(
     assert len(y_classes) == len(df_val.index)
     assert (
         len(automl.experiment_tracker.experiment_id)
-        <= automl.conf_training.hyperparameter_tuning_rounds
+        <= automl.conf_training.hypertuning_cv_folds * 2
     )
 
 

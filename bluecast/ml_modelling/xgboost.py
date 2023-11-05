@@ -370,8 +370,8 @@ class XgboostModel(BaseClassMlModel):
                     score_category="oof_score",
                     training_config=self.conf_training,
                     model_parameters=param,
-                    eval_scores=matthews_mean[0],
-                    metric_used="adjusted ml logloss",
+                    eval_scores=matthews_mean,
+                    metric_used="matthew_inverse",
                     metric_higher_is_better=False,
                 )
                 return matthews_mean
