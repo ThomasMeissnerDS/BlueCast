@@ -13,6 +13,7 @@ import optuna
 import pandas as pd
 import xgboost as xgb
 from sklearn.metrics import matthews_corrcoef
+from sklearn.model_selection import StratifiedKFold
 from sklearn.utils import class_weight
 
 from bluecast.config.training_config import (
@@ -298,6 +299,82 @@ class XgboostModel(BaseClassMlModel):
                     metric_higher_is_better=False,
                 )
                 return matthew
+            elif (
+                self.conf_training.hypertuning_cv_folds > 1
+                and self.conf_training.precise_cv_tuning
+            ):
+                stratifier = StratifiedKFold(
+                    n_splits=5,
+                    shuffle=True,
+                    random_state=self.conf_training.global_random_state,
+                )
+
+                fold_losses = []
+                for _fn, (trn_idx, val_idx) in enumerate(
+                    stratifier.split(x_train, y_train)
+                ):
+                    X_train_fold, X_val_fold = (
+                        x_train.iloc[trn_idx],
+                        x_train.iloc[val_idx],
+                    )
+                    y_train_fold, y_val_fold = (
+                        y_train.iloc[trn_idx],
+                        y_train.iloc[val_idx],
+                    )
+
+                    if sample_weight:
+                        classes_weights = self.calculate_class_weights(y_train_fold)
+                        d_train = xgb.DMatrix(
+                            X_train_fold,
+                            label=y_train_fold,
+                            weight=classes_weights,
+                            enable_categorical=self.conf_training.cat_encoding_via_ml_algorithm,
+                        )
+                    else:
+                        d_train = xgb.DMatrix(
+                            X_train_fold,
+                            label=y_train_fold,
+                            enable_categorical=self.conf_training.cat_encoding_via_ml_algorithm,
+                        )
+
+                    eval_set = [(d_train, "train"), (d_test, "test")]
+                    model = xgb.train(
+                        param,
+                        d_train,
+                        num_boost_round=steps,
+                        early_stopping_rounds=self.conf_training.early_stopping_rounds,
+                        evals=eval_set,
+                        callbacks=[pruning_callback],
+                        verbose_eval=self.conf_xgboost.model_verbosity,
+                    )
+                    d_eval = xgb.DMatrix(
+                        X_val_fold,
+                        label=y_val_fold,
+                        enable_categorical=self.conf_training.cat_encoding_via_ml_algorithm,
+                    )
+
+                    preds = model.predict(d_eval)
+                    pred_labels = np.asarray([np.argmax(line) for line in preds])
+
+                    fold_losses.append(matthews_corrcoef(y_val_fold, pred_labels) * -1)
+
+                matthews_mean = np.mean(np.asarray(fold_losses))
+
+                # track results
+                if len(self.experiment_tracker.experiment_id) == 0:
+                    new_id = 0
+                else:
+                    new_id = self.experiment_tracker.experiment_id[-1] + 1
+                self.experiment_tracker.add_results(
+                    experiment_id=new_id,
+                    score_category="oof_score",
+                    training_config=self.conf_training,
+                    model_parameters=param,
+                    eval_scores=matthews_mean[0],
+                    metric_used="adjusted ml logloss",
+                    metric_higher_is_better=False,
+                )
+                return matthews_mean
             else:
                 random_seed = trial.suggest_categorical(
                     "random_seed",

@@ -17,7 +17,7 @@ for x in os.walk("../../src"):
 project = "BlueCast"
 copyright = "2023, Thomas Meißner"
 author = "Thomas Meißner"
-release = "0.61"
+release = "0.70"
 
 # -- General configuration ---------------------------------------------------
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#general-configuration
