@@ -232,8 +232,28 @@ def test_bluecast_with_custom_model():
         ) -> Tuple[pd.DataFrame, Optional[pd.Series]]:
             return df, target
 
+    class MyCustomInFoldPreprocessor(CustomPreprocessing):
+        def __init__(self):
+            super().__init__()
+
+        def fit_transform(
+            self, df: pd.DataFrame, target: pd.Series
+        ) -> Tuple[pd.DataFrame, Optional[pd.Series]]:
+            df["leakage"] = target
+            return df, target
+
+        def transform(
+            self,
+            df: pd.DataFrame,
+            target: Optional[pd.Series] = None,
+            predicton_mode: bool = False,
+        ) -> Tuple[pd.DataFrame, Optional[pd.Series]]:
+            df["leakage"] = 0
+            return df, target
+
     custom_feature_selector = RFECVSelector()
     custum_preproc = MyCustomPreprocessor()
+    custom_infold_preproc = MyCustomInFoldPreprocessor()
 
     # Create an instance of the BlueCast class with the custom model
     bluecast = BlueCast(
@@ -243,6 +263,7 @@ def test_bluecast_with_custom_model():
         conf_training=train_config,
         custom_feature_selector=custom_feature_selector,
         custom_preprocessor=custum_preproc,
+        custom_in_fold_preprocessor=custom_infold_preproc,
     )
 
     # Create some sample data for testing

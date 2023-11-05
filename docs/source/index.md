@@ -33,6 +33,7 @@ the full documentation [here](https://bluecast.readthedocs.io/en/latest/).
     * [Explanatory analysis](#explanatory-analysis)
     * [Leakage detection](#leakage-detection)
     * [Enable cross-validation](#enable-cross-validation)
+    * [Enable even more overfitting-robust cross-validation](#enable-even-more-overfitting-robust-cross-validation)
     * [Gaining extra performance](#gaining-extra-performance)
     * [Use multi-model blended pipeline](#use-multi-model-blended-pipeline)
     * [Categorical encoding](#categorical-encoding)
@@ -224,6 +225,45 @@ automl = BlueCast(
 automl.fit(df_train, target_col="target")
 y_probs, y_classes = automl.predict(df_val)
 ```
+
+This will use Xgboost's inbuilt cross validation routine which allows BlueCast
+to execute early pruning on not promising hyperparameter sets. This way BlueCast
+can test many more hyperparameters than usual cross validation.
+
+#### Enable even more overfitting-robust cross-validation
+
+There might be situations where a preprocessing step has a high risk of overfitting
+and  needs even more careful evaluation (i.e. oversampling techniques). For such
+scenarios BlueCast offers a solution as well.
+
+```sh
+from bluecast.blueprints.cast import BlueCast
+from bluecast.config.training_config import TrainingConfig
+
+
+# Create a custom training config and adjust general training parameters
+train_config = TrainingConfig()
+train_config.hypertuning_cv_folds = 5 # default is 1
+train_config.precise_cv_tuning = True # this enables the better routine
+
+# this only makes sense if we have an overfitting risky step
+custom_preprocessor = MyCustomPreprocessing() # see section Custom Preprocessing for details
+
+# Pass the custom configs to the BlueCast class
+automl = BlueCast(
+        class_problem="binary",
+        target_column="target"
+        conf_training=train_config,
+        custom_in_fold_preprocessor=custom_preprocessor # this happens during each fold
+    )
+
+automl.fit(df_train, target_col="target")
+y_probs, y_classes = automl.predict(df_val)
+```
+
+The custom in fold preprocessing takes place within the cross validation and
+executes the step on each fold. This is much more robust, but does not offer
+early pruning and is much slower. BlueCastCV supports this as well.
 
 #### Gaining extra performance
 
