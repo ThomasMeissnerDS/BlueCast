@@ -120,6 +120,7 @@ def test_blueprint_xgboost(
 
     custom_config = TrainingConfig()
     custom_config.precise_cv_tuning = True
+    custom_config.hypertuning_cv_folds = 2
 
     automl = BlueCast(
         class_problem="multiclass",
