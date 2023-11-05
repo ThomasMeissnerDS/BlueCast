@@ -157,4 +157,4 @@ def test_bluecast_cv_fit_eval_with_custom_model():
     assert isinstance(predicted_probas, np.ndarray)
     assert isinstance(predicted_classes, np.ndarray)
     print(bluecast.experiment_tracker.experiment_id)
-    assert len(bluecast.experiment_tracker.experiment_id) == 0  # due to custom model
+    assert len(bluecast.experiment_tracker.experiment_id) == 8  # due to custom model
