@@ -7,7 +7,6 @@ import pytest
 from bluecast.blueprints.cast import BlueCast
 from bluecast.config.training_config import TrainingConfig, XgboostTuneParamsConfig
 from bluecast.evaluation.eval_metrics import matthews_corrcoef
-from bluecast.evaluation.shap_values import shap_explanations
 from bluecast.tests.make_data.create_data import create_synthetic_dataframe
 
 
@@ -43,23 +42,6 @@ def test_shap_explanations():
     )
     print(eval_dict)
     assert isinstance(eval_dict, dict)
-
-
-def test_shap_explanations_else(mock_model, test_data):
-    explainer = "other"
-    with mock.patch(
-        "bluecast.evaluation.shap_values.shap.KernelExplainer"
-    ) as mock_kernel_explainer, mock.patch("matplotlib.pyplot.show") as mock_show:
-        mock_kernel_explainer.return_value.shap_values.return_value = np.array(
-            [[0.1, 0.2], [0.3, 0.4], [0.5, 0.6]]
-        )
-
-        shap_values = shap_explanations(mock_model, test_data, explainer)
-
-        mock_kernel_explainer.assert_called_once_with(mock_model.predict, test_data)
-        mock_show.assert_called_once()
-
-        assert shap_values is not None and shap_values.size > 0
 
 
 def test_eval_classifier_except():

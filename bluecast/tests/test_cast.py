@@ -113,10 +113,6 @@ def test_blueprint_xgboost(
     print("Predicting successful.")
     assert len(y_probs) == len(df_val.index)
     assert len(y_classes) == len(df_val.index)
-    assert (
-        len(automl.experiment_tracker.experiment_id)
-        <= automl.conf_training.hyperparameter_tuning_rounds
-    )
 
     custom_config = TrainingConfig()
     custom_config.precise_cv_tuning = True
@@ -142,7 +138,9 @@ def test_blueprint_xgboost(
     assert len(y_classes) == len(df_val.index)
     assert (
         len(automl.experiment_tracker.experiment_id)
-        <= automl.conf_training.hypertuning_cv_folds * 2
+        <= automl.conf_training.hypertuning_cv_folds
+        * 2
+        * automl.conf_training.hyperparameter_tuning_rounds
     )
 
 

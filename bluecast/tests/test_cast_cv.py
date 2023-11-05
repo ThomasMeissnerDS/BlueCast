@@ -1,12 +1,19 @@
 from typing import Tuple
 
+import numpy as np
 import pandas as pd
 import pytest
+from sklearn.ensemble import RandomForestClassifier
 from sklearn.model_selection import StratifiedKFold
 
 from bluecast.blueprints.cast import BlueCast
 from bluecast.blueprints.cast_cv import BlueCastCV
 from bluecast.config.training_config import TrainingConfig, XgboostTuneParamsConfig
+from bluecast.ml_modelling.base_classes import (
+    BaseClassMlModel,
+    PredictedClasses,
+    PredictedProbas,
+)
 from bluecast.tests.make_data.create_data import create_synthetic_dataframe
 
 
@@ -82,3 +89,72 @@ def test_blueprint_cv_xgboost(synthetic_train_test_data):
     # Check if each model in bluecast_models is an instance of BlueCast
     for model in automl_cv.bluecast_models:
         assert isinstance(model, BlueCast)
+
+
+class CustomLRModel(BaseClassMlModel):
+    def __init__(self):
+        self.model = None
+
+    def fit(
+        self,
+        x_train: pd.DataFrame,
+        x_test: pd.DataFrame,
+        y_train: pd.Series,
+        y_test: pd.Series,
+    ) -> None:
+        self.model = RandomForestClassifier()
+        self.model.fit(x_train, y_train)
+
+    def predict(self, df: pd.DataFrame) -> Tuple[PredictedProbas, PredictedClasses]:
+        predicted_probas = self.model.predict_proba(df)
+        predicted_classes = self.model.predict(df)
+        return predicted_probas, predicted_classes
+
+
+def test_bluecast_cv_fit_eval_with_custom_model():
+    custom_model = CustomLRModel()
+
+    # Create an instance of the BlueCast class with the custom model
+    bluecast = BlueCast(
+        class_problem="binary",
+        target_column="target",
+        ml_model=custom_model,
+    )
+
+    # Create some sample data for testing
+    x_train = pd.DataFrame(
+        {
+            "feature1": [i for i in range(10)],
+            "feature2": [i for i in range(10)],
+            "feature3": [i for i in range(10)],
+            "feature4": [i for i in range(10)],
+            "feature5": [i for i in range(10)],
+            "feature6": [i for i in range(10)],
+        }
+    )
+    y_train = pd.Series([0, 1, 0, 1, 0, 1, 0, 1, 0, 1])
+    x_test = pd.DataFrame(
+        {
+            "feature1": [i for i in range(10)],
+            "feature2": [i for i in range(10)],
+            "feature3": [i for i in range(10)],
+            "feature4": [i for i in range(10)],
+            "feature5": [i for i in range(10)],
+            "feature6": [i for i in range(10)],
+        }
+    )
+    y_test = pd.Series([0, 1, 0, 1, 0, 1, 0, 1, 0, 1])
+
+    x_train["target"] = y_train
+
+    # Fit the BlueCast model using the custom model
+    bluecast.fit_eval(x_train, x_test, y_test, "target")
+
+    # Predict on the test data using the custom model
+    predicted_probas, predicted_classes = bluecast.predict(x_test)
+
+    # Assert the expected results
+    assert isinstance(predicted_probas, np.ndarray)
+    assert isinstance(predicted_classes, np.ndarray)
+    print(bluecast.experiment_tracker.experiment_id)
+    assert len(bluecast.experiment_tracker.experiment_id) == 0  # due to custom model
