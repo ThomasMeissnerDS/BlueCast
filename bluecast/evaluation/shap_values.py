@@ -20,7 +20,7 @@ def shap_explanations(model, df: pd.DataFrame) -> np.ndarray:
         tree_explainer = shap.TreeExplainer(model)
         model_shap_values = tree_explainer.shap_values(df)
         shap.summary_plot(model_shap_values, df, plot_type="bar", show=True)
-    except AssertionError:
+    except (AssertionError, shap.utils._exceptions.InvalidModelError):
         model_shap_explainer = shap.KernelExplainer(model.predict, df)
         model_shap_values = model_shap_explainer.shap_values(df)
         shap.summary_plot(model_shap_values, df, show=True)

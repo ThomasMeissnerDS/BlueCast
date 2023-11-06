@@ -3,10 +3,12 @@ from unittest import mock
 import numpy as np
 import pandas as pd
 import pytest
+from sklearn.linear_model import LogisticRegression
 
 from bluecast.blueprints.cast import BlueCast
 from bluecast.config.training_config import TrainingConfig, XgboostTuneParamsConfig
 from bluecast.evaluation.eval_metrics import matthews_corrcoef
+from bluecast.evaluation.shap_values import shap_explanations
 from bluecast.tests.make_data.create_data import create_synthetic_dataframe
 
 
@@ -42,6 +44,24 @@ def test_shap_explanations():
     )
     print(eval_dict)
     assert isinstance(eval_dict, dict)
+
+    targets = df_train.pop("target")
+
+    # test that non-tree based models are supported as well
+    model = LogisticRegression()
+    model.fit(
+        df_train.loc[
+            :, ["numerical_feature_1", "numerical_feature_2", "numerical_feature_3"]
+        ],
+        targets,
+    )
+    model_shap_values = shap_explanations(
+        model,
+        df_val.loc[
+            :, ["numerical_feature_1", "numerical_feature_2", "numerical_feature_3"]
+        ],
+    )
+    assert model_shap_values.any()
 
 
 def test_eval_classifier_except():
