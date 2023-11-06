@@ -137,8 +137,7 @@ class XgboostModel(BaseClassMlModel):
         )
         eval_set = [(d_train, "train"), (d_test, "test")]
 
-        steps = self.conf_params_xgboost.params["steps"]
-        del self.conf_params_xgboost.params["steps"]
+        steps = self.conf_params_xgboost.params.pop("steps", 300)
 
         if self.conf_training.hypertuning_cv_folds == 1 and self.conf_xgboost:
             self.model = xgb.train(
@@ -270,8 +269,7 @@ class XgboostModel(BaseClassMlModel):
                 trial, "test-mlogloss"
             )
 
-            steps = param["steps"]
-            del param["steps"]
+            steps = param.pop("steps", 300)
 
             if self.conf_training.hypertuning_cv_folds == 1:
                 d_test = xgb.DMatrix(
@@ -571,8 +569,7 @@ class XgboostModel(BaseClassMlModel):
             tuned_params["lambda"] = lambda_space
             tuned_params["gamma"] = gamma_space
 
-            steps = tuned_params["steps"]
-            del tuned_params["steps"]
+            steps = tuned_params.pop("steps", 300)
 
             if self.conf_training.hypertuning_cv_folds == 1:
                 eval_set = [(d_train, "train"), (d_test, "test")]

@@ -181,6 +181,24 @@ class BlueCast:
             within the provided last mile computation or consider disabling categorical encoding via ML algorithm in the
             TrainingConfig alternatively."""
             warnings.warn(message, UserWarning, stacklevel=2)
+        if (
+            self.conf_training.precise_cv_tuning
+            and not self.custom_in_fold_preprocessor
+        ):
+            message = """Precise fine tuning has been enabled, but no custom_in_fold_preprocessor has been provided.
+            This will cause long runtimes without benefit. If you plan to execute any overfitting risky preprocessing,
+            please consider using custom_in_fold_preprocessor to execute the steps within the cross-validation folds
+            using precise_cv_tuning. Otherwise disable precise_cv_tuning to benefit from early pruning of unpromising
+            hyperparameter sets."""
+            warnings.warn(message, UserWarning, stacklevel=2)
+        if (
+            self.conf_training.precise_cv_tuning
+            and self.conf_training.hypertuning_cv_folds < 2
+        ):
+            message = """Precise fine tuning has been enabled, but number of hypertuning_cv_folds is less than 2. With
+            less than 2 folds precise_cv_tuning will not have any impact. Consider raising the number of folds to two
+            or higher or disable precise_cv_tuning."""
+            warnings.warn(message, UserWarning, stacklevel=2)
 
     def fit(self, df: pd.DataFrame, target_col: str) -> None:
         """Train a full ML pipeline."""
