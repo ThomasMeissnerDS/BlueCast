@@ -25,7 +25,8 @@ def train_test_split_cross(
     logger(
         f"{datetime.utcnow()}: Start executing train-test split with train size of {train_size}."
     )
-    target = df.pop(target_col)
+    target = df[target_col].copy()
+    df = df.drop(target_col, axis=1)
 
     if stratify:
         stratify_data = target
