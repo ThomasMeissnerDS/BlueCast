@@ -292,16 +292,19 @@ def check_unique_values(
     return lots_uniques
 
 
-def mutual_info_to_target(df: pd.DataFrame, target: str) -> None:
+def mutual_info_to_target(df: pd.DataFrame, target: str, **mut_params) -> None:
     """
     Plots mutual information scores for all the categorical columns in the dataframe in relation to the target column.
     The target column must be part of the provided DataFrame.
+    :param df: DataFrame containing all columns including target column.
+    :param target: String indicating which column is teh target column.
+    :param mut_params: Dictionary passing additional arguments into sklearn's mutual_info_classif function.
 
     To be used for classification only.
     """
     # Calculate the mutual information scores
     mi_scores = mutual_info_classif(
-        df.drop(columns=[target]), df[target], discrete_features=True
+        X=df.drop(columns=[target]), y=df[target], **mut_params
     )
 
     # Sort features by MI score descending
