@@ -121,7 +121,8 @@ from bluecast.eda.analyse import (
     plot_tsne,
     univariate_plots,
     check_unique_values,
-    plot_null_percentage
+    plot_null_percentage,
+    mutual_info_to_target.
 )
 
 from bluecast.preprocessing.feature_types import FeatureTypeDetector
@@ -144,6 +145,9 @@ bi_variate_plots(
 
 # show correlation heatmap
 correlation_heatmap(train_data.loc[:, feat_type_detector.num_columns])
+
+# show mutual information of categorical features to target
+mutual_info_to_target(train_data.loc[:, feat_type_detector.cat_columns], "EC1")
 
 # show correlation to target
 correlation_to_target(

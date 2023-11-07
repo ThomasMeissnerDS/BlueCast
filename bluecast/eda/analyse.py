@@ -8,6 +8,7 @@ import pandas as pd
 import scipy.stats as ss
 import seaborn as sns
 from sklearn.decomposition import PCA
+from sklearn.feature_selection import mutual_info_classif
 from sklearn.manifold import TSNE
 
 
@@ -289,3 +290,32 @@ def check_unique_values(
         if unique_values / total_rows >= threshold:
             lots_uniques.append(column)
     return lots_uniques
+
+
+def mutual_info_to_target(df: pd.DataFrame, target: str) -> None:
+    """
+    Plots mutual information scores for all the categorical columns in the dataframe in relation to the target column.
+    The target column must be part of the provided DataFrame.
+
+    To be used for classification only.
+    """
+    # Calculate the mutual information scores
+    mi_scores = mutual_info_classif(
+        df.drop(columns=[target]), df[target], discrete_features=True
+    )
+
+    # Sort features by MI score descending
+    sorted_features = df.drop(columns=[target]).columns[np.argsort(-mi_scores)]
+
+    # Sort MI scores in descending order
+    mi_scores_sorted = mi_scores[np.argsort(-mi_scores)]
+
+    # Create a bar chart of the mutual information scores
+    fig, ax = plt.subplots(figsize=(10, 6))
+    sns.barplot(x=mi_scores_sorted, y=sorted_features, order=sorted_features, ax=ax)
+    ax.set_title("Mutual Information Scores with Target")
+    ax.set_xlabel("Mutual Information Score")
+    ax.set_ylabel("Features")
+    for i, v in enumerate(mi_scores_sorted):
+        ax.text(v + 0.01, i, str(round(v, 2)), color="blue", fontweight="bold")
+    plt.show()
