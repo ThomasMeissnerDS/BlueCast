@@ -103,7 +103,7 @@ def test_correlation_to_target(synthetic_train_test_data):
 def test_mutual_info_to_target(synthetic_train_test_data):
     mutual_info_to_target(
         synthetic_train_test_data[0][
-            ["categorical_feature_1", "categorical_feature_2"]
+            ["categorical_feature_1", "categorical_feature_2", "target"]
         ],
         "target",
     )
