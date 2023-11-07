@@ -4,9 +4,12 @@ Feature type detection and casting.
 This is a convenience class to detect and cast feature types in a DataFrame. It can be used to detect numerical,
 categorical and datetime columns. It also casts columns to a specific type.
 """
+from datetime import datetime
 from typing import Dict, List, Tuple, Union
 
 import pandas as pd
+
+from bluecast.general_utils.general_utils import logger
 
 
 class FeatureTypeDetector:
@@ -137,6 +140,7 @@ class FeatureTypeDetector:
 
         Wrapper function to orchester different detection methods.
         """
+        logger(f"{datetime.utcnow()}: Start detecting and casting feature types.")
         self.identify_num_columns(df)
         bool_cols, no_bool_cols = self.identify_bool_columns(df)
         self.identify_date_time_columns(df, no_bool_cols)
@@ -151,6 +155,7 @@ class FeatureTypeDetector:
         Loops through the dataframe and detects column types and type casts them accordingly.
         :return: Returns casted dataframe
         """
+        logger(f"{datetime.utcnow()}: Start casting feature types.")
         for key in self.detected_col_types:
             if ignore_cols and key not in ignore_cols and key in df.columns:
                 if self.detected_col_types[key] == "datetime[ns]":
