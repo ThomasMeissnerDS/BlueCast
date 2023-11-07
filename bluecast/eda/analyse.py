@@ -294,7 +294,7 @@ def check_unique_values(
 
 def mutual_info_to_target(df: pd.DataFrame, target: str, **mut_params) -> None:
     """
-    Plots mutual information scores for all the categorical columns in the dataframe in relation to the target column.
+    Plots mutual information scores for all the categorical columns in the DataFrame in relation to the target column.
     The target column must be part of the provided DataFrame.
     :param df: DataFrame containing all columns including target column.
     :param target: String indicating which column is teh target column.

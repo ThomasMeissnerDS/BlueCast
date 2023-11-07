@@ -147,7 +147,8 @@ bi_variate_plots(
 correlation_heatmap(train_data.loc[:, feat_type_detector.num_columns])
 
 # show mutual information of categorical features to target
-mutual_info_to_target(train_data.loc[:, feat_type_detector.cat_columns], "EC1")
+extra_params = {"random_state": 30}
+mutual_info_to_target(train_data.loc[:, feat_type_detector.cat_columns], "EC1", **extra_params)
 
 # show correlation to target
 correlation_to_target(
