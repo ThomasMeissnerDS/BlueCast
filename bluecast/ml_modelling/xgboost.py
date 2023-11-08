@@ -360,9 +360,9 @@ class XgboostModel(BaseClassMlModel):
         self.conf_params_xgboost.sample_weight = xgboost_best_param["sample_weight"]
 
     def get_best_score(self):
-        if (
-            self.conf_training.autotune_model
-            and self.conf_training.hypertuning_cv_folds == 1
+        if self.conf_training.autotune_model and (
+            self.conf_training.hypertuning_cv_folds == 1
+            or self.conf_training.precise_cv_tuning
         ):
             best_score_cv_grid = self.experiment_tracker.get_best_score(
                 target_metric="matthew_inverse"
