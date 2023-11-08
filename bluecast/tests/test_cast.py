@@ -173,6 +173,7 @@ def test_bluecast_with_custom_model():
     train_config.enable_feature_selection = True
     train_config.hypertuning_cv_folds = 2
     train_config.enable_grid_search_fine_tuning = True
+    train_config.gridsearch_nb_parameters_per_grid = 2
 
     xgboost_param_config = XgboostTuneParamsConfig()
     xgboost_param_config.steps_max = 100
