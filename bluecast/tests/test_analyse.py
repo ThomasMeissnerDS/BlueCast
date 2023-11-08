@@ -9,6 +9,7 @@ from bluecast.eda.analyse import (
     check_unique_values,
     correlation_heatmap,
     correlation_to_target,
+    mutual_info_to_target,
     plot_null_percentage,
     plot_pca,
     plot_theil_u_heatmap,
@@ -97,6 +98,16 @@ def test_correlation_to_target(synthetic_train_test_data):
         "target",
     )
     assert True
+
+
+def test_mutual_info_to_target(synthetic_train_test_data):
+    mutual_info_to_target(
+        synthetic_train_test_data[0].drop(
+            ["categorical_feature_1", "categorical_feature_2", "datetime_feature"],
+            axis=1,
+        ),
+        "target",
+    )
 
 
 def test_pca_plot(synthetic_train_test_data):

@@ -1,5 +1,6 @@
 """General utilities."""
 import logging
+from datetime import datetime
 from typing import Any, Optional
 
 import dill as pickle
@@ -8,6 +9,7 @@ import xgboost as xgb
 
 
 def check_gpu_support() -> str:
+    logger(f"{datetime.utcnow()}: Start checking if GPU is available for usage.")
     data = np.random.rand(50, 2)
     label = np.random.randint(2, size=50)
     d_train = xgb.DMatrix(data, label=label)
@@ -46,6 +48,7 @@ def save_to_production(
     :param file_type: Takes the expected type of file to export.
     :return:
     """
+    logger(f"{datetime.utcnow()}: Start saving class instance.")
     if file_path:
         full_path = file_path + file_name + file_type
     else:
@@ -68,6 +71,7 @@ def load_for_production(
     :param file_type: Takes the expected type of file to import.
     :return:
     """
+    logger(f"{datetime.utcnow()}: Start loading class instance.")
     if file_path:
         full_path = file_path + file_name
     else:

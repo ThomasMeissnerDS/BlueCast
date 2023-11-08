@@ -3,6 +3,7 @@ from unittest import mock
 import numpy as np
 import pandas as pd
 import pytest
+from sklearn.linear_model import LogisticRegression
 
 from bluecast.blueprints.cast import BlueCast
 from bluecast.config.training_config import TrainingConfig, XgboostTuneParamsConfig
@@ -44,22 +45,23 @@ def test_shap_explanations():
     print(eval_dict)
     assert isinstance(eval_dict, dict)
 
+    targets = df_train.pop("target")
 
-def test_shap_explanations_else(mock_model, test_data):
-    explainer = "other"
-    with mock.patch(
-        "bluecast.evaluation.shap_values.shap.KernelExplainer"
-    ) as mock_kernel_explainer, mock.patch("matplotlib.pyplot.show") as mock_show:
-        mock_kernel_explainer.return_value.shap_values.return_value = np.array(
-            [[0.1, 0.2], [0.3, 0.4], [0.5, 0.6]]
-        )
-
-        shap_values = shap_explanations(mock_model, test_data, explainer)
-
-        mock_kernel_explainer.assert_called_once_with(mock_model.predict, test_data)
-        mock_show.assert_called_once()
-
-        assert shap_values is not None and shap_values.size > 0
+    # test that non-tree based models are supported as well
+    model = LogisticRegression()
+    model.fit(
+        df_train.loc[
+            :, ["numerical_feature_1", "numerical_feature_2", "numerical_feature_3"]
+        ],
+        targets,
+    )
+    model_shap_values = shap_explanations(
+        model,
+        df_val.loc[
+            :, ["numerical_feature_1", "numerical_feature_2", "numerical_feature_3"]
+        ],
+    )
+    assert model_shap_values.any()
 
 
 def test_eval_classifier_except():

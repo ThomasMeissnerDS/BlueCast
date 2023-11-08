@@ -1,7 +1,10 @@
 """Module for DataFrame schema checks."""
+from datetime import datetime
 from typing import List, Union
 
 import pandas as pd
+
+from bluecast.general_utils.general_utils import logger
 
 
 class SchemaDetector:
@@ -12,6 +15,7 @@ class SchemaDetector:
 
     def fit(self, df: pd.DataFrame):
         """Store the schema of the train dataset."""
+        logger(f"{datetime.utcnow()}: Start fitting DataFrame schema.")
         self.train_schema = df.columns.to_list()
         return self.train_schema
 
@@ -20,6 +24,9 @@ class SchemaDetector:
 
         Will raise an error if schema length does not match and will raise a warning indicating the missing or extra
         columns."""
+        logger(
+            f"{datetime.utcnow()}: Start checking if DataFrame schema of new data is consistent with previous data."
+        )
         if len(df.columns) > len(self.train_schema):
             new_cols = [col for col in df.columns if col not in self.train_schema]
             raise ValueError(

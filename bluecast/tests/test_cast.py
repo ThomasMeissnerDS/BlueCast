@@ -113,9 +113,34 @@ def test_blueprint_xgboost(
     print("Predicting successful.")
     assert len(y_probs) == len(df_val.index)
     assert len(y_classes) == len(df_val.index)
+
+    custom_config = TrainingConfig()
+    custom_config.precise_cv_tuning = True
+    custom_config.hypertuning_cv_folds = 2
+
+    automl = BlueCast(
+        class_problem="multiclass",
+        target_column="target",
+        conf_xgboost=xgboost_param_config,
+        conf_training=custom_config,
+        custom_last_mile_computation=custom_last_mile_computation,
+    )
+    automl.fit_eval(
+        df_train,
+        df_train.drop("target", axis=1),
+        df_train["target"],
+        target_col="target",
+    )
+    print("Autotuning successful.")
+    y_probs, y_classes = automl.predict(df_val.drop("target", axis=1))
+    print("Predicting successful.")
+    assert len(y_probs) == len(df_val.index)
+    assert len(y_classes) == len(df_val.index)
     assert (
         len(automl.experiment_tracker.experiment_id)
-        <= automl.conf_training.hyperparameter_tuning_rounds
+        <= automl.conf_training.hypertuning_cv_folds
+        * 2
+        * automl.conf_training.hyperparameter_tuning_rounds
     )
 
 
@@ -207,8 +232,28 @@ def test_bluecast_with_custom_model():
         ) -> Tuple[pd.DataFrame, Optional[pd.Series]]:
             return df, target
 
+    class MyCustomInFoldPreprocessor(CustomPreprocessing):
+        def __init__(self):
+            super().__init__()
+
+        def fit_transform(
+            self, df: pd.DataFrame, target: pd.Series
+        ) -> Tuple[pd.DataFrame, Optional[pd.Series]]:
+            df["leakage"] = target
+            return df, target
+
+        def transform(
+            self,
+            df: pd.DataFrame,
+            target: Optional[pd.Series] = None,
+            predicton_mode: bool = False,
+        ) -> Tuple[pd.DataFrame, Optional[pd.Series]]:
+            df["leakage"] = 0
+            return df, target
+
     custom_feature_selector = RFECVSelector()
     custum_preproc = MyCustomPreprocessor()
+    custom_infold_preproc = MyCustomInFoldPreprocessor()
 
     # Create an instance of the BlueCast class with the custom model
     bluecast = BlueCast(
@@ -218,6 +263,7 @@ def test_bluecast_with_custom_model():
         conf_training=train_config,
         custom_feature_selector=custom_feature_selector,
         custom_preprocessor=custum_preproc,
+        custom_in_fold_preprocessor=custom_infold_preproc,
     )
 
     # Create some sample data for testing
@@ -255,4 +301,6 @@ def test_bluecast_with_custom_model():
     assert isinstance(predicted_probas, np.ndarray)
     assert isinstance(predicted_classes, np.ndarray)
     print(bluecast.experiment_tracker.experiment_id)
-    assert len(bluecast.experiment_tracker.experiment_id) == 0  # due to custom model
+    assert (
+        len(bluecast.experiment_tracker.experiment_id) == 0
+    )  # due to custom model and fit method

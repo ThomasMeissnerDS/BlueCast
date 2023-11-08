@@ -5,6 +5,7 @@ import pandas as pd
 
 from bluecast.config.base_classes import BaseClassExperimentTracker
 from bluecast.config.training_config import TrainingConfig
+from bluecast.general_utils.general_utils import logger
 
 
 class ExperimentTracker(BaseClassExperimentTracker):
@@ -52,6 +53,7 @@ class ExperimentTracker(BaseClassExperimentTracker):
         :param metric_used: The name of the eval metric.
         :param metric_higher_is_better: True or False.
         """
+        logger(f"{datetime.utcnow()}: Start adding results to ExperimentTracker.")
         self.experiment_id.append(experiment_id)
         self.score_category.append(score_category)
         try:

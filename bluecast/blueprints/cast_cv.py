@@ -31,6 +31,7 @@ class BlueCastCV:
         conf_xgboost: Optional[XgboostTuneParamsConfig] = None,
         conf_params_xgboost: Optional[XgboostFinalParamConfig] = None,
         experiment_tracker: Optional[ExperimentTracker] = None,
+        custom_in_fold_preprocessor: Optional[CustomPreprocessing] = None,
         custom_last_mile_computation: Optional[CustomPreprocessing] = None,
         custom_preprocessor: Optional[CustomPreprocessing] = None,
         custom_feature_selector: Optional[
@@ -42,6 +43,7 @@ class BlueCastCV:
         self.conf_xgboost = conf_xgboost
         self.conf_training = conf_training
         self.conf_params_xgboost = conf_params_xgboost
+        self.custom_in_fold_preprocessor = custom_in_fold_preprocessor
         self.custom_preprocessor = custom_preprocessor
         self.custom_feature_selector = custom_feature_selector
         self.custom_last_mile_computation = custom_last_mile_computation
@@ -102,6 +104,7 @@ class BlueCastCV:
                 conf_xgboost=self.conf_xgboost,
                 conf_params_xgboost=self.conf_params_xgboost,
                 experiment_tracker=self.experiment_tracker,
+                custom_in_fold_preprocessor=self.custom_in_fold_preprocessor,
                 custom_preprocessor=self.custom_preprocessor,
                 custom_feature_selector=self.custom_feature_selector,
                 custom_last_mile_computation=self.custom_last_mile_computation,
@@ -150,6 +153,7 @@ class BlueCastCV:
                 conf_xgboost=self.conf_xgboost,
                 conf_params_xgboost=self.conf_params_xgboost,
                 experiment_tracker=self.experiment_tracker,
+                custom_in_fold_preprocessor=self.custom_in_fold_preprocessor,
                 custom_preprocessor=self.custom_preprocessor,
                 custom_feature_selector=self.custom_feature_selector,
                 custom_last_mile_computation=self.custom_last_mile_computation,

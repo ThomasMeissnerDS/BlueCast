@@ -27,6 +27,7 @@ def train_test_split_cross(
     )
     target = df[target_col].copy()
     df = df.drop(target_col, axis=1)
+
     if stratify:
         stratify_data = target
     else:

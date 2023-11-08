@@ -8,6 +8,7 @@ import pandas as pd
 import scipy.stats as ss
 import seaborn as sns
 from sklearn.decomposition import PCA
+from sklearn.feature_selection import mutual_info_classif
 from sklearn.manifold import TSNE
 
 
@@ -45,10 +46,11 @@ def univariate_plots(df: pd.DataFrame, target: str) -> None:
         plt.show()
 
 
-def bi_variate_plots(df: pd.DataFrame, target: str) -> None:
+def bi_variate_plots(df: pd.DataFrame, target: str, num_cols_grid: int = 4) -> None:
     """
     Plots bivariate plots for all column combinations in the dataframe.
     The target column must be part of the provided DataFrame.
+    Param num_cols_grid specifies how many columns the grid shall have.
 
     Expects numeric columns only.
     """
@@ -57,7 +59,7 @@ def bi_variate_plots(df: pd.DataFrame, target: str) -> None:
 
     # Define the grid layout based on the number of variables
     num_variables = len(variables)
-    num_cols = 4  # Number of columns in the grid
+    num_cols = num_cols_grid  # Number of columns in the grid
     num_rows = (
         num_variables + num_cols - 1
     ) // num_cols  # Calculate the number of rows needed
@@ -288,3 +290,35 @@ def check_unique_values(
         if unique_values / total_rows >= threshold:
             lots_uniques.append(column)
     return lots_uniques
+
+
+def mutual_info_to_target(df: pd.DataFrame, target: str, **mut_params) -> None:
+    """
+    Plots mutual information scores for all the categorical columns in the DataFrame in relation to the target column.
+    The target column must be part of the provided DataFrame.
+    :param df: DataFrame containing all columns including target column. Features are expected to be numerical.
+    :param target: String indicating which column is the target column.
+    :param mut_params: Dictionary passing additional arguments into sklearn's mutual_info_classif function.
+
+    To be used for classification only.
+    """
+    # Calculate the mutual information scores
+    mi_scores = mutual_info_classif(
+        X=df.drop(columns=[target]), y=df[target], **mut_params
+    )
+
+    # Sort features by MI score descending
+    sorted_features = df.drop(columns=[target]).columns[np.argsort(-mi_scores)]
+
+    # Sort MI scores in descending order
+    mi_scores_sorted = mi_scores[np.argsort(-mi_scores)]
+
+    # Create a bar chart of the mutual information scores
+    fig, ax = plt.subplots(figsize=(10, 6))
+    sns.barplot(x=mi_scores_sorted, y=sorted_features, order=sorted_features, ax=ax)
+    ax.set_title("Mutual Information Scores with Target")
+    ax.set_xlabel("Mutual Information Score")
+    ax.set_ylabel("Features")
+    for i, v in enumerate(mi_scores_sorted):
+        ax.text(v + 0.01, i, str(round(v, 2)), color="blue", fontweight="bold")
+    plt.show()

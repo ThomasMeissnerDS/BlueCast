@@ -48,5 +48,6 @@ class RFECVSelector(CustomPreprocessing):
         target: Optional[pd.Series] = None,
         predicton_mode: bool = False,
     ) -> Tuple[pd.DataFrame, Optional[pd.Series]]:
+        logger(f"{datetime.utcnow()}: Apply feature selection.")
         df = df.loc[:, self.selected_features]
         return df, target

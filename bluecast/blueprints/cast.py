@@ -52,6 +52,10 @@ class BlueCast:
         BlueCast will not split the data by time or order, but do a random split instead.
     :param :ml_model: Takes an instance of a XgboostModel class. If not provided, BlueCast will instantiate one.
         This is an API to pass any model class. Inherit the baseclass from ml_modelling.base_model.BaseModel.
+    :param custom_in_fold_preprocessor: Takes an instance of a CustomPreprocessing class. Allows users to eeecute
+        preprocessing after the train test split within cv folds. This will be executed only if precise_cv_tuning in
+        the conf_Training is True. Custom ML models need to implement this themselves. This step is only useful when
+        the proprocessing step has a high chance of overfitting otherwise (i.e: oversampling techniques).
     :param custom_preprocessor: Takes an instance of a CustomPreprocessing class. Allows users to inject custom
         preprocessing steps which take place right after the train test spit.
     :param custom_last_mile_computation: Takes an instance of a CustomPreprocessing class. Allows users to inject custom
@@ -68,6 +72,7 @@ class BlueCast:
         date_columns: Optional[List[Union[str, float, int]]] = None,
         time_split_column: Optional[str] = None,
         ml_model: Optional[Union[XgboostModel, Any]] = None,
+        custom_in_fold_preprocessor: Optional[CustomPreprocessing] = None,
         custom_last_mile_computation: Optional[CustomPreprocessing] = None,
         custom_preprocessor: Optional[CustomPreprocessing] = None,
         custom_feature_selector: Optional[
@@ -94,6 +99,7 @@ class BlueCast:
         self.target_label_encoder: Optional[TargetLabelEncoder] = None
         self.schema_detector: Optional[SchemaDetector] = None
         self.ml_model: Optional[XgboostModel] = ml_model
+        self.custom_in_fold_preprocessor = custom_in_fold_preprocessor
         self.custom_last_mile_computation = custom_last_mile_computation
         self.custom_preprocessor = custom_preprocessor
         self.custom_feature_selector = custom_feature_selector
@@ -175,6 +181,24 @@ class BlueCast:
             within the provided last mile computation or consider disabling categorical encoding via ML algorithm in the
             TrainingConfig alternatively."""
             warnings.warn(message, UserWarning, stacklevel=2)
+        if (
+            self.conf_training.precise_cv_tuning
+            and not self.custom_in_fold_preprocessor
+        ):
+            message = """Precise fine tuning has been enabled, but no custom_in_fold_preprocessor has been provided.
+            This will cause long runtimes without benefit. If you plan to execute any overfitting risky preprocessing,
+            please consider using custom_in_fold_preprocessor to execute the steps within the cross-validation folds
+            using precise_cv_tuning. Otherwise disable precise_cv_tuning to benefit from early pruning of unpromising
+            hyperparameter sets."""
+            warnings.warn(message, UserWarning, stacklevel=2)
+        if (
+            self.conf_training.precise_cv_tuning
+            and self.conf_training.hypertuning_cv_folds < 2
+        ):
+            message = """Precise fine tuning has been enabled, but number of hypertuning_cv_folds is less than 2. With
+            less than 2 folds precise_cv_tuning will not have any impact. Consider raising the number of folds to two
+            or higher or disable precise_cv_tuning."""
+            warnings.warn(message, UserWarning, stacklevel=2)
 
     def fit(self, df: pd.DataFrame, target_col: str) -> None:
         """Train a full ML pipeline."""
@@ -186,10 +210,10 @@ class BlueCast:
         if self.feat_type_detector.cat_columns:
             if self.target_column in self.feat_type_detector.cat_columns:
                 self.target_label_encoder = TargetLabelEncoder()
-                df[
-                    self.target_column
+                df.loc[
+                    :, self.target_column
                 ] = self.target_label_encoder.fit_transform_target_labels(
-                    df[self.target_column]
+                    df.loc[:, self.target_column]
                 )
 
         self.cat_columns = self.feat_type_detector.cat_columns
@@ -289,7 +313,7 @@ class BlueCast:
             )
         self.ml_model.fit(x_train, x_test, y_train, y_test)
         if self.conf_training and self.conf_training.calculate_shap_values:
-            self.shap_values = shap_explanations(self.ml_model.model, x_test, "tree")
+            self.shap_values = shap_explanations(self.ml_model.model, x_test)
         self.prediction_mode = True
 
     def fit_eval(
@@ -332,6 +356,9 @@ class BlueCast:
 
         if not self.conf_params_xgboost:
             raise ValueError("Could not find Xgboost params")
+
+        if len(self.experiment_tracker.experiment_id) == 0:
+            self.experiment_tracker.experiment_id.append(0)
 
         # enrich experiment tracker
         for metric, higher_is_better in zip(
