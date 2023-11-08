@@ -61,7 +61,7 @@ class TrainingConfig(BaseModel):
     hyperparameter_tuning_max_runtime_secs: int = 3600
     hypertuning_cv_folds: int = 1
     precise_cv_tuning: bool = False
-    early_stopping_rounds: int = 10
+    early_stopping_rounds: Optional[int] = None
     autotune_model: bool = True
     enable_feature_selection: bool = False
     calculate_shap_values: bool = True
