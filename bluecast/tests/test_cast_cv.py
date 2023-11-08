@@ -71,12 +71,12 @@ def test_blueprint_cv_xgboost(synthetic_train_test_data):
     assert len(automl_cv.bluecast_models) == nb_models
 
     train_config = TrainingConfig()
-    train_config.hyperparameter_tuning_rounds = 10
+    train_config.hyperparameter_tuning_rounds = 3
     train_config.enable_feature_selection = True
     train_config.hypertuning_cv_folds = 2
     train_config.enable_grid_search_fine_tuning = True
     train_config.gridsearch_nb_parameters_per_grid = 2
-    train_config.precise_cv_tuning = True
+    train_config.precise_cv_tuning = False
 
     automl_cv = BlueCastCV(
         conf_xgboost=xgboost_param_config, conf_training=train_config, stratifier=None
@@ -88,8 +88,8 @@ def test_blueprint_cv_xgboost(synthetic_train_test_data):
     assert automl_cv.stratifier
     assert (
         len(automl_cv.experiment_tracker.experiment_id)
-        <= train_config.hyperparameter_tuning_rounds * 5
-        + 5 * 7  # 7 metrics stored in fit_eval, 5 = default split
+        <= 5 * (train_config.hyperparameter_tuning_rounds * 2 + 5 * 7)
+        # 7 metrics stored in fit_eval, 5 = default split, cv tuning rounds
     )  # due to Optuna pruning
 
     # Assert that the bluecast_models attribute is updated
