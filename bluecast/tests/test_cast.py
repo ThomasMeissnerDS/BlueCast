@@ -45,6 +45,7 @@ def test_blueprint_xgboost(
     df_val = synthetic_train_test_data[1]
     xgboost_param_config = XgboostTuneParamsConfig()
     xgboost_param_config.steps_max = 100
+    xgboost_param_config.max_depth_max = 3
 
     # add custom last mile computation
     class MyCustomLastMilePreprocessing(CustomPreprocessing):
@@ -173,6 +174,10 @@ def test_bluecast_with_custom_model():
     train_config.hypertuning_cv_folds = 2
     train_config.enable_grid_search_fine_tuning = True
 
+    xgboost_param_config = XgboostTuneParamsConfig()
+    xgboost_param_config.steps_max = 100
+    xgboost_param_config.max_depth_max = 3
+
     # add custom feature selection
     class RFECVSelector(CustomPreprocessing):
         def __init__(self, random_state: int = 0):
@@ -260,6 +265,7 @@ def test_bluecast_with_custom_model():
         class_problem="binary",
         target_column="target",
         ml_model=custom_model,
+        conf_xgboost=xgboost_param_config,
         conf_training=train_config,
         custom_feature_selector=custom_feature_selector,
         custom_preprocessor=custum_preproc,

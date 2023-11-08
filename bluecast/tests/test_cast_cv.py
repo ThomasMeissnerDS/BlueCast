@@ -30,6 +30,7 @@ def test_blueprint_cv_xgboost(synthetic_train_test_data):
     df_val = synthetic_train_test_data[1]
     xgboost_param_config = XgboostTuneParamsConfig()
     xgboost_param_config.steps_max = 100
+    xgboost_param_config.max_depth_max = 3
     train_config = TrainingConfig()
     train_config.hyperparameter_tuning_rounds = 10
 
@@ -68,6 +69,13 @@ def test_blueprint_cv_xgboost(synthetic_train_test_data):
 
     # Assert that the bluecast_models attribute is updated
     assert len(automl_cv.bluecast_models) == nb_models
+
+    train_config = TrainingConfig()
+    train_config.hyperparameter_tuning_rounds = 10
+    train_config.enable_feature_selection = True
+    train_config.hypertuning_cv_folds = 2
+    train_config.enable_grid_search_fine_tuning = True
+    train_config.precise_cv_tuning = True
 
     automl_cv = BlueCastCV(
         conf_xgboost=xgboost_param_config, conf_training=train_config, stratifier=None
