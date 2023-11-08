@@ -350,12 +350,14 @@ class XgboostModel(BaseClassMlModel):
                         ) = self.custom_in_fold_preprocessor.transform(
                             X_val_fold, y_val_fold, predicton_mode=False
                         )
+                    else:
+                        X_test_fold, y_test_fold = x_test, y_test
 
-                        d_test = xgb.DMatrix(
-                            X_test_fold,
-                            label=y_val_fold,
-                            enable_categorical=self.conf_training.cat_encoding_via_ml_algorithm,
-                        )
+                    d_test = xgb.DMatrix(
+                        X_val_fold,
+                        label=y_val_fold,
+                        enable_categorical=self.conf_training.cat_encoding_via_ml_algorithm,
+                    )
 
                     if sample_weight:
                         classes_weights = self.calculate_class_weights(y_train_fold)
@@ -379,19 +381,19 @@ class XgboostModel(BaseClassMlModel):
                         num_boost_round=steps,
                         # early_stopping_rounds=self.conf_training.early_stopping_rounds,
                         evals=eval_set,
-                        callbacks=[pruning_callback],
+                        # callbacks=[pruning_callback],
                         verbose_eval=self.conf_xgboost.model_verbosity,
                     )
                     d_eval = xgb.DMatrix(
-                        X_val_fold,
-                        label=y_val_fold,
+                        X_test_fold,
+                        label=y_test_fold,
                         enable_categorical=self.conf_training.cat_encoding_via_ml_algorithm,
                     )
 
                     preds = model.predict(d_eval)
                     pred_labels = np.asarray([np.argmax(line) for line in preds])
 
-                    fold_losses.append(matthews_corrcoef(y_val_fold, pred_labels) * -1)
+                    fold_losses.append(matthews_corrcoef(y_test_fold, pred_labels) * -1)
 
                 matthews_mean = np.mean(np.asarray(fold_losses))
 
@@ -501,6 +503,101 @@ class XgboostModel(BaseClassMlModel):
         logger(f"Best params: {self.conf_params_xgboost.params}")
         self.conf_params_xgboost.sample_weight = xgboost_best_param["sample_weight"]
 
+    def _fine_tune_precise(self, tuned_params, x_train, y_train, x_test, y_test):
+        steps = tuned_params.pop("steps", 300)
+
+        stratifier = StratifiedKFold(
+            n_splits=self.conf_training.hypertuning_cv_folds,
+            shuffle=True,
+            random_state=self.conf_training.global_random_state,
+        )
+
+        fold_losses = []
+        for _fn, (trn_idx, val_idx) in enumerate(stratifier.split(x_train, y_train)):
+            X_train_fold, X_val_fold = (
+                x_train.iloc[trn_idx],
+                x_train.iloc[val_idx],
+            )
+            y_train_fold, y_val_fold = (
+                y_train.iloc[trn_idx],
+                y_train.iloc[val_idx],
+            )
+            if self.custom_in_fold_preprocessor:
+                (
+                    X_train_fold,
+                    y_train_fold,
+                ) = self.custom_in_fold_preprocessor.fit_transform(
+                    X_train_fold, y_train_fold
+                )
+                (
+                    X_test_fold,
+                    y_test_fold,
+                ) = self.custom_in_fold_preprocessor.transform(x_test, y_test)
+                (
+                    X_val_fold,
+                    y_val_fold,
+                ) = self.custom_in_fold_preprocessor.transform(
+                    X_val_fold, y_val_fold, predicton_mode=False
+                )
+            else:
+                X_test_fold, y_test_fold = x_test, y_test
+
+            d_test = xgb.DMatrix(
+                X_val_fold,
+                label=y_val_fold,
+                enable_categorical=self.conf_training.cat_encoding_via_ml_algorithm,
+            )
+
+            if self.conf_params_xgboost.sample_weight:
+                classes_weights = self.calculate_class_weights(y_train_fold)
+                d_train = xgb.DMatrix(
+                    X_train_fold,
+                    label=y_train_fold,
+                    weight=classes_weights,
+                    enable_categorical=self.conf_training.cat_encoding_via_ml_algorithm,
+                )
+            else:
+                d_train = xgb.DMatrix(
+                    X_train_fold,
+                    label=y_train_fold,
+                    enable_categorical=self.conf_training.cat_encoding_via_ml_algorithm,
+                )
+            eval_set = [(d_train, "train"), (d_test, "test")]
+            model = xgb.train(
+                tuned_params,
+                d_train,
+                num_boost_round=steps,
+                # early_stopping_rounds=self.conf_training.early_stopping_rounds,
+                evals=eval_set,
+                verbose_eval=self.conf_xgboost.model_verbosity,
+            )
+            d_eval = xgb.DMatrix(
+                X_test_fold,
+                label=y_test_fold,
+                enable_categorical=self.conf_training.cat_encoding_via_ml_algorithm,
+            )
+            preds = model.predict(d_eval)
+            pred_labels = np.asarray([np.argmax(line) for line in preds])
+            fold_losses.append(matthews_corrcoef(y_test_fold, pred_labels) * -1)
+
+        matthews_mean = np.mean(np.asarray(fold_losses))
+
+        # track results
+        if len(self.experiment_tracker.experiment_id) == 0:
+            new_id = 0
+        else:
+            new_id = self.experiment_tracker.experiment_id[-1] + 1
+        self.experiment_tracker.add_results(
+            experiment_id=new_id,
+            score_category="oof_score",
+            training_config=self.conf_training,
+            model_parameters=tuned_params,
+            eval_scores=matthews_mean,
+            metric_used="matthew_inverse",
+            metric_higher_is_better=False,
+        )
+        return matthews_mean
+
     def fine_tune(
         self,
         x_train: pd.DataFrame,
@@ -605,127 +702,9 @@ class XgboostModel(BaseClassMlModel):
                 self.conf_training.hypertuning_cv_folds > 1
                 and self.conf_training.precise_cv_tuning
             ):
-                # copy best params to not overwrite them
-                tuned_params = deepcopy(self.conf_params_xgboost.params)
-                alpha_space = trial.suggest_float(
-                    "alpha",
-                    self.conf_params_xgboost.params["alpha"] * 0.9,
-                    self.conf_params_xgboost.params["alpha"] * 1.1,
+                return self._fine_tune_precise(
+                    tuned_params, x_train, y_train, x_test, y_test
                 )
-                lambda_space = trial.suggest_float(
-                    "lambda",
-                    self.conf_params_xgboost.params["lambda"] * 0.9,
-                    self.conf_params_xgboost.params["lambda"] * 1.1,
-                )
-                gamma_space = trial.suggest_float(
-                    "gamma",
-                    self.conf_params_xgboost.params["gamma"] * 0.9,
-                    self.conf_params_xgboost.params["gamma"] * 1.1,
-                )
-
-                tuned_params["alpha"] = alpha_space
-                tuned_params["lambda"] = lambda_space
-                tuned_params["gamma"] = gamma_space
-
-                steps = tuned_params.pop("steps", 300)
-
-                stratifier = StratifiedKFold(
-                    n_splits=self.conf_training.hypertuning_cv_folds,
-                    shuffle=True,
-                    random_state=self.conf_training.global_random_state,
-                )
-
-                fold_losses = []
-                for _fn, (trn_idx, val_idx) in enumerate(
-                    stratifier.split(x_train, y_train)
-                ):
-                    X_train_fold, X_val_fold = (
-                        x_train.iloc[trn_idx],
-                        x_train.iloc[val_idx],
-                    )
-                    y_train_fold, y_val_fold = (
-                        y_train.iloc[trn_idx],
-                        y_train.iloc[val_idx],
-                    )
-                    if self.custom_in_fold_preprocessor:
-                        (
-                            X_train_fold,
-                            y_train_fold,
-                        ) = self.custom_in_fold_preprocessor.fit_transform(
-                            X_train_fold, y_train_fold
-                        )
-                        (
-                            X_test_fold,
-                            y_test_fold,
-                        ) = self.custom_in_fold_preprocessor.transform(x_test, y_test)
-                        (
-                            X_val_fold,
-                            y_val_fold,
-                        ) = self.custom_in_fold_preprocessor.transform(
-                            X_val_fold, y_val_fold, predicton_mode=False
-                        )
-
-                        d_test = xgb.DMatrix(
-                            X_test_fold,
-                            label=y_val_fold,
-                            enable_categorical=self.conf_training.cat_encoding_via_ml_algorithm,
-                        )
-
-                        if self.conf_params_xgboost.sample_weight:
-                            classes_weights = self.calculate_class_weights(y_train_fold)
-                            d_train = xgb.DMatrix(
-                                X_train_fold,
-                                label=y_train_fold,
-                                weight=classes_weights,
-                                enable_categorical=self.conf_training.cat_encoding_via_ml_algorithm,
-                            )
-                        else:
-                            d_train = xgb.DMatrix(
-                                X_train_fold,
-                                label=y_train_fold,
-                                enable_categorical=self.conf_training.cat_encoding_via_ml_algorithm,
-                            )
-
-                        eval_set = [(d_train, "train"), (d_test, "test")]
-                        model = xgb.train(
-                            tuned_params,
-                            d_train,
-                            num_boost_round=steps,
-                            # early_stopping_rounds=self.conf_training.early_stopping_rounds,
-                            evals=eval_set,
-                            callbacks=[pruning_callback],
-                            verbose_eval=self.conf_xgboost.model_verbosity,
-                        )
-                        d_eval = xgb.DMatrix(
-                            X_val_fold,
-                            label=y_val_fold,
-                            enable_categorical=self.conf_training.cat_encoding_via_ml_algorithm,
-                        )
-
-                        preds = model.predict(d_eval)
-                        pred_labels = np.asarray([np.argmax(line) for line in preds])
-
-                        fold_losses.append(
-                            matthews_corrcoef(y_val_fold, pred_labels) * -1
-                        )
-
-                matthews_mean = np.mean(np.asarray(fold_losses))
-
-                # track results
-                if len(self.experiment_tracker.experiment_id) == 0:
-                    new_id = 0
-                else:
-                    new_id = self.experiment_tracker.experiment_id[-1] + 1
-                self.experiment_tracker.add_results(
-                    experiment_id=new_id,
-                    score_category="oof_score",
-                    training_config=self.conf_training,
-                    model_parameters=tuned_params,
-                    eval_scores=matthews_mean,
-                    metric_used="matthew_inverse",
-                    metric_higher_is_better=False,
-                )
-                return matthews_mean
             else:
                 result = xgb.cv(
                     params=tuned_params,

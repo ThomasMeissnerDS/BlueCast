@@ -1,3 +1,4 @@
+import logging
 from datetime import datetime
 from typing import Any, Dict, List, Literal, Union
 
@@ -5,7 +6,6 @@ import pandas as pd
 
 from bluecast.config.base_classes import BaseClassExperimentTracker
 from bluecast.config.training_config import TrainingConfig
-from bluecast.general_utils.general_utils import logger
 
 
 class ExperimentTracker(BaseClassExperimentTracker):
@@ -28,7 +28,7 @@ class ExperimentTracker(BaseClassExperimentTracker):
         self.eval_scores: List[Union[float, int, None]] = []
         self.metric_used: List[str] = []  # TODO: Split by metrics in eval_results?
         self.metric_higher_is_better: List[bool] = []
-        self.created_at: List[datetime.datetime] = []
+        self.created_at: List[datetime] = []
 
     def add_results(
         self,
@@ -53,7 +53,7 @@ class ExperimentTracker(BaseClassExperimentTracker):
         :param metric_used: The name of the eval metric.
         :param metric_higher_is_better: True or False.
         """
-        logger(f"{datetime.utcnow()}: Start adding results to ExperimentTracker.")
+        logging.info(f"{datetime.utcnow()}: Start adding results to ExperimentTracker.")
         self.experiment_id.append(experiment_id)
         self.score_category.append(score_category)
         try:
