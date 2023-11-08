@@ -115,26 +115,7 @@ class XgboostModel(BaseClassMlModel):
             x_train = pd.concat([x_train, x_test])
             y_train = pd.concat([y_train, y_test])
 
-        if self.conf_params_xgboost.sample_weight:
-            classes_weights = self.calculate_class_weights(y_train)
-            d_train = xgb.DMatrix(
-                x_train,
-                label=y_train,
-                weight=classes_weights,
-                enable_categorical=self.conf_training.cat_encoding_via_ml_algorithm,
-            )
-        else:
-            d_train = xgb.DMatrix(
-                x_train,
-                label=y_train,
-                enable_categorical=self.conf_training.cat_encoding_via_ml_algorithm,
-            )
-
-        d_test = xgb.DMatrix(
-            x_test,
-            label=y_test,
-            enable_categorical=self.conf_training.cat_encoding_via_ml_algorithm,
-        )
+        d_train, d_test = self.create_d_matrices(x_train, y_train, x_test, y_test)
         eval_set = [(d_train, "train"), (d_test, "test")]
 
         steps = self.conf_params_xgboost.params.pop("steps", 300)
@@ -272,35 +253,9 @@ class XgboostModel(BaseClassMlModel):
             steps = param.pop("steps", 300)
 
             if self.conf_training.hypertuning_cv_folds == 1:
-                eval_set = [(d_train, "train"), (d_test, "test")]
-                model = xgb.train(
-                    param,
-                    d_train,
-                    num_boost_round=steps,
-                    early_stopping_rounds=self.conf_training.early_stopping_rounds,
-                    evals=eval_set,
-                    callbacks=[pruning_callback],
-                    verbose_eval=self.conf_xgboost.model_verbosity,
+                return self.train_single_fold_model(
+                    d_train, d_test, y_test, param, steps, pruning_callback
                 )
-                preds = model.predict(d_test)
-                pred_labels = np.asarray([np.argmax(line) for line in preds])
-                matthew = matthews_corrcoef(y_test, pred_labels) * -1
-
-                # track results
-                if len(self.experiment_tracker.experiment_id) == 0:
-                    new_id = 0
-                else:
-                    new_id = self.experiment_tracker.experiment_id[-1] + 1
-                self.experiment_tracker.add_results(
-                    experiment_id=new_id,
-                    score_category="simple_train_test_score",
-                    training_config=self.conf_training,
-                    model_parameters=param,
-                    eval_scores=matthew,
-                    metric_used="matthew_inverse",
-                    metric_higher_is_better=False,
-                )
-                return matthew
             elif (
                 self.conf_training.hypertuning_cv_folds > 1
                 and self.conf_training.precise_cv_tuning
@@ -403,6 +358,80 @@ class XgboostModel(BaseClassMlModel):
         }
         logger(f"Best params: {self.conf_params_xgboost.params}")
         self.conf_params_xgboost.sample_weight = xgboost_best_param["sample_weight"]
+
+    def get_best_score(self):
+        if (
+            self.conf_training.autotune_model
+            and self.conf_training.hypertuning_cv_folds == 1
+        ):
+            best_score_cv_grid = self.experiment_tracker.get_best_score(
+                target_metric="matthew_inverse"
+            )
+        elif (
+            self.conf_training.autotune_model
+            and self.conf_training.hypertuning_cv_folds > 1
+        ):
+            best_score_cv_grid = self.experiment_tracker.get_best_score(
+                target_metric="adjusted ml logloss"
+            )
+        else:
+            best_score_cv_grid = np.inf
+        return best_score_cv_grid
+
+    def create_d_matrices(self, x_train, y_train, x_test, y_test):
+        if self.conf_params_xgboost.sample_weight:
+            classes_weights = self.calculate_class_weights(y_train)
+            d_train = xgb.DMatrix(
+                x_train,
+                label=y_train,
+                weight=classes_weights,
+                enable_categorical=self.conf_training.cat_encoding_via_ml_algorithm,
+            )
+        else:
+            d_train = xgb.DMatrix(
+                x_train,
+                label=y_train,
+                enable_categorical=self.conf_training.cat_encoding_via_ml_algorithm,
+            )
+        d_test = xgb.DMatrix(
+            x_test,
+            label=y_test,
+            enable_categorical=self.conf_training.cat_encoding_via_ml_algorithm,
+        )
+        return d_train, d_test
+
+    def train_single_fold_model(
+        self, d_train, d_test, y_test, param, steps, pruning_callback
+    ):
+        eval_set = [(d_train, "train"), (d_test, "test")]
+        model = xgb.train(
+            param,
+            d_train,
+            num_boost_round=steps,
+            early_stopping_rounds=self.conf_training.early_stopping_rounds,
+            evals=eval_set,
+            callbacks=[pruning_callback],
+            verbose_eval=self.conf_xgboost.model_verbosity,
+        )
+        preds = model.predict(d_test)
+        pred_labels = np.asarray([np.argmax(line) for line in preds])
+        matthew = matthews_corrcoef(y_test, pred_labels) * -1
+
+        # track results
+        if len(self.experiment_tracker.experiment_id) == 0:
+            new_id = 0
+        else:
+            new_id = self.experiment_tracker.experiment_id[-1] + 1
+        self.experiment_tracker.add_results(
+            experiment_id=new_id,
+            score_category="simple_train_test_score",
+            training_config=self.conf_training,
+            model_parameters=param,
+            eval_scores=matthew,
+            metric_used="matthew_inverse",
+            metric_higher_is_better=False,
+        )
+        return matthew
 
     def _fine_tune_precise(
         self, tuned_params, x_train, y_train, x_test, y_test, random_seed
@@ -524,25 +553,7 @@ class XgboostModel(BaseClassMlModel):
         )
 
         def objective(trial):
-            if self.conf_params_xgboost.sample_weight:
-                classes_weights = self.calculate_class_weights(y_train)
-                d_train = xgb.DMatrix(
-                    x_train,
-                    label=y_train,
-                    weight=classes_weights,
-                    enable_categorical=self.conf_training.cat_encoding_via_ml_algorithm,
-                )
-            else:
-                d_train = xgb.DMatrix(
-                    x_train,
-                    label=y_train,
-                    enable_categorical=self.conf_training.cat_encoding_via_ml_algorithm,
-                )
-            d_test = xgb.DMatrix(
-                x_test,
-                label=y_test,
-                enable_categorical=self.conf_training.cat_encoding_via_ml_algorithm,
-            )
+            d_train, d_test = self.create_d_matrices(x_train, y_train, x_test, y_test)
 
             pruning_callback = optuna.integration.XGBoostPruningCallback(
                 trial, "test-mlogloss"
@@ -572,35 +583,9 @@ class XgboostModel(BaseClassMlModel):
             steps = tuned_params.pop("steps", 300)
 
             if self.conf_training.hypertuning_cv_folds == 1:
-                eval_set = [(d_train, "train"), (d_test, "test")]
-                model = xgb.train(
-                    tuned_params,
-                    d_train,
-                    num_boost_round=steps,
-                    early_stopping_rounds=self.conf_training.early_stopping_rounds,
-                    evals=eval_set,
-                    callbacks=[pruning_callback],
-                    verbose_eval=self.conf_xgboost.model_verbosity,
+                return self.train_single_fold_model(
+                    d_train, d_test, y_test, tuned_params, steps, pruning_callback
                 )
-                preds = model.predict(d_test)
-                pred_labels = np.asarray([np.argmax(line) for line in preds])
-                matthew = matthews_corrcoef(y_test, pred_labels) * -1
-
-                # track results
-                if len(self.experiment_tracker.experiment_id) == 0:
-                    new_id = 0
-                else:
-                    new_id = self.experiment_tracker.experiment_id[-1] + 1
-                self.experiment_tracker.add_results(
-                    experiment_id=new_id,
-                    score_category="simple_train_test_score",
-                    training_config=self.conf_training,
-                    model_parameters=tuned_params,
-                    eval_scores=matthew,
-                    metric_used="matthew_inverse",
-                    metric_higher_is_better=False,
-                )
-                return matthew
             elif (
                 self.conf_training.hypertuning_cv_folds > 1
                 and self.conf_training.precise_cv_tuning
@@ -677,22 +662,7 @@ class XgboostModel(BaseClassMlModel):
         else:
             ValueError("Some parameters are not floats or strings")
 
-        if (
-            self.conf_training.autotune_model
-            and self.conf_training.hypertuning_cv_folds == 1
-        ):
-            best_score_cv = self.experiment_tracker.get_best_score(
-                target_metric="matthew_inverse"
-            )
-        elif (
-            self.conf_training.autotune_model
-            and self.conf_training.hypertuning_cv_folds > 1
-        ):
-            best_score_cv = self.experiment_tracker.get_best_score(
-                target_metric="adjusted ml logloss"
-            )
-        else:
-            best_score_cv = np.inf
+        best_score_cv = self.get_best_score()
 
         study = optuna.create_study(
             direction="minimize", sampler=optuna.samplers.GridSampler(search_space)
@@ -714,22 +684,7 @@ class XgboostModel(BaseClassMlModel):
         except (ZeroDivisionError, RuntimeError, ValueError):
             pass
 
-        if (
-            self.conf_training.autotune_model
-            and self.conf_training.hypertuning_cv_folds == 1
-        ):
-            best_score_cv_grid = self.experiment_tracker.get_best_score(
-                target_metric="matthew_inverse"
-            )
-        elif (
-            self.conf_training.autotune_model
-            and self.conf_training.hypertuning_cv_folds > 1
-        ):
-            best_score_cv_grid = self.experiment_tracker.get_best_score(
-                target_metric="adjusted ml logloss"
-            )
-        else:
-            best_score_cv_grid = np.inf
+        best_score_cv_grid = self.get_best_score()
 
         if best_score_cv_grid < best_score_cv or not self.conf_training.autotune_model:
             xgboost_grid_best_param = study.best_trial.params
