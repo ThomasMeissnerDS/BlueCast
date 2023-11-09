@@ -203,7 +203,9 @@ class BlueCast:
     def fit(self, df: pd.DataFrame, target_col: str) -> None:
         """Train a full ML pipeline."""
         check_gpu_support()
-        feat_type_detector = FeatureTypeDetector()
+        feat_type_detector = FeatureTypeDetector(
+            cat_columns=[], num_columns=[], date_columns=[]
+        )
         df = feat_type_detector.fit_transform_feature_types(df)
         self.feat_type_detector = feat_type_detector
 
@@ -238,7 +240,9 @@ class BlueCast:
             x_test, y_test = self.custom_preprocessor.transform(
                 x_test, y_test, predicton_mode=False
             )
-            feat_type_detector = FeatureTypeDetector()
+            feat_type_detector = FeatureTypeDetector(
+                cat_columns=[], num_columns=[], date_columns=[]
+            )
             _ = feat_type_detector.fit_transform_feature_types(x_train)
             x_train, y_train = x_train.reset_index(drop=True), y_train.reset_index(
                 drop=True
@@ -250,8 +254,10 @@ class BlueCast:
                 feat_type_detector.cat_columns.remove(target_col)
 
         x_train, x_test = fill_infinite_values(x_train), fill_infinite_values(x_test)
-        x_train, x_test = date_converter(x_train, self.date_columns), date_converter(
-            x_test, self.date_columns
+        x_train, x_test = date_converter(
+            x_train, self.date_columns, date_parts=["month", "day", "dayofweek", "hour"]
+        ), date_converter(
+            x_test, self.date_columns, date_parts=["month", "day", "dayofweek", "hour"]
         )
 
         self.schema_detector = SchemaDetector()
@@ -402,7 +408,9 @@ class BlueCast:
             df = df.reset_index(drop=True)
 
         df = fill_infinite_values(df)
-        df = date_converter(df, self.date_columns)
+        df = date_converter(
+            df, self.date_columns, date_parts=["month", "day", "dayofweek", "hour"]
+        )
 
         if self.schema_detector:
             df = self.schema_detector.transform(df)

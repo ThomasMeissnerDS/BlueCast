@@ -20,9 +20,9 @@ class FeatureTypeDetector:
 
     def __init__(
         self,
-        num_columns: List[Union[str, int, float]] = None,
-        cat_columns: List[Union[str, int, float]] = None,
-        date_columns: List[Union[str, int, float]] = None,
+        num_columns: List[Union[str, int, float]],
+        cat_columns: List[Union[str, int, float]],
+        date_columns: List[Union[str, int, float]],
     ):
         if not num_columns:
             num_columns = []
@@ -148,7 +148,7 @@ class FeatureTypeDetector:
         return df
 
     def transform_feature_types(
-        self, df: pd.DataFrame, ignore_cols: List[Union[str, float, int, None]] = None
+        self, df: pd.DataFrame, ignore_cols: List[Union[str, float, int, None]]
     ) -> pd.DataFrame:
         """Transform feature types based on already mapped types."""
         """
