@@ -12,6 +12,7 @@ import numpy as np
 import optuna
 import pandas as pd
 import xgboost as xgb
+from optuna_fast_fanova import FanovaImportanceEvaluator
 from sklearn.metrics import matthews_corrcoef
 from sklearn.model_selection import StratifiedKFold
 from sklearn.utils import class_weight
@@ -328,7 +329,9 @@ class XgboostModel(BaseClassMlModel):
         try:
             fig = optuna.visualization.plot_optimization_history(study)
             fig.show()
-            fig = optuna.visualization.plot_param_importances(study)
+            fig = optuna.visualization.plot_param_importances(
+                study, evaluator=FanovaImportanceEvaluator()
+            )
             fig.show()
         except (ZeroDivisionError, RuntimeError, ValueError):
             pass
