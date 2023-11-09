@@ -1,7 +1,7 @@
 default_stages: [commit]
 repos:
   -   repo: https://github.com/pre-commit/pre-commit-hooks
-      rev: 38b88246ccc552bffaaf54259d064beeee434539 #v4.0.1
+      rev: v4.5.0 #v4.0.1
       hooks:
         -   id: end-of-file-fixer
         -   id: trailing-whitespace
@@ -11,38 +11,38 @@ repos:
         -   id: black
             exclude: ^.github/
   -   repo: https://github.com/pre-commit/mirrors-mypy
-      rev: 44afb68a9695d04030edc5cdc5a4fc4f17e4f9e2 #0.910
+      rev: v1.6.1 #0.910
       hooks:
         -   id: mypy
             additional_dependencies: [types-requests]
             exclude: ^.github/
   -   repo: https://github.com/pycqa/isort
-      rev: 76a71b13dab48f59cc1c006806f04bde1fe19b6d
+      rev: 5.12.0
       hooks:
         - id: isort
           args: [--profile, black, --filter-files]
           exclude: ^.github/
   -   repo: https://github.com/pycqa/flake8
-      rev: 82b698e09996cdde5d473e234681d8380810d7a2 #4.0.1
+      rev: 6.1.0 #4.0.1
       hooks:
         -   id: flake8
             additional_dependencies: [flake8-bugbear]
             exclude: ^.github/
   -   repo: https://github.com/pycqa/pydocstyle
-      rev: faeaa735d5c9387ab2f02c5bf9d4f07d0e7b6841 #6.1.1
+      rev: 6.3.0 #6.1.1
       hooks:
         -   id: pydocstyle
             files: "^inference_service/.*\\.py"
             additional_dependencies: [toml]
             exclude: ^.github/
   -   repo: https://github.com/Lucas-C/pre-commit-hooks-nodejs
-      rev: b234899b5db911d0e5482deffcf4e6364ad349d0 #v1.1.1
+      rev: v1.1.2 #v1.1.1
       hooks:
         -   id: markdown-toc
             files: ^README\.md$
             args: [-i, --bullets, "*"]
   -   repo: https://github.com/DavidAnson/markdownlint-cli2
-      rev: 7f2cb1a915520a6139f09749836379ff57819380 #v0.2.0
+      rev: v0.10.0 #v0.2.0
       hooks:
         -   id: markdownlint-cli2
             exclude: ^.github/
