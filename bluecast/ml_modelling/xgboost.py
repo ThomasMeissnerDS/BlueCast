@@ -715,6 +715,11 @@ class XgboostModel(BaseClassMlModel):
         if not self.conf_xgboost or not self.conf_training:
             raise ValueError("conf_params_xgboost or conf_training is None")
 
+        if self.custom_in_fold_preprocessor:
+            df, _ = self.custom_in_fold_preprocessor.transform(
+                df, None, predicton_mode=True
+            )
+
         d_test = xgb.DMatrix(
             df,
             enable_categorical=self.conf_training.cat_encoding_via_ml_algorithm,
