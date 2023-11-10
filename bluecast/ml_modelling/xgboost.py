@@ -6,13 +6,12 @@ hyperparameter tuning.
 """
 from copy import deepcopy
 from datetime import datetime
-from typing import Dict, Literal, Optional, Tuple
+from typing import Dict, List, Literal, Optional, Tuple
 
 import numpy as np
 import optuna
 import pandas as pd
 import xgboost as xgb
-from optuna_fast_fanova import FanovaImportanceEvaluator
 from sklearn.metrics import matthews_corrcoef
 from sklearn.model_selection import StratifiedKFold
 from sklearn.utils import class_weight
@@ -47,6 +46,12 @@ class XgboostModel(BaseClassMlModel):
         self.conf_params_xgboost = conf_params_xgboost
         self.experiment_tracker = experiment_tracker
         self.custom_in_fold_preprocessor = custom_in_fold_preprocessor
+        if self.conf_training:
+            self.random_generator = np.random.default_rng(
+                self.conf_training.global_random_state
+            )
+        else:
+            self.random_generator = np.random.default_rng(0)
 
     def calculate_class_weights(self, y: pd.Series) -> Dict[str, float]:
         """Calculate class weights of target column."""
@@ -330,7 +335,7 @@ class XgboostModel(BaseClassMlModel):
             fig = optuna.visualization.plot_optimization_history(study)
             fig.show()
             fig = optuna.visualization.plot_param_importances(
-                study, evaluator=FanovaImportanceEvaluator()
+                study  # , evaluator=FanovaImportanceEvaluator()
             )
             fig.show()
         except (ZeroDivisionError, RuntimeError, ValueError):
@@ -436,6 +441,70 @@ class XgboostModel(BaseClassMlModel):
         )
         return matthew
 
+    def increasing_noise_evaluator(
+        self, ml_model, eval_df: pd.DataFrame, y_true: pd.Series, iterations: int = 100
+    ):
+        """Function to add increasing noise and evaluate it.
+
+        The function expects a trained model and a dataframe with the same columns as the training data.
+        The training data should be normally distributed (consider using a power transformer with yeo-johnson).
+
+        The function will apply increasingly noise to the eval dataframe and evaluate the model on it.
+
+        Returns a list of losses.
+        """
+        # from sklearn.metrics import roc_auc_score
+        losses = []
+        for i in range(iterations):
+            mu, sigma = 0, 0.2 * i
+            N, D = eval_df.shape
+            noise = self.random_generator.normal(mu, sigma, [N, D])
+            eval_df_mod = eval_df + noise
+            if self.conf_training:
+                d_eval = xgb.DMatrix(
+                    eval_df_mod,
+                    label=y_true,
+                    enable_categorical=self.conf_training.cat_encoding_via_ml_algorithm,
+                )
+            else:
+                raise ValueError("No training_config could be found")
+            y_hat = ml_model.predict(d_eval)
+
+            y_hat = np.asarray([np.argmax(line) for line in y_hat])
+            loss = matthews_corrcoef(y_true, y_hat) * -1
+            losses.append(loss)
+
+        return losses
+
+    def constant_loss_degregation_factor(self, losses: List[float]) -> float:
+        """Calculate a weighted loss based on the number of times the loss decreased.
+
+        Expects a list of losses coming from increasing_noise_evaluator. Checks how many times the loss decreased and
+        calculates a weighted loss based on the number of times the loss decreased.
+
+        Returns the weighted loss.
+        """
+        nb_loss_decreased = 0
+        for idx in range(len(losses)):
+            if idx + 1 > len(losses) - 1:
+                break
+            if losses[idx] > losses[idx + 1]:
+                nb_loss_decreased += 1
+
+        # apply penalty
+        if nb_loss_decreased == 0:
+            weighted_loss = 999
+        else:
+            nb_losses = len(losses)
+            weighted_loss = losses[0] - np.std(losses[:nb_loss_decreased]) ** (
+                nb_losses / (nb_losses - nb_loss_decreased)
+            )
+
+        # print(
+        #     f"Score decreased {nb_loss_decreased} times with weighted loss of {weighted_loss}"
+        # )
+        return weighted_loss
+
     def _fine_tune_precise(
         self, tuned_params, x_train, y_train, x_test, y_test, random_seed
     ):
@@ -506,14 +575,19 @@ class XgboostModel(BaseClassMlModel):
                 evals=eval_set,
                 verbose_eval=self.conf_xgboost.model_verbosity,
             )
-            d_eval = xgb.DMatrix(
-                X_test_fold,
-                label=y_test_fold,
-                enable_categorical=self.conf_training.cat_encoding_via_ml_algorithm,
+            # d_eval = xgb.DMatrix(
+            #    X_test_fold,
+            #    label=y_test_fold,
+            #    enable_categorical=self.conf_training.cat_encoding_via_ml_algorithm,
+            # )
+            # preds = model.predict(d_eval)
+            losses = self.increasing_noise_evaluator(
+                model, X_test_fold, y_test_fold, 100
             )
-            preds = model.predict(d_eval)
-            pred_labels = np.asarray([np.argmax(line) for line in preds])
-            fold_losses.append(matthews_corrcoef(y_test_fold, pred_labels) * -1)
+            constant_loss_degregation = self.constant_loss_degregation_factor(losses)
+            fold_losses.append(constant_loss_degregation)
+            # pred_labels = np.asarray([np.argmax(line) for line in preds])
+            # fold_losses.append(matthews_corrcoef(y_test_fold, pred_labels) * -1)
 
         matthews_mean = np.mean(np.asarray(fold_losses))
 

@@ -181,6 +181,11 @@ class BlueCast:
             within the provided last mile computation or consider disabling categorical encoding via ML algorithm in the
             TrainingConfig alternatively."""
             warnings.warn(message, UserWarning, stacklevel=2)
+        if self.conf_training.precise_cv_tuning:
+            message = """Precise fine tuning has been enabled. Please make sure to transform your data to a normal
+            distribution (yeo-johnson). This is an experimental feature as it includes a special
+            evaluation (see more in the docs). If you plan to use this feature, please make sure to read the docs."""
+            warnings.warn(message, UserWarning, stacklevel=2)
         if (
             self.conf_training.precise_cv_tuning
             and not self.custom_in_fold_preprocessor

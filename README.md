@@ -268,8 +268,15 @@ y_probs, y_classes = automl.predict(df_val)
 ```
 
 The custom in fold preprocessing takes place within the cross validation and
-executes the step on each fold. This is much more robust, but does not offer
+executes the step on each fold. The evaluation metric is special here:
+Instead of calculating matthews correlation coefficient reversed only,
+it applied increasingly random noise to the eval dataset to find an even
+more robust hyperparameter set.
+
+This is much more robust, but does not offer
 early pruning and is much slower. BlueCastCV supports this as well.
+
+Please note that this is an experimental feature.
 
 #### Gaining extra performance
 

@@ -1301,21 +1301,6 @@ optional = ["boto3", "botorch", "cmaes (>=0.10.0)", "google-cloud-storage", "mat
 test = ["coverage", "fakeredis[lua]", "kaleido", "moto", "pytest", "scipy (>=1.9.2)"]
 
 [[package]]
-name = "optuna-fast-fanova"
-version = "0.0.4"
-description = "Cython accelerated fANOVA implementation for Optuna"
-optional = false
-python-versions = ">=3.7"
-files = [
-    {file = "optuna-fast-fanova-0.0.4.tar.gz", hash = "sha256:fba6f5133225903facd94f12b09c729544062b804edf0d7b7f0d521762dfe45d"},
-]
-
-[package.dependencies]
-numpy = "*"
-optuna = "*"
-scikit-learn = "*"
-
-[[package]]
 name = "packaging"
 version = "23.2"
 description = "Core utilities for Python packages"
@@ -1597,13 +1582,13 @@ virtualenv = ">=20.10.0"
 
 [[package]]
 name = "prompt-toolkit"
-version = "3.0.39"
+version = "3.0.40"
 description = "Library for building powerful interactive command lines in Python"
 optional = false
 python-versions = ">=3.7.0"
 files = [
-    {file = "prompt_toolkit-3.0.39-py3-none-any.whl", hash = "sha256:9dffbe1d8acf91e3de75f3b544e4842382fc06c6babe903ac9acb74dc6e08d88"},
-    {file = "prompt_toolkit-3.0.39.tar.gz", hash = "sha256:04505ade687dc26dc4284b1ad19a83be2f2afe83e7a828ace0c72f3a1df72aac"},
+    {file = "prompt_toolkit-3.0.40-py3-none-any.whl", hash = "sha256:99ba3dfb23d5b5af89712f89e60a5f3d9b8b67a9482ca377c5771d0e9047a34b"},
+    {file = "prompt_toolkit-3.0.40.tar.gz", hash = "sha256:a371c06bb1d66cd499fecd708e50c0b6ae00acba9822ba33c586e2f16d1b739e"},
 ]
 
 [package.dependencies]
@@ -2791,4 +2776,4 @@ jupyter = []
 [metadata]
 lock-version = "2.0"
 python-versions = ">=3.9,<3.12"
-content-hash = "056b24ff1ec153386aa987e455eb341962717e583ba3f76999d9e93106fa79ef"
+content-hash = "d8fb0c7ea15a97aee5935fa6edfd9d146a5394d4dab372843c07cfc3b5330515"
