@@ -324,6 +324,12 @@ class BlueCast:
                 custom_in_fold_preprocessor=self.custom_in_fold_preprocessor,
             )
         self.ml_model.fit(x_train, x_test, y_train, y_test)
+
+        if self.custom_in_fold_preprocessor:
+            x_test, _ = self.custom_in_fold_preprocessor.transform(
+                x_test, None, predicton_mode=True
+            )
+
         if self.conf_training and self.conf_training.calculate_shap_values:
             self.shap_values = shap_explanations(self.ml_model.model, x_test)
         self.prediction_mode = True
