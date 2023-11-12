@@ -113,6 +113,14 @@ class XgboostModel(BaseClassMlModel):
             print("Finished Grid search fine tuning")
 
         logger("Start final model training")
+        if self.custom_in_fold_preprocessor:
+            x_train, y_train = self.custom_in_fold_preprocessor.fit_transform(
+                x_train, y_train
+            )
+            x_test, y_test = self.custom_in_fold_preprocessor.transform(
+                x_test, y_test, predicton_mode=False
+            )
+
         if self.conf_training.use_full_data_for_final_model:
             logger(
                 f"""{datetime.utcnow()}: Union train and test data for final model training based on TrainingConfig
