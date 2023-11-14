@@ -181,6 +181,11 @@ class BlueCast:
             within the provided last mile computation or consider disabling categorical encoding via ML algorithm in the
             TrainingConfig alternatively."""
             warnings.warn(message, UserWarning, stacklevel=2)
+        if self.conf_training.precise_cv_tuning:
+            message = """Precise fine tuning has been enabled. Please make sure to transform your data to a normal
+            distribution (yeo-johnson). This is an experimental feature as it includes a special
+            evaluation (see more in the docs). If you plan to use this feature, please make sure to read the docs."""
+            warnings.warn(message, UserWarning, stacklevel=2)
         if (
             self.conf_training.precise_cv_tuning
             and not self.custom_in_fold_preprocessor
@@ -203,7 +208,9 @@ class BlueCast:
     def fit(self, df: pd.DataFrame, target_col: str) -> None:
         """Train a full ML pipeline."""
         check_gpu_support()
-        feat_type_detector = FeatureTypeDetector()
+        feat_type_detector = FeatureTypeDetector(
+            cat_columns=[], num_columns=[], date_columns=[]
+        )
         df = feat_type_detector.fit_transform_feature_types(df)
         self.feat_type_detector = feat_type_detector
 
@@ -238,7 +245,9 @@ class BlueCast:
             x_test, y_test = self.custom_preprocessor.transform(
                 x_test, y_test, predicton_mode=False
             )
-            feat_type_detector = FeatureTypeDetector()
+            feat_type_detector = FeatureTypeDetector(
+                cat_columns=[], num_columns=[], date_columns=[]
+            )
             _ = feat_type_detector.fit_transform_feature_types(x_train)
             x_train, y_train = x_train.reset_index(drop=True), y_train.reset_index(
                 drop=True
@@ -250,8 +259,10 @@ class BlueCast:
                 feat_type_detector.cat_columns.remove(target_col)
 
         x_train, x_test = fill_infinite_values(x_train), fill_infinite_values(x_test)
-        x_train, x_test = date_converter(x_train, self.date_columns), date_converter(
-            x_test, self.date_columns
+        x_train, x_test = date_converter(
+            x_train, self.date_columns, date_parts=["month", "day", "dayofweek", "hour"]
+        ), date_converter(
+            x_test, self.date_columns, date_parts=["month", "day", "dayofweek", "hour"]
         )
 
         self.schema_detector = SchemaDetector()
@@ -310,8 +321,15 @@ class BlueCast:
                 conf_xgboost=self.conf_xgboost,
                 conf_params_xgboost=self.conf_params_xgboost,
                 experiment_tracker=self.experiment_tracker,
+                custom_in_fold_preprocessor=self.custom_in_fold_preprocessor,
             )
         self.ml_model.fit(x_train, x_test, y_train, y_test)
+
+        if self.custom_in_fold_preprocessor:
+            x_test, _ = self.custom_in_fold_preprocessor.transform(
+                x_test, None, predicton_mode=True
+            )
+
         if self.conf_training and self.conf_training.calculate_shap_values:
             self.shap_values = shap_explanations(self.ml_model.model, x_test)
         self.prediction_mode = True
@@ -402,7 +420,9 @@ class BlueCast:
             df = df.reset_index(drop=True)
 
         df = fill_infinite_values(df)
-        df = date_converter(df, self.date_columns)
+        df = date_converter(
+            df, self.date_columns, date_parts=["month", "day", "dayofweek", "hour"]
+        )
 
         if self.schema_detector:
             df = self.schema_detector.transform(df)

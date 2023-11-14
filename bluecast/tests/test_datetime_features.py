@@ -28,7 +28,11 @@ def test_date_converter(sample_dataframe):
     )
 
     # Call the date_converter function with the sample dataframe
-    result = date_converter(sample_dataframe, ["datetime_col"])
+    result = date_converter(
+        sample_dataframe,
+        ["datetime_col"],
+        date_parts=["month", "day", "dayofweek", "hour"],
+    )
 
     # Assert that the result matches the expected result
     pd.testing.assert_frame_equal(

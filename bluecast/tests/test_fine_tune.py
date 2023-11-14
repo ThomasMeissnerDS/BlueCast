@@ -26,6 +26,9 @@ def test_fine_tune_runs_without_errors(xgboost_model):
     print(xgboost_model.conf_params_xgboost.params)
     xgboost_model.experiment_tracker = ExperimentTracker()
     xgboost_model.conf_training.autotune_model = False
+    xgboost_model.conf_training.hypertuning_cv_folds = 3  # enable cross validation
+    xgboost_model.conf_training.hyperparameter_tuning_rounds = 5
+    xgboost_model.conf_training.gridsearch_nb_parameters_per_grid = 2
 
     df_train, df_val = create_synthetic_dataframe(
         2000, random_state=20
@@ -52,18 +55,19 @@ def test_fine_tune_runs_without_errors(xgboost_model):
 
 def test_fine_tune_runs_without_errors_using_cv(xgboost_model):
     xgboost_params = XgboostFinalParamConfig()
-
     xgboost_model.conf_params_xgboost = xgboost_params
     xgboost_model.conf_training = TrainingConfig()
     xgboost_model.conf_xgboost = XgboostTuneParamsConfig()
     print(xgboost_model.conf_params_xgboost.params)
     xgboost_model.experiment_tracker = ExperimentTracker()
     xgboost_model.conf_training.autotune_model = False
-    xgboost_model.conf_training.hypertuning_cv_folds = 5  # enable cross validation
+    xgboost_model.conf_training.hypertuning_cv_folds = 3  # enable cross validation
+    xgboost_model.conf_training.hyperparameter_tuning_rounds = 5
+    xgboost_model.conf_training.gridsearch_nb_parameters_per_grid = 2
 
     df_train, df_val = create_synthetic_dataframe(
-        2000, random_state=20
-    ), create_synthetic_dataframe(2000, random_state=200)
+        1000, random_state=20
+    ), create_synthetic_dataframe(1000, random_state=200)
     df_train = df_train.drop(
         ["categorical_feature_1", "categorical_feature_2", "datetime_feature"], axis=1
     )

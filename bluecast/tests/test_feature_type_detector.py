@@ -46,7 +46,7 @@ def test_feature_type_detector():
     assert transformed_df["categorical_col2"].equals(df["categorical_col2"])
 
     # Test transform_feature_types
-    transformed_df = detector.transform_feature_types(transformed_df)
+    transformed_df = detector.transform_feature_types(transformed_df, ignore_cols=[])
 
     # All columns should have the expected data types
     assert transformed_df["numeric_col1"].dtype in ["int64", "float64"]

@@ -5,7 +5,7 @@ This is a convenience class to detect and cast feature types in a DataFrame. It 
 categorical and datetime columns. It also casts columns to a specific type.
 """
 from datetime import datetime
-from typing import Dict, List, Tuple, Union
+from typing import Dict, List, Optional, Tuple, Union
 
 import pandas as pd
 
@@ -20,9 +20,9 @@ class FeatureTypeDetector:
 
     def __init__(
         self,
-        num_columns: List[Union[str, int, float]] = None,
-        cat_columns: List[Union[str, int, float]] = None,
-        date_columns: List[Union[str, int, float]] = None,
+        num_columns: Optional[List[Union[str, int, float]]] = None,
+        cat_columns: Optional[List[Union[str, int, float]]] = None,
+        date_columns: Optional[List[Union[str, int, float]]] = None,
     ):
         if not num_columns:
             num_columns = []
@@ -148,7 +148,7 @@ class FeatureTypeDetector:
         return df
 
     def transform_feature_types(
-        self, df: pd.DataFrame, ignore_cols: List[Union[str, float, int, None]] = None
+        self, df: pd.DataFrame, ignore_cols: List[Union[str, float, int, None]]
     ) -> pd.DataFrame:
         """Transform feature types based on already mapped types."""
         """

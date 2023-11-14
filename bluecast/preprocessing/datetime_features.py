@@ -14,7 +14,7 @@ from bluecast.general_utils.general_utils import logger
 def date_converter(
     df: pd.DataFrame,
     date_columns: Optional[List[Union[str, int, float]]],
-    date_parts: List[str] = None,
+    date_parts: List[str],
 ) -> pd.DataFrame:
     """
     Takes in a df and loops through datetime columns to and extracts the date parts month, day, dayofweek
