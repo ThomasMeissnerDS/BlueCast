@@ -148,14 +148,13 @@ def eval_classifier(
     f1_score_weighted = f1_score(y_true, y_classes, average="weighted", zero_division=0)
     logger(f"The weighted F1 score is {f1_score_weighted}")
 
-    if pd.Series(y_classes).nunique() <= 2:
-        bll = balanced_log_loss(y_true, y_probs)
-        logger(f"The balanced logloss is {bll}")
+    if pd.Series(y_classes).any():
+        if pd.Series(y_classes).nunique() != 2:
+            bll = balanced_log_loss(y_true, y_probs)
+            logger(f"The balanced logloss is {bll}")
     else:
         bll = 99
-        logger(
-            f"Skip blanced logloss as number of classes is {pd.Series(y_classes).nunique()}."
-        )
+        logger("Skip balanced logloss as number of classes is less than 2.")
 
     if pd.Series(y_classes).nunique() <= 2:
         roc_auc = roc_auc_score(y_true, y_probs)
