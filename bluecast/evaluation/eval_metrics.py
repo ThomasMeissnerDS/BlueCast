@@ -149,7 +149,7 @@ def eval_classifier(
     logger(f"The weighted F1 score is {f1_score_weighted}")
 
     if pd.Series(y_classes).any():
-        if pd.Series(y_classes).nunique() != 2:
+        if pd.Series(y_classes).nunique() == 2:
             bll = balanced_log_loss(y_true, y_probs)
             logger(f"The balanced logloss is {bll}")
         else:
