@@ -152,6 +152,8 @@ def eval_classifier(
         if pd.Series(y_classes).nunique() != 2:
             bll = balanced_log_loss(y_true, y_probs)
             logger(f"The balanced logloss is {bll}")
+        else:
+            bll = 99
     else:
         bll = 99
         logger("Skip balanced logloss as number of classes is less than 2.")
