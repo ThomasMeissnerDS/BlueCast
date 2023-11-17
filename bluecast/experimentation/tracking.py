@@ -18,7 +18,7 @@ class ExperimentTracker(BaseClassExperimentTracker):
     """
 
     def __init__(self):
-        self.experiment_id: List[Union[int, str, float]] = []
+        self.experiment_id: List[int] = []
         self.experiment_name: List[Union[int, str, float]] = []
         self.score_category: List[
             Literal["simple_train_test_score", "cv_score", "oof_score"]
@@ -32,7 +32,7 @@ class ExperimentTracker(BaseClassExperimentTracker):
 
     def add_results(
         self,
-        experiment_id: Union[int, str, float],
+        experiment_id: int,
         score_category: Literal["simple_train_test_score", "cv_score", "oof_score"],
         training_config: TrainingConfig,
         model_parameters: Dict[Any, Any],

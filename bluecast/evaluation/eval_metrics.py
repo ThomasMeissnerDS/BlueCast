@@ -148,16 +148,14 @@ def eval_classifier(
     f1_score_weighted = f1_score(y_true, y_classes, average="weighted", zero_division=0)
     logger(f"The weighted F1 score is {f1_score_weighted}")
 
-    if pd.Series(y_classes).nunique() <= 2:
+    if len(y_probs.shape) == 1:
         bll = balanced_log_loss(y_true, y_probs)
         logger(f"The balanced logloss is {bll}")
     else:
         bll = 99
-        logger(
-            f"Skip blanced logloss as number of classes is {pd.Series(y_classes).nunique()}."
-        )
+        logger("Skip balanced logloss as number of classes is less than 2.")
 
-    if pd.Series(y_classes).nunique() <= 2:
+    if len(y_probs.shape) == 1:
         roc_auc = roc_auc_score(y_true, y_probs)
     else:
         roc_auc = roc_auc_score(y_true, y_probs, multi_class="ovr")
@@ -168,7 +166,7 @@ def eval_classifier(
     full_classification_report = classification_report(y_true, y_classes)
     logger(full_classification_report)
 
-    if pd.Series(y_classes).nunique() <= 2:
+    if len(y_probs.shape) == 1:
         plot_roc_auc(y_true, y_probs)
         try:
             plot_lift_chart(y_probs, y_true)
@@ -180,9 +178,7 @@ def eval_classifier(
             )
         plot_probability_distribution(y_probs)
     else:
-        logger(
-            f"Skip ROC AUC curve as number of classes is {pd.Series(y_classes).nunique()}."
-        )
+        logger(f"Skip ROC AUC curve as number of classes is {y_probs.shape[1]}.")
 
     evaluation_scores = {
         "matthews": matthews,
