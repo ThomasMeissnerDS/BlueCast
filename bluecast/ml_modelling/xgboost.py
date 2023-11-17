@@ -6,7 +6,7 @@ hyperparameter tuning.
 """
 from copy import deepcopy
 from datetime import datetime
-from typing import Dict, List, Literal, Optional, Tuple
+from typing import Any, Dict, List, Literal, Optional, Tuple
 
 import numpy as np
 import optuna
@@ -514,9 +514,19 @@ class XgboostModel(BaseClassMlModel):
         return weighted_loss
 
     def _fine_tune_precise(
-        self, tuned_params, x_train, y_train, x_test, y_test, random_seed
+        self,
+        tuned_params: Dict[str, Any],
+        x_train: pd.DataFrame,
+        y_train: pd.Series,
+        x_test: pd.DataFrame,
+        y_test: pd.Series,
+        random_seed: int,
     ):
         steps = tuned_params.pop("steps", 300)
+
+        if not self.conf_training:
+            self.conf_training = TrainingConfig()
+            logger("Could not find Training config. Falling back to default values")
 
         stratifier = StratifiedKFold(
             n_splits=self.conf_training.hypertuning_cv_folds,
@@ -525,7 +535,9 @@ class XgboostModel(BaseClassMlModel):
         )
 
         fold_losses = []
-        for _fn, (trn_idx, val_idx) in enumerate(stratifier.split(x_train, y_train)):
+        for _fn, (trn_idx, val_idx) in enumerate(
+            stratifier.split(x_train, y_train.astype(int))
+        ):
             X_train_fold, X_val_fold = (
                 x_train.iloc[trn_idx],
                 x_train.iloc[val_idx],
@@ -560,6 +572,12 @@ class XgboostModel(BaseClassMlModel):
                 enable_categorical=self.conf_training.cat_encoding_via_ml_algorithm,
             )
 
+            if not self.conf_params_xgboost:
+                self.conf_params_xgboost = XgboostFinalParamConfig()
+                logger(
+                    "Could not find XgboostFinalParamConfig. Falling back to default settings."
+                )
+
             if self.conf_params_xgboost.sample_weight:
                 classes_weights = self.calculate_class_weights(y_train_fold)
                 d_train = xgb.DMatrix(
@@ -575,6 +593,12 @@ class XgboostModel(BaseClassMlModel):
                     enable_categorical=self.conf_training.cat_encoding_via_ml_algorithm,
                 )
             eval_set = [(d_train, "train"), (d_test, "test")]
+
+            if not self.conf_xgboost:
+                self.conf_xgboost = XgboostTuneParamsConfig()
+                logger(
+                    "Could not find XgboostTuneParamsConfig. Falling back to defaults."
+                )
             model = xgb.train(
                 tuned_params,
                 d_train,
@@ -599,20 +623,21 @@ class XgboostModel(BaseClassMlModel):
 
         matthews_mean = np.mean(np.asarray(fold_losses))
 
-        # track results
-        if len(self.experiment_tracker.experiment_id) == 0:
-            new_id = 0
-        else:
-            new_id = self.experiment_tracker.experiment_id[-1] + 1
-        self.experiment_tracker.add_results(
-            experiment_id=new_id,
-            score_category="oof_score",
-            training_config=self.conf_training,
-            model_parameters=tuned_params,
-            eval_scores=matthews_mean,
-            metric_used="matthew_inverse",
-            metric_higher_is_better=False,
-        )
+        if self.experiment_tracker and self.conf_training:
+            # track results
+            if len(self.experiment_tracker.experiment_id) == 0:
+                new_id = 0
+            else:
+                new_id = self.experiment_tracker.experiment_id[-1] + 1
+            self.experiment_tracker.add_results(
+                experiment_id=new_id,
+                score_category="oof_score",
+                training_config=self.conf_training,
+                model_parameters=tuned_params,
+                eval_scores=matthews_mean,
+                metric_used="matthew_inverse",
+                metric_higher_is_better=False,
+            )
         return matthews_mean
 
     def fine_tune(

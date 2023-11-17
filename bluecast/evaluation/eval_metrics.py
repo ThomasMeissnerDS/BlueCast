@@ -148,7 +148,7 @@ def eval_classifier(
     f1_score_weighted = f1_score(y_true, y_classes, average="weighted", zero_division=0)
     logger(f"The weighted F1 score is {f1_score_weighted}")
 
-    if y_probs.shape[1] == 1:
+    if len(y_probs.shape) == 1:
         bll = balanced_log_loss(y_true, y_probs)
         logger(f"The balanced logloss is {bll}")
     else:
@@ -166,7 +166,7 @@ def eval_classifier(
     full_classification_report = classification_report(y_true, y_classes)
     logger(full_classification_report)
 
-    if y_probs.shape[1] == 1:
+    if len(y_probs.shape) == 1:
         plot_roc_auc(y_true, y_probs)
         try:
             plot_lift_chart(y_probs, y_true)
