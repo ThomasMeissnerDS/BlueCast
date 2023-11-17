@@ -155,7 +155,7 @@ def eval_classifier(
         bll = 99
         logger("Skip balanced logloss as number of classes is less than 2.")
 
-    if y_probs.shape[1] == 1:
+    if len(y_probs.shape) == 1:
         roc_auc = roc_auc_score(y_true, y_probs)
     else:
         roc_auc = roc_auc_score(y_true, y_probs, multi_class="ovr")
