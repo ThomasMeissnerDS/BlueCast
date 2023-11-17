@@ -477,9 +477,9 @@ class XgboostModel(BaseClassMlModel):
             else:
                 raise ValueError("No training_config could be found")
             y_hat = ml_model.predict(d_eval)
+            y_classes = np.asarray([np.argmax(line) for line in y_hat])
 
-            y_hat = np.asarray([np.argmax(line) for line in y_hat])
-            loss = matthews_corrcoef(y_true, y_hat) * -1
+            loss = matthews_corrcoef(y_true.values.tolist(), y_classes.tolist()) * -1
             losses.append(loss)
 
         return losses
