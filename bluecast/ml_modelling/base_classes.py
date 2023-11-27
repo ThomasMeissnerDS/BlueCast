@@ -58,6 +58,6 @@ class BaseClassMlRegressionModel(ABC):
         """
         Predict on unseen data.
 
-        :return tuple of predicted probabilities and predicted classes
+        :return numpy array of predictions
         """
         pass
