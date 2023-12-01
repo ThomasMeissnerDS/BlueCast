@@ -15,6 +15,10 @@ from sklearn.metrics import (
     f1_score,
     log_loss,
     matthews_corrcoef,
+    mean_absolute_error,
+    mean_squared_error,
+    median_absolute_error,
+    r2_score,
     recall_score,
     roc_auc_score,
     roc_curve,
@@ -192,5 +196,27 @@ def eval_classifier(
         "roc_auc": roc_auc,
         "classfication_report": full_classification_report,
         "confusion_matrix": confusion_matrix(y_true, y_classes),
+    }
+    return evaluation_scores
+
+
+def eval_regressor(y_true: np.ndarray, y_preds: np.ndarray) -> Dict[str, Any]:
+    r2 = r2_score(y_true, y_preds)
+    print(f"The R2 score is {r2}")
+    mean_absolute_error_score = mean_absolute_error(y_true, y_preds)
+    print(f"The MAE score is {mean_absolute_error_score}")
+    median_absolute_error_score = median_absolute_error(y_true, y_preds)
+    print(f"The Median absolute error score is {median_absolute_error_score}")
+    mean_squared_error_score = mean_squared_error(y_true, y_preds, squared=False)
+    print(f"The MSE score is {mean_squared_error_score}")
+    root_mean_squared_error_score = mean_squared_error(y_true, y_preds, squared=True)
+    print(f"The RMSE score is {root_mean_squared_error_score}")
+
+    evaluation_scores = {
+        "mae": mean_absolute_error_score,
+        "r2_score": r2,
+        "MSE": mean_squared_error_score,
+        "RMSE": root_mean_squared_error_score,
+        "median_absolute_error": median_absolute_error_score,
     }
     return evaluation_scores

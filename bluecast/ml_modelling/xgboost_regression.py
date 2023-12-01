@@ -26,7 +26,7 @@ from bluecast.ml_modelling.base_classes import BaseClassMlRegressionModel
 from bluecast.preprocessing.custom import CustomPreprocessing
 
 
-class XgboostModel(BaseClassMlRegressionModel):
+class XgboostModelRegression(BaseClassMlRegressionModel):
     """Train and/or tune Xgboost classification model."""
 
     def __init__(
