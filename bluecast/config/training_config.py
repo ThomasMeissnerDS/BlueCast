@@ -138,7 +138,7 @@ class XgboostTuneParamsRegressionConfig(BaseModel):
     model_verbosity: int = 0
     model_verbosity_during_final_training: int = 0
     model_objective: str = "reg:squarederror"
-    model_eval_metric: str = "mse"
+    model_eval_metric: str = "rmse"
     booster: str = "gbtree"
 
 
