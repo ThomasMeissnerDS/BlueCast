@@ -173,7 +173,7 @@ class BlueCastCVRegression:
         for fn, pipeline in enumerate(self.bluecast_models):
             y_preds = pipeline.predict(df.loc[:, or_cols])
             df[f"preds_{fn}"] = y_preds
-            pred_cols.append(f"proba_{fn}")
+            pred_cols.append(f"preds_{fn}")
 
         if return_sub_models_preds:
             return df.loc[:, pred_cols]
