@@ -304,6 +304,7 @@ class BlueCast:
             self.custom_feature_selector = RFECVSelector(
                 random_state=self.conf_training.global_random_state,
                 min_features_to_select=self.conf_training.min_features_to_select,
+                class_problem=self.class_problem,
             )
 
         if self.conf_training.enable_feature_selection:

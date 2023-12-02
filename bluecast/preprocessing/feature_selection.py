@@ -18,12 +18,12 @@ class RFECVSelector(CustomPreprocessing):
     """
 
     def __init__(
-        self, random_state: int = 0, min_features_to_select: int = 5, stratifier=None
+        self, random_state: int = 0, min_features_to_select: int = 5, class_problem=None
     ):
         super().__init__()
         self.selected_features = None
         self.random_state = random_state
-        if not stratifier:
+        if class_problem in ["regression"]:
             stratifier = KFold(5, random_state=random_state, shuffle=True)
             model = xgb.XGBRegressor()
             scorer = make_scorer(mean_squared_error)
