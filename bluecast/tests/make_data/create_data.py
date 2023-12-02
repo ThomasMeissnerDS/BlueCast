@@ -92,7 +92,6 @@ def create_synthetic_dataframe_regression(
         n_samples=num_samples,
         n_features=20,
         n_informative=20,
-        n_redundant=0,
         random_state=random_state,
     )
 

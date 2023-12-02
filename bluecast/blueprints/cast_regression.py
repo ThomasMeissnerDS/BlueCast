@@ -8,7 +8,7 @@ via the config class attributes from config.training_config module.
 """
 import warnings
 from datetime import datetime
-from typing import Any, Dict, List, Literal, Optional, Tuple, Union
+from typing import Any, Dict, List, Literal, Optional, Union
 
 import numpy as np
 import pandas as pd
@@ -363,7 +363,7 @@ class BlueCastRegression:
                 score_category="oof_score",
                 training_config=self.conf_training,
                 model_parameters=self.conf_params_xgboost.params,  # noqa
-                eval_scores=self.eval_metrics["accuracy"],
+                eval_scores=self.eval_metrics["mse"],
                 metric_used=metric,
                 metric_higher_is_better=higher_is_better,
             )
@@ -413,7 +413,7 @@ class BlueCastRegression:
 
         return df
 
-    def predict(self, df: pd.DataFrame) -> Tuple[np.ndarray, np.ndarray]:
+    def predict(self, df: pd.DataFrame) -> np.ndarray:
         """Predict on unseen data.
 
         Return the predicted probabilities and the predicted classes:
