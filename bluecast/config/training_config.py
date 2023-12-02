@@ -150,7 +150,6 @@ class XgboostFinalParamConfig:
         "objective": "multi:softprob",  # OR  'binary:logistic' #the loss function being used
         "eval_metric": "mlogloss",
         "tree_method": "exact",  # use GPU for training
-        "num_class": 2,
         "max_depth": 3,  # maximum depth of the decision trees being trained
         "alpha": 0.1,
         "lambda": 0.1,

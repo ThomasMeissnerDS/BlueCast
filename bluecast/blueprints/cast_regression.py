@@ -334,7 +334,9 @@ class BlueCastRegression:
         self.fit(df, target_col)
         y_preds = self.predict(df_eval)
 
-        eval_dict = eval_regressor(target_eval, y_preds)  # TODO: add experiment tracker
+        eval_dict = eval_regressor(
+            target_eval.values, y_preds
+        )  # TODO: add experiment tracker
         self.eval_metrics = eval_dict
 
         if not self.conf_training:
@@ -349,15 +351,13 @@ class BlueCastRegression:
         # enrich experiment tracker
         for metric, higher_is_better in zip(
             [
-                "accuracy",
-                "recall",
-                "f1_score_weighted",
-                "log_loss",
-                "balanced_logloss",
-                "roc_auc",
-                "matthews",
+                "mae",
+                "r2_score",
+                "MSE",
+                "RMSE",
+                "median_absolute_error",
             ],
-            [True, True, True, False, False, True, True],
+            [False, False, False, False, False],
         ):
             self.experiment_tracker.add_results(
                 experiment_id=self.experiment_tracker.experiment_id[-1],

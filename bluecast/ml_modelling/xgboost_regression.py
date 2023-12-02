@@ -26,7 +26,7 @@ from bluecast.preprocessing.custom import CustomPreprocessing
 
 
 class XgboostModelRegression(BaseClassMlRegressionModel):
-    """Train and/or tune Xgboost classification model."""
+    """Train and/or tune Xgboost regression model."""
 
     def __init__(
         self,
@@ -37,7 +37,7 @@ class XgboostModelRegression(BaseClassMlRegressionModel):
         experiment_tracker: Optional[ExperimentTracker] = None,
         custom_in_fold_preprocessor: Optional[CustomPreprocessing] = None,
     ):
-        self.model: Optional[xgb.XGBClassifier] = None
+        self.model: Optional[xgb.XGBRegressor] = None
         self.class_problem = class_problem
         self.conf_training = conf_training
         self.conf_params_xgboost = conf_params_xgboost
@@ -367,7 +367,7 @@ class XgboostModelRegression(BaseClassMlRegressionModel):
             and self.conf_training.hypertuning_cv_folds > 1
         ):
             best_score_cv_grid = self.experiment_tracker.get_best_score(
-                target_metric="adjusted ml logloss"
+                target_metric="mean_squared_error"
             )
         else:
             best_score_cv_grid = np.inf
@@ -695,7 +695,7 @@ class XgboostModelRegression(BaseClassMlRegressionModel):
                     training_config=self.conf_training,
                     model_parameters=tuned_params,
                     eval_scores=adjusted_score,
-                    metric_used="adjusted ml logloss",
+                    metric_used="mean_squared_error",
                     metric_higher_is_better=False,
                 )
 

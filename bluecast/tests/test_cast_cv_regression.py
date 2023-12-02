@@ -96,6 +96,22 @@ def test_blueprint_cv_xgboost(synthetic_train_test_data):
     for model in automl_cv.bluecast_models:
         assert isinstance(model, BlueCastRegression)
 
+    # test fine tune
+    train_config.precise_cv_tuning = True
+    automl_cv = BlueCastCVRegression(
+        conf_xgboost=xgboost_param_config, conf_training=train_config, stratifier=None
+    )
+    automl_cv.fit_eval(
+        df_train,
+        target_col="target",
+    )
+    assert True
+    assert automl_cv.class_problem == "regression"
+    preds = automl_cv.predict(
+        df_val.drop("target", axis=1), return_sub_models_preds=True
+    )
+    assert isinstance(preds, pd.DataFrame)
+
 
 class CustomLRModel(BaseClassMlRegressionModel):
     def __init__(self):
