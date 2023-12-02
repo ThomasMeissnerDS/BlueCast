@@ -17,14 +17,18 @@ class RFECVSelector(CustomPreprocessing):
     On default cross-validated recursive feature elimination is used.
     """
 
-    def __init__(self, random_state: int = 0, min_features_to_select: int = 5):
+    def __init__(
+        self, random_state: int = 0, min_features_to_select: int = 5, stratifier=None
+    ):
         super().__init__()
         self.selected_features = None
         self.random_state = random_state
+        if not stratifier:
+            stratifier = StratifiedKFold(5, random_state=random_state, shuffle=True)
         self.selection_strategy: RFECV = RFECV(
             estimator=xgb.XGBClassifier(),
             step=1,
-            cv=StratifiedKFold(5, random_state=random_state, shuffle=True),
+            cv=stratifier,
             min_features_to_select=min_features_to_select,
             scoring=make_scorer(matthews_corrcoef),
             n_jobs=2,

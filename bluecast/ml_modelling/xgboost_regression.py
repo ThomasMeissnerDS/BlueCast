@@ -13,7 +13,7 @@ import optuna
 import pandas as pd
 import xgboost as xgb
 from sklearn.metrics import mean_squared_error
-from sklearn.model_selection import StratifiedKFold
+from sklearn.model_selection import KFold
 
 from bluecast.config.training_config import TrainingConfig, XgboostFinalParamConfig
 from bluecast.config.training_config import (
@@ -496,7 +496,7 @@ class XgboostModelRegression(BaseClassMlRegressionModel):
             self.conf_training = TrainingConfig()
             logger("Could not find Training config. Falling back to default values")
 
-        stratifier = StratifiedKFold(
+        stratifier = KFold(
             n_splits=self.conf_training.hypertuning_cv_folds,
             shuffle=True,
             random_state=random_seed,

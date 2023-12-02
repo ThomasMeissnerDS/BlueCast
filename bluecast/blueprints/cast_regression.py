@@ -12,6 +12,7 @@ from typing import Any, Dict, List, Literal, Optional, Union
 
 import numpy as np
 import pandas as pd
+from sklearn.model_selection import KFold
 
 from bluecast.config.training_config import TrainingConfig, XgboostFinalParamConfig
 from bluecast.config.training_config import (
@@ -284,6 +285,11 @@ class BlueCastRegression:
             self.custom_feature_selector = RFECVSelector(
                 random_state=self.conf_training.global_random_state,
                 min_features_to_select=self.conf_training.min_features_to_select,
+                stratifier=KFold(
+                    n_splits=5,
+                    shuffle=True,
+                    random_state=self.conf_training.global_random_state,
+                ),
             )
 
         if self.conf_training.enable_feature_selection:
