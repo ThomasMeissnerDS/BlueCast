@@ -41,23 +41,6 @@ class XgboostModelRegression(BaseClassMlRegressionModel):
         self.model: Optional[xgb.XGBClassifier] = None
         self.class_problem = class_problem
         self.conf_training = conf_training
-
-        if not conf_xgboost:
-            logger(
-                "No Xgboost config provided. Change default config to fit regression task."
-            )
-            conf_xgboost = XgboostTuneParamsConfig()
-            conf_xgboost.model_objective = "reg:squarederror"
-            conf_xgboost.model_eval_metric = "mse"
-        self.conf_xgboost = conf_xgboost
-
-        if not conf_params_xgboost:
-            logger(
-                "No Xgboost final config provided. Change default config to fit regression task."
-            )
-            conf_params_xgboost = XgboostFinalParamConfig()
-            conf_params_xgboost.params["objective"] = "reg:squarederror"
-            conf_params_xgboost.params["eval_metric"] = "mse"
         self.conf_params_xgboost = conf_params_xgboost
 
         self.experiment_tracker = experiment_tracker

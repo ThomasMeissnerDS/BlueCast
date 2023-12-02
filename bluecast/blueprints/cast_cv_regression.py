@@ -4,10 +4,9 @@ import pandas as pd
 from sklearn.model_selection import StratifiedKFold
 
 from bluecast.blueprints.cast_regression import BlueCastRegression
+from bluecast.config.training_config import TrainingConfig, XgboostFinalParamConfig
 from bluecast.config.training_config import (
-    TrainingConfig,
-    XgboostFinalParamConfig,
-    XgboostTuneParamsConfig,
+    XgboostTuneParamsRegressionConfig as XgboostTuneParamsConfig,
 )
 from bluecast.experimentation.tracking import ExperimentTracker
 from bluecast.general_utils.general_utils import logger

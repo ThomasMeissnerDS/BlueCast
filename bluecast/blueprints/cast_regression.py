@@ -13,10 +13,9 @@ from typing import Any, Dict, List, Literal, Optional, Tuple, Union
 import numpy as np
 import pandas as pd
 
+from bluecast.config.training_config import TrainingConfig, XgboostFinalParamConfig
 from bluecast.config.training_config import (
-    TrainingConfig,
-    XgboostFinalParamConfig,
-    XgboostTuneParamsConfig,
+    XgboostTuneParamsRegressionConfig as XgboostTuneParamsConfig,
 )
 from bluecast.evaluation.eval_metrics import eval_regressor
 from bluecast.evaluation.shap_values import shap_explanations
