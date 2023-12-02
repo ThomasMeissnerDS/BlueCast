@@ -15,10 +15,9 @@ import xgboost as xgb
 from sklearn.metrics import mean_squared_error
 from sklearn.model_selection import StratifiedKFold
 
+from bluecast.config.training_config import TrainingConfig, XgboostFinalParamConfig
 from bluecast.config.training_config import (
-    TrainingConfig,
-    XgboostFinalParamConfig,
-    XgboostTuneParamsConfig,
+    XgboostTuneParamsRegressionConfig as XgboostTuneParamsConfig,
 )
 from bluecast.experimentation.tracking import ExperimentTracker
 from bluecast.general_utils.general_utils import check_gpu_support, logger
@@ -42,6 +41,7 @@ class XgboostModelRegression(BaseClassMlRegressionModel):
         self.class_problem = class_problem
         self.conf_training = conf_training
         self.conf_params_xgboost = conf_params_xgboost
+        self.conf_xgboost = conf_xgboost
 
         self.experiment_tracker = experiment_tracker
         self.custom_in_fold_preprocessor = custom_in_fold_preprocessor
