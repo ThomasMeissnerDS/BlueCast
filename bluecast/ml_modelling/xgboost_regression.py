@@ -242,7 +242,7 @@ class XgboostModelRegression(BaseClassMlRegressionModel):
             )
 
             pruning_callback = optuna.integration.XGBoostPruningCallback(
-                trial, "test-mlogloss"
+                trial, "test-rmse"
             )
 
             steps = param.pop("steps", 300)
@@ -280,8 +280,8 @@ class XgboostModelRegression(BaseClassMlRegressionModel):
                     shuffle=self.conf_training.shuffle_during_training,
                 )
 
-                adjusted_score = result["test-mlogloss-mean"].mean() + (
-                    result["test-mlogloss-mean"].std() ** 0.7
+                adjusted_score = result["test-rmse-mean"].mean() + (
+                    result["test-rmse-mean"].std() ** 0.7
                 )
 
                 # track results
@@ -625,7 +625,7 @@ class XgboostModelRegression(BaseClassMlRegressionModel):
             d_train, d_test = self.create_d_matrices(x_train, y_train, x_test, y_test)
 
             pruning_callback = optuna.integration.XGBoostPruningCallback(
-                trial, "test-mlogloss"
+                trial, "test-rmse"
             )
             # copy best params to not overwrite them
             tuned_params = deepcopy(self.conf_params_xgboost.params)
@@ -680,8 +680,8 @@ class XgboostModelRegression(BaseClassMlRegressionModel):
                     shuffle=self.conf_training.shuffle_during_training,
                 )
 
-                adjusted_score = result["test-mlogloss-mean"].mean() + (
-                    result["test-mlogloss-mean"].std() ** 0.7
+                adjusted_score = result["test-rmse-mean"].mean() + (
+                    result["test-rmse-mean"].std() ** 0.7
                 )
 
                 # track results
