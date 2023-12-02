@@ -363,7 +363,7 @@ class BlueCastRegression:
                 score_category="oof_score",
                 training_config=self.conf_training,
                 model_parameters=self.conf_params_xgboost.params,  # noqa
-                eval_scores=self.eval_metrics["mse"],
+                eval_scores=self.eval_metrics["RMSE"],
                 metric_used=metric,
                 metric_higher_is_better=higher_is_better,
             )
