@@ -25,14 +25,23 @@ class RFECVSelector(CustomPreprocessing):
         self.random_state = random_state
         if not stratifier:
             stratifier = StratifiedKFold(5, random_state=random_state, shuffle=True)
-        self.selection_strategy: RFECV = RFECV(
-            estimator=xgb.XGBClassifier(),
-            step=1,
-            cv=stratifier,
-            min_features_to_select=min_features_to_select,
-            scoring=make_scorer(matthews_corrcoef),
-            n_jobs=2,
-        )
+            self.selection_strategy: RFECV = RFECV(
+                estimator=xgb.XGBRegressor(),
+                step=1,
+                cv=stratifier,
+                min_features_to_select=min_features_to_select,
+                scoring=make_scorer(matthews_corrcoef),
+                n_jobs=2,
+            )
+        else:
+            self.selection_strategy: RFECV = RFECV(
+                estimator=xgb.XGBClassifier(),
+                step=1,
+                cv=stratifier,
+                min_features_to_select=min_features_to_select,
+                scoring=make_scorer(matthews_corrcoef),
+                n_jobs=2,
+            )
 
     def fit_transform(
         self, df: pd.DataFrame, target: pd.Series
