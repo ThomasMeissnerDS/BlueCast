@@ -227,7 +227,7 @@ class BlueCastRegression:
             self.time_split_column,
             self.conf_training.train_size,
             self.conf_training.global_random_state,
-            self.conf_training.train_split_stratify,
+            stratify=False,
         )
 
         if self.custom_preprocessor:

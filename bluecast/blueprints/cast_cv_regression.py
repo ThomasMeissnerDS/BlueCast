@@ -1,7 +1,7 @@
 from typing import Any, List, Literal, Optional, Tuple, Union
 
 import pandas as pd
-from sklearn.model_selection import StratifiedKFold
+from sklearn.model_selection import KFold
 
 from bluecast.blueprints.cast_regression import BlueCastRegression
 from bluecast.config.training_config import TrainingConfig, XgboostFinalParamConfig
@@ -73,7 +73,7 @@ class BlueCastCVRegression:
             self.conf_training = TrainingConfig()
 
         if not self.stratifier:
-            self.stratifier = StratifiedKFold(
+            self.stratifier = KFold(
                 n_splits=5,
                 shuffle=True,
                 random_state=self.conf_training.global_random_state,
@@ -126,7 +126,7 @@ class BlueCastCVRegression:
             self.conf_training = TrainingConfig()
 
         if not self.stratifier:
-            self.stratifier = StratifiedKFold(
+            self.stratifier = KFold(
                 n_splits=5,
                 shuffle=True,
                 random_state=self.conf_training.global_random_state,
