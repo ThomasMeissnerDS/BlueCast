@@ -19,6 +19,7 @@ def xgboost_model():
 # Test case to check if fine-tuning runs without errors
 def test_fine_tune_runs_without_errors(xgboost_model):
     xgboost_params = XgboostFinalParamConfig()
+    xgboost_params.params["num_classes"] = 2
 
     xgboost_model.conf_params_xgboost = xgboost_params
     xgboost_model.conf_training = TrainingConfig()
@@ -55,6 +56,7 @@ def test_fine_tune_runs_without_errors(xgboost_model):
 
 def test_fine_tune_runs_without_errors_using_cv(xgboost_model):
     xgboost_params = XgboostFinalParamConfig()
+    xgboost_params.params["num_classes"] = 2
     xgboost_model.conf_params_xgboost = xgboost_params
     xgboost_model.conf_training = TrainingConfig()
     xgboost_model.conf_xgboost = XgboostTuneParamsConfig()
