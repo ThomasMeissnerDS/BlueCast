@@ -4,8 +4,8 @@ from typing import Optional, Tuple
 import pandas as pd
 import xgboost as xgb
 from sklearn.feature_selection import RFECV
-from sklearn.metrics import make_scorer, matthews_corrcoef
-from sklearn.model_selection import StratifiedKFold
+from sklearn.metrics import make_scorer, matthews_corrcoef, mean_squared_error
+from sklearn.model_selection import KFold, StratifiedKFold
 
 from bluecast.general_utils.general_utils import logger
 from bluecast.preprocessing.custom import CustomPreprocessing
@@ -24,24 +24,22 @@ class RFECVSelector(CustomPreprocessing):
         self.selected_features = None
         self.random_state = random_state
         if not stratifier:
-            stratifier = StratifiedKFold(5, random_state=random_state, shuffle=True)
-            self.selection_strategy: RFECV = RFECV(
-                estimator=xgb.XGBRegressor(),
-                step=1,
-                cv=stratifier,
-                min_features_to_select=min_features_to_select,
-                scoring=make_scorer(matthews_corrcoef),
-                n_jobs=2,
-            )
+            stratifier = KFold(5, random_state=random_state, shuffle=True)
+            model = xgb.XGBRegressor()
+            scorer = make_scorer(mean_squared_error)
         else:
-            self.selection_strategy: RFECV = RFECV(
-                estimator=xgb.XGBClassifier(),
-                step=1,
-                cv=stratifier,
-                min_features_to_select=min_features_to_select,
-                scoring=make_scorer(matthews_corrcoef),
-                n_jobs=2,
-            )
+            stratifier = StratifiedKFold(5, random_state=random_state, shuffle=True)
+            model = xgb.XGBClassifier()
+            scorer = make_scorer(matthews_corrcoef)
+
+        self.selection_strategy: RFECV = RFECV(
+            estimator=model,
+            step=1,
+            cv=stratifier,
+            min_features_to_select=min_features_to_select,
+            scoring=scorer,
+            n_jobs=2,
+        )
 
     def fit_transform(
         self, df: pd.DataFrame, target: pd.Series
