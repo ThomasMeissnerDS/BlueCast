@@ -41,8 +41,25 @@ class XgboostModelRegression(BaseClassMlRegressionModel):
         self.model: Optional[xgb.XGBClassifier] = None
         self.class_problem = class_problem
         self.conf_training = conf_training
+
+        if not conf_xgboost:
+            logger(
+                "No Xgboost config provided. Change default config to fit regression task."
+            )
+            conf_xgboost = XgboostTuneParamsConfig()
+            conf_xgboost.model_objective = "reg:squarederror"
+            conf_xgboost.model_eval_metric = "mse"
         self.conf_xgboost = conf_xgboost
+
+        if not conf_params_xgboost:
+            logger(
+                "No Xgboost final config provided. Change default config to fit regression task."
+            )
+            conf_params_xgboost = XgboostFinalParamConfig()
+            conf_params_xgboost.params["objective"] = "reg:squarederror"
+            conf_params_xgboost.params["eval_metric"] = "mse"
         self.conf_params_xgboost = conf_params_xgboost
+
         self.experiment_tracker = experiment_tracker
         self.custom_in_fold_preprocessor = custom_in_fold_preprocessor
         if self.conf_training:
@@ -188,7 +205,6 @@ class XgboostModelRegression(BaseClassMlRegressionModel):
                 "booster": self.conf_xgboost.booster,
                 "eval_metric": self.conf_xgboost.model_eval_metric,
                 "tree_method": train_on,
-                "num_class": y_train.nunique(),
                 "eta": trial.suggest_float(
                     "eta", self.conf_xgboost.eta_min, self.conf_xgboost.eta_max
                 ),
@@ -340,7 +356,6 @@ class XgboostModelRegression(BaseClassMlRegressionModel):
             "booster": self.conf_xgboost.booster,
             "eval_metric": self.conf_xgboost.model_eval_metric,
             "tree_method": train_on,  # use GPU for training
-            "num_class": y_train.nunique(),
             "max_depth": xgboost_best_param[
                 "max_depth"
             ],  # maximum depth of the decision trees being trained
