@@ -92,6 +92,6 @@ def load_for_production(
         filehandler = open(full_path, "rb")
     except Exception:
         filehandler = open(full_path + file_type, "rb")
-    automl_model = pickle.load(filehandler)
+    automl_model = pickle.Unpickler(filehandler)
     filehandler.close()
     return automl_model
