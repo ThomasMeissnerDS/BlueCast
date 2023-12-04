@@ -6,7 +6,7 @@ import pytest
 import xgboost as xgb
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.feature_selection import RFECV
-from sklearn.metrics import make_scorer, matthews_corrcoef
+from sklearn.metrics import make_scorer, mean_absolute_error
 from sklearn.model_selection import KFold
 
 from bluecast.blueprints.cast_regression import BlueCastRegression
@@ -124,7 +124,7 @@ def test_bluecast_with_custom_model():
                 step=1,
                 cv=KFold(2, random_state=random_state, shuffle=True),
                 min_features_to_select=1,
-                scoring=make_scorer(matthews_corrcoef),
+                scoring=make_scorer(mean_absolute_error),
                 n_jobs=2,
             )
 
@@ -151,11 +151,11 @@ def test_bluecast_with_custom_model():
             self.selected_features = None
             self.random_state = random_state
             self.selection_strategy: RFECV = RFECV(
-                estimator=xgb.XGBClassifier(),
+                estimator=xgb.XGBRegressor(),
                 step=1,
                 cv=KFold(2, random_state=random_state, shuffle=True),
                 min_features_to_select=1,
-                scoring=make_scorer(matthews_corrcoef),
+                scoring=make_scorer(mean_absolute_error),
                 n_jobs=2,
             )
 
