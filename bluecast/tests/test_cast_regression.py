@@ -120,7 +120,7 @@ def test_bluecast_with_custom_model():
             self.selected_features = None
             self.random_state = random_state
             self.selection_strategy: RFECV = RFECV(
-                estimator=xgb.XGBClassifier(),
+                estimator=xgb.XGBRegressor(),
                 step=1,
                 cv=KFold(2, random_state=random_state, shuffle=True),
                 min_features_to_select=1,
