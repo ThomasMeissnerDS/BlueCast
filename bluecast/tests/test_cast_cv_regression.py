@@ -202,7 +202,7 @@ def test_bluecast_cv_fit_eval_with_custom_model():
             "feature6": [i for i in range(10)],
         }
     )
-    y_train = pd.Series([0, 1, 0, 1, 0, 1, 0, 1, 0, 1])
+    y_train = pd.Series([0.0, 1.0, 0.0, 10.0, 0.0, 1.0, 0.0, 1.0, 0.0, 45.0])
     x_test = pd.DataFrame(
         {
             "feature1": [i for i in range(10)],
@@ -213,7 +213,7 @@ def test_bluecast_cv_fit_eval_with_custom_model():
             "feature6": [i for i in range(10)],
         }
     )
-    y_test = pd.Series([0, 1, 0, 1, 0, 1, 0, 1, 0, 1])
+    y_test = pd.Series([0.0, 1.0, 0.0, 10.0, 0.0, 1.0, 0.0, 1.0, 0.0, 45.0])
 
     x_train["target"] = y_train
 
@@ -282,7 +282,7 @@ def test_bluecast_cv_with_custom_objects():
             self.selected_features = None
             self.random_state = random_state
             self.selection_strategy: RFECV = RFECV(
-                estimator=xgboost.XGBClassifier(),
+                estimator=xgboost.XGBRegressor(),
                 step=1,
                 cv=KFold(2, random_state=random_state, shuffle=True),
                 min_features_to_select=1,
@@ -349,7 +349,7 @@ def test_bluecast_cv_with_custom_objects():
             "feature6": [i for i in range(10)],
         }
     )
-    y_train = pd.Series([0, 1, 0, 1, 0, 1, 0, 1, 0, 1])
+    y_train = pd.Series([0.0, 1.0, 0.0, 10.0, 0.0, 1.0, 0.0, 1.0, 0.0, 45.0])
     x_test = pd.DataFrame(
         {
             "feature1": [i for i in range(10)],
