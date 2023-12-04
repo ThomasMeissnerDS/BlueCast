@@ -77,7 +77,7 @@ def test_blueprint_cv_xgboost(synthetic_train_test_data):
     train_config.hypertuning_cv_folds = 2
     train_config.enable_grid_search_fine_tuning = True
     train_config.gridsearch_nb_parameters_per_grid = 2
-    train_config.precise_cv_tuning = False
+    train_config.precise_cv_tuning = True
 
     automl_cv = BlueCastCVRegression(
         conf_xgboost=xgboost_param_config, conf_training=train_config, stratifier=None
@@ -236,7 +236,7 @@ def test_bluecast_cv_with_custom_objects():
     train_config.hyperparameter_tuning_rounds = 10
     train_config.enable_feature_selection = True
     train_config.hypertuning_cv_folds = 2
-    train_config.enable_grid_search_fine_tuning = True
+    train_config.enable_grid_search_fine_tuning = False
     train_config.gridsearch_nb_parameters_per_grid = 2
     train_config.use_full_data_for_final_model = True
 
