@@ -360,14 +360,14 @@ class XgboostModelRegression(BaseClassMlRegressionModel):
             or self.conf_training.precise_cv_tuning
         ):
             best_score_cv_grid = self.experiment_tracker.get_best_score(
-                target_metric="mean_squared_error"
+                target_metric="root_mean_squared_error"
             )
         elif (
             self.conf_training.autotune_model
             and self.conf_training.hypertuning_cv_folds > 1
         ):
             best_score_cv_grid = self.experiment_tracker.get_best_score(
-                target_metric="mean_squared_error"
+                target_metric="root_mean_squared_error"
             )
         else:
             best_score_cv_grid = np.inf
@@ -400,7 +400,7 @@ class XgboostModelRegression(BaseClassMlRegressionModel):
             verbose_eval=self.conf_xgboost.model_verbosity,
         )
         preds = model.predict(d_test)
-        mse = mean_squared_error(y_test, preds)
+        mse = mean_squared_error(y_test, preds, squared=False)
 
         # track results
         if len(self.experiment_tracker.experiment_id) == 0:
@@ -413,7 +413,7 @@ class XgboostModelRegression(BaseClassMlRegressionModel):
             training_config=self.conf_training,
             model_parameters=param,
             eval_scores=mse,
-            metric_used="mean_squared_error",
+            metric_used="root_mean_squared_error",
             metric_higher_is_better=False,
         )
         return mse
@@ -447,7 +447,9 @@ class XgboostModelRegression(BaseClassMlRegressionModel):
                 raise ValueError("No training_config could be found")
             preds = ml_model.predict(d_eval)
 
-            loss = mean_squared_error(y_true.values.tolist(), preds.tolist())
+            loss = mean_squared_error(
+                y_true.values.tolist(), preds.tolist(), squared=False
+            )
             losses.append(loss)
 
         return losses
@@ -594,7 +596,7 @@ class XgboostModelRegression(BaseClassMlRegressionModel):
                 training_config=self.conf_training,
                 model_parameters=tuned_params,
                 eval_scores=mse_mean,
-                metric_used="mean_squared_error",
+                metric_used="root_mean_squared_error",
                 metric_higher_is_better=False,
             )
         return mse_mean
@@ -695,7 +697,7 @@ class XgboostModelRegression(BaseClassMlRegressionModel):
                     training_config=self.conf_training,
                     model_parameters=tuned_params,
                     eval_scores=adjusted_score,
-                    metric_used="mean_squared_error",
+                    metric_used="root_mean_squared_error",
                     metric_higher_is_better=False,
                 )
 
