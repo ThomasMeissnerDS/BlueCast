@@ -207,9 +207,9 @@ def eval_regressor(y_true: np.ndarray, y_preds: np.ndarray) -> Dict[str, Any]:
     print(f"The MAE score is {mean_absolute_error_score}")
     median_absolute_error_score = median_absolute_error(y_true, y_preds)
     print(f"The Median absolute error score is {median_absolute_error_score}")
-    mean_squared_error_score = mean_squared_error(y_true, y_preds, squared=False)
+    mean_squared_error_score = mean_squared_error(y_true, y_preds, squared=True)
     print(f"The MSE score is {mean_squared_error_score}")
-    root_mean_squared_error_score = mean_squared_error(y_true, y_preds, squared=True)
+    root_mean_squared_error_score = mean_squared_error(y_true, y_preds, squared=False)
     print(f"The RMSE score is {root_mean_squared_error_score}")
 
     evaluation_scores = {
