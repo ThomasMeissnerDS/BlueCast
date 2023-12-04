@@ -23,7 +23,7 @@ def check_gpu_support() -> str:
         params = {"tree_method": gpu_param}
         xgb.train(params, d_train, num_boost_round=2)
         print("Xgboost uses GPU.")
-        return "gpu"
+        return gpu_param
     except xgb.core.XGBoostError:
         params = {"tree_method": "cuda"}
         xgb.train(params, d_train, num_boost_round=2)
