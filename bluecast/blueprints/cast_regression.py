@@ -334,9 +334,7 @@ class BlueCastRegression:
         self.fit(df, target_col)
         y_preds = self.predict(df_eval)
 
-        eval_dict = eval_regressor(
-            target_eval.values, y_preds
-        )  # TODO: add experiment tracker
+        eval_dict = eval_regressor(target_eval.values, y_preds)
         self.eval_metrics = eval_dict
 
         if not self.conf_training:

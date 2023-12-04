@@ -26,7 +26,7 @@ class ExperimentTracker(BaseClassExperimentTracker):
         self.training_configs: List[TrainingConfig] = []
         self.model_parameters: List[Dict[Union[str, int, float, None]]] = []
         self.eval_scores: List[Union[float, int, None]] = []
-        self.metric_used: List[str] = []  # TODO: Split by metrics in eval_results?
+        self.metric_used: List[str] = []
         self.metric_higher_is_better: List[bool] = []
         self.created_at: List[datetime] = []
 

@@ -295,7 +295,7 @@ class XgboostModelRegression(BaseClassMlRegressionModel):
                     training_config=self.conf_training,
                     model_parameters=param,
                     eval_scores=adjusted_score,
-                    metric_used="adjusted ml logloss",
+                    metric_used="adjusted rmse",
                     metric_higher_is_better=False,
                 )
 
