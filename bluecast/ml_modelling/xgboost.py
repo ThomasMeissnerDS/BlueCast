@@ -431,7 +431,7 @@ class XgboostModel(BaseClassMlModel):
         )
         preds = model.predict(d_test)
         pred_labels = np.asarray([np.argmax(line) for line in preds])
-        matthew = matthews_corrcoef(y_test, pred_labels) * -1
+        matthew = matthews_corrcoef(y_test.tolist(), pred_labels.tolist()) * -1
 
         # track results
         if len(self.experiment_tracker.experiment_id) == 0:
