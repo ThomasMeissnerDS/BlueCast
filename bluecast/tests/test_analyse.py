@@ -16,13 +16,23 @@ from bluecast.eda.analyse import (
     plot_tsne,
     univariate_plots,
 )
-from bluecast.tests.make_data.create_data import create_synthetic_dataframe
+from bluecast.tests.make_data.create_data import (
+    create_synthetic_dataframe,
+    create_synthetic_dataframe_regression,
+)
 
 
 @pytest.fixture
 def synthetic_train_test_data() -> Tuple[pd.DataFrame, pd.DataFrame]:
     df_train = create_synthetic_dataframe(2000, random_state=20)
     df_val = create_synthetic_dataframe(2000, random_state=200)
+    return df_train, df_val
+
+
+@pytest.fixture
+def synthetic_train_test_data_regression() -> Tuple[pd.DataFrame, pd.DataFrame]:
+    df_train = create_synthetic_dataframe_regression(2000, random_state=20)
+    df_val = create_synthetic_dataframe_regression(2000, random_state=200)
     return df_train, df_val
 
 
@@ -107,6 +117,29 @@ def test_mutual_info_to_target(synthetic_train_test_data):
             axis=1,
         ),
         "target",
+        class_problem="binary",
+    )
+
+
+def test_mutual_info_to_target_multiclass(synthetic_train_test_data):
+    mutual_info_to_target(
+        synthetic_train_test_data[0].drop(
+            ["categorical_feature_1", "categorical_feature_2", "datetime_feature"],
+            axis=1,
+        ),
+        "target",
+        class_problem="multiclass",
+    )
+
+
+def test_mutual_info_to_target_regression(synthetic_train_test_data_regression):
+    mutual_info_to_target(
+        synthetic_train_test_data_regression[0].drop(
+            ["categorical_feature_1", "categorical_feature_2", "datetime_feature"],
+            axis=1,
+        ),
+        "target",
+        class_problem="regression",
     )
 
 
