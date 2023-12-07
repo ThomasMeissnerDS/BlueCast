@@ -108,6 +108,7 @@ def test_bluecast_with_custom_model():
     train_config.hypertuning_cv_folds = 2
     train_config.enable_grid_search_fine_tuning = True
     train_config.gridsearch_nb_parameters_per_grid = 2
+    train_config.precise_cv_tuning = True
 
     xgboost_param_config = XgboostTuneParamsConfig()
     xgboost_param_config.steps_max = 100
@@ -195,6 +196,57 @@ def test_bluecast_with_custom_model():
     custum_preproc = MyCustomPreprocessor()
     custom_infold_preproc = MyCustomInFoldPreprocessor()
 
+    # Create an instance of the BlueCast class with the custom model
+    bluecast = BlueCastRegression(
+        class_problem="regression",
+        target_column="target",
+        ml_model=custom_model,
+        conf_xgboost=xgboost_param_config,
+        conf_training=train_config,
+        custom_feature_selector=custom_feature_selector,
+        custom_preprocessor=custum_preproc,
+        custom_in_fold_preprocessor=custom_infold_preproc,
+    )
+
+    # Create some sample data for testing
+    x_train = pd.DataFrame(
+        {
+            "feature1": [i for i in range(10)],
+            "feature2": [i for i in range(10)],
+            "feature3": [i for i in range(10)],
+            "feature4": [i for i in range(10)],
+            "feature5": [i for i in range(10)],
+            "feature6": [i for i in range(10)],
+        }
+    )
+    y_train = pd.Series([0, 1, 0, 1, 0, 1, 0, 1, 0, 1])
+    x_test = pd.DataFrame(
+        {
+            "feature1": [i for i in range(10)],
+            "feature2": [i for i in range(10)],
+            "feature3": [i for i in range(10)],
+            "feature4": [i for i in range(10)],
+            "feature5": [i for i in range(10)],
+            "feature6": [i for i in range(10)],
+        }
+    )
+
+    x_train["target"] = y_train
+
+    # Fit the BlueCast model using the custom model
+    bluecast.fit(x_train, "target")
+
+    # Predict on the test data using the custom model
+    preds = bluecast.predict(x_test)
+
+    # Assert the expected results
+    assert isinstance(preds, np.ndarray)
+    print(bluecast.experiment_tracker.experiment_id)
+    assert (
+        len(bluecast.experiment_tracker.experiment_id) == 0
+    )  # due to custom model and fit method
+
+    train_config.precise_cv_tuning = False
     # Create an instance of the BlueCast class with the custom model
     bluecast = BlueCastRegression(
         class_problem="regression",
