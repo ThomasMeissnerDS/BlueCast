@@ -110,6 +110,38 @@ class XgboostTuneParamsConfig(BaseModel):
     booster: str = "gbtree"
 
 
+class XgboostTuneParamsRegressionConfig(BaseModel):
+    """Define hyperparameter tuning search space."""
+
+    max_depth_min: int = 2
+    max_depth_max: int = 6
+    alpha_min: float = 0.0
+    alpha_max: float = 10.0
+    lambda_min: float = 0.0
+    lambda_max: float = 10.0
+    gamma_min: float = 0.0
+    gamma_max: float = 10.0
+    subsample_min: float = 0.0
+    subsample_max: float = 10.0
+    max_leaves_min: int = 0
+    max_leaves_max: int = 0
+    sub_sample_min: float = 0.3
+    sub_sample_max: float = 1.0
+    col_sample_by_tree_min: float = 0.3
+    col_sample_by_tree_max: float = 1.0
+    col_sample_by_level_min: float = 0.3
+    col_sample_by_level_max: float = 1.0
+    eta_min: float = 0.001
+    eta_max: float = 0.3
+    steps_min: int = 2
+    steps_max: int = 1000
+    model_verbosity: int = 0
+    model_verbosity_during_final_training: int = 0
+    model_objective: str = "reg:squarederror"
+    model_eval_metric: str = "rmse"
+    booster: str = "gbtree"
+
+
 @dataclass
 class XgboostFinalParamConfig:
     """Define final hyper parameters."""
@@ -118,7 +150,6 @@ class XgboostFinalParamConfig:
         "objective": "multi:softprob",  # OR  'binary:logistic' #the loss function being used
         "eval_metric": "mlogloss",
         "tree_method": "exact",  # use GPU for training
-        "num_class": 2,
         "max_depth": 3,  # maximum depth of the decision trees being trained
         "alpha": 0.1,
         "lambda": 0.1,

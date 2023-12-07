@@ -14,17 +14,29 @@ def check_gpu_support() -> str:
     label = np.random.randint(2, size=50)
     d_train = xgb.DMatrix(data, label=label)
 
-    if int(xgb.__version__[0]):
-        gpu_param = "gpu"
-    else:
-        gpu_param = "gpu_hist"
-
-    params = {"tree_method": gpu_param}
     try:
+        params = {"tree_method": "gpu_hist"}
         xgb.train(params, d_train, num_boost_round=2)
         print("Xgboost uses GPU.")
-        return gpu_param
+        return "gpu_hist"
     except Exception:
+        pass
+
+    try:
+        params = {"tree_method": "gpu"}
+        xgb.train(params, d_train, num_boost_round=2)
+        print("Xgboost uses GPU.")
+        return "gpu"
+    except Exception:
+        pass
+
+    try:
+        params = {"tree_method": "cuda"}
+        xgb.train(params, d_train, num_boost_round=2)
+        print("Xgboost uses GPU.")
+        return "cuda"
+    except Exception as e:
+        print(e)
         print("Xgboost uses CPU.")
         return "exact"
 
@@ -80,6 +92,6 @@ def load_for_production(
         filehandler = open(full_path, "rb")
     except Exception:
         filehandler = open(full_path + file_type, "rb")
-    automl_model = pickle.load(filehandler)
+    automl_model = pickle.Unpickler(filehandler)
     filehandler.close()
     return automl_model

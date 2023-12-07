@@ -1,6 +1,6 @@
 import math
 from collections import Counter
-from typing import List, Union
+from typing import List, Literal, Union
 
 import matplotlib.pyplot as plt
 import numpy as np
@@ -8,7 +8,7 @@ import pandas as pd
 import scipy.stats as ss
 import seaborn as sns
 from sklearn.decomposition import PCA
-from sklearn.feature_selection import mutual_info_classif
+from sklearn.feature_selection import mutual_info_classif, mutual_info_regression
 from sklearn.manifold import TSNE
 
 
@@ -292,20 +292,30 @@ def check_unique_values(
     return lots_uniques
 
 
-def mutual_info_to_target(df: pd.DataFrame, target: str, **mut_params) -> None:
+def mutual_info_to_target(
+    df: pd.DataFrame,
+    target: str,
+    class_problem: Literal["binary", "multiclass", "regression"],
+    **mut_params,
+) -> None:
     """
     Plots mutual information scores for all the categorical columns in the DataFrame in relation to the target column.
     The target column must be part of the provided DataFrame.
     :param df: DataFrame containing all columns including target column. Features are expected to be numerical.
     :param target: String indicating which column is the target column.
+    :param class_problem: Any of ["binary", "multiclass", "regression"]
     :param mut_params: Dictionary passing additional arguments into sklearn's mutual_info_classif function.
 
     To be used for classification only.
     """
-    # Calculate the mutual information scores
-    mi_scores = mutual_info_classif(
-        X=df.drop(columns=[target]), y=df[target], **mut_params
-    )
+    if class_problem in ["binary", "multiclass"]:
+        mi_scores = mutual_info_classif(
+            X=df.drop(columns=[target]), y=df[target], **mut_params
+        )
+    else:
+        mi_scores = mutual_info_regression(
+            X=df.drop(columns=[target]), y=df[target], **mut_params
+        )
 
     # Sort features by MI score descending
     sorted_features = df.drop(columns=[target]).columns[np.argsort(-mi_scores)]

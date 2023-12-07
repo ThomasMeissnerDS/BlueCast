@@ -8,21 +8,20 @@ via the config class attributes from config.training_config module.
 """
 import warnings
 from datetime import datetime
-from typing import Any, Dict, List, Literal, Optional, Tuple, Union
+from typing import Any, Dict, List, Literal, Optional, Union
 
 import numpy as np
 import pandas as pd
 
+from bluecast.config.training_config import TrainingConfig, XgboostFinalParamConfig
 from bluecast.config.training_config import (
-    TrainingConfig,
-    XgboostFinalParamConfig,
-    XgboostTuneParamsConfig,
+    XgboostTuneParamsRegressionConfig as XgboostTuneParamsConfig,
 )
-from bluecast.evaluation.eval_metrics import eval_classifier
+from bluecast.evaluation.eval_metrics import eval_regressor
 from bluecast.evaluation.shap_values import shap_explanations
 from bluecast.experimentation.tracking import ExperimentTracker
 from bluecast.general_utils.general_utils import check_gpu_support, logger
-from bluecast.ml_modelling.xgboost import XgboostModel
+from bluecast.ml_modelling.xgboost_regression import XgboostModelRegression
 from bluecast.preprocessing.custom import CustomPreprocessing
 from bluecast.preprocessing.datetime_features import date_converter
 from bluecast.preprocessing.encode_target_labels import TargetLabelEncoder
@@ -37,12 +36,12 @@ from bluecast.preprocessing.target_encoding import (
 from bluecast.preprocessing.train_test_split import train_test_split
 
 
-class BlueCast:
+class BlueCastRegression:
     """Run fully configured classification blueprint.
 
     Customization via class attributes is possible. Configs can be instantiated and provided to change Xgboost training.
     Default hyperparameter search space is relatively light-weight to speed up the prototyping.
-    :param :class_problem: Takes a string containing the class problem type. Either "binary" or "multiclass".
+    :param :class_problem: Takes a string containing the class problem type. At the moment "regression" only.
     :param :target_column: Takes a string containing the name of the target column.
     :param :cat_columns: Takes a list of strings containing the names of the categorical columns. If not provided,
         BlueCast will infer these automatically.
@@ -50,7 +49,7 @@ class BlueCast:
         BlueCast will infer these automatically.
     :param :time_split_column: Takes a string containing the name of the time split column. If not provided,
         BlueCast will not split the data by time or order, but do a random split instead.
-    :param :ml_model: Takes an instance of a XgboostModel class. If not provided, BlueCast will instantiate one.
+    :param :ml_model: Takes an instance of a XgboostModelRegression class. If not provided, BlueCast will instantiate one.
         This is an API to pass any model class. Inherit the baseclass from ml_modelling.base_model.BaseModel.
     :param custom_in_fold_preprocessor: Takes an instance of a CustomPreprocessing class. Allows users to eeecute
         preprocessing after the train test split within cv folds. This will be executed only if precise_cv_tuning in
@@ -66,12 +65,12 @@ class BlueCast:
 
     def __init__(
         self,
-        class_problem: Literal["binary", "multiclass"],
+        class_problem: Literal["regression"],
         target_column: Union[str, float, int],
         cat_columns: Optional[List[Union[str, float, int]]] = None,
         date_columns: Optional[List[Union[str, float, int]]] = None,
         time_split_column: Optional[str] = None,
-        ml_model: Optional[Union[XgboostModel, Any]] = None,
+        ml_model: Optional[Union[XgboostModelRegression, Any]] = None,
         custom_in_fold_preprocessor: Optional[CustomPreprocessing] = None,
         custom_last_mile_computation: Optional[CustomPreprocessing] = None,
         custom_preprocessor: Optional[CustomPreprocessing] = None,
@@ -98,7 +97,7 @@ class BlueCast:
         ] = None
         self.target_label_encoder: Optional[TargetLabelEncoder] = None
         self.schema_detector: Optional[SchemaDetector] = None
-        self.ml_model: Optional[XgboostModel] = ml_model
+        self.ml_model: Optional[XgboostModelRegression] = ml_model
         self.custom_in_fold_preprocessor = custom_in_fold_preprocessor
         self.custom_last_mile_computation = custom_last_mile_computation
         self.custom_preprocessor = custom_preprocessor
@@ -214,15 +213,6 @@ class BlueCast:
         df = feat_type_detector.fit_transform_feature_types(df)
         self.feat_type_detector = feat_type_detector
 
-        if self.feat_type_detector.cat_columns:
-            if self.target_column in self.feat_type_detector.cat_columns:
-                self.target_label_encoder = TargetLabelEncoder()
-                df.loc[
-                    :, self.target_column
-                ] = self.target_label_encoder.fit_transform_target_labels(
-                    df.loc[:, self.target_column]
-                )
-
         self.cat_columns = self.feat_type_detector.cat_columns
         self.date_columns = self.feat_type_detector.date_columns
 
@@ -237,7 +227,7 @@ class BlueCast:
             self.time_split_column,
             self.conf_training.train_size,
             self.conf_training.global_random_state,
-            self.conf_training.train_split_stratify,
+            stratify=False,
         )
 
         if self.custom_preprocessor:
@@ -272,22 +262,12 @@ class BlueCast:
 
         if (
             self.cat_columns is not None
-            and self.class_problem == "binary"
+            and self.class_problem == "regression"
             and not self.conf_training.cat_encoding_via_ml_algorithm
         ):
             self.cat_encoder = BinaryClassTargetEncoder(feat_type_detector.cat_columns)
             x_train = self.cat_encoder.fit_target_encode_binary_class(x_train, y_train)
             x_test = self.cat_encoder.transform_target_encode_binary_class(x_test)
-        elif (
-            self.cat_columns is not None
-            and self.class_problem == "multiclass"
-            and not self.conf_training.cat_encoding_via_ml_algorithm
-        ):
-            self.cat_encoder = MultiClassTargetEncoder(
-                feat_type_detector.cat_columns, self.target_column
-            )
-            x_train = self.cat_encoder.fit_target_encode_multiclass(x_train, y_train)
-            x_test = self.cat_encoder.transform_target_encode_multiclass(x_test)
         elif self.conf_training.cat_encoding_via_ml_algorithm:
             x_train[self.cat_columns] = x_train[self.cat_columns].astype("category")
             x_test[self.cat_columns] = x_test[self.cat_columns].astype("category")
@@ -316,7 +296,7 @@ class BlueCast:
             )
 
         if not self.ml_model:
-            self.ml_model = XgboostModel(
+            self.ml_model = XgboostModelRegression(
                 self.class_problem,
                 conf_training=self.conf_training,
                 conf_xgboost=self.conf_xgboost,
@@ -352,20 +332,9 @@ class BlueCast:
         :param :target_col: Takes a string containing the name of the target column inside the training data df.
         """
         self.fit(df, target_col)
-        y_probs, y_classes = self.predict(df_eval)
+        y_preds = self.predict(df_eval)
 
-        if self.feat_type_detector:
-            if self.target_label_encoder and self.feat_type_detector:
-                eval_df = pd.DataFrame(target_eval.values, columns=[target_col])
-                y_true = self.target_label_encoder.transform_target_labels(
-                    eval_df, target_col
-                )
-            else:
-                y_true = target_eval.values
-        else:
-            y_true = target_eval.values
-
-        eval_dict = eval_classifier(y_true, y_probs, y_classes)
+        eval_dict = eval_regressor(target_eval.values, y_preds)
         self.eval_metrics = eval_dict
 
         if not self.conf_training:
@@ -380,22 +349,20 @@ class BlueCast:
         # enrich experiment tracker
         for metric, higher_is_better in zip(
             [
-                "accuracy",
-                "recall",
-                "f1_score_weighted",
-                "log_loss",
-                "balanced_logloss",
-                "roc_auc",
-                "matthews",
+                "mae",
+                "r2_score",
+                "MSE",
+                "RMSE",
+                "median_absolute_error",
             ],
-            [True, True, True, False, False, True, True],
+            [False, False, False, False, False],
         ):
             self.experiment_tracker.add_results(
                 experiment_id=self.experiment_tracker.experiment_id[-1],
                 score_category="oof_score",
                 training_config=self.conf_training,
                 model_parameters=self.conf_params_xgboost.params,  # noqa
-                eval_scores=self.eval_metrics["accuracy"],
+                eval_scores=self.eval_metrics["RMSE"],
                 metric_used=metric,
                 metric_higher_is_better=higher_is_better,
             )
@@ -429,19 +396,11 @@ class BlueCast:
         if (
             self.cat_columns
             and self.cat_encoder
-            and self.class_problem == "binary"
+            and self.class_problem == "regression"
             and isinstance(self.cat_encoder, BinaryClassTargetEncoder)
             and not self.conf_training.cat_encoding_via_ml_algorithm
         ):
             df = self.cat_encoder.transform_target_encode_binary_class(df)
-        elif (
-            self.cat_columns
-            and self.cat_encoder
-            and self.class_problem == "multiclass"
-            and isinstance(self.cat_encoder, MultiClassTargetEncoder)
-            and not self.conf_training.cat_encoding_via_ml_algorithm
-        ):
-            df = self.cat_encoder.transform_target_encode_multiclass(df)
         elif self.conf_training.cat_encoding_via_ml_algorithm:
             df[self.cat_columns] = df[self.cat_columns].astype("category")
 
@@ -453,7 +412,7 @@ class BlueCast:
 
         return df
 
-    def predict(self, df: pd.DataFrame) -> Tuple[np.ndarray, np.ndarray]:
+    def predict(self, df: pd.DataFrame) -> np.ndarray:
         """Predict on unseen data.
 
         Return the predicted probabilities and the predicted classes:
@@ -472,16 +431,6 @@ class BlueCast:
         df = self.transform_new_data(df)
 
         logger(f"{datetime.utcnow()}: Predicting...")
-        y_probs, y_classes = self.ml_model.predict(df)
+        y_preds = self.ml_model.predict(df)
 
-        if self.feat_type_detector.cat_columns:
-            if (
-                self.target_column in self.feat_type_detector.cat_columns
-                and self.target_label_encoder
-                and self.feat_type_detector
-            ):
-                y_classes = self.target_label_encoder.label_encoder_reverse_transform(
-                    pd.Series(y_classes)
-                )
-
-        return y_probs, y_classes
+        return y_preds

@@ -6,44 +6,43 @@ hyperparameter tuning.
 """
 from copy import deepcopy
 from datetime import datetime
-from typing import Any, Dict, List, Literal, Optional, Tuple
+from typing import Any, Dict, List, Literal, Optional
 
 import numpy as np
 import optuna
 import pandas as pd
 import xgboost as xgb
-from sklearn.metrics import matthews_corrcoef
-from sklearn.model_selection import StratifiedKFold
-from sklearn.utils import class_weight
+from sklearn.metrics import mean_squared_error
+from sklearn.model_selection import KFold
 
+from bluecast.config.training_config import TrainingConfig, XgboostFinalParamConfig
 from bluecast.config.training_config import (
-    TrainingConfig,
-    XgboostFinalParamConfig,
-    XgboostTuneParamsConfig,
+    XgboostTuneParamsRegressionConfig as XgboostTuneParamsConfig,
 )
 from bluecast.experimentation.tracking import ExperimentTracker
 from bluecast.general_utils.general_utils import check_gpu_support, logger
-from bluecast.ml_modelling.base_classes import BaseClassMlModel
+from bluecast.ml_modelling.base_classes import BaseClassMlRegressionModel
 from bluecast.preprocessing.custom import CustomPreprocessing
 
 
-class XgboostModel(BaseClassMlModel):
-    """Train and/or tune Xgboost classification model."""
+class XgboostModelRegression(BaseClassMlRegressionModel):
+    """Train and/or tune Xgboost regression model."""
 
     def __init__(
         self,
-        class_problem: Literal["binary", "multiclass"],
+        class_problem: Literal["regression"],
         conf_training: Optional[TrainingConfig] = None,
         conf_xgboost: Optional[XgboostTuneParamsConfig] = None,
         conf_params_xgboost: Optional[XgboostFinalParamConfig] = None,
         experiment_tracker: Optional[ExperimentTracker] = None,
         custom_in_fold_preprocessor: Optional[CustomPreprocessing] = None,
     ):
-        self.model: Optional[xgb.XGBClassifier] = None
+        self.model: Optional[xgb.XGBRegressor] = None
         self.class_problem = class_problem
         self.conf_training = conf_training
-        self.conf_xgboost = conf_xgboost
         self.conf_params_xgboost = conf_params_xgboost
+        self.conf_xgboost = conf_xgboost
+
         self.experiment_tracker = experiment_tracker
         self.custom_in_fold_preprocessor = custom_in_fold_preprocessor
         if self.conf_training:
@@ -52,13 +51,6 @@ class XgboostModel(BaseClassMlModel):
             )
         else:
             self.random_generator = np.random.default_rng(0)
-
-    def calculate_class_weights(self, y: pd.Series) -> Dict[str, float]:
-        """Calculate class weights of target column."""
-        classes_weights = class_weight.compute_sample_weight(
-            class_weight="balanced", y=y
-        )
-        return classes_weights
 
     def check_load_confs(self):
         """Load multiple configs or load default configs instead."""
@@ -196,7 +188,6 @@ class XgboostModel(BaseClassMlModel):
                 "booster": self.conf_xgboost.booster,
                 "eval_metric": self.conf_xgboost.model_eval_metric,
                 "tree_method": train_on,
-                "num_class": y_train.nunique(),
                 "eta": trial.suggest_float(
                     "eta", self.conf_xgboost.eta_min, self.conf_xgboost.eta_max
                 ),
@@ -238,21 +229,11 @@ class XgboostModel(BaseClassMlModel):
                     "steps", self.conf_xgboost.steps_min, self.conf_xgboost.steps_max
                 ),
             }
-            sample_weight = trial.suggest_categorical("sample_weight", [True, False])
-            if sample_weight:
-                classes_weights = self.calculate_class_weights(y_train)
-                d_train = xgb.DMatrix(
-                    x_train,
-                    label=y_train,
-                    weight=classes_weights,
-                    enable_categorical=self.conf_training.cat_encoding_via_ml_algorithm,
-                )
-            else:
-                d_train = xgb.DMatrix(
-                    x_train,
-                    label=y_train,
-                    enable_categorical=self.conf_training.cat_encoding_via_ml_algorithm,
-                )
+            d_train = xgb.DMatrix(
+                x_train,
+                label=y_train,
+                enable_categorical=self.conf_training.cat_encoding_via_ml_algorithm,
+            )
 
             d_test = xgb.DMatrix(
                 x_test,
@@ -261,7 +242,7 @@ class XgboostModel(BaseClassMlModel):
             )
 
             pruning_callback = optuna.integration.XGBoostPruningCallback(
-                trial, "test-mlogloss"
+                trial, "test-rmse"
             )
 
             steps = param.pop("steps", 300)
@@ -299,8 +280,8 @@ class XgboostModel(BaseClassMlModel):
                     shuffle=self.conf_training.shuffle_during_training,
                 )
 
-                adjusted_score = result["test-mlogloss-mean"].mean() + (
-                    result["test-mlogloss-mean"].std() ** 0.7
+                adjusted_score = result["test-rmse-mean"].mean() + (
+                    result["test-rmse-mean"].std() ** 0.7
                 )
 
                 # track results
@@ -314,7 +295,7 @@ class XgboostModel(BaseClassMlModel):
                     training_config=self.conf_training,
                     model_parameters=param,
                     eval_scores=adjusted_score,
-                    metric_used="adjusted ml logloss",
+                    metric_used="adjusted rmse",
                     metric_higher_is_better=False,
                 )
 
@@ -358,7 +339,6 @@ class XgboostModel(BaseClassMlModel):
             "booster": self.conf_xgboost.booster,
             "eval_metric": self.conf_xgboost.model_eval_metric,
             "tree_method": train_on,  # use GPU for training
-            "num_class": y_train.nunique(),
             "max_depth": xgboost_best_param[
                 "max_depth"
             ],  # maximum depth of the decision trees being trained
@@ -373,7 +353,6 @@ class XgboostModel(BaseClassMlModel):
             "steps": xgboost_best_param["steps"],
         }
         logger(f"Best params: {self.conf_params_xgboost.params}")
-        self.conf_params_xgboost.sample_weight = xgboost_best_param["sample_weight"]
 
     def get_best_score(self):
         if self.conf_training.autotune_model and (
@@ -381,34 +360,25 @@ class XgboostModel(BaseClassMlModel):
             or self.conf_training.precise_cv_tuning
         ):
             best_score_cv_grid = self.experiment_tracker.get_best_score(
-                target_metric="matthew_inverse"
+                target_metric="root_mean_squared_error"
             )
         elif (
             self.conf_training.autotune_model
             and self.conf_training.hypertuning_cv_folds > 1
         ):
             best_score_cv_grid = self.experiment_tracker.get_best_score(
-                target_metric="adjusted ml logloss"
+                target_metric="root_mean_squared_error"
             )
         else:
             best_score_cv_grid = np.inf
         return best_score_cv_grid
 
     def create_d_matrices(self, x_train, y_train, x_test, y_test):
-        if self.conf_params_xgboost.sample_weight:
-            classes_weights = self.calculate_class_weights(y_train)
-            d_train = xgb.DMatrix(
-                x_train,
-                label=y_train,
-                weight=classes_weights,
-                enable_categorical=self.conf_training.cat_encoding_via_ml_algorithm,
-            )
-        else:
-            d_train = xgb.DMatrix(
-                x_train,
-                label=y_train,
-                enable_categorical=self.conf_training.cat_encoding_via_ml_algorithm,
-            )
+        d_train = xgb.DMatrix(
+            x_train,
+            label=y_train,
+            enable_categorical=self.conf_training.cat_encoding_via_ml_algorithm,
+        )
         d_test = xgb.DMatrix(
             x_test,
             label=y_test,
@@ -430,8 +400,7 @@ class XgboostModel(BaseClassMlModel):
             verbose_eval=self.conf_xgboost.model_verbosity,
         )
         preds = model.predict(d_test)
-        pred_labels = np.asarray([np.argmax(line) for line in preds])
-        matthew = matthews_corrcoef(y_test.tolist(), pred_labels.tolist()) * -1
+        mse = mean_squared_error(y_test, preds, squared=False)
 
         # track results
         if len(self.experiment_tracker.experiment_id) == 0:
@@ -443,11 +412,11 @@ class XgboostModel(BaseClassMlModel):
             score_category="simple_train_test_score",
             training_config=self.conf_training,
             model_parameters=param,
-            eval_scores=matthew,
-            metric_used="matthew_inverse",
+            eval_scores=mse,
+            metric_used="root_mean_squared_error",
             metric_higher_is_better=False,
         )
-        return matthew
+        return mse
 
     def increasing_noise_evaluator(
         self, ml_model, eval_df: pd.DataFrame, y_true: pd.Series, iterations: int = 100
@@ -476,10 +445,11 @@ class XgboostModel(BaseClassMlModel):
                 )
             else:
                 raise ValueError("No training_config could be found")
-            y_hat = ml_model.predict(d_eval)
-            y_classes = np.asarray([np.argmax(line) for line in y_hat])
+            preds = ml_model.predict(d_eval)
 
-            loss = matthews_corrcoef(y_true.values.tolist(), y_classes.tolist()) * -1
+            loss = mean_squared_error(
+                y_true.values.tolist(), preds.tolist(), squared=False
+            )
             losses.append(loss)
 
         return losses
@@ -528,7 +498,7 @@ class XgboostModel(BaseClassMlModel):
             self.conf_training = TrainingConfig()
             logger("Could not find Training config. Falling back to default values")
 
-        stratifier = StratifiedKFold(
+        stratifier = KFold(
             n_splits=self.conf_training.hypertuning_cv_folds,
             shuffle=True,
             random_state=random_seed,
@@ -578,20 +548,11 @@ class XgboostModel(BaseClassMlModel):
                     "Could not find XgboostFinalParamConfig. Falling back to default settings."
                 )
 
-            if self.conf_params_xgboost.sample_weight:
-                classes_weights = self.calculate_class_weights(y_train_fold)
-                d_train = xgb.DMatrix(
-                    X_train_fold,
-                    label=y_train_fold,
-                    weight=classes_weights,
-                    enable_categorical=self.conf_training.cat_encoding_via_ml_algorithm,
-                )
-            else:
-                d_train = xgb.DMatrix(
-                    X_train_fold,
-                    label=y_train_fold,
-                    enable_categorical=self.conf_training.cat_encoding_via_ml_algorithm,
-                )
+            d_train = xgb.DMatrix(
+                X_train_fold,
+                label=y_train_fold,
+                enable_categorical=self.conf_training.cat_encoding_via_ml_algorithm,
+            )
             eval_set = [(d_train, "train"), (d_test, "test")]
 
             if not self.conf_xgboost:
@@ -607,21 +568,15 @@ class XgboostModel(BaseClassMlModel):
                 evals=eval_set,
                 verbose_eval=self.conf_xgboost.model_verbosity,
             )
-            # d_eval = xgb.DMatrix(
-            #    X_test_fold,
-            #    label=y_test_fold,
-            #    enable_categorical=self.conf_training.cat_encoding_via_ml_algorithm,
-            # )
-            # preds = model.predict(d_eval)
-            losses = self.increasing_noise_evaluator(
-                model, X_test_fold, y_test_fold, 100
+            d_eval = xgb.DMatrix(
+                X_test_fold,
+                label=y_test_fold,
+                enable_categorical=self.conf_training.cat_encoding_via_ml_algorithm,
             )
-            constant_loss_degregation = self.constant_loss_degregation_factor(losses)
-            fold_losses.append(constant_loss_degregation)
-            # pred_labels = np.asarray([np.argmax(line) for line in preds])
-            # fold_losses.append(matthews_corrcoef(y_test_fold, pred_labels) * -1)
+            preds = model.predict(d_eval)
+            fold_losses.append(mean_squared_error(y_test_fold, preds, squared=False))
 
-        matthews_mean = np.mean(np.asarray(fold_losses))
+        mse_mean = np.mean(np.asarray(fold_losses))
 
         if self.experiment_tracker and self.conf_training:
             # track results
@@ -634,11 +589,11 @@ class XgboostModel(BaseClassMlModel):
                 score_category="oof_score",
                 training_config=self.conf_training,
                 model_parameters=tuned_params,
-                eval_scores=matthews_mean,
-                metric_used="matthew_inverse",
+                eval_scores=mse_mean,
+                metric_used="root_mean_squared_error",
                 metric_higher_is_better=False,
             )
-        return matthews_mean
+        return mse_mean
 
     def fine_tune(
         self,
@@ -666,7 +621,7 @@ class XgboostModel(BaseClassMlModel):
             d_train, d_test = self.create_d_matrices(x_train, y_train, x_test, y_test)
 
             pruning_callback = optuna.integration.XGBoostPruningCallback(
-                trial, "test-mlogloss"
+                trial, "test-rmse"
             )
             # copy best params to not overwrite them
             tuned_params = deepcopy(self.conf_params_xgboost.params)
@@ -721,8 +676,8 @@ class XgboostModel(BaseClassMlModel):
                     shuffle=self.conf_training.shuffle_during_training,
                 )
 
-                adjusted_score = result["test-mlogloss-mean"].mean() + (
-                    result["test-mlogloss-mean"].std() ** 0.7
+                adjusted_score = result["test-rmse-mean"].mean() + (
+                    result["test-rmse-mean"].std() ** 0.7
                 )
 
                 # track results
@@ -736,7 +691,7 @@ class XgboostModel(BaseClassMlModel):
                     training_config=self.conf_training,
                     model_parameters=tuned_params,
                     eval_scores=adjusted_score,
-                    metric_used="adjusted ml logloss",
+                    metric_used="root_mean_squared_error",
                     metric_higher_is_better=False,
                 )
 
@@ -814,7 +769,7 @@ class XgboostModel(BaseClassMlModel):
 
         self.conf_training.global_random_state -= 1000  # back to original setting
 
-    def predict(self, df: pd.DataFrame) -> Tuple[np.ndarray, np.ndarray]:
+    def predict(self, df: pd.DataFrame) -> np.ndarray:
         """Predict on unseen data."""
         logger(
             f"{datetime.utcnow()}: Start predicting on new data using Xgboost model."
@@ -838,14 +793,6 @@ class XgboostModel(BaseClassMlModel):
         if not self.conf_params_xgboost:
             raise Exception("No model configuration file has been found.")
 
-        partial_probs = self.model.predict(d_test)
-        if self.class_problem == "binary":
-            predicted_probs = np.asarray([line[1] for line in partial_probs])
-            predicted_classes = (
-                predicted_probs > self.conf_params_xgboost.classification_threshold
-            )
-        else:
-            predicted_probs = partial_probs
-            predicted_classes = np.asarray([np.argmax(line) for line in partial_probs])
+        preds = self.model.predict(d_test)
         logger("Finished predicting")
-        return predicted_probs, predicted_classes
+        return preds
