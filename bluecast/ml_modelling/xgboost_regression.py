@@ -568,19 +568,13 @@ class XgboostModelRegression(BaseClassMlRegressionModel):
                 evals=eval_set,
                 verbose_eval=self.conf_xgboost.model_verbosity,
             )
-            # d_eval = xgb.DMatrix(
-            #    X_test_fold,
-            #    label=y_test_fold,
-            #    enable_categorical=self.conf_training.cat_encoding_via_ml_algorithm,
-            # )
-            # preds = model.predict(d_eval)
-            losses = self.increasing_noise_evaluator(
-                model, X_test_fold, y_test_fold, 100
+            d_eval = xgb.DMatrix(
+                X_test_fold,
+                label=y_test_fold,
+                enable_categorical=self.conf_training.cat_encoding_via_ml_algorithm,
             )
-            constant_loss_degregation = self.constant_loss_degregation_factor(losses)
-            fold_losses.append(constant_loss_degregation)
-            # pred_labels = np.asarray([np.argmax(line) for line in preds])
-            # fold_losses.append(mean_squared_error(y_test_fold, pred_labels) * -1)
+            preds = model.predict(d_eval)
+            fold_losses.append(mean_squared_error(y_test_fold, preds, squared=False))
 
         mse_mean = np.mean(np.asarray(fold_losses))
 

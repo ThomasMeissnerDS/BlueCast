@@ -105,6 +105,20 @@ save_to_production(automl, "/kaggle/working/", "bluecast_cv_pipeline")
 automl = load_for_production("/kaggle/working/", "bluecast_cv_pipeline")
 ```
 
+Since version 0.80 BlueCast offers regression as well:
+
+```sh
+from bluecast.blueprints.cast_regression import BlueCastRegression
+
+automl = BlueCast(
+        class_problem="regression",
+        target_column="target"
+    )
+
+automl.fit(df_train, target_col="target")
+y_probs, y_classes = automl.predict(df_val)
+```
+
 ### Advanced usage
 
 #### Explanatory analysis
@@ -148,8 +162,9 @@ correlation_heatmap(train_data.loc[:, feat_type_detector.num_columns])
 
 # show mutual information of categorical features to target
 # features are expected to be numerical format
+# class problem can be any of "binary", "multiclass" or "regression"
 extra_params = {"random_state": 30}
-mutual_info_to_target(train_data.loc[:, feat_type_detector.num_columns], "EC1", **extra_params)
+mutual_info_to_target(train_data.loc[:, feat_type_detector.num_columns], "EC1", class_problem="binary", **extra_params)
 
 # show correlation to target
 correlation_to_target(
@@ -329,12 +344,35 @@ models, but also provides out-of-fold validation. Also `BlueCastCV`
 allows to pass custom configurations.
 
 ```sh
-from bluecast.blueprints.cast import BlueCastCV
+from bluecast.blueprints.cast_cv import BlueCastCV
 from bluecast.config.training_config import TrainingConfig, XgboostTuneParamsConfig
 
 # Pass the custom configs to the BlueCast class
 automl = BlueCastCV(
         class_problem="binary",
+        #conf_training=train_config,
+        #conf_xgboost=xgboost_param_config,
+        #custom_preprocessor=custom_preprocessor, # this takes place right after test_train_split
+        #custom_last_mile_computation=custom_last_mile_computation, # last step before model training/prediction
+        #custom_feature_selector=custom_feature_selector,
+    )
+
+# this class has a train method:
+# automl.fit(df_train, target_col="target")
+
+automl.fit_eval(df_train, target_col="target")
+y_probs, y_classes = automl.predict(df_val)
+```
+
+Also here a variant for regression is available:
+
+```sh
+from bluecast.blueprints.cast_cv_regression import BlueCastCVRegression
+from bluecast.config.training_config import TrainingConfig, XgboostTuneParamsConfig
+
+# Pass the custom configs to the BlueCast class
+automl = BlueCastCVRegression(
+        class_problem="regression",
         #conf_training=train_config,
         #conf_xgboost=xgboost_param_config,
         #custom_preprocessor=custom_preprocessor, # this takes place right after test_train_split
@@ -776,6 +814,7 @@ feature- and performance-wise.
 * ICR top 20% finish with over 6000 participants ([notebook](https://www.kaggle.com/code/thomasmeiner/icr-bluecast-automl-almost-bronze-ranks))
 * An advanced example covering lots of functionalities ([notebook](https://www.kaggle.com/code/thomasmeiner/ps3e23-automl-eda-outlier-detection/notebook))
 * PS3E23: Predict software defects top 12% finish ([notebook](https://www.kaggle.com/code/thomasmeiner/ps3e23-automl-eda-outlier-detection?scriptVersionId=145650820))
+* PS3E25: Predict hardness of steel via regression ([notebook](https://www.kaggle.com/code/thomasmeiner/ps3e25-bluecast-automl?scriptVersionId=153347618))
 
 ## How to contribute
 
