@@ -19,6 +19,8 @@ def univariate_plots(df: pd.DataFrame, target: str) -> None:
 
     Expects numeric columns only.
     """
+    if target not in df.columns.to_list():
+        raise ValueError("Target column must be part of the provided DataFrame")
     for col in df.columns:
         # Check if the col is the target column (EC1 or EC2)
         if col == target:
@@ -54,6 +56,8 @@ def bi_variate_plots(df: pd.DataFrame, target: str, num_cols_grid: int = 4) -> N
 
     Expects numeric columns only.
     """
+    if target not in df.columns.to_list():
+        raise ValueError("Target column must be part of the provided DataFrame")
     # Get the list of column names except for the target column
     variables = [col for col in df.columns if col != target]
 
@@ -127,6 +131,8 @@ def correlation_to_target(df: pd.DataFrame, target: str) -> None:
 
     Expects numeric columns only.
     """
+    if target not in df.columns.to_list():
+        raise ValueError("Target column must be part of the provided DataFrame")
     # Calculate the correlation matrix
     corr = df.corr()
 
@@ -151,6 +157,8 @@ def plot_pca(df: pd.DataFrame, target: str) -> None:
 
     Expects numeric columns only.
     """
+    if target not in df.columns.to_list():
+        raise ValueError("Target column must be part of the provided DataFrame")
     pca = PCA(n_components=2)
 
     pca_df = pd.DataFrame(pca.fit_transform(df.drop([target], axis=1)))
@@ -178,6 +186,8 @@ def plot_tsne(df: pd.DataFrame, target: str, perplexity=50, random_state=42) -> 
 
     Expects numeric columns only.
     """
+    if target not in df.columns.to_list():
+        raise ValueError("Target column must be part of the provided DataFrame")
     tsne = TSNE(n_components=2, perplexity=perplexity, random_state=random_state)
 
     tsne_df = pd.DataFrame(tsne.fit_transform(df.drop([target], axis=1)))
@@ -308,6 +318,8 @@ def mutual_info_to_target(
 
     To be used for classification only.
     """
+    if target not in df.columns.to_list():
+        raise ValueError("Target column must be part of the provided DataFrame")
     if class_problem in ["binary", "multiclass"]:
         mi_scores = mutual_info_classif(
             X=df.drop(columns=[target]), y=df[target], **mut_params
