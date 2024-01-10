@@ -141,7 +141,7 @@ def correlation_to_target(df: pd.DataFrame, target: str) -> None:
     sns.set_style("white")
     sns.set_palette("PuBuGn_d")
     sns.heatmap(corrs_sorted.to_frame(), cmap="coolwarm", annot=True, fmt=".2f")
-    plt.title("Correlation with EC1")
+    plt.title(f"Correlation with {target}")
     plt.show()
 
 
