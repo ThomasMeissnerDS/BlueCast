@@ -12,20 +12,14 @@ from sklearn.feature_selection import mutual_info_classif, mutual_info_regressio
 from sklearn.manifold import TSNE
 
 
-def univariate_plots(df: pd.DataFrame, target: str) -> None:
+def univariate_plots(df: pd.DataFrame) -> None:
     """
-    Plots univariate plots for all the columns in the dataframe.
-    The target column must be part of the provided DataFrame.
+    Plots univariate plots for all the columns in the dataframe. Only numerical columns are expected.
+    The target column does not need to be part of the provided DataFrame.
 
     Expects numeric columns only.
     """
-    if target not in df.columns.to_list():
-        raise ValueError("Target column must be part of the provided DataFrame")
     for col in df.columns:
-        # Check if the col is the target column (EC1 or EC2)
-        if col == target:
-            continue  # Skip target columns in univariate analysis
-
         plt.figure(figsize=(8, 4))
 
         # Histogram

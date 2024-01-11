@@ -148,7 +148,6 @@ train_data = feat_type_detector.fit_transform_feature_types(train_data)
 # show univariate plots
 univariate_plots(
         train_data.loc[:, feat_type_detector.num_columns],  # here the target column EC1 is already included
-        "EC1",
     )
 
 # show bi-variate plots
