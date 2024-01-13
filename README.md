@@ -755,9 +755,9 @@ models the tracker will not trigger automatically and has to be added manually.
 
 #### Use Mlflow via custom ExperientTracker API
 
-The inbuilt experiment tracker is handy to start with, however in production environments
-it might be required to send metrics to a Mlflow server or comparable solutions. BlueCast
-allows to pass a custom experiment tracker.
+The inbuilt experiment tracker is handy to start with, however in production
+environments it might be required to send metrics to a Mlflow server or
+comparable solutions. BlueCast allows to pass a custom experiment tracker.
 
 ```sh
 # instantiate and train BlueCast
@@ -810,7 +810,6 @@ tracker = automl.experiment_tracker
 # see all stored information as a Pandas DataFrame
 tracker_df = tracker.retrieve_results_as_df()
 ```
-
 
 ## Convenience features
 

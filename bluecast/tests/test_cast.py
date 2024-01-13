@@ -350,9 +350,75 @@ def test_missing_feature_selector_warning(bluecast_instance):
         bluecast_instance.initial_checks(df)
 
 
-# Example test for class problem mismatch warning
-def test_class_problem_mismatch_warning():
-    # Test if a warning is raised when there is a mismatch in class_problem and unique target classes
+def test_missing_xgboost_tune_params_config_warning(bluecast_instance):
+    # Test if a warning is raised when XgboostTuneParamsConfig is not provided
+    df = pd.DataFrame({"feature1": [1, 2, 3], "target": [0, 1, 0]})
+    bluecast_instance.conf_xgboost = None
+    with pytest.warns(
+        UserWarning, match="No XgboostTuneParamsConfig has been provided."
+    ):
+        bluecast_instance.initial_checks(df)
+
+
+def test_min_features_to_select_warning(bluecast_instance):
+    # Test if a warning is raised when min_features_to_select is greater than or equal to the number of features
+    df = pd.DataFrame({"feature1": [1, 2, 3], "target": [0, 1, 0]})
+    bluecast_instance.conf_training.enable_feature_selection = True
+    bluecast_instance.conf_training.min_features_to_select = 3
+    with pytest.warns(
+        UserWarning,
+        match="The minimum number of features to select is greater or equal to the number of features in the dataset.",
+    ):
+        bluecast_instance.initial_checks(df)
+
+
+def test_shap_values_and_ml_algorithm_warning(bluecast_instance):
+    # Test if a warning is raised when calculate_shap_values is True and cat_encoding_via_ml_algorithm is True
+    df = pd.DataFrame({"feature1": [1, 2, 3], "target": [0, 1, 0]})
+    bluecast_instance.conf_training.calculate_shap_values = True
+    bluecast_instance.conf_training.cat_encoding_via_ml_algorithm = True
+    with pytest.warns(
+        UserWarning,
+        match="SHAP values cannot be calculated when categorical encoding via ML algorithm is enabled.",
+    ):
+        bluecast_instance.initial_checks(df)
+
+
+def test_cat_encoding_via_ml_algorithm_and_ml_model_warning(bluecast_instance):
+    # Test if a warning is raised when cat_encoding_via_ml_algorithm is True and ml_model is provided
+    df = pd.DataFrame({"feature1": [1, 2, 3], "target": [0, 1, 0]})
+    bluecast_instance.conf_training.cat_encoding_via_ml_algorithm = True
+    bluecast_instance.ml_model = (
+        bluecast_instance.ml_model
+    )  # Replace with your ml_model instance
+    with pytest.warns(
+        UserWarning,
+        match="Categorical encoding via ML algorithm is enabled. Make sure to handle categorical features within the provided ml model.",
+    ):
+        bluecast_instance.initial_checks(df)
+
+
+def test_precise_cv_tuning_warnings(bluecast_instance):
+    # Test if warnings are raised for precise_cv_tuning conditions
+    df = pd.DataFrame({"feature1": [1, 2, 3], "target": [0, 1, 0]})
+    bluecast_instance.conf_training.precise_cv_tuning = True
+    with pytest.warns(UserWarning, match="Precise fine tuning has been enabled."):
+        bluecast_instance.initial_checks(df)
+    with pytest.warns(
+        UserWarning,
+        match="Precise fine tuning has been enabled, but no custom_in_fold_preprocessor has been provided.",
+    ):
+        bluecast_instance.initial_checks(df)
+    with pytest.warns(
+        UserWarning,
+        match="Precise fine tuning has been enabled, but number of hypertuning_cv_folds is less than 2.",
+    ):
+        bluecast_instance.conf_training.hypertuning_cv_folds = 1
+        bluecast_instance.initial_checks(df)
+
+
+def test_class_problem_mismatch_warnings(bluecast_instance):
+    # Test if warnings are raised for class problem mismatch
     df_binary = pd.DataFrame({"feature1": [1, 2, 3], "target": [0, 1, 0]})
     df_multiclass = pd.DataFrame({"feature1": [1, 2, 3], "target": [0, 1, 2]})
 
