@@ -42,6 +42,7 @@ the full documentation [here](https://bluecast.readthedocs.io/en/latest/).
     * [Custom feature selection](#custom-feature-selection)
     * [Custom ML model](#custom-ml-model)
     * [Using the inbuilt ExperientTracker](#using-the-inbuilt-experienttracker)
+    * [Use Mlflow via custom ExperientTracker API](#use-mlflow-via-custom-experienttracker-api)
 * [Convenience features](#convenience-features)
 * [Code quality](#code-quality)
 * [Documentation](#documentation)
@@ -751,6 +752,65 @@ is skipped whenever Optuna prunes a trial.
 The experiment triggers whenever the `fit` or `fit_eval` methods of a BlueCast
 class instance are called (also within BlueCastCV). This means for custom
 models the tracker will not trigger automatically and has to be added manually.
+
+#### Use Mlflow via custom ExperientTracker API
+
+The inbuilt experiment tracker is handy to start with, however in production environments
+it might be required to send metrics to a Mlflow server or comparable solutions. BlueCast
+allows to pass a custom experiment tracker.
+
+```sh
+# instantiate and train BlueCast
+from bluecast.blueprints.cast import BlueCast
+from bluecast.cnfig.base_classes import BaseClassExperimentTracker
+
+class CustomExperimentTracker(BaseClassExperimentTracker):
+    """Base class for the experiment tracker.
+
+    Enforces the implementation of the add_results and retrieve_results_as_df methods.
+    """
+
+    @abstractmethod
+    def add_results(
+        self,
+        experiment_id: int,
+        score_category: Literal["simple_train_test_score", "cv_score", "oof_score"],
+        training_config: TrainingConfig,
+        model_parameters: Dict[Any, Any],
+        eval_scores: Union[float, int, None],
+        metric_used: str,
+        metric_higher_is_better: bool,
+    ) -> None:
+        """
+        Add results to the ExperimentTracker class.
+        """
+        pass # add Mlflow tracking i.e.
+
+    @abstractmethod
+    def retrieve_results_as_df(self) -> pd.DataFrame:
+        """
+        Retrieve results from the ExperimentTracker class
+        """
+        pass
+
+
+experiment_tracker = CustomExperimentTracker()
+
+automl = BlueCast(
+        class_problem="binary",
+        target_column="target",
+        experiment_tracker=experiment_tracker,
+    )
+
+automl.fit_eval(df_train, df_eval, y_eval, target_col="target")
+
+# access the experiment tracker
+tracker = automl.experiment_tracker
+
+# see all stored information as a Pandas DataFrame
+tracker_df = tracker.retrieve_results_as_df()
+```
+
 
 ## Convenience features
 
