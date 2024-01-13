@@ -365,9 +365,12 @@ def test_min_features_to_select_warning(bluecast_instance):
     df = pd.DataFrame({"feature1": [1, 2, 3], "target": [0, 1, 0]})
     bluecast_instance.conf_training.enable_feature_selection = True
     bluecast_instance.conf_training.min_features_to_select = 3
+    message = """The minimum number of features to select is greater or equal to the number of features in
+            the dataset while feature selection is enabled. Consider reducing the minimum number of features to
+            select or disabling feature selection via TrainingConfig."""
     with pytest.warns(
         UserWarning,
-        match="The minimum number of features to select is greater or equal to the number of features in the dataset.",
+        match=message,
     ):
         bluecast_instance.initial_checks(df)
 
@@ -391,9 +394,12 @@ def test_cat_encoding_via_ml_algorithm_and_ml_model_warning(bluecast_instance):
     bluecast_instance.ml_model = (
         bluecast_instance.ml_model
     )  # Replace with your ml_model instance
+    message = """Categorical encoding via ML algorithm is enabled. Make sure to handle categorical features
+            within the provided ml model or consider disabling categorical encoding via ML algorithm in the
+            TrainingConfig alternatively."""
     with pytest.warns(
         UserWarning,
-        match="Categorical encoding via ML algorithm is enabled. Make sure to handle categorical features within the provided ml model.",
+        match=message,
     ):
         bluecast_instance.initial_checks(df)
 
@@ -422,16 +428,16 @@ def test_class_problem_mismatch_warnings(bluecast_instance):
     df_binary = pd.DataFrame({"feature1": [1, 2, 3], "target": [0, 1, 0]})
     df_multiclass = pd.DataFrame({"feature1": [1, 2, 3], "target": [0, 1, 2]})
 
-    with pytest.warns(
-        UserWarning, match="During class instantiation class_problem = 'binary'"
-    ):
-        bluecast_binary = BlueCast(class_problem="binary", target_column="target")
+    message = """During class instantiation class_problem = 'binary' has been passed. However more than 2
+            unique target classes have been found. Did you mean 'multiclass' instead?"""
+
+    with pytest.warns(UserWarning, match=message):
+        bluecast_binary = BlueCast(class_problem="multiclass", target_column="target")
         bluecast_binary.initial_checks(df_binary)
 
-    with pytest.warns(
-        UserWarning, match="During class instantiation class_problem = 'multiclass'"
-    ):
-        bluecast_multiclass = BlueCast(
-            class_problem="multiclass", target_column="target"
-        )
+    message = """During class instantiation class_problem = 'multiclass' has been passed. However less than 3
+            unique target classes have been found. Did you mean 'binary' instead?"""
+
+    with pytest.warns(UserWarning, match=message):
+        bluecast_multiclass = BlueCast(class_problem="binary", target_column="target")
         bluecast_multiclass.initial_checks(df_multiclass)
