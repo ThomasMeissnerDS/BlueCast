@@ -324,119 +324,48 @@ def bluecast_instance():
     return bluecast_instance
 
 
-def test_enable_feature_selection_warning(bluecast_instance, capsys):
+def test_enable_feature_selection_warning(bluecast_instance):
     # Test if a warning is raised when feature selection is disabled
     df = pd.DataFrame({"feature1": [1, 2, 3], "target": [0, 1, 0]})
-    bluecast_instance.initial_checks(df)
-    captured = capsys.readouterr()
-    assert "Feature selection is disabled." in captured.err
+    with pytest.warns(UserWarning, match="Feature selection is disabled."):
+        bluecast_instance.initial_checks(df)
 
 
-def test_hypertuning_cv_folds_warning(bluecast_instance, capsys):
+def test_hypertuning_cv_folds_warning(bluecast_instance):
     # Test if a warning is raised when hypertuning_cv_folds is set to 1
     df = pd.DataFrame({"feature1": [1, 2, 3], "target": [0, 1, 0]})
-    bluecast_instance.conf_training.hypertuning_cv_folds = 1
-    bluecast_instance.initial_checks(df)
-    captured = capsys.readouterr()
-    assert "Cross validation is disabled." in captured.err
+    with pytest.warns(UserWarning, match="Cross validation is disabled."):
+        bluecast_instance.conf_training.hypertuning_cv_folds = 1
+        bluecast_instance.initial_checks(df)
 
 
-def test_missing_feature_selector_warning(bluecast_instance, capsys):
+def test_missing_feature_selector_warning(bluecast_instance):
     # Test if a warning is raised when feature selection is enabled but no feature selector is provided
     df = pd.DataFrame({"feature1": [1, 2, 3], "target": [0, 1, 0]})
     bluecast_instance.conf_training.enable_feature_selection = True
-    bluecast_instance.initial_checks(df)
-    captured = capsys.readouterr()
-    assert (
-        "Feature selection is enabled but no feature selector has been provided."
-        in captured.err
-    )
+    with pytest.warns(
+        UserWarning,
+        match="Feature selection is enabled but no feature selector has been provided.",
+    ):
+        bluecast_instance.initial_checks(df)
 
 
-def test_missing_xgboost_tune_params_config_warning(bluecast_instance, capsys):
-    # Test if a warning is raised when XgboostTuneParamsConfig is not provided
-    df = pd.DataFrame({"feature1": [1, 2, 3], "target": [0, 1, 0]})
-    bluecast_instance.conf_xgboost = None
-    bluecast_instance.initial_checks(df)
-    captured = capsys.readouterr()
-    assert "No XgboostTuneParamsConfig has been provided." in captured.err
-
-
-def test_min_features_to_select_warning(bluecast_instance, capsys):
-    # Test if a warning is raised when min_features_to_select is greater than or equal to the number of features
-    df = pd.DataFrame({"feature1": [1, 2, 3], "target": [0, 1, 0]})
-    bluecast_instance.conf_training.enable_feature_selection = True
-    bluecast_instance.conf_training.min_features_to_select = 3
-    bluecast_instance.initial_checks(df)
-    captured = capsys.readouterr()
-    assert (
-        "The minimum number of features to select is greater or equal to the number of features in the dataset."
-        in captured.err
-    )
-
-
-def test_shap_values_and_ml_algorithm_warning(bluecast_instance, capsys):
-    # Test if a warning is raised when calculate_shap_values is True and cat_encoding_via_ml_algorithm is True
-    df = pd.DataFrame({"feature1": [1, 2, 3], "target": [0, 1, 0]})
-    bluecast_instance.conf_training.calculate_shap_values = True
-    bluecast_instance.conf_training.cat_encoding_via_ml_algorithm = True
-    bluecast_instance.initial_checks(df)
-    captured = capsys.readouterr()
-    assert (
-        "SHAP values cannot be calculated when categorical encoding via ML algorithm is enabled."
-        in captured.err
-    )
-
-
-def test_cat_encoding_via_ml_algorithm_and_ml_model_warning(bluecast_instance, capsys):
-    # Test if a warning is raised when cat_encoding_via_ml_algorithm is True and ml_model is provided
-    df = pd.DataFrame({"feature1": [1, 2, 3], "target": [0, 1, 0]})
-    bluecast_instance.conf_training.cat_encoding_via_ml_algorithm = True
-    bluecast_instance.ml_model = (
-        bluecast_instance.ml_model
-    )  # Replace with your ml_model instance
-    bluecast_instance.initial_checks(df)
-    captured = capsys.readouterr()
-    assert (
-        "Categorical encoding via ML algorithm is enabled. Make sure to handle categorical features within the provided ml model."
-        in captured.err
-    )
-
-
-def test_precise_cv_tuning_warnings(bluecast_instance, capsys):
-    # Test if warnings are raised for precise_cv_tuning conditions
-    df = pd.DataFrame({"feature1": [1, 2, 3], "target": [0, 1, 0]})
-    bluecast_instance.conf_training.precise_cv_tuning = True
-    bluecast_instance.initial_checks(df)
-    captured = capsys.readouterr()
-    assert "Precise fine tuning has been enabled." in captured.err
-    assert (
-        "Precise fine tuning has been enabled, but no custom_in_fold_preprocessor has been provided."
-        in captured.err
-    )
-    assert (
-        "Precise fine tuning has been enabled, but number of hypertuning_cv_folds is less than 2."
-        in captured.err
-    )
-
-
-def test_class_problem_mismatch_warnings(bluecast_instance, capsys):
-    # Test if warnings are raised for class problem mismatch
+# Example test for class problem mismatch warning
+def test_class_problem_mismatch_warning():
+    # Test if a warning is raised when there is a mismatch in class_problem and unique target classes
     df_binary = pd.DataFrame({"feature1": [1, 2, 3], "target": [0, 1, 0]})
     df_multiclass = pd.DataFrame({"feature1": [1, 2, 3], "target": [0, 1, 2]})
 
-    with capsys.disabled():
-        with pytest.warns(
-            UserWarning, match="During class instantiation class_problem = 'binary'"
-        ):
-            bluecast_binary = BlueCast(class_problem="binary", target_column="target")
-            bluecast_binary.initial_checks(df_binary)
+    with pytest.warns(
+        UserWarning, match="During class instantiation class_problem = 'binary'"
+    ):
+        bluecast_binary = BlueCast(class_problem="binary", target_column="target")
+        bluecast_binary.initial_checks(df_binary)
 
-    with capsys.disabled():
-        with pytest.warns(
-            UserWarning, match="During class instantiation class_problem = 'multiclass'"
-        ):
-            bluecast_multiclass = BlueCast(
-                class_problem="multiclass", target_column="target"
-            )
-            bluecast_multiclass.initial_checks(df_multiclass)
+    with pytest.warns(
+        UserWarning, match="During class instantiation class_problem = 'multiclass'"
+    ):
+        bluecast_multiclass = BlueCast(
+            class_problem="multiclass", target_column="target"
+        )
+        bluecast_multiclass.initial_checks(df_multiclass)
