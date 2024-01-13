@@ -387,13 +387,14 @@ def test_shap_values_and_ml_algorithm_warning(bluecast_instance):
         bluecast_instance.initial_checks(df)
 
 
-def test_cat_encoding_via_ml_algorithm_and_ml_model_warning(bluecast_instance):
+def test_cat_encoding_via_ml_algorithm_and_ml_model_warning():
     # Test if a warning is raised when cat_encoding_via_ml_algorithm is True and ml_model is provided
     df = pd.DataFrame({"feature1": [1, 2, 3], "target": [0, 1, 0]})
-    bluecast_instance.conf_training.cat_encoding_via_ml_algorithm = True
-    bluecast_instance.ml_model = (
-        bluecast_instance.ml_model
-    )  # Replace with your ml_model instance
+    custom_config = TrainingConfig()
+    custom_config.conf_training.cat_encoding_via_ml_algorithm = True
+    bluecast_instance = BlueCast(
+        class_problem="binary", target_column="target", conf_training=custom_config
+    )
     message = """Categorical encoding via ML algorithm is enabled. Make sure to handle categorical features
             within the provided ml model or consider disabling categorical encoding via ML algorithm in the
             TrainingConfig alternatively."""
@@ -432,12 +433,12 @@ def test_class_problem_mismatch_warnings(bluecast_instance):
             unique target classes have been found. Did you mean 'multiclass' instead?"""
 
     with pytest.warns(UserWarning, match=message):
-        bluecast_binary = BlueCast(class_problem="multiclass", target_column="target")
-        bluecast_binary.initial_checks(df_binary)
+        bluecast_binary = BlueCast(class_problem="binary", target_column="target")
+        bluecast_binary.initial_checks(df_multiclass)
 
     message = """During class instantiation class_problem = 'multiclass' has been passed. However less than 3
             unique target classes have been found. Did you mean 'binary' instead?"""
 
     with pytest.warns(UserWarning, match=message):
-        bluecast_multiclass = BlueCast(class_problem="binary", target_column="target")
-        bluecast_multiclass.initial_checks(df_multiclass)
+        bluecast_multiclass = BlueCast(class_problem="multiclass", target_column="target")
+        bluecast_multiclass.initial_checks(df_binary)
