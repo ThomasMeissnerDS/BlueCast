@@ -3,15 +3,16 @@ Module containing classes and function to monitor data drifts.
 
 This is meant for pipelines on production.
 """
-
 from typing import Any, Dict
 
 import numpy as np
 import pandas as pd
 from scipy.stats import ks_2samp
 
+from bluecast.monitoring.base_classes import BaseClassDataDrift
 
-class DataDrift:
+
+class DataDrift(BaseClassDataDrift):
     """
     Monitor data drift.
 
@@ -22,7 +23,7 @@ class DataDrift:
     def __init__(self):
         self.drift_stats: Dict[str, Any] = {}
 
-    def fit_data_drift(self, data: pd.DataFrame) -> Dict[str, Any]:
+    def fit_data_drift(self, data: pd.DataFrame, **params) -> Dict[str, Any]:
         """
         Collects statistical information about a Pandas DataFrame for monitoring data drift.
 
@@ -44,7 +45,7 @@ class DataDrift:
         return self.drift_stats
 
     def check_drift(
-        self, new_data: pd.DataFrame, threshold: float = 0.05
+        self, new_data: pd.DataFrame, threshold: float = 0.05, **params
     ) -> Dict[str, bool]:
         """
         Checks for data drift in new data based on the statistics collected by fit_data_drift.
