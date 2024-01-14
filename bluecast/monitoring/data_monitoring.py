@@ -3,12 +3,14 @@ Module containing classes and function to monitor data drifts.
 
 This is meant for pipelines on production.
 """
+from datetime import datetime
 from typing import Any, Dict
 
 import numpy as np
 import pandas as pd
 from scipy.stats import ks_2samp
 
+from bluecast.general_utils.general_utils import logger
 from bluecast.monitoring.base_classes import BaseClassDataDrift
 
 
@@ -30,7 +32,7 @@ class DataDrift(BaseClassDataDrift):
         :param: data: Pandas DataFrame
         :return drift_stats: Dictionary containing statistics for each column
         """
-
+        logger(f"{datetime.utcnow()}: Start fitting data drift checker.")
         for column in data.columns:
             # Calculate mean and standard deviation for numerical columns
             if pd.api.types.is_numeric_dtype(data[column]):
@@ -54,7 +56,7 @@ class DataDrift(BaseClassDataDrift):
         :param threshold: Threshold for the Kolmogorov-Smirnov test (default is 0.05)
         :return drift_flags: Dictionary containing flags indicating data drift for each column
         """
-
+        logger(f"{datetime.utcnow()}: Start checking for data drift.")
         drift_flags = {}
 
         for column in new_data.columns:
@@ -86,4 +88,5 @@ class DataDrift(BaseClassDataDrift):
                 else:
                     drift_flags[column] = False
 
+        logger(f"{datetime.utcnow()}: Data drift resukts are: {drift_flags}.")
         return drift_flags

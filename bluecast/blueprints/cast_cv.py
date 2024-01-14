@@ -12,6 +12,7 @@ from bluecast.config.training_config import (
 from bluecast.experimentation.tracking import ExperimentTracker
 from bluecast.general_utils.general_utils import logger
 from bluecast.ml_modelling.xgboost import XgboostModel
+from bluecast.monitoring.data_monitoring import DataDrift
 from bluecast.preprocessing.custom import CustomPreprocessing
 from bluecast.preprocessing.feature_selection import RFECVSelector
 
@@ -37,6 +38,7 @@ class BlueCastCV:
         custom_feature_selector: Optional[
             Union[RFECVSelector, CustomPreprocessing]
         ] = None,
+        custom_data_drift_detector: Optional[DataDrift] = None,
         ml_model: Optional[Union[XgboostModel, Any]] = None,
     ):
         self.class_problem = class_problem
@@ -46,6 +48,7 @@ class BlueCastCV:
         self.custom_in_fold_preprocessor = custom_in_fold_preprocessor
         self.custom_preprocessor = custom_preprocessor
         self.custom_feature_selector = custom_feature_selector
+        self.custom_data_drift_detector = custom_data_drift_detector
         self.custom_last_mile_computation = custom_last_mile_computation
         self.bluecast_models: List[BlueCast] = []
         self.stratifier = stratifier
@@ -107,6 +110,7 @@ class BlueCastCV:
                 custom_in_fold_preprocessor=self.custom_in_fold_preprocessor,
                 custom_preprocessor=self.custom_preprocessor,
                 custom_feature_selector=self.custom_feature_selector,
+                custom_data_drift_detector=self.custom_data_drift_detector,
                 custom_last_mile_computation=self.custom_last_mile_computation,
                 ml_model=self.ml_model,
             )
@@ -156,6 +160,7 @@ class BlueCastCV:
                 custom_in_fold_preprocessor=self.custom_in_fold_preprocessor,
                 custom_preprocessor=self.custom_preprocessor,
                 custom_feature_selector=self.custom_feature_selector,
+                custom_data_drift_detector=self.custom_data_drift_detector,
                 custom_last_mile_computation=self.custom_last_mile_computation,
                 ml_model=self.ml_model,
             )
