@@ -116,6 +116,9 @@ class BlueCastRegression:
         if not self.conf_params_xgboost:
             self.conf_params_xgboost = XgboostFinalParamConfig()
 
+        if not self.custom_data_drift_detector:
+            self.custom_data_drift_detector = DataDrift()
+
     def initial_checks(self, df: pd.DataFrame) -> None:
         if not self.conf_training:
             self.conf_training = TrainingConfig()
