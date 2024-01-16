@@ -104,7 +104,7 @@ class BlueCastRegression:
         self.custom_last_mile_computation = custom_last_mile_computation
         self.custom_preprocessor = custom_preprocessor
         self.custom_feature_selector = custom_feature_selector
-        self.custom_data_drift_detector = (custom_data_drift_detector,)
+        self.custom_data_drift_detector = custom_data_drift_detector
         self.shap_values: Optional[np.ndarray] = None
         self.eval_metrics: Optional[Dict[str, Any]] = None
 
