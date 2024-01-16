@@ -104,5 +104,5 @@ class DataDrift(BaseClassDataDrift):
                 else:
                     drift_flags[column] = False
 
-        logger(f"{datetime.utcnow()}: Data drift resukts are: {drift_flags}.")
+        logger(f"{datetime.utcnow()}: Data drift results are: {drift_flags}.")
         return drift_flags
