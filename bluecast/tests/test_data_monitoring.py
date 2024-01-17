@@ -47,7 +47,7 @@ def test_check_drift_numeric():
     drift_flags = drift_monitor.check_drift(new_data_drift)
 
     # Check if drift is detected for numeric column
-    assert drift_flags["numeric_column"] is False
+    assert drift_flags["numeric_column"] is True
 
 
 def generate_random_data(mean, std_dev, size):
@@ -75,7 +75,6 @@ def test_check_drift_numeric_large_array():
             )
         }
     )
-    new_data_drift += 5
     print(f"Synthetic mean: {new_data_drift['numeric_column'].mean()}")
     print(f"Synthetic std: {new_data_drift['numeric_column'].std()}")
 

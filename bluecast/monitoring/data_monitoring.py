@@ -75,6 +75,7 @@ class DataDrift(BaseClassDataDrift):
             # Check for numerical columns
             if pd.api.types.is_numeric_dtype(new_data[column]):
                 # Perform Kolmogorov-Smirnov test for numerical columns
+                #  test the null hypothesis that two samples were drawn from the same distribution
                 ks_stat, p_value = ks_2samp(
                     new_data[column],
                     np.random.normal(
@@ -85,9 +86,9 @@ class DataDrift(BaseClassDataDrift):
                 )
 
                 if p_value < threshold:
-                    drift_flags[column] = True
+                    drift_flags[column] = True  # not drawn from same distribution
                 else:
-                    drift_flags[column] = False
+                    drift_flags[column] = False  # drawn from same distribution
 
             else:
                 # Check for categorical columns: We sort to keep index order and reset index to not store raw data
