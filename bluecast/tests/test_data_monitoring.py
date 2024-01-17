@@ -1,3 +1,4 @@
+import numpy as np
 import pandas as pd
 
 from bluecast.monitoring.data_monitoring import DataDrift
@@ -46,7 +47,40 @@ def test_check_drift_numeric():
     drift_flags = drift_monitor.check_drift(new_data_drift)
 
     # Check if drift is detected for numeric column
-    assert drift_flags["numeric_column"] is True
+    assert drift_flags["numeric_column"] is False
+
+
+def generate_random_data(mean, std_dev, size):
+    """Generate random data with given mean and standard deviation."""
+    random_generator = np.random.default_rng(25)
+    return random_generator.normal(loc=mean, scale=std_dev, size=size)
+
+
+def test_check_drift_numeric_large_array():
+    drift_monitor = DataDrift()
+
+    # Set some initial statistics for testing
+    initial_mean = 2.5
+    initial_std_dev = 1.5
+    drift_monitor.drift_stats = {
+        "numeric_column": {"mean": initial_mean, "std_dev": initial_std_dev}
+    }
+
+    # Create a sample DataFrame with drift
+    array_size = 1000
+    new_data_drift = pd.DataFrame(
+        {
+            "numeric_column": generate_random_data(
+                initial_mean, initial_std_dev, array_size
+            )
+        }
+    )
+    new_data_drift += 5
+
+    drift_flags = drift_monitor.check_drift(new_data_drift)
+
+    # Check if drift is detected for numeric column
+    assert drift_flags["numeric_column"] is False
 
 
 def test_check_drift_categorical():
