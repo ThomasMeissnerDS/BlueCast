@@ -76,6 +76,8 @@ def test_check_drift_numeric_large_array():
         }
     )
     new_data_drift += 5
+    print(f"Synthetic mean: {new_data_drift['numeric_column'].mean()}")
+    print(f"Synthetic std: {new_data_drift['numeric_column'].std()}")
 
     drift_flags = drift_monitor.check_drift(new_data_drift)
 
