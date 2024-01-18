@@ -24,6 +24,7 @@ class DataDrift(BaseClassDataDrift):
 
     def __init__(self):
         self.drift_stats: Dict[str, Any] = {}
+        self.random_generator = np.random.default_rng(25)
 
     def fit_data_drift(
         self, data: pd.DataFrame, anonymize_categories: bool = True, **params
@@ -78,7 +79,7 @@ class DataDrift(BaseClassDataDrift):
                 #  test the null hypothesis that two samples were drawn from the same distribution
                 ks_stat, p_value = ks_2samp(
                     new_data[column],
-                    np.random.normal(
+                    self.random_generator.normal(
                         loc=self.drift_stats[column]["mean"],
                         scale=self.drift_stats[column]["std_dev"],
                         size=len(new_data),
