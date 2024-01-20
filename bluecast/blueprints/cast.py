@@ -23,7 +23,6 @@ from bluecast.evaluation.shap_values import shap_explanations
 from bluecast.experimentation.tracking import ExperimentTracker
 from bluecast.general_utils.general_utils import check_gpu_support, logger
 from bluecast.ml_modelling.xgboost import XgboostModel
-from bluecast.monitoring.data_monitoring import DataDrift
 from bluecast.preprocessing.custom import CustomPreprocessing
 from bluecast.preprocessing.datetime_features import date_converter
 from bluecast.preprocessing.encode_target_labels import TargetLabelEncoder
@@ -79,7 +78,6 @@ class BlueCast:
         custom_feature_selector: Optional[
             Union[RFECVSelector, CustomPreprocessing]
         ] = None,
-        custom_data_drift_detector: Optional[DataDrift] = None,
         conf_training: Optional[TrainingConfig] = None,
         conf_xgboost: Optional[XgboostTuneParamsConfig] = None,
         conf_params_xgboost: Optional[XgboostFinalParamConfig] = None,
@@ -105,7 +103,6 @@ class BlueCast:
         self.custom_last_mile_computation = custom_last_mile_computation
         self.custom_preprocessor = custom_preprocessor
         self.custom_feature_selector = custom_feature_selector
-        self.custom_data_drift_detector = custom_data_drift_detector
         self.shap_values: Optional[np.ndarray] = None
         self.eval_metrics: Optional[Dict[str, Any]] = None
 
@@ -116,9 +113,6 @@ class BlueCast:
 
         if not self.conf_params_xgboost:
             self.conf_params_xgboost = XgboostFinalParamConfig()
-
-        if not self.custom_data_drift_detector:
-            self.custom_data_drift_detector = DataDrift()
 
     def initial_checks(self, df: pd.DataFrame) -> None:
         if not self.conf_training:
@@ -253,10 +247,6 @@ class BlueCast:
             self.conf_training.global_random_state,
             self.conf_training.train_split_stratify,
         )
-
-        if isinstance(self.custom_data_drift_detector, DataDrift):
-            self.custom_data_drift_detector.fit_data_drift(x_train)
-            self.custom_data_drift_detector.check_drift(x_test)
 
         if self.custom_preprocessor:
             x_train, y_train = self.custom_preprocessor.fit_transform(x_train, y_train)
@@ -485,9 +475,6 @@ class BlueCast:
 
         if not self.conf_training:
             raise ValueError("conf_training is None")
-
-        if isinstance(self.custom_data_drift_detector, DataDrift):
-            self.custom_data_drift_detector.check_drift(df)
 
         check_gpu_support()
         df = self.transform_new_data(df)
