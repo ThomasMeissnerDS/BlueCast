@@ -118,7 +118,7 @@ automl = BlueCast(
     )
 
 automl.fit(df_train, target_col="target")
-y_probs, y_classes = automl.predict(df_val)
+y_hat = automl.predict(df_val)
 ```
 
 ### Advanced usage
