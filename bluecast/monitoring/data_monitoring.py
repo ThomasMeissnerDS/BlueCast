@@ -24,6 +24,7 @@ class DataDrift:
     def __init__(self):
         self.random_generator = np.random.default_rng(25)
         self.kolmogorov_smirnov_flags: Dict[str, bool] = {}
+        self.population_stability_index_values: Dict[str, float] = {}
         self.population_stability_index_flags: Dict[str, Any] = {}
 
     def eval_data_drift_categorical(self):
@@ -69,7 +70,7 @@ class DataDrift:
                         column
                     ] = False  # drawn from same distribution
 
-    def _calculate_psi(self, expected, actual, buckettype="bins", buckets=10, axis=0):
+    def _calculate_psi(self, expected, actual, buckets=10) -> float:
         def scale_range(input, min_val, max_val):
             input += -(np.min(input))
             input /= np.max(input) / (max_val - min_val)
@@ -97,17 +98,13 @@ class DataDrift:
                 for i in range(len(expected_percents))
             )
 
-        if len(expected.shape) == 1:
-            psi_values = np.empty(len(expected))
-        else:
-            psi_values = np.empty(expected.shape[axis])
-
-        for i in range(len(psi_values)):
-            psi_values[i] = psi(expected, actual, buckets)
+        psi_values = psi(expected, actual, buckets)
 
         return psi_values
 
-    def population_stability_index(self, data: pd.DataFrame, new_data: pd.DataFrame):
+    def population_stability_index(
+        self, data: pd.DataFrame, new_data: pd.DataFrame
+    ) -> Dict[str, bool]:
         """
         Checks for data drift in new data based on population stability index.
 
@@ -128,4 +125,7 @@ class DataDrift:
             if pd.api.types.is_numeric_dtype(new_data[column]):
                 # Assuming you have a validation and training set
                 psi_t = self._calculate_psi(data[column], new_data[column])
-                self.population_stability_index_flags[column] = psi_t
+                self.population_stability_index_values[column] = psi_t
+                self.population_stability_index_flags[column] = psi_t > 0.1
+
+        return self.population_stability_index_flags
