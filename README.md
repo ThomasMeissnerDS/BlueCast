@@ -824,9 +824,15 @@ from bluecast.monitoring.data_monitoring import DataDrift
 
 
 data_drift_checker = DataDrift()
+# statistical data drift checks
 data_drift_checker.kolmogorov_smirnov_test(data, new_data, threshold=0.05)
 data_drift_checker.population_stability_index(data, new_data)
+
+# QQplot for two numerical columns
+data_drift_checker.qqplot_two_samples(train["feature1"], test["feature1"], x_label="X", y_label="Y")
 ```
+
+![QQplot example](docs/source/qqplot_sample.png)
 
 ## Convenience features
 
