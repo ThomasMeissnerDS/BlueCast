@@ -12,18 +12,14 @@ from sklearn.feature_selection import mutual_info_classif, mutual_info_regressio
 from sklearn.manifold import TSNE
 
 
-def univariate_plots(df: pd.DataFrame, target: str) -> None:
+def univariate_plots(df: pd.DataFrame) -> None:
     """
-    Plots univariate plots for all the columns in the dataframe.
-    The target column must be part of the provided DataFrame.
+    Plots univariate plots for all the columns in the dataframe. Only numerical columns are expected.
+    The target column does not need to be part of the provided DataFrame.
 
     Expects numeric columns only.
     """
     for col in df.columns:
-        # Check if the col is the target column (EC1 or EC2)
-        if col == target:
-            continue  # Skip target columns in univariate analysis
-
         plt.figure(figsize=(8, 4))
 
         # Histogram
@@ -54,6 +50,8 @@ def bi_variate_plots(df: pd.DataFrame, target: str, num_cols_grid: int = 4) -> N
 
     Expects numeric columns only.
     """
+    if target not in df.columns.to_list():
+        raise ValueError("Target column must be part of the provided DataFrame")
     # Get the list of column names except for the target column
     variables = [col for col in df.columns if col != target]
 
@@ -127,6 +125,8 @@ def correlation_to_target(df: pd.DataFrame, target: str) -> None:
 
     Expects numeric columns only.
     """
+    if target not in df.columns.to_list():
+        raise ValueError("Target column must be part of the provided DataFrame")
     # Calculate the correlation matrix
     corr = df.corr()
 
@@ -141,7 +141,7 @@ def correlation_to_target(df: pd.DataFrame, target: str) -> None:
     sns.set_style("white")
     sns.set_palette("PuBuGn_d")
     sns.heatmap(corrs_sorted.to_frame(), cmap="coolwarm", annot=True, fmt=".2f")
-    plt.title("Correlation with EC1")
+    plt.title(f"Correlation with {target}")
     plt.show()
 
 
@@ -151,6 +151,8 @@ def plot_pca(df: pd.DataFrame, target: str) -> None:
 
     Expects numeric columns only.
     """
+    if target not in df.columns.to_list():
+        raise ValueError("Target column must be part of the provided DataFrame")
     pca = PCA(n_components=2)
 
     pca_df = pd.DataFrame(pca.fit_transform(df.drop([target], axis=1)))
@@ -178,6 +180,8 @@ def plot_tsne(df: pd.DataFrame, target: str, perplexity=50, random_state=42) -> 
 
     Expects numeric columns only.
     """
+    if target not in df.columns.to_list():
+        raise ValueError("Target column must be part of the provided DataFrame")
     tsne = TSNE(n_components=2, perplexity=perplexity, random_state=random_state)
 
     tsne_df = pd.DataFrame(tsne.fit_transform(df.drop([target], axis=1)))
@@ -308,6 +312,8 @@ def mutual_info_to_target(
 
     To be used for classification only.
     """
+    if target not in df.columns.to_list():
+        raise ValueError("Target column must be part of the provided DataFrame")
     if class_problem in ["binary", "multiclass"]:
         mi_scores = mutual_info_classif(
             X=df.drop(columns=[target]), y=df[target], **mut_params

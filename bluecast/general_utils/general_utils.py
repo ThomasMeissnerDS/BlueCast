@@ -42,6 +42,11 @@ def check_gpu_support() -> str:
 
 
 def logger(message: str) -> None:
+    logging.basicConfig(
+        filename="bluecast.log",
+        filemode="w",
+        format="%(name)s - %(levelname)s - %(message)s",
+    )
     logging.info(message)
     print(message)
 

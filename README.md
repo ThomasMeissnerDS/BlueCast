@@ -37,11 +37,13 @@ the full documentation [here](https://bluecast.readthedocs.io/en/latest/).
     * [Gaining extra performance](#gaining-extra-performance)
     * [Use multi-model blended pipeline](#use-multi-model-blended-pipeline)
     * [Categorical encoding](#categorical-encoding)
-    * [Custom training configuration](#custom--training-configuration)
+    * [Custom training configuration](#custom-training-configuration)
     * [Custom preprocessing](#custom-preprocessing)
     * [Custom feature selection](#custom-feature-selection)
     * [Custom ML model](#custom-ml-model)
     * [Using the inbuilt ExperientTracker](#using-the-inbuilt-experienttracker)
+    * [Use Mlflow via custom ExperientTracker API](#use-mlflow-via-custom-experienttracker-api)
+    * [Custom data drift checker](#custom-data-drift-checker)
 * [Convenience features](#convenience-features)
 * [Code quality](#code-quality)
 * [Documentation](#documentation)
@@ -116,7 +118,7 @@ automl = BlueCast(
     )
 
 automl.fit(df_train, target_col="target")
-y_probs, y_classes = automl.predict(df_val)
+y_hat = automl.predict(df_val)
 ```
 
 ### Advanced usage
@@ -145,39 +147,80 @@ from bluecast.preprocessing.feature_types import FeatureTypeDetector
 feat_type_detector = FeatureTypeDetector()
 train_data = feat_type_detector.fit_transform_feature_types(train_data)
 
+# detect columns with a very high share of unique values
+many_unique_cols = check_unique_values(train_data, feat_type_detector.cat_columns)
+```
+
+```sh
+# plot the percentage of Nulls for all features
+plot_null_percentage(
+    train_data.loc[:, feat_type_detector.num_columns],
+    )
+```
+
+![QQplot example](docs/source/plot_nulls.png)
+
+```sh
 # show univariate plots
 univariate_plots(
         train_data.loc[:, feat_type_detector.num_columns],  # here the target column EC1 is already included
-        "EC1",
     )
+```
 
+![QQplot example](docs/source/univariate_plots.png)
+
+```sh
 # show bi-variate plots
 bi_variate_plots(
     train_data.loc[:, feat_type_detector.num_columns],
       "EC1"
       )
+```
 
+![QQplot example](docs/source/bivariate_plots.png)
+
+```sh
+# show correlation to target
+correlation_to_target(train_data.loc[:, feat_type_detector.num_columns])
+```
+
+![QQplot example](docs/source/correlation_to_target.png)
+
+```sh
 # show correlation heatmap
 correlation_heatmap(train_data.loc[:, feat_type_detector.num_columns])
+```
 
+![QQplot example](docs/source/correlation_heatmap.png)
+
+```sh
+# show a heatmap of assocations between categorical variables
+theil_matrix = plot_theil_u_heatmap(train_data, feat_type_detector.cat_columns)
+```
+
+![QQplot example](docs/source/theil_u_matrix.png)
+
+```sh
 # show mutual information of categorical features to target
 # features are expected to be numerical format
 # class problem can be any of "binary", "multiclass" or "regression"
 extra_params = {"random_state": 30}
 mutual_info_to_target(train_data.loc[:, feat_type_detector.num_columns], "EC1", class_problem="binary", **extra_params)
+```
 
-# show correlation to target
-correlation_to_target(
-    train_data.loc[:, feat_type_detector.num_columns],
-      "EC1",
-      )
+![QQplot example](docs/source/mutual_information.png)
 
-# show feature space after principal component analysis
+```sh
+## show feature space after principal component analysis
 plot_pca(
     train_data.loc[:, feat_type_detector.num_columns],
     "target"
     )
+```
 
+![QQplot example](docs/source/plot_pca.png)
+
+```sh
 # show feature space after t-SNE
 plot_tsne(
     train_data.loc[:, feat_type_detector.num_columns],
@@ -185,18 +228,9 @@ plot_tsne(
     perplexity=30,
     random_state=0
     )
-
-# show a heatmap of assocations between categorical variables
-theil_matrix = plot_theil_u_heatmap(train_data, feat_type_detector.cat_columns)
-
-# plot the percentage of Nulls for all features
-plot_null_percentage(
-    train_data.loc[:, feat_type_detector.num_columns],
-    )
-
-# detect columns with a very high share of unique values
-many_unique_cols = check_unique_values(train_data, feat_type_detector.cat_columns)
 ```
+
+![QQplot example](docs/source/t_sne_plot.png)
 
 #### Leakage detection
 
@@ -219,7 +253,6 @@ result = detect_leakage_via_correlation(
 result = detect_categorical_leakage(
         train_data.loc[:, feat_type_detector.cat_columns], "target", threshold=0.9
     )
-
 ```
 
 #### Enable cross-validation
@@ -397,7 +430,7 @@ will receive numerical features only as target encoding will apply before. If `c
 is True (default setting) `custom_last_mile_computation` will receive categorical
 features as well, because Xgboost's inbuilt categorical encoding will be used.
 
-#### Custom  training configuration
+#### Custom training configuration
 
 Despite e2eml, BlueCast allows easy customization. Users can adjust the
 configuration and just pass it to the `BlueCast` class. Here is an example:
@@ -752,6 +785,94 @@ is skipped whenever Optuna prunes a trial.
 The experiment triggers whenever the `fit` or `fit_eval` methods of a BlueCast
 class instance are called (also within BlueCastCV). This means for custom
 models the tracker will not trigger automatically and has to be added manually.
+
+#### Use Mlflow via custom ExperientTracker API
+
+The inbuilt experiment tracker is handy to start with, however in production
+environments it might be required to send metrics to a Mlflow server or
+comparable solutions. BlueCast allows to pass a custom experiment tracker.
+
+```sh
+# instantiate and train BlueCast
+from bluecast.blueprints.cast import BlueCast
+from bluecast.cnfig.base_classes import BaseClassExperimentTracker
+
+class CustomExperimentTracker(BaseClassExperimentTracker):
+    """Base class for the experiment tracker.
+
+    Enforces the implementation of the add_results and retrieve_results_as_df methods.
+    """
+
+    @abstractmethod
+    def add_results(
+        self,
+        experiment_id: int,
+        score_category: Literal["simple_train_test_score", "cv_score", "oof_score"],
+        training_config: TrainingConfig,
+        model_parameters: Dict[Any, Any],
+        eval_scores: Union[float, int, None],
+        metric_used: str,
+        metric_higher_is_better: bool,
+    ) -> None:
+        """
+        Add results to the ExperimentTracker class.
+        """
+        pass # add Mlflow tracking i.e.
+
+    @abstractmethod
+    def retrieve_results_as_df(self) -> pd.DataFrame:
+        """
+        Retrieve results from the ExperimentTracker class
+        """
+        pass
+
+
+experiment_tracker = CustomExperimentTracker()
+
+automl = BlueCast(
+        class_problem="binary",
+        target_column="target",
+        experiment_tracker=experiment_tracker,
+    )
+
+automl.fit_eval(df_train, df_eval, y_eval, target_col="target")
+
+# access the experiment tracker
+tracker = automl.experiment_tracker
+
+# see all stored information as a Pandas DataFrame
+tracker_df = tracker.retrieve_results_as_df()
+```
+
+#### Custom data drift checker
+
+Since version 0.90 BlueCast checks for data drift for numerical
+and categorical columns. The checks happen on the raw data.
+Categories will be stored anonymized by default. Data drift
+checks are not part of the model pipeline, but have to be called separately:
+
+```sh
+from bluecast.monitoring.data_monitoring import DataDrift
+
+
+data_drift_checker = DataDrift()
+# statistical data drift checks for numerical features
+data_drift_checker.kolmogorov_smirnov_test(data, new_data, threshold=0.05)
+# show flags
+print(data_drift_checker.kolmogorov_smirnov_flags)
+
+# statistical data drift checks for categorical features
+data_drift_checker.population_stability_index(data, new_data)
+# show flags
+print(data_drift_checker.population_stability_index_flags)
+# show psi values
+print(data_drift_checker.population_stability_index_values)
+
+# QQplot for two numerical columns
+data_drift_checker.qqplot_two_samples(train["feature1"], test["feature1"], x_label="X", y_label="Y")
+```
+
+![QQplot example](docs/source/qqplot_sample.png)
 
 ## Convenience features
 

@@ -80,8 +80,7 @@ def test_univariate_plots(synthetic_train_test_data):
     univariate_plots(
         synthetic_train_test_data[0].loc[
             :, ["numerical_feature_1", "numerical_feature_2", "numerical_feature_3"]
-        ],
-        "target",
+        ]
     )
     assert True
 

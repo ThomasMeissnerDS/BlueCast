@@ -204,6 +204,14 @@ class BlueCast:
             less than 2 folds precise_cv_tuning will not have any impact. Consider raising the number of folds to two
             or higher or disable precise_cv_tuning."""
             warnings.warn(message, UserWarning, stacklevel=2)
+        if self.class_problem == "binary" and df[self.target_column].nunique() > 2:
+            message = """During class instantiation class_problem = 'binary' has been passed. However more than 2
+            unique target classes have been found. Did you mean 'multiclass' instead?"""
+            warnings.warn(message, UserWarning, stacklevel=2)
+        if self.class_problem == "multiclass" and df[self.target_column].nunique() < 3:
+            message = """During class instantiation class_problem = 'multiclass' has been passed. However less than 3
+            unique target classes have been found. Did you mean 'binary' instead?"""
+            warnings.warn(message, UserWarning, stacklevel=2)
 
     def fit(self, df: pd.DataFrame, target_col: str) -> None:
         """Train a full ML pipeline."""
