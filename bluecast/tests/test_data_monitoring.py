@@ -40,7 +40,7 @@ def test_population_stability_index(mock_logger):
     assert data_drift.population_stability_index_flags["col2"]
 
 
-def test_qqplot_two_samples(qqplot_instance):
+def test_qqplot_two_samples():
     data_drift = DataDrift()
     # Generate sample data
     x = np.random.randn(100)
