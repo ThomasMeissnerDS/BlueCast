@@ -24,13 +24,9 @@ class DataDrift:
     """
 
     def __init__(self):
-        self.random_generator = np.random.default_rng(25)
         self.kolmogorov_smirnov_flags: Dict[str, bool] = {}
         self.population_stability_index_values: Dict[str, float] = {}
         self.population_stability_index_flags: Dict[str, Any] = {}
-
-    def eval_data_drift_categorical(self):
-        pass
 
     def kolmogorov_smirnov_test(
         self,
