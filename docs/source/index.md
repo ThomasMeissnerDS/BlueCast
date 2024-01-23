@@ -147,38 +147,80 @@ from bluecast.preprocessing.feature_types import FeatureTypeDetector
 feat_type_detector = FeatureTypeDetector()
 train_data = feat_type_detector.fit_transform_feature_types(train_data)
 
+# detect columns with a very high share of unique values
+many_unique_cols = check_unique_values(train_data, feat_type_detector.cat_columns)
+```
+
+```sh
+# plot the percentage of Nulls for all features
+plot_null_percentage(
+    train_data.loc[:, feat_type_detector.num_columns],
+    )
+```
+
+![QQplot example](plot_nulls.png)
+
+```sh
 # show univariate plots
 univariate_plots(
         train_data.loc[:, feat_type_detector.num_columns],  # here the target column EC1 is already included
     )
+```
 
+![QQplot example](univariate_plots.png)
+
+```sh
 # show bi-variate plots
 bi_variate_plots(
     train_data.loc[:, feat_type_detector.num_columns],
       "EC1"
       )
+```
 
+![QQplot example](bivariate_plots.png)
+
+```sh
+# show correlation to target
+correlation_to_target(train_data.loc[:, feat_type_detector.num_columns])
+```
+
+![QQplot example](correlation_to_target.png)
+
+```sh
 # show correlation heatmap
 correlation_heatmap(train_data.loc[:, feat_type_detector.num_columns])
+```
 
+![QQplot example](correlation_heatmap.png)
+
+```sh
+# show a heatmap of assocations between categorical variables
+theil_matrix = plot_theil_u_heatmap(train_data, feat_type_detector.cat_columns)
+```
+
+![QQplot example](theil_u_matrix.png)
+
+```sh
 # show mutual information of categorical features to target
 # features are expected to be numerical format
 # class problem can be any of "binary", "multiclass" or "regression"
 extra_params = {"random_state": 30}
 mutual_info_to_target(train_data.loc[:, feat_type_detector.num_columns], "EC1", class_problem="binary", **extra_params)
+```
 
-# show correlation to target
-correlation_to_target(
-    train_data.loc[:, feat_type_detector.num_columns],
-      "EC1",
-      )
+![QQplot example](mutual_information.png)
 
-# show feature space after principal component analysis
+```sh
+## show feature space after principal component analysis
 plot_pca(
     train_data.loc[:, feat_type_detector.num_columns],
     "target"
     )
+```
 
+![QQplot example](plot_pca.png)
+
+```sh
 # show feature space after t-SNE
 plot_tsne(
     train_data.loc[:, feat_type_detector.num_columns],
@@ -186,18 +228,9 @@ plot_tsne(
     perplexity=30,
     random_state=0
     )
-
-# show a heatmap of assocations between categorical variables
-theil_matrix = plot_theil_u_heatmap(train_data, feat_type_detector.cat_columns)
-
-# plot the percentage of Nulls for all features
-plot_null_percentage(
-    train_data.loc[:, feat_type_detector.num_columns],
-    )
-
-# detect columns with a very high share of unique values
-many_unique_cols = check_unique_values(train_data, feat_type_detector.cat_columns)
 ```
+
+![QQplot example](t_sne_plot.png)
 
 #### Leakage detection
 
@@ -220,7 +253,6 @@ result = detect_leakage_via_correlation(
 result = detect_categorical_leakage(
         train_data.loc[:, feat_type_detector.cat_columns], "target", threshold=0.9
     )
-
 ```
 
 #### Enable cross-validation
@@ -832,7 +864,7 @@ data_drift_checker.population_stability_index(data, new_data)
 data_drift_checker.qqplot_two_samples(train["feature1"], test["feature1"], x_label="X", y_label="Y")
 ```
 
-![QQplot example](./qqplot_sample.png)
+![QQplot example](qqplot_sample.png)
 
 ## Convenience features
 
@@ -905,8 +937,8 @@ Contributions are welcome. Please follow the following steps:
 * Add your feature or fix
 * Add unit tests for new features
 * Run pre-commit checks and unit tests (using Pytest)
-* Adjust the `docs/source/index.md` file
-* Copy paste the content of the `docs/source/index.md` file into the
+* Adjust the `index.md` file
+* Copy paste the content of the `index.md` file into the
   `README.md` file
 * Push your changes and create a pull request
 

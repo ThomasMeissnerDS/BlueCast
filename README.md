@@ -147,38 +147,80 @@ from bluecast.preprocessing.feature_types import FeatureTypeDetector
 feat_type_detector = FeatureTypeDetector()
 train_data = feat_type_detector.fit_transform_feature_types(train_data)
 
+# detect columns with a very high share of unique values
+many_unique_cols = check_unique_values(train_data, feat_type_detector.cat_columns)
+```
+
+```sh
+# plot the percentage of Nulls for all features
+plot_null_percentage(
+    train_data.loc[:, feat_type_detector.num_columns],
+    )
+```
+
+![QQplot example](docs/source/plot_nulls.png)
+
+```sh
 # show univariate plots
 univariate_plots(
         train_data.loc[:, feat_type_detector.num_columns],  # here the target column EC1 is already included
     )
+```
 
+![QQplot example](docs/source/univariate_plots.png)
+
+```sh
 # show bi-variate plots
 bi_variate_plots(
     train_data.loc[:, feat_type_detector.num_columns],
       "EC1"
       )
+```
 
+![QQplot example](docs/source/bivariate_plots.png)
+
+```sh
+# show correlation to target
+correlation_to_target(train_data.loc[:, feat_type_detector.num_columns])
+```
+
+![QQplot example](docs/source/correlation_to_target.png)
+
+```sh
 # show correlation heatmap
 correlation_heatmap(train_data.loc[:, feat_type_detector.num_columns])
+```
 
+![QQplot example](docs/source/correlation_heatmap.png)
+
+```sh
+# show a heatmap of assocations between categorical variables
+theil_matrix = plot_theil_u_heatmap(train_data, feat_type_detector.cat_columns)
+```
+
+![QQplot example](docs/source/theil_u_matrix.png)
+
+```sh
 # show mutual information of categorical features to target
 # features are expected to be numerical format
 # class problem can be any of "binary", "multiclass" or "regression"
 extra_params = {"random_state": 30}
 mutual_info_to_target(train_data.loc[:, feat_type_detector.num_columns], "EC1", class_problem="binary", **extra_params)
+```
 
-# show correlation to target
-correlation_to_target(
-    train_data.loc[:, feat_type_detector.num_columns],
-      "EC1",
-      )
+![QQplot example](docs/source/mutual_information.png)
 
-# show feature space after principal component analysis
+```sh
+## show feature space after principal component analysis
 plot_pca(
     train_data.loc[:, feat_type_detector.num_columns],
     "target"
     )
+```
 
+![QQplot example](docs/source/plot_pca.png)
+
+```sh
 # show feature space after t-SNE
 plot_tsne(
     train_data.loc[:, feat_type_detector.num_columns],
@@ -186,18 +228,9 @@ plot_tsne(
     perplexity=30,
     random_state=0
     )
-
-# show a heatmap of assocations between categorical variables
-theil_matrix = plot_theil_u_heatmap(train_data, feat_type_detector.cat_columns)
-
-# plot the percentage of Nulls for all features
-plot_null_percentage(
-    train_data.loc[:, feat_type_detector.num_columns],
-    )
-
-# detect columns with a very high share of unique values
-many_unique_cols = check_unique_values(train_data, feat_type_detector.cat_columns)
 ```
+
+![QQplot example](docs/source/t_sne_plot.png)
 
 #### Leakage detection
 
@@ -220,7 +253,6 @@ result = detect_leakage_via_correlation(
 result = detect_categorical_leakage(
         train_data.loc[:, feat_type_detector.cat_columns], "target", threshold=0.9
     )
-
 ```
 
 #### Enable cross-validation
