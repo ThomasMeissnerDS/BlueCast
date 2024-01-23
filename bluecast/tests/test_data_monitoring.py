@@ -1,5 +1,6 @@
 from unittest.mock import patch
 
+import numpy as np
 import pandas as pd
 import pytest
 
@@ -37,3 +38,14 @@ def test_population_stability_index(mock_logger):
     print(data_drift.population_stability_index_flags)
     assert not data_drift.population_stability_index_flags["col1"]
     assert data_drift.population_stability_index_flags["col2"]
+
+
+def test_qqplot_two_samples(qqplot_instance):
+    data_drift = DataDrift()
+    # Generate sample data
+    x = np.random.randn(100)
+    y = np.random.randn(100)
+
+    # Call the function with sample data
+    data_drift.qqplot_two_samples(x, y)
+    assert True
