@@ -182,26 +182,26 @@ def test_bluecast_cv_fit_eval_multiclass_with_custom_model():
     # Create some sample data for testing
     x_train = pd.DataFrame(
         {
-            "feature1": [i for i in range(10)],
-            "feature2": [i for i in range(10)],
-            "feature3": [i for i in range(10)],
-            "feature4": [i for i in range(10)],
-            "feature5": [i for i in range(10)],
-            "feature6": [i + 4 for i in range(10)],
+            "feature1": [i for i in range(20)],
+            "feature2": [i for i in range(20)],
+            "feature3": [i for i in range(20)],
+            "feature4": [i for i in range(20)],
+            "feature5": [i for i in range(20)],
+            "feature6": [i + 4 for i in range(20)],
         }
     )
-    y_train = pd.Series([0, 1, 0, 1, 0, 2, 0, 2, 0, 2])
+    y_train = pd.Series([0, 1, 0, 1, 0, 2, 0, 2, 0, 2, 0, 1, 0, 1, 0, 2, 0, 2, 0, 2])
     x_test = pd.DataFrame(
         {
-            "feature1": [i for i in range(10)],
-            "feature2": [i for i in range(10)],
-            "feature3": [i for i in range(10)],
-            "feature4": [i for i in range(10)],
-            "feature5": [i for i in range(10)],
-            "feature6": [i + 4 for i in range(10)],
+            "feature1": [i for i in range(20)],
+            "feature2": [i for i in range(20)],
+            "feature3": [i for i in range(20)],
+            "feature4": [i for i in range(20)],
+            "feature5": [i for i in range(20)],
+            "feature6": [i + 4 for i in range(12)],
         }
     )
-    y_test = pd.Series([0, 1, 0, 1, 0, 2, 0, 2, 0, 2])
+    y_test = pd.Series([0, 1, 0, 1, 0, 2, 0, 2, 0, 2, 0, 1, 0, 1, 0, 2, 0, 2, 0, 2])
 
     x_train["target"] = y_train
 
