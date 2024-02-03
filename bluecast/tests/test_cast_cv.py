@@ -190,7 +190,7 @@ def test_bluecast_cv_fit_eval_multiclass_with_custom_model():
             "feature6": [i + 4 for i in range(10)],
         }
     )
-    y_train = pd.Series([0, 1, 0, 1, 0, 2, 0, 3, 0, 4])
+    y_train = pd.Series([0, 1, 0, 1, 0, 2, 0, 2, 0, 2])
     x_test = pd.DataFrame(
         {
             "feature1": [i for i in range(10)],
@@ -201,7 +201,7 @@ def test_bluecast_cv_fit_eval_multiclass_with_custom_model():
             "feature6": [i + 4 for i in range(10)],
         }
     )
-    y_test = pd.Series([0, 1, 0, 1, 0, 2, 0, 3, 0, 4])
+    y_test = pd.Series([0, 1, 0, 1, 0, 2, 0, 2, 0, 2])
 
     x_train["target"] = y_train
 
