@@ -1,5 +1,6 @@
 from typing import Any, List, Literal, Optional, Tuple, Union
 
+import numpy as np
 import pandas as pd
 from sklearn.model_selection import KFold
 
@@ -63,6 +64,31 @@ class BlueCastCVRegression:
         X = df.drop(target, axis=1)
         return X, y
 
+    def show_oof_scores(self, metric: str = "RMSE") -> Tuple[float, float]:
+        """
+        Show out of fold scores.
+
+        When calling BlueCastCVRegression's fit_eval function multiple BlueCastRegression
+        instances are called and each of them predicts on unseen/oof data.
+
+        This function collects these scores and return mean and average of them.
+
+        :param metric: String indicating which metric shall be returned.
+        :return: Tuple with (mean, std) of oof scores
+        """
+        all_metrics = []
+        for bluecast_instance in self.bluecast_models:
+            if bluecast_instance.eval_metrics:
+                score = bluecast_instance.eval_metrics.get(metric)
+                all_metrics.append(score)
+
+        score_mean = np.asarray(all_metrics).mean()
+        score_std = np.asarray(all_metrics).std()
+        message = f"The mean out of fold {metric} score is {score_mean} with an std of {score_std}"
+        logger(message)
+
+        return score_mean, score_std
+
     def fit(self, df: pd.DataFrame, target_col: str) -> None:
         """Fit multiple BlueCastRegression instances on different data splits.
 
@@ -115,11 +141,15 @@ class BlueCastCVRegression:
             # overwrite experiment tracker to pass it into next iteration
             self.experiment_tracker = automl.experiment_tracker
 
-    def fit_eval(self, df: pd.DataFrame, target_col: str) -> None:
+    def fit_eval(self, df: pd.DataFrame, target_col: str) -> Tuple[float, float]:
         """Fit multiple BlueCastRegression instances on different data splits.
 
         Input df is expected the target column. Evaluation is executed on out-of-fold dataset
-        in each split."""
+        in each split.
+        :param df: Pandas DataFrame that includes the target column
+        :param target_col: String indicating the name of the target column
+        :returns Tuple of (oof_mean, oof_std) with scores on unseen data during eval
+        """
         X, y = self.prepare_data(df, target_col)
 
         if not self.conf_training:
@@ -163,6 +193,9 @@ class BlueCastCVRegression:
 
             # overwrite experiment tracker to pass it into next iteration
             self.experiment_tracker = automl.experiment_tracker
+
+        oof_mean, oof_std = self.show_oof_scores()
+        return oof_mean, oof_std
 
     def predict(
         self, df: pd.DataFrame, return_sub_models_preds: bool = False
