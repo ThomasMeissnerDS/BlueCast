@@ -194,7 +194,9 @@ class BlueCastCV:
             if return_sub_models_preds:
                 return df.loc[:, prob_cols], df.loc[:, class_cols]
             else:
-                classes = df.loc[:, class_cols].mode(axis=1)[0].astype(int)
+                classes = df.loc[:, class_cols].mode(axis=1)  # [0].astype(int)
+                print("DEBUG PRINT")
+                print(classes)
 
                 if self.bluecast_models[0].feat_type_detector:
                     if (
