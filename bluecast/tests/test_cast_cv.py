@@ -167,3 +167,52 @@ def test_bluecast_cv_fit_eval_with_custom_model():
     assert isinstance(predicted_classes, np.ndarray)
     print(bluecast.experiment_tracker.experiment_id)
     assert len(bluecast.experiment_tracker.experiment_id) == 8  # due to custom model
+
+
+def test_bluecast_cv_fit_eval_multiclass_with_custom_model():
+    custom_model = CustomLRModel()
+
+    # Create an instance of the BlueCast class with the custom model
+    bluecast = BlueCast(
+        class_problem="multiclass",
+        target_column="target",
+        ml_model=custom_model,
+    )
+
+    # Create some sample data for testing
+    x_train = pd.DataFrame(
+        {
+            "feature1": [i for i in range(10)],
+            "feature2": [i for i in range(10)],
+            "feature3": [i for i in range(10)],
+            "feature4": [i for i in range(10)],
+            "feature5": [i for i in range(10)],
+            "feature6": [i + 4 for i in range(10)],
+        }
+    )
+    y_train = pd.Series([0, 1, 0, 1, 0, 2, 0, 3, 0, 4])
+    x_test = pd.DataFrame(
+        {
+            "feature1": [i for i in range(10)],
+            "feature2": [i for i in range(10)],
+            "feature3": [i for i in range(10)],
+            "feature4": [i for i in range(10)],
+            "feature5": [i for i in range(10)],
+            "feature6": [i + 4 for i in range(10)],
+        }
+    )
+    y_test = pd.Series([0, 1, 0, 1, 0, 2, 0, 3, 0, 4])
+
+    x_train["target"] = y_train
+
+    # Fit the BlueCast model using the custom model
+    bluecast.fit_eval(x_train, x_test, y_test, "target")
+
+    # Predict on the test data using the custom model
+    predicted_probas, predicted_classes = bluecast.predict(x_test)
+
+    # Assert the expected results
+    assert isinstance(predicted_probas, np.ndarray)
+    assert isinstance(predicted_classes, np.ndarray)
+    print(bluecast.experiment_tracker.experiment_id)
+    assert len(bluecast.experiment_tracker.experiment_id) == 8  # due to custom model
