@@ -130,12 +130,13 @@ BlueCast offers a simple way to get a first overview of the data:
 ```sh
 from bluecast.eda.analyse import (
     bi_variate_plots,
+    univariate_plots,
+    plot_count_pairs,
     correlation_heatmap,
     correlation_to_target,
     plot_pca,
     plot_theil_u_heatmap,
     plot_tsne,
-    univariate_plots,
     check_unique_values,
     plot_null_percentage,
     mutual_info_to_target.
@@ -178,6 +179,17 @@ bi_variate_plots(
 ```
 
 ![QQplot example](bivariate_plots.png)
+
+```sh
+# show bi-variate plots
+plot_count_pairs(
+    train,
+    test,
+    cat_cols=train_data.loc[:, feat_type_detector.cat_columns],
+      )
+```
+
+![QQplot example](pair_countplot.png)
 
 ```sh
 # show correlation to target

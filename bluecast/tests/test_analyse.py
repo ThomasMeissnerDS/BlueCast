@@ -10,6 +10,7 @@ from bluecast.eda.analyse import (
     correlation_heatmap,
     correlation_to_target,
     mutual_info_to_target,
+    plot_count_pairs,
     plot_null_percentage,
     plot_pca,
     plot_theil_u_heatmap,
@@ -181,6 +182,15 @@ def test_plot_theil_u_heatmap(synthetic_categorical_data):
     theil_matrix = plot_theil_u_heatmap(synthetic_categorical_data, columns_of_interest)
     assert True
     assert theil_matrix[0, 0] == 1.0
+
+
+def test_plot_count_pairs(synthetic_categorical_data):
+    plot_count_pairs(
+        synthetic_categorical_data,
+        synthetic_categorical_data.head(2),
+        cat_cols=synthetic_categorical_data.columns.to_list(),
+    )
+    assert True
 
 
 def test_plot_null_percentage(create_data_with_nulls):

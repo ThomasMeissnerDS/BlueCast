@@ -1,6 +1,6 @@
 import math
 from collections import Counter
-from typing import List, Literal, Union
+from typing import List, Literal, Optional, Union
 
 import matplotlib.pyplot as plt
 import numpy as np
@@ -10,6 +10,88 @@ import seaborn as sns
 from sklearn.decomposition import PCA
 from sklearn.feature_selection import mutual_info_classif, mutual_info_regression
 from sklearn.manifold import TSNE
+
+
+def plot_count_pair(
+    df_1: pd.DataFrame,
+    df_2: pd.DataFrame,
+    df_aliases: Optional[List[str]],
+    feature: str,
+    order: Optional[List[str]] = None,
+    palette: Optional[List[str]] = None,
+) -> None:
+    """
+    Compare the counts between two DataFrames of the chosen provided categorical column.
+
+    :param df_1: Pandas DataFrame. I.e.: df_1 dataset
+    :param df_2: Pandas DataFrame. I.e.: Test dataset
+    :param df_aliases: List with names of DataFrames that shall be shown on the count plots to represent them.
+        Format: [df_1 representation, df_2 representation]
+    :param feature: String indicating categorical column to plot
+    :param hue: Read the sns.countplot
+    :param order: List with category names to define the order they appear in the plot
+    :param palette:  List with hexadecimal representations of colors in the RGB color model
+    """
+    if not df_aliases:
+        df_aliases = ["train", "test"]
+    data_df = df_1.copy()
+    data_df["set"] = df_aliases[0]
+    data_df = pd.concat([data_df, df_2.copy()]).fillna(df_aliases[1])
+    f, ax = plt.subplots(1, 1, figsize=(8, 6))  # Increased height to 6
+
+    # Create countplot
+    sns.countplot(x=feature, data=data_df, hue="set", palette=palette, order=order)
+
+    # Rotate x-axis labels by 90 degrees
+    ax.set_xticklabels(ax.get_xticklabels(), rotation=90)
+
+    # Add annotations above the bars
+    for p in ax.patches:
+        ax.annotate(
+            f"{p.get_height()}",
+            (p.get_x() + p.get_width() / 2.0, p.get_height()),
+            ha="center",
+            va="center",
+            xytext=(0, 10),
+            textcoords="offset points",
+        )
+
+    # Customize the plot
+    plt.grid(color="black", linestyle="-.", linewidth=0.5, axis="y", which="major")
+    ax.set_title(f"Paired {df_aliases[0]}/{df_aliases[1]}frequencies of {feature}")
+    plt.show()
+
+
+def plot_count_pairs(
+    df_1: pd.DataFrame,
+    df_2: pd.DataFrame,
+    cat_cols: List[str],
+    df_aliases: Optional[List[str]] = None,
+    palette: Optional[List[str]] = None,
+) -> None:
+    """
+    Compare the counts between two DataFrames of each categorical column in the provided list.
+
+    :param df_1: Pandas DataFrame. I.e.: Train dataset
+    :param df_2: Pandas DataFrame. I.e.: Test dataset
+    :param df_aliases: List with names of DataFrames that shall be shown on the count plots to represent them.
+        Format: [df_1 representation, df_2 representation]
+    :param cat_cols: List with strings indicating categorical column names to plot
+    :param palette:  List with hexadecimal representations of colors in the RGB color model
+    """
+    if isinstance(df_aliases, List):
+        assert len(df_aliases) == 2
+
+    for feature in cat_cols:
+        order = sorted(df_1[feature].unique())
+        plot_count_pair(
+            df_1,
+            df_2,
+            df_aliases=df_aliases,
+            feature=feature,
+            order=order,
+            palette=palette,
+        )
 
 
 def univariate_plots(df: pd.DataFrame) -> None:
