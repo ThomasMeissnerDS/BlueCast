@@ -48,7 +48,7 @@ def plot_count_pair(
     # Add annotations above the bars
     for p in ax.patches:
         ax.annotate(
-            f"{p.get_height()}",
+            f"{int(p.get_height())}",
             (p.get_x() + p.get_width() / 2.0, p.get_height()),
             ha="center",
             va="center",
