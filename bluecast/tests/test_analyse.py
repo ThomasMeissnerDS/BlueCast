@@ -13,6 +13,7 @@ from bluecast.eda.analyse import (
     plot_count_pairs,
     plot_null_percentage,
     plot_pca,
+    plot_pie_chart,
     plot_theil_u_heatmap,
     plot_tsne,
     univariate_plots,
@@ -75,6 +76,21 @@ def create_data_with_many_uniques() -> pd.DataFrame:
         }
     )
     return df
+
+
+def test_plot_pie_chart(synthetic_train_test_data):
+    plot_pie_chart(
+        synthetic_train_test_data[0],
+        "categorical_feature_1",
+    )
+    assert True
+
+    plot_pie_chart(
+        synthetic_train_test_data[0],
+        "categorical_feature_1",
+        explode=[0.1]
+        * len(synthetic_train_test_data["categorical_feature_1"].nunique()),
+    )
 
 
 def test_univariate_plots(synthetic_train_test_data):

@@ -140,6 +140,7 @@ from bluecast.eda.analyse import (
     check_unique_values,
     plot_null_percentage,
     mutual_info_to_target.
+    plot_pie_chart,
 )
 
 from bluecast.preprocessing.feature_types import FeatureTypeDetector
@@ -151,6 +152,17 @@ train_data = feat_type_detector.fit_transform_feature_types(train_data)
 # detect columns with a very high share of unique values
 many_unique_cols = check_unique_values(train_data, feat_type_detector.cat_columns)
 ```
+
+```sh
+# plot the percentage of Nulls for all features
+plot_pie_chart(
+        synthetic_train_test_data[0],
+        "categorical_feature_1",
+    )
+```
+
+![QQplot example](docs/source/pie_chart.png)
+
 
 ```sh
 # plot the percentage of Nulls for all features

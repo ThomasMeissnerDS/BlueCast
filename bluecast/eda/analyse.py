@@ -12,6 +12,105 @@ from sklearn.feature_selection import mutual_info_classif, mutual_info_regressio
 from sklearn.manifold import TSNE
 
 
+def plot_pie_chart(
+    df: pd.DataFrame,
+    column: str,
+    explode: Optional[List[float]] = None,
+    colors: Optional[List[str]] = None,
+) -> None:
+    """
+    Create a pie chart with labels, sizes, and optional explosion.
+
+    Parameters:
+    - df: Pandas DataFrame holding the column of nterest
+    - column: The column to be plottted
+    - explode: (Optional) List of numerical values, representing the explosion distance for each segment.
+    - colors: (Optional) List with hexadecimal representations of colors in the RGB color model
+    """
+    value_counts = df[column].value_counts()
+    sizes = value_counts.to_list()
+    labels = value_counts.index.to_list()
+
+    if explode is None:
+        explode = [0.1] * len(labels)  # No explosion by default
+
+    if not colors and len(labels) <= 50:
+        colors = [
+            "#ff6666",
+            "#ff9966",
+            "#ffb366",
+            "#ffcc66",
+            "#ffd966",
+            "#ffeb66",
+            "#ffff66",
+            "#ebff66",
+            "#d9ff66",
+            "#b3ff66",
+            "#99ff66",
+            "#66ff66",
+            "#66ff99",
+            "#66ffcc",
+            "#66ffff",
+            "#66ebff",
+            "#66d9ff",
+            "#66b3ff",
+            "#6699ff",
+            "#6666ff",
+            "#9966ff",
+            "#cc66ff",
+            "#ff66ff",
+            "#ff66cc",
+            "#ff6699",
+            "#ff6666",
+            "#ff9999",
+            "#ffcc99",
+            "#ffff99",
+            "#ccff99",
+            "#99ff99",
+            "#99ffcc",
+            "#99ffff",
+            "#99ccff",
+            "#9999ff",
+            "#cc99ff",
+            "#ff99ff",
+            "#ff99cc",
+            "#ff9999",
+            "#66b3ff",
+            "#66ccff",
+            "#66e6ff",
+            "#66f3ff",
+            "#66feff",
+            "#66fffb",
+            "#66ffec",
+            "#66ffe1",
+            "#66ffd5",
+            "#66ffc8",
+            "#66ffba",
+        ]
+
+    # Create a pie chart
+    plt.pie(
+        sizes,
+        labels=labels,
+        autopct="%1.1f%%",
+        startangle=90,
+        explode=explode,
+        shadow=True,
+        pctdistance=0.85,
+        colors=colors,
+    )
+
+    centre_circle = plt.Circle((0, 0), 0.70, fc="white")
+    fig = plt.gcf()
+    fig.gca().add_artist(centre_circle)
+
+    # Add a title
+    plt.title(f"Distribution of column {column}")
+
+    # Show the plot
+    plt.show()
+
+
 def plot_count_pair(
     df_1: pd.DataFrame,
     df_2: pd.DataFrame,
