@@ -135,6 +135,7 @@ from bluecast.eda.analyse import (
     correlation_heatmap,
     correlation_to_target,
     plot_pca,
+    plot_pca_cumulative_variance,
     plot_theil_u_heatmap,
     plot_tsne,
     check_unique_values,
@@ -242,6 +243,16 @@ plot_pca(
 ```
 
 ![QQplot example](docs/source/plot_pca.png)
+
+```sh
+## show how many components are needed to explain certain variance
+plot_pca_cumulative_variance(
+    train_data.loc[:, feat_type_detector.num_columns],
+    "target"
+    )
+```
+
+![QQplot example](docs/source/plot_cumulative_pca_variance.png)
 
 ```sh
 # show feature space after t-SNE

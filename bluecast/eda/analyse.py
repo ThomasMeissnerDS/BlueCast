@@ -10,6 +10,7 @@ import seaborn as sns
 from sklearn.decomposition import PCA
 from sklearn.feature_selection import mutual_info_classif, mutual_info_regression
 from sklearn.manifold import TSNE
+from sklearn.preprocessing import StandardScaler
 
 
 def plot_pie_chart(
@@ -352,6 +353,74 @@ def plot_pca(df: pd.DataFrame, target: str) -> None:
         ax.set_ylabel("Component 2")
 
     fig.suptitle(f"PCA \n explained variance :{explained_variance}", y=1.1)
+    plt.show()
+
+
+def plot_pca_cumulative_variance(
+    df: pd.DataFrame, scale_data: bool = True, n_components: int = 10
+) -> None:
+    """
+    Plot the cumulative variance of principal components.
+
+    :param df: Pandas DataFrame. Should not include the target variable.
+    :param scale_data: If true, standard scaling will be performed before applying PCA, otherwise the raw data is used.
+    :param n_components: Number of total components to compute.
+    """
+    if scale_data:
+        scaler = StandardScaler()
+        data_standardized = scaler.fit_transform(df.copy())
+    else:
+        data_standardized = df.copy()
+
+    # Perform PCA to create components
+    pca = PCA(n_components=n_components)
+    pca.fit(data_standardized)
+    explained_variances = pca.explained_variance_ratio_
+
+    # Individual explained variances for 10 components
+    individual_variances = explained_variances.tolist()
+
+    # Compute the cumulative explained variance
+    cumulative_variances = np.cumsum(individual_variances)
+    # Create the bar plot for individual variances
+    plt.figure(figsize=(12, 7))
+    plot_bar = plt.bar(
+        range(1, n_components + 1),
+        individual_variances,
+        alpha=0.6,
+        color="g",
+        label="Individual Explained Variance",
+    )
+
+    # Create the line plot for cumulative variance
+    plt.plot(
+        range(1, n_components + 1),
+        cumulative_variances,
+        marker="o",
+        linestyle="-",
+        color="r",
+        label="Cumulative Explained Variance",
+    )
+
+    # Adding percentage values on top of bars and dots
+    for i, (bar, cum_val) in enumerate(zip(plot_bar, cumulative_variances)):
+        plt.text(
+            bar.get_x() + bar.get_width() / 2,
+            bar.get_height(),
+            f"{individual_variances[i]*100:.1f}%",
+            ha="center",
+            va="bottom",
+        )
+        plt.text(i + 1, cum_val, f"{cum_val*100:.1f}%", ha="center", va="bottom")
+
+    # Aesthetics for the plot
+    plt.xlabel("Principal Components")
+    plt.ylabel("Explained Variance")
+    plt.title("Explained Variance by Different Principal Components")
+    plt.xticks(range(1, n_components + 1))
+    plt.legend(loc="upper left")
+    plt.ylim(0, 1.1)  # extend y-axis limit to accommodate text labels
+    plt.grid(True)
     plt.show()
 
 

@@ -13,6 +13,7 @@ from bluecast.eda.analyse import (
     plot_count_pairs,
     plot_null_percentage,
     plot_pca,
+    plot_pca_cumulative_variance,
     plot_pie_chart,
     plot_theil_u_heatmap,
     plot_tsne,
@@ -171,6 +172,37 @@ def test_pca_plot(synthetic_train_test_data):
             ],
         ],
         "target",
+    )
+    assert True
+
+
+def test_plot_pca_cumulative_variance(synthetic_train_test_data):
+    plot_pca_cumulative_variance(
+        synthetic_train_test_data[0].loc[
+            :,
+            [
+                "numerical_feature_1",
+                "numerical_feature_2",
+                "numerical_feature_3",
+                "target",
+            ],
+        ],
+        scale_data=True,
+        n_components=3,
+    )
+    assert True
+    plot_pca_cumulative_variance(
+        synthetic_train_test_data[0].loc[
+            :,
+            [
+                "numerical_feature_1",
+                "numerical_feature_2",
+                "numerical_feature_3",
+                "target",
+            ],
+        ],
+        scale_data=False,
+        n_components=2,
     )
     assert True
 
