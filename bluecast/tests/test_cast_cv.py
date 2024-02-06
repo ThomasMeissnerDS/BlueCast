@@ -45,10 +45,12 @@ def test_blueprint_cv_xgboost(synthetic_train_test_data):
     automl_cv = BlueCastCV(
         conf_xgboost=xgboost_param_config, conf_training=train_config, stratifier=skf
     )
-    automl_cv.fit_eval(
+    oof_mean, oof_std = automl_cv.fit_eval(
         df_train,
         target_col="target",
     )
+    assert isinstance(oof_mean, float)
+    assert isinstance(oof_std, float)
     print(automl_cv.experiment_tracker.experiment_id)
     assert (
         len(automl_cv.experiment_tracker.experiment_id)

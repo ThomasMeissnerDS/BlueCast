@@ -10,8 +10,11 @@ from bluecast.eda.analyse import (
     correlation_heatmap,
     correlation_to_target,
     mutual_info_to_target,
+    plot_count_pairs,
     plot_null_percentage,
     plot_pca,
+    plot_pca_cumulative_variance,
+    plot_pie_chart,
     plot_theil_u_heatmap,
     plot_tsne,
     univariate_plots,
@@ -74,6 +77,21 @@ def create_data_with_many_uniques() -> pd.DataFrame:
         }
     )
     return df
+
+
+def test_plot_pie_chart(synthetic_train_test_data):
+    plot_pie_chart(
+        synthetic_train_test_data[0],
+        "categorical_feature_1",
+    )
+    assert True
+
+    plot_pie_chart(
+        synthetic_train_test_data[0],
+        "categorical_feature_1",
+        explode=[0.1]
+        * len(synthetic_train_test_data[0]["categorical_feature_1"].unique()),
+    )
 
 
 def test_univariate_plots(synthetic_train_test_data):
@@ -158,6 +176,37 @@ def test_pca_plot(synthetic_train_test_data):
     assert True
 
 
+def test_plot_pca_cumulative_variance(synthetic_train_test_data):
+    plot_pca_cumulative_variance(
+        synthetic_train_test_data[0].loc[
+            :,
+            [
+                "numerical_feature_1",
+                "numerical_feature_2",
+                "numerical_feature_3",
+                "target",
+            ],
+        ],
+        scale_data=True,
+        n_components=3,
+    )
+    assert True
+    plot_pca_cumulative_variance(
+        synthetic_train_test_data[0].loc[
+            :,
+            [
+                "numerical_feature_1",
+                "numerical_feature_2",
+                "numerical_feature_3",
+                "target",
+            ],
+        ],
+        scale_data=False,
+        n_components=2,
+    )
+    assert True
+
+
 def test_plot_tsne(synthetic_train_test_data):
     plot_tsne(
         synthetic_train_test_data[0].loc[
@@ -181,6 +230,15 @@ def test_plot_theil_u_heatmap(synthetic_categorical_data):
     theil_matrix = plot_theil_u_heatmap(synthetic_categorical_data, columns_of_interest)
     assert True
     assert theil_matrix[0, 0] == 1.0
+
+
+def test_plot_count_pairs(synthetic_categorical_data):
+    plot_count_pairs(
+        synthetic_categorical_data,
+        synthetic_categorical_data.head(2),
+        cat_cols=synthetic_categorical_data.columns.to_list(),
+    )
+    assert True
 
 
 def test_plot_null_percentage(create_data_with_nulls):

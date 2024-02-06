@@ -1,6 +1,6 @@
 import math
 from collections import Counter
-from typing import List, Literal, Union
+from typing import List, Literal, Optional, Union
 
 import matplotlib.pyplot as plt
 import numpy as np
@@ -10,6 +10,188 @@ import seaborn as sns
 from sklearn.decomposition import PCA
 from sklearn.feature_selection import mutual_info_classif, mutual_info_regression
 from sklearn.manifold import TSNE
+from sklearn.preprocessing import StandardScaler
+
+
+def plot_pie_chart(
+    df: pd.DataFrame,
+    column: str,
+    explode: Optional[List[float]] = None,
+    colors: Optional[List[str]] = None,
+) -> None:
+    """
+    Create a pie chart with labels, sizes, and optional explosion.
+
+    Parameters:
+    - df: Pandas DataFrame holding the column of nterest
+    - column: The column to be plottted
+    - explode: (Optional) List of numerical values, representing the explosion distance for each segment.
+    - colors: (Optional) List with hexadecimal representations of colors in the RGB color model
+    """
+    value_counts = df[column].value_counts()
+    sizes = value_counts.to_list()
+    labels = value_counts.index.to_list()
+
+    if explode is None:
+        explode = [0.1] * len(labels)  # No explosion by default
+
+    if not colors and len(labels) <= 50:
+        colors = [
+            "#ff6666",
+            "#ff9966",
+            "#ffb366",
+            "#ffcc66",
+            "#ffd966",
+            "#ffeb66",
+            "#ffff66",
+            "#ebff66",
+            "#d9ff66",
+            "#b3ff66",
+            "#99ff66",
+            "#66ff66",
+            "#66ff99",
+            "#66ffcc",
+            "#66ffff",
+            "#66ebff",
+            "#66d9ff",
+            "#66b3ff",
+            "#6699ff",
+            "#6666ff",
+            "#9966ff",
+            "#cc66ff",
+            "#ff66ff",
+            "#ff66cc",
+            "#ff6699",
+            "#ff6666",
+            "#ff9999",
+            "#ffcc99",
+            "#ffff99",
+            "#ccff99",
+            "#99ff99",
+            "#99ffcc",
+            "#99ffff",
+            "#99ccff",
+            "#9999ff",
+            "#cc99ff",
+            "#ff99ff",
+            "#ff99cc",
+            "#ff9999",
+            "#66b3ff",
+            "#66ccff",
+            "#66e6ff",
+            "#66f3ff",
+            "#66feff",
+            "#66fffb",
+            "#66ffec",
+            "#66ffe1",
+            "#66ffd5",
+            "#66ffc8",
+            "#66ffba",
+        ]
+
+    # Create a pie chart
+    plt.pie(
+        sizes,
+        labels=labels,
+        autopct="%1.1f%%",
+        startangle=90,
+        explode=explode,
+        shadow=True,
+        pctdistance=0.85,
+        colors=colors,
+    )
+
+    centre_circle = plt.Circle((0, 0), 0.70, fc="white")
+    fig = plt.gcf()
+    fig.gca().add_artist(centre_circle)
+
+    # Add a title
+    plt.title(f"Distribution of column {column}")
+
+    # Show the plot
+    plt.show()
+
+
+def plot_count_pair(
+    df_1: pd.DataFrame,
+    df_2: pd.DataFrame,
+    df_aliases: Optional[List[str]],
+    feature: str,
+    order: Optional[List[str]] = None,
+    palette: Optional[List[str]] = None,
+) -> None:
+    """
+    Compare the counts between two DataFrames of the chosen provided categorical column.
+
+    :param df_1: Pandas DataFrame. I.e.: df_1 dataset
+    :param df_2: Pandas DataFrame. I.e.: Test dataset
+    :param df_aliases: List with names of DataFrames that shall be shown on the count plots to represent them.
+        Format: [df_1 representation, df_2 representation]
+    :param feature: String indicating categorical column to plot
+    :param hue: Read the sns.countplot
+    :param order: List with category names to define the order they appear in the plot
+    :param palette:  List with hexadecimal representations of colors in the RGB color model
+    """
+    if not df_aliases:
+        df_aliases = ["train", "test"]
+    data_df = df_1.copy()
+    data_df["set"] = df_aliases[0]
+    data_df = pd.concat([data_df, df_2.copy()]).fillna(df_aliases[1])
+    f, ax = plt.subplots(1, 1, figsize=(8, 6))  # Increased height to 6
+
+    # Create countplot
+    sns.countplot(x=feature, data=data_df, hue="set", palette=palette, order=order)
+
+    # Rotate x-axis labels by 90 degrees
+    ax.set_xticklabels(ax.get_xticklabels(), rotation=90)
+
+    # Add annotations above the bars
+    for p in ax.patches:
+        ax.annotate(
+            f"{int(p.get_height())}",
+            (p.get_x() + p.get_width() / 2.0, p.get_height()),
+            ha="center",
+            va="center",
+            xytext=(0, 10),
+            textcoords="offset points",
+        )
+
+    # Customize the plot
+    plt.grid(color="black", linestyle="-.", linewidth=0.5, axis="y", which="major")
+    ax.set_title(f"Paired {df_aliases[0]}/{df_aliases[1]}frequencies of {feature}")
+    plt.show()
+
+
+def plot_count_pairs(
+    df_1: pd.DataFrame,
+    df_2: pd.DataFrame,
+    cat_cols: List[str],
+    df_aliases: Optional[List[str]] = None,
+    palette: Optional[List[str]] = None,
+) -> None:
+    """
+    Compare the counts between two DataFrames of each categorical column in the provided list.
+
+    :param df_1: Pandas DataFrame. I.e.: Train dataset
+    :param df_2: Pandas DataFrame. I.e.: Test dataset
+    :param df_aliases: List with names of DataFrames that shall be shown on the count plots to represent them.
+        Format: [df_1 representation, df_2 representation]
+    :param cat_cols: List with strings indicating categorical column names to plot
+    :param palette:  List with hexadecimal representations of colors in the RGB color model
+    """
+    if isinstance(df_aliases, List):
+        assert len(df_aliases) == 2
+
+    for feature in cat_cols:
+        order = sorted(df_1[feature].unique())
+        plot_count_pair(
+            df_1,
+            df_2,
+            df_aliases=df_aliases,
+            feature=feature,
+            order=order,
+            palette=palette,
+        )
 
 
 def univariate_plots(df: pd.DataFrame) -> None:
@@ -171,6 +353,74 @@ def plot_pca(df: pd.DataFrame, target: str) -> None:
         ax.set_ylabel("Component 2")
 
     fig.suptitle(f"PCA \n explained variance :{explained_variance}", y=1.1)
+    plt.show()
+
+
+def plot_pca_cumulative_variance(
+    df: pd.DataFrame, scale_data: bool = True, n_components: int = 10
+) -> None:
+    """
+    Plot the cumulative variance of principal components.
+
+    :param df: Pandas DataFrame. Should not include the target variable.
+    :param scale_data: If true, standard scaling will be performed before applying PCA, otherwise the raw data is used.
+    :param n_components: Number of total components to compute.
+    """
+    if scale_data:
+        scaler = StandardScaler()
+        data_standardized = scaler.fit_transform(df.copy())
+    else:
+        data_standardized = df.copy()
+
+    # Perform PCA to create components
+    pca = PCA(n_components=n_components)
+    pca.fit(data_standardized)
+    explained_variances = pca.explained_variance_ratio_
+
+    # Individual explained variances for 10 components
+    individual_variances = explained_variances.tolist()
+
+    # Compute the cumulative explained variance
+    cumulative_variances = np.cumsum(individual_variances)
+    # Create the bar plot for individual variances
+    plt.figure(figsize=(12, 7))
+    plot_bar = plt.bar(
+        range(1, n_components + 1),
+        individual_variances,
+        alpha=0.6,
+        color="g",
+        label="Individual Explained Variance",
+    )
+
+    # Create the line plot for cumulative variance
+    plt.plot(
+        range(1, n_components + 1),
+        cumulative_variances,
+        marker="o",
+        linestyle="-",
+        color="r",
+        label="Cumulative Explained Variance",
+    )
+
+    # Adding percentage values on top of bars and dots
+    for i, (bar, cum_val) in enumerate(zip(plot_bar, cumulative_variances)):
+        plt.text(
+            bar.get_x() + bar.get_width() / 2,
+            bar.get_height(),
+            f"{individual_variances[i]*100:.1f}%",
+            ha="center",
+            va="bottom",
+        )
+        plt.text(i + 1, cum_val, f"{cum_val*100:.1f}%", ha="center", va="bottom")
+
+    # Aesthetics for the plot
+    plt.xlabel("Principal Components")
+    plt.ylabel("Explained Variance")
+    plt.title("Explained Variance by Different Principal Components")
+    plt.xticks(range(1, n_components + 1))
+    plt.legend(loc="upper left")
+    plt.ylim(0, 1.1)  # extend y-axis limit to accommodate text labels
+    plt.grid(True)
     plt.show()
 
 
