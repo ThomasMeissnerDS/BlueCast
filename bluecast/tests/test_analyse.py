@@ -89,7 +89,7 @@ def test_plot_pie_chart(synthetic_train_test_data):
         synthetic_train_test_data[0],
         "categorical_feature_1",
         explode=[0.1]
-        * len(synthetic_train_test_data["categorical_feature_1"].unique()),
+        * len(synthetic_train_test_data[0]["categorical_feature_1"].unique()),
     )
 
 

@@ -163,7 +163,6 @@ plot_pie_chart(
 
 ![QQplot example](pie_chart.png)
 
-
 ```sh
 # plot the percentage of Nulls for all features
 plot_null_percentage(
