@@ -388,6 +388,7 @@ def test_cat_encoding_via_ml_algorithm_and_ml_model_warning():
     custom_config = TrainingConfig()
     custom_config.cat_encoding_via_ml_algorithm = True
     bluecast_instance = BlueCast(class_problem="binary", conf_training=custom_config)
+    bluecast_instance.target_column = "target"
     from sklearn.linear_model import LogisticRegression
 
     bluecast_instance.ml_model = LogisticRegression()
@@ -430,6 +431,7 @@ def test_class_problem_mismatch_warnings(bluecast_instance):
 
     with pytest.warns(UserWarning, match=message):
         bluecast_binary = BlueCast(class_problem="binary")
+        bluecast_binary.target_column = "target"
         bluecast_binary.initial_checks(df_multiclass)
 
     message = """During class instantiation class_problem = 'multiclass' has been passed. However less than 3
