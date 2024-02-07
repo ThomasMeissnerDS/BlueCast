@@ -441,4 +441,5 @@ def test_class_problem_mismatch_warnings(bluecast_instance):
         bluecast_multiclass = BlueCast(
             class_problem="multiclass",
         )
+        bluecast_multiclass.target_column = "target"
         bluecast_multiclass.initial_checks(df_binary)
