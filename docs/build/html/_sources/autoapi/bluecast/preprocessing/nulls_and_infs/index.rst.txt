@@ -34,5 +34,3 @@ Functions
 .. py:function:: fill_nulls(df: pandas.DataFrame, fill_with: Union[int, float] = 0)
 
    Replace null values with NaN or given value.
-
-

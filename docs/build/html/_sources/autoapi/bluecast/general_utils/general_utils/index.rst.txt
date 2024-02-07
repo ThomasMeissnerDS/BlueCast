@@ -49,5 +49,3 @@ Functions
    :param file_name: Takes a string containing the whole file name.
    :param file_type: Takes the expected type of file to import.
    :return:
-
-

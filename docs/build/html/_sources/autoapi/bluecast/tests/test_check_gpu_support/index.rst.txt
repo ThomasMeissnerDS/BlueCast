@@ -27,5 +27,3 @@ Functions
    and randint function to return a predefined array for labels.
 
    Finally, we call check_gpu_support and assert that it returns the expected output, which in this case is "gpu_hist".
-
-

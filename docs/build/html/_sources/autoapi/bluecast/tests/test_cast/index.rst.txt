@@ -101,5 +101,3 @@ Functions
 
 
 .. py:function:: test_class_problem_mismatch_warnings(bluecast_instance)
-
-

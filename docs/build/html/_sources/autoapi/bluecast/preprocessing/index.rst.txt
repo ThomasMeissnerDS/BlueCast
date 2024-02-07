@@ -19,5 +19,3 @@ Submodules
    schema_checks/index.rst
    target_encoding/index.rst
    train_test_split/index.rst
-
-

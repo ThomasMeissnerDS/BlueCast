@@ -22,5 +22,3 @@ Functions
 
 
 .. py:function:: test_date_converter(sample_dataframe)
-
-

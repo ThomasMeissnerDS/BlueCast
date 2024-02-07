@@ -38,6 +38,3 @@ Classes
 
       Will raise an error if schema length does not match and will raise a warning indicating the missing or extra
       columns.
-
-
-

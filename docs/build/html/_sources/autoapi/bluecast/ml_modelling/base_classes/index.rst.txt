@@ -34,11 +34,11 @@ Attributes
 
 .. py:data:: PredictedProbas
 
-   
+
 
 .. py:data:: PredictedClasses
 
-   
+
 
 .. py:class:: BaseClassMlModel
 
@@ -83,6 +83,3 @@ Attributes
       Predict on unseen data.
 
       :return numpy array of predictions
-
-
-

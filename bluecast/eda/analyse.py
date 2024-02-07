@@ -342,7 +342,9 @@ def plot_pca(df: pd.DataFrame, target: str, scale_data: bool = True) -> None:
 
     if scale_data:
         scaler = StandardScaler()
-        df.drop([target], axis=1).loc[:, :] = scaler.fit_transform(df.drop([target], axis=1).loc[:, :])
+        df.drop([target], axis=1).loc[:, :] = scaler.fit_transform(
+            df.drop([target], axis=1).loc[:, :]
+        )
     else:
         df = df.copy()
 
@@ -455,7 +457,9 @@ def plot_tsne(
 
     if scale_data:
         scaler = StandardScaler()
-        df.drop([target], axis=1).loc[:, :] = scaler.fit_transform(df.drop([target], axis=1).loc[:, :])
+        df.drop([target], axis=1).loc[:, :] = scaler.fit_transform(
+            df.drop([target], axis=1).loc[:, :]
+        )
     else:
         df = df.copy()
 

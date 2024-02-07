@@ -42,6 +42,3 @@ Classes
       :abstractmethod:
 
       Use prediction mode to not process the missing target during inference.
-
-
-

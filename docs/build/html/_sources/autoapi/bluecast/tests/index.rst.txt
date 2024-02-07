@@ -42,5 +42,3 @@ Submodules
    test_target_encoding_binary/index.rst
    test_target_encoding_multiclass/index.rst
    test_train_test_split/index.rst
-
-

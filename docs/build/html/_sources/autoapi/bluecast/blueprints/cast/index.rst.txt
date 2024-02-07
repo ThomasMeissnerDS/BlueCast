@@ -87,6 +87,3 @@ Classes
 
       Return the predicted probabilities and the predicted classes:
       y_probs, y_classes = predict(df)
-
-
-

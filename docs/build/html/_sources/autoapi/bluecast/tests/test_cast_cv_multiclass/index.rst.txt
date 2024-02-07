@@ -47,5 +47,3 @@ Functions
 
 
 .. py:function:: test_bluecast_cv_fit_eval_multiclass_with_custom_model()
-
-

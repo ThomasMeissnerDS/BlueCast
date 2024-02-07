@@ -22,5 +22,3 @@ Functions
 
 
 .. py:function:: test_train_test_split_time()
-
-

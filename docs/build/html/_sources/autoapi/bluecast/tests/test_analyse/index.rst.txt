@@ -94,5 +94,3 @@ Functions
 
 
 .. py:function:: test_check_unique_values(create_data_with_many_uniques)
-
-
