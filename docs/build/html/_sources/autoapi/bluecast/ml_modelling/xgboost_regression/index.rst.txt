@@ -1,0 +1,95 @@
+:py:mod:`bluecast.ml_modelling.xgboost_regression`
+==================================================
+
+.. py:module:: bluecast.ml_modelling.xgboost_regression
+
+.. autoapi-nested-parse::
+
+   Xgboost classification model.
+
+   This module contains a wrapper for the Xgboost classification model. It can be used to train and/or tune the model.
+   It also calculates class weights for imbalanced datasets. The weights may or may not be used deepending on the
+   hyperparameter tuning.
+
+
+
+Module Contents
+---------------
+
+Classes
+~~~~~~~
+
+.. autoapisummary::
+
+   bluecast.ml_modelling.xgboost_regression.XgboostModelRegression
+
+
+
+
+.. py:class:: XgboostModelRegression(class_problem: Literal[regression], conf_training: Optional[bluecast.config.training_config.TrainingConfig] = None, conf_xgboost: Optional[bluecast.config.training_config.XgboostTuneParamsRegressionConfig] = None, conf_params_xgboost: Optional[bluecast.config.training_config.XgboostFinalParamConfig] = None, experiment_tracker: Optional[bluecast.experimentation.tracking.ExperimentTracker] = None, custom_in_fold_preprocessor: Optional[bluecast.preprocessing.custom.CustomPreprocessing] = None)
+
+
+   Bases: :py:obj:`bluecast.ml_modelling.base_classes.BaseClassMlRegressionModel`
+
+   Train and/or tune Xgboost regression model.
+
+   .. py:method:: check_load_confs()
+
+      Load multiple configs or load default configs instead.
+
+
+   .. py:method:: fit(x_train: pandas.DataFrame, x_test: pandas.DataFrame, y_train: pandas.Series, y_test: pandas.Series) -> xgboost.Booster
+
+      Train Xgboost model. Includes hyperparameter tuning on default.
+
+
+   .. py:method:: autotune(x_train: pandas.DataFrame, x_test: pandas.DataFrame, y_train: pandas.Series, y_test: pandas.Series) -> None
+
+      Tune hyperparameters.
+
+      An alternative config can be provided to overwrite the hyperparameter search space.
+
+
+   .. py:method:: get_best_score()
+
+
+   .. py:method:: create_d_matrices(x_train, y_train, x_test, y_test)
+
+
+   .. py:method:: train_single_fold_model(d_train, d_test, y_test, param, steps, pruning_callback)
+
+
+   .. py:method:: increasing_noise_evaluator(ml_model, eval_df: pandas.DataFrame, y_true: pandas.Series, iterations: int = 100)
+
+      Function to add increasing noise and evaluate it.
+
+      The function expects a trained model and a dataframe with the same columns as the training data.
+      The training data should be normally distributed (consider using a power transformer with yeo-johnson).
+
+      The function will apply increasingly noise to the eval dataframe and evaluate the model on it.
+
+      Returns a list of losses.
+
+
+   .. py:method:: constant_loss_degregation_factor(losses: List[float]) -> float
+
+      Calculate a weighted loss based on the number of times the loss decreased.
+
+      Expects a list of losses coming from increasing_noise_evaluator. Checks how many times the loss decreased and
+      calculates a weighted loss based on the number of times the loss decreased.
+
+      Returns the weighted loss.
+
+
+   .. py:method:: _fine_tune_precise(tuned_params: Dict[str, Any], x_train: pandas.DataFrame, y_train: pandas.Series, x_test: pandas.DataFrame, y_test: pandas.Series, random_seed: int)
+
+
+   .. py:method:: fine_tune(x_train: pandas.DataFrame, x_test: pandas.DataFrame, y_train: pandas.Series, y_test: pandas.Series) -> None
+
+
+   .. py:method:: predict(df: pandas.DataFrame) -> numpy.ndarray
+
+      Predict on unseen data.
+
+
+

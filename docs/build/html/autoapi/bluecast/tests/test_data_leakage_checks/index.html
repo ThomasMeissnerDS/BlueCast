@@ -1,0 +1,143 @@
+
+<!DOCTYPE html>
+
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="generator" content="Docutils 0.18.1: http://docutils.sourceforge.net/" />
+
+    <title>bluecast.tests.test_data_leakage_checks &#8212; BlueCast 0.91 documentation</title>
+    <link rel="stylesheet" type="text/css" href="../../../../_static/pygments.css" />
+    <link rel="stylesheet" type="text/css" href="../../../../_static/alabaster.css" />
+    <link rel="stylesheet" type="text/css" href="../../../../_static/graphviz.css" />
+    <script data-url_root="../../../../" id="documentation_options" src="../../../../_static/documentation_options.js"></script>
+    <script src="../../../../_static/doctools.js"></script>
+    <script src="../../../../_static/sphinx_highlight.js"></script>
+    <link rel="index" title="Index" href="../../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../../search.html" />
+   
+  <link rel="stylesheet" href="../../../../_static/custom.css" type="text/css" />
+  
+  
+  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9" />
+
+  </head><body>
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          
+
+          <div class="body" role="main">
+            
+  <section id="module-bluecast.tests.test_data_leakage_checks">
+<span id="bluecast-tests-test-data-leakage-checks"></span><h1><a class="reference internal" href="#module-bluecast.tests.test_data_leakage_checks" title="bluecast.tests.test_data_leakage_checks"><code class="xref py py-mod docutils literal notranslate"><span class="pre">bluecast.tests.test_data_leakage_checks</span></code></a><a class="headerlink" href="#module-bluecast.tests.test_data_leakage_checks" title="Permalink to this heading">¶</a></h1>
+<section id="module-contents">
+<h2>Module Contents<a class="headerlink" href="#module-contents" title="Permalink to this heading">¶</a></h2>
+<section id="functions">
+<h3>Functions<a class="headerlink" href="#functions" title="Permalink to this heading">¶</a></h3>
+<table class="autosummary longtable docutils align-default">
+<tbody>
+<tr class="row-odd"><td><p><a class="reference internal" href="#bluecast.tests.test_data_leakage_checks.create_to_target_correlated_features" title="bluecast.tests.test_data_leakage_checks.create_to_target_correlated_features"><code class="xref py py-obj docutils literal notranslate"><span class="pre">create_to_target_correlated_features</span></code></a>(→ pandas.DataFrame)</p></td>
+<td><p></p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#bluecast.tests.test_data_leakage_checks.create_to_target_correlated_categorical_features" title="bluecast.tests.test_data_leakage_checks.create_to_target_correlated_categorical_features"><code class="xref py py-obj docutils literal notranslate"><span class="pre">create_to_target_correlated_categorical_features</span></code></a>(...)</p></td>
+<td><p></p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#bluecast.tests.test_data_leakage_checks.test_detect_leakage_via_correlation" title="bluecast.tests.test_data_leakage_checks.test_detect_leakage_via_correlation"><code class="xref py py-obj docutils literal notranslate"><span class="pre">test_detect_leakage_via_correlation</span></code></a>(...)</p></td>
+<td><p></p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#bluecast.tests.test_data_leakage_checks.test_detect_categorical_leakage" title="bluecast.tests.test_data_leakage_checks.test_detect_categorical_leakage"><code class="xref py py-obj docutils literal notranslate"><span class="pre">test_detect_categorical_leakage</span></code></a>(...)</p></td>
+<td><p></p></td>
+</tr>
+</tbody>
+</table>
+<dl class="py function">
+<dt class="sig sig-object py" id="bluecast.tests.test_data_leakage_checks.create_to_target_correlated_features">
+<span class="sig-prename descclassname"><span class="pre">bluecast.tests.test_data_leakage_checks.</span></span><span class="sig-name descname"><span class="pre">create_to_target_correlated_features</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">pandas.DataFrame</span></span></span><a class="headerlink" href="#bluecast.tests.test_data_leakage_checks.create_to_target_correlated_features" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="bluecast.tests.test_data_leakage_checks.create_to_target_correlated_categorical_features">
+<span class="sig-prename descclassname"><span class="pre">bluecast.tests.test_data_leakage_checks.</span></span><span class="sig-name descname"><span class="pre">create_to_target_correlated_categorical_features</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">pandas.DataFrame</span></span></span><a class="headerlink" href="#bluecast.tests.test_data_leakage_checks.create_to_target_correlated_categorical_features" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="bluecast.tests.test_data_leakage_checks.test_detect_leakage_via_correlation">
+<span class="sig-prename descclassname"><span class="pre">bluecast.tests.test_data_leakage_checks.</span></span><span class="sig-name descname"><span class="pre">test_detect_leakage_via_correlation</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">create_to_target_correlated_features</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#bluecast.tests.test_data_leakage_checks.test_detect_leakage_via_correlation" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="bluecast.tests.test_data_leakage_checks.test_detect_categorical_leakage">
+<span class="sig-prename descclassname"><span class="pre">bluecast.tests.test_data_leakage_checks.</span></span><span class="sig-name descname"><span class="pre">test_detect_categorical_leakage</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">create_to_target_correlated_categorical_features</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#bluecast.tests.test_data_leakage_checks.test_detect_categorical_leakage" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</section>
+</section>
+</section>
+
+
+          </div>
+          
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+<h1 class="logo"><a href="../../../../index.html">BlueCast</a></h1>
+
+
+
+
+
+
+
+
+<h3>Navigation</h3>
+
+<div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="../../../../index.html">Documentation overview</a><ul>
+  </ul></li>
+</ul>
+</div>
+<div id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../../../../search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"/>
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</div>
+<script>document.getElementById('searchbox').style.display = "block"</script>
+
+
+
+
+
+
+
+
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &copy;2023, Thomas Meißner.
+      
+      |
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 6.2.1</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.13</a>
+      
+      |
+      <a href="../../../../_sources/autoapi/bluecast/tests/test_data_leakage_checks/index.rst.txt"
+          rel="nofollow">Page source</a>
+    </div>
+
+    
+
+    
+  </body>
+</html>

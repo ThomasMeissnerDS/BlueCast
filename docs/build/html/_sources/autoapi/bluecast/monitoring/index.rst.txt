@@ -1,0 +1,15 @@
+:py:mod:`bluecast.monitoring`
+=============================
+
+.. py:module:: bluecast.monitoring
+
+
+Submodules
+----------
+.. toctree::
+   :titlesonly:
+   :maxdepth: 1
+
+   data_monitoring/index.rst
+
+

@@ -1,0 +1,26 @@
+:py:mod:`bluecast.tests.test_datetime_features`
+===============================================
+
+.. py:module:: bluecast.tests.test_datetime_features
+
+
+Module Contents
+---------------
+
+
+Functions
+~~~~~~~~~
+
+.. autoapisummary::
+
+   bluecast.tests.test_datetime_features.sample_dataframe
+   bluecast.tests.test_datetime_features.test_date_converter
+
+
+
+.. py:function:: sample_dataframe()
+
+
+.. py:function:: test_date_converter(sample_dataframe)
+
+

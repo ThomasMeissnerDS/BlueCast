@@ -1,0 +1,16 @@
+:py:mod:`bluecast.config`
+=========================
+
+.. py:module:: bluecast.config
+
+
+Submodules
+----------
+.. toctree::
+   :titlesonly:
+   :maxdepth: 1
+
+   base_classes/index.rst
+   training_config/index.rst
+
+

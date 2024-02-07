@@ -1,0 +1,111 @@
+:py:mod:`bluecast.tests.test_cast_cv_regression`
+================================================
+
+.. py:module:: bluecast.tests.test_cast_cv_regression
+
+
+Module Contents
+---------------
+
+Classes
+~~~~~~~
+
+.. autoapisummary::
+
+   bluecast.tests.test_cast_cv_regression.CustomLRModel
+   bluecast.tests.test_cast_cv_regression.MyCustomLastMilePreprocessing
+   bluecast.tests.test_cast_cv_regression.CustomModel
+
+
+
+Functions
+~~~~~~~~~
+
+.. autoapisummary::
+
+   bluecast.tests.test_cast_cv_regression.synthetic_train_test_data
+   bluecast.tests.test_cast_cv_regression.test_blueprint_cv_xgboost
+   bluecast.tests.test_cast_cv_regression.test_bluecast_cv_fit_eval_with_custom_model
+   bluecast.tests.test_cast_cv_regression.test_bluecast_cv_with_custom_objects
+
+
+
+.. py:function:: synthetic_train_test_data() -> Tuple[pandas.DataFrame, pandas.DataFrame]
+
+
+.. py:function:: test_blueprint_cv_xgboost(synthetic_train_test_data)
+
+   Test that tests the BlueCast cv class
+
+
+.. py:class:: CustomLRModel
+
+
+   Bases: :py:obj:`bluecast.ml_modelling.base_classes.BaseClassMlRegressionModel`
+
+   Base class for all ML models.
+
+   Enforces the implementation of the fit and predict methods.
+   If hyperparameter tuning is required, then the fit method should implement the tuning.
+
+   .. py:method:: fit(x_train: pandas.DataFrame, x_test: pandas.DataFrame, y_train: pandas.Series, y_test: pandas.Series) -> None
+
+
+   .. py:method:: predict(df: pandas.DataFrame) -> numpy.ndarray
+
+      Predict on unseen data.
+
+      :return numpy array of predictions
+
+
+
+.. py:class:: MyCustomLastMilePreprocessing(trained_patterns: Optional[Any] = None)
+
+
+   Bases: :py:obj:`bluecast.preprocessing.custom.CustomPreprocessing`
+
+   This class is an entry point for last mile computations before model training or tuning. It is an abstract class
+   and must be extended by the user. For fit_transform x_train and y_train are passed. For transform x_test and y_test
+   are passed in the BlueCast pipeline. Use prediction_mode = False to skip processing the missing targets.
+   :param trained_patterns: Optional. Can we used to save anything from training to be loaded and used in transform.
+   If more placeholders are needed, use a dictionary.
+
+   .. py:method:: custom_function(df: pandas.DataFrame) -> pandas.DataFrame
+
+
+   .. py:method:: fit_transform(df: pandas.DataFrame, target: pandas.Series) -> Tuple[pandas.DataFrame, pandas.Series]
+
+
+   .. py:method:: transform(df: pandas.DataFrame, target: Optional[pandas.Series] = None, predicton_mode: bool = False) -> Tuple[pandas.DataFrame, Optional[pandas.Series]]
+
+      Use prediction mode to not process the missing target during inference.
+
+
+
+.. py:class:: CustomModel
+
+
+   Bases: :py:obj:`bluecast.ml_modelling.base_classes.BaseClassMlRegressionModel`
+
+   Base class for all ML models.
+
+   Enforces the implementation of the fit and predict methods.
+   If hyperparameter tuning is required, then the fit method should implement the tuning.
+
+   .. py:method:: fit(x_train: pandas.DataFrame, x_test: pandas.DataFrame, y_train: pandas.Series, y_test: pandas.Series) -> None
+
+
+   .. py:method:: predict(df: pandas.DataFrame) -> numpy.ndarray
+
+      Predict on unseen data.
+
+      :return numpy array of predictions
+
+
+
+.. py:function:: test_bluecast_cv_fit_eval_with_custom_model()
+
+
+.. py:function:: test_bluecast_cv_with_custom_objects()
+
+

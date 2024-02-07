@@ -1,0 +1,176 @@
+
+<!DOCTYPE html>
+
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="generator" content="Docutils 0.18.1: http://docutils.sourceforge.net/" />
+
+    <title>bluecast.evaluation.eval_metrics &#8212; BlueCast 0.91 documentation</title>
+    <link rel="stylesheet" type="text/css" href="../../../../_static/pygments.css" />
+    <link rel="stylesheet" type="text/css" href="../../../../_static/alabaster.css" />
+    <link rel="stylesheet" type="text/css" href="../../../../_static/graphviz.css" />
+    <script data-url_root="../../../../" id="documentation_options" src="../../../../_static/documentation_options.js"></script>
+    <script src="../../../../_static/doctools.js"></script>
+    <script src="../../../../_static/sphinx_highlight.js"></script>
+    <link rel="index" title="Index" href="../../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../../search.html" />
+   
+  <link rel="stylesheet" href="../../../../_static/custom.css" type="text/css" />
+  
+  
+  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9" />
+
+  </head><body>
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          
+
+          <div class="body" role="main">
+            
+  <section id="module-bluecast.evaluation.eval_metrics">
+<span id="bluecast-evaluation-eval-metrics"></span><h1><a class="reference internal" href="#module-bluecast.evaluation.eval_metrics" title="bluecast.evaluation.eval_metrics"><code class="xref py py-mod docutils literal notranslate"><span class="pre">bluecast.evaluation.eval_metrics</span></code></a><a class="headerlink" href="#module-bluecast.evaluation.eval_metrics" title="Permalink to this heading">¶</a></h1>
+<p>Module for evaluation metrics.</p>
+<p>This is called as part of the fit_eval function.</p>
+<section id="module-contents">
+<h2>Module Contents<a class="headerlink" href="#module-contents" title="Permalink to this heading">¶</a></h2>
+<section id="functions">
+<h3>Functions<a class="headerlink" href="#functions" title="Permalink to this heading">¶</a></h3>
+<table class="autosummary longtable docutils align-default">
+<tbody>
+<tr class="row-odd"><td><p><a class="reference internal" href="#bluecast.evaluation.eval_metrics.plot_lift_chart" title="bluecast.evaluation.eval_metrics.plot_lift_chart"><code class="xref py py-obj docutils literal notranslate"><span class="pre">plot_lift_chart</span></code></a>(→ None)</p></td>
+<td><p></p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#bluecast.evaluation.eval_metrics.plot_roc_auc" title="bluecast.evaluation.eval_metrics.plot_roc_auc"><code class="xref py py-obj docutils literal notranslate"><span class="pre">plot_roc_auc</span></code></a>(→ None)</p></td>
+<td><p>Plot the ROC curve and calculate the AUC (Area Under the Curve).</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#bluecast.evaluation.eval_metrics.plot_probability_distribution" title="bluecast.evaluation.eval_metrics.plot_probability_distribution"><code class="xref py py-obj docutils literal notranslate"><span class="pre">plot_probability_distribution</span></code></a>(→ None)</p></td>
+<td><p>Plot the distribution of predicted probabilities as a histogram using Matplotlib.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#bluecast.evaluation.eval_metrics.balanced_log_loss" title="bluecast.evaluation.eval_metrics.balanced_log_loss"><code class="xref py py-obj docutils literal notranslate"><span class="pre">balanced_log_loss</span></code></a>(y_true, y_pred)</p></td>
+<td><p></p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#bluecast.evaluation.eval_metrics.eval_classifier" title="bluecast.evaluation.eval_metrics.eval_classifier"><code class="xref py py-obj docutils literal notranslate"><span class="pre">eval_classifier</span></code></a>(→ Dict[str, Any])</p></td>
+<td><p></p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#bluecast.evaluation.eval_metrics.eval_regressor" title="bluecast.evaluation.eval_metrics.eval_regressor"><code class="xref py py-obj docutils literal notranslate"><span class="pre">eval_regressor</span></code></a>(→ Dict[str, Any])</p></td>
+<td><p></p></td>
+</tr>
+</tbody>
+</table>
+<dl class="py function">
+<dt class="sig sig-object py" id="bluecast.evaluation.eval_metrics.plot_lift_chart">
+<span class="sig-prename descclassname"><span class="pre">bluecast.evaluation.eval_metrics.</span></span><span class="sig-name descname"><span class="pre">plot_lift_chart</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">y_probs</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">numpy.array</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">y_true</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">numpy.array</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">num_bins</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">20</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="headerlink" href="#bluecast.evaluation.eval_metrics.plot_lift_chart" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="bluecast.evaluation.eval_metrics.plot_roc_auc">
+<span class="sig-prename descclassname"><span class="pre">bluecast.evaluation.eval_metrics.</span></span><span class="sig-name descname"><span class="pre">plot_roc_auc</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">y_true</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">numpy.array</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">predicted_probabilities</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">numpy.array</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">title</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'ROC</span> <span class="pre">Curve'</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="headerlink" href="#bluecast.evaluation.eval_metrics.plot_roc_auc" title="Permalink to this definition">¶</a></dt>
+<dd><p>Plot the ROC curve and calculate the AUC (Area Under the Curve).</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>y_true</strong> – True labels (0 or 1) for the binary classification problem.</p></li>
+<li><p><strong>predicted_probabilities</strong> – Predicted probabilities for the positive class.</p></li>
+<li><p><strong>title</strong> – Title for the ROC curve plot.</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="bluecast.evaluation.eval_metrics.plot_probability_distribution">
+<span class="sig-prename descclassname"><span class="pre">bluecast.evaluation.eval_metrics.</span></span><span class="sig-name descname"><span class="pre">plot_probability_distribution</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">y_probs</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">numpy.array</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">num_bins</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">20</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">title</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'Probability</span> <span class="pre">Distribution'</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="headerlink" href="#bluecast.evaluation.eval_metrics.plot_probability_distribution" title="Permalink to this definition">¶</a></dt>
+<dd><p>Plot the distribution of predicted probabilities as a histogram using Matplotlib.</p>
+<p>Parameters:
+:param y_probs: NumPy array of predicted probabilities.
+:param num_bins: Number of bins for the histogram (default is 20).
+:param title: Title for the plot (default is “Probability Distribution”).</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="bluecast.evaluation.eval_metrics.balanced_log_loss">
+<span class="sig-prename descclassname"><span class="pre">bluecast.evaluation.eval_metrics.</span></span><span class="sig-name descname"><span class="pre">balanced_log_loss</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">y_true</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">y_pred</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#bluecast.evaluation.eval_metrics.balanced_log_loss" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="bluecast.evaluation.eval_metrics.eval_classifier">
+<span class="sig-prename descclassname"><span class="pre">bluecast.evaluation.eval_metrics.</span></span><span class="sig-name descname"><span class="pre">eval_classifier</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">y_true</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">numpy.ndarray</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">y_probs</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">numpy.ndarray</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">y_classes</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">numpy.ndarray</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Any</span><span class="p"><span class="pre">]</span></span></span></span><a class="headerlink" href="#bluecast.evaluation.eval_metrics.eval_classifier" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="bluecast.evaluation.eval_metrics.eval_regressor">
+<span class="sig-prename descclassname"><span class="pre">bluecast.evaluation.eval_metrics.</span></span><span class="sig-name descname"><span class="pre">eval_regressor</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">y_true</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">numpy.ndarray</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">y_preds</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">numpy.ndarray</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Any</span><span class="p"><span class="pre">]</span></span></span></span><a class="headerlink" href="#bluecast.evaluation.eval_metrics.eval_regressor" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</section>
+</section>
+</section>
+
+
+          </div>
+          
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+<h1 class="logo"><a href="../../../../index.html">BlueCast</a></h1>
+
+
+
+
+
+
+
+
+<h3>Navigation</h3>
+
+<div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="../../../../index.html">Documentation overview</a><ul>
+  </ul></li>
+</ul>
+</div>
+<div id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../../../../search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"/>
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</div>
+<script>document.getElementById('searchbox').style.display = "block"</script>
+
+
+
+
+
+
+
+
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &copy;2023, Thomas Meißner.
+      
+      |
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 6.2.1</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.13</a>
+      
+      |
+      <a href="../../../../_sources/autoapi/bluecast/evaluation/eval_metrics/index.rst.txt"
+          rel="nofollow">Page source</a>
+    </div>
+
+    
+
+    
+  </body>
+</html>

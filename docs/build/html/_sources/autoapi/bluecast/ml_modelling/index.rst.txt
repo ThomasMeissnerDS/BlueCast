@@ -1,0 +1,17 @@
+:py:mod:`bluecast.ml_modelling`
+===============================
+
+.. py:module:: bluecast.ml_modelling
+
+
+Submodules
+----------
+.. toctree::
+   :titlesonly:
+   :maxdepth: 1
+
+   base_classes/index.rst
+   xgboost/index.rst
+   xgboost_regression/index.rst
+
+

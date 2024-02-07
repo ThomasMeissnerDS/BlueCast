@@ -1,0 +1,51 @@
+:py:mod:`bluecast.tests.test_cast_cv_multiclass`
+================================================
+
+.. py:module:: bluecast.tests.test_cast_cv_multiclass
+
+
+Module Contents
+---------------
+
+Classes
+~~~~~~~
+
+.. autoapisummary::
+
+   bluecast.tests.test_cast_cv_multiclass.CustomLRModel
+
+
+
+Functions
+~~~~~~~~~
+
+.. autoapisummary::
+
+   bluecast.tests.test_cast_cv_multiclass.test_bluecast_cv_fit_eval_multiclass_with_custom_model
+
+
+
+.. py:class:: CustomLRModel
+
+
+   Bases: :py:obj:`bluecast.ml_modelling.base_classes.BaseClassMlModel`
+
+   Base class for all ML models.
+
+   Enforces the implementation of the fit and predict methods.
+   If hyperparameter tuning is required, then the fit method should implement the tuning.
+
+   .. py:method:: fit(x_train: pandas.DataFrame, x_test: pandas.DataFrame, y_train: pandas.Series, y_test: pandas.Series) -> None
+
+
+   .. py:method:: predict(df: pandas.DataFrame) -> Tuple[bluecast.ml_modelling.base_classes.PredictedProbas, bluecast.ml_modelling.base_classes.PredictedClasses]
+
+      Predict on unseen data.
+
+      :return tuple of predicted probabilities and predicted classes
+
+
+
+.. py:function:: test_bluecast_cv_fit_eval_multiclass_with_custom_model()
+
+

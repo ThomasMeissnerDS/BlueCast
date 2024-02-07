@@ -1,0 +1,67 @@
+:py:mod:`bluecast.blueprints.cast_cv`
+=====================================
+
+.. py:module:: bluecast.blueprints.cast_cv
+
+
+Module Contents
+---------------
+
+Classes
+~~~~~~~
+
+.. autoapisummary::
+
+   bluecast.blueprints.cast_cv.BlueCastCV
+
+
+
+
+.. py:class:: BlueCastCV(class_problem: Literal[binary, multiclass] = 'binary', stratifier: Optional[Any] = None, conf_training: Optional[bluecast.config.training_config.TrainingConfig] = None, conf_xgboost: Optional[bluecast.config.training_config.XgboostTuneParamsConfig] = None, conf_params_xgboost: Optional[bluecast.config.training_config.XgboostFinalParamConfig] = None, experiment_tracker: Optional[bluecast.experimentation.tracking.ExperimentTracker] = None, custom_in_fold_preprocessor: Optional[bluecast.preprocessing.custom.CustomPreprocessing] = None, custom_last_mile_computation: Optional[bluecast.preprocessing.custom.CustomPreprocessing] = None, custom_preprocessor: Optional[bluecast.preprocessing.custom.CustomPreprocessing] = None, custom_feature_selector: Optional[Union[bluecast.preprocessing.feature_selection.RFECVSelector, bluecast.preprocessing.custom.CustomPreprocessing]] = None, ml_model: Optional[Union[bluecast.ml_modelling.xgboost.XgboostModel, Any]] = None)
+
+
+   Wrapper to train and predict multiple blueCast intstances.
+
+   Check the BlueCast class documentation for additional parameter details.
+   A custom splitter can be provided.
+
+   .. py:method:: prepare_data(df: pandas.DataFrame, target: str) -> Tuple[pandas.DataFrame, pandas.Series]
+
+
+   .. py:method:: show_oof_scores(metric: str = 'matthews') -> Tuple[float, float]
+
+      Show out of fold scores.
+
+      When calling BlueCastCVRegression's fit_eval function multiple BlueCastRegression
+      instances are called and each of them predicts on unseen/oof data.
+
+      This function collects these scores and return mean and average of them.
+
+      :param metric: String indicating which metric shall be returned.
+      :return: Tuple with (mean, std) of oof scores
+
+
+   .. py:method:: fit(df: pandas.DataFrame, target_col: str) -> None
+
+      Fit multiple BlueCast instances on different data splits.
+
+      Input df is expected the target column.
+
+
+   .. py:method:: fit_eval(df: pandas.DataFrame, target_col: str) -> Tuple[float, float]
+
+      Fit multiple BlueCast instances on different data splits.
+
+      Input df is expected the target column. Evaluation is executed on out-of-fold dataset.
+      in each split.
+      :param df: Pandas DataFrame that includes the target column
+      :param target_col: String indicating the name of the target column
+      :returns Tuple of (oof_mean, oof_std) with scores on unseen data during eval
+
+
+   .. py:method:: predict(df: pandas.DataFrame, return_sub_models_preds: bool = False) -> Tuple[Union[pandas.DataFrame, pandas.Series], Union[pandas.DataFrame, pandas.Series]]
+
+      Predict on unseen data using multiple trained BlueCast instances
+
+
+

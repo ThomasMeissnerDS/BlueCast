@@ -1,0 +1,31 @@
+:py:mod:`bluecast.tests.test_check_gpu_support`
+===============================================
+
+.. py:module:: bluecast.tests.test_check_gpu_support
+
+
+Module Contents
+---------------
+
+
+Functions
+~~~~~~~~~
+
+.. autoapisummary::
+
+   bluecast.tests.test_check_gpu_support.test_check_gpu_support
+
+
+
+.. py:function:: test_check_gpu_support(monkeypatch)
+
+   Test check_gpu_support function.
+
+   We use the monkeypatch fixture provided by pytest to mock the xgb.train function and numpy's random functions.
+   The mock_train function is defined as a replacement for xgb.train and asserts that the expected parameters are
+   passed and the labels are set correctly. We then patch numpy's rand function to return a predefined array for data
+   and randint function to return a predefined array for labels.
+
+   Finally, we call check_gpu_support and assert that it returns the expected output, which in this case is "gpu_hist".
+
+

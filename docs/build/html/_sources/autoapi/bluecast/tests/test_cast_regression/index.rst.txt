@@ -1,0 +1,61 @@
+:py:mod:`bluecast.tests.test_cast_regression`
+=============================================
+
+.. py:module:: bluecast.tests.test_cast_regression
+
+
+Module Contents
+---------------
+
+Classes
+~~~~~~~
+
+.. autoapisummary::
+
+   bluecast.tests.test_cast_regression.CustomModel
+
+
+
+Functions
+~~~~~~~~~
+
+.. autoapisummary::
+
+   bluecast.tests.test_cast_regression.synthetic_train_test_data
+   bluecast.tests.test_cast_regression.test_blueprint_xgboost
+   bluecast.tests.test_cast_regression.test_bluecast_with_custom_model
+
+
+
+.. py:function:: synthetic_train_test_data() -> Tuple[pandas.DataFrame, pandas.DataFrame]
+
+
+.. py:function:: test_blueprint_xgboost(synthetic_train_test_data)
+
+   Test that tests the BlueCast class
+
+
+.. py:class:: CustomModel
+
+
+   Bases: :py:obj:`bluecast.ml_modelling.base_classes.BaseClassMlRegressionModel`
+
+   Base class for all ML models.
+
+   Enforces the implementation of the fit and predict methods.
+   If hyperparameter tuning is required, then the fit method should implement the tuning.
+
+   .. py:method:: fit(x_train: pandas.DataFrame, x_test: pandas.DataFrame, y_train: pandas.Series, y_test: pandas.Series) -> None
+
+
+   .. py:method:: predict(df: pandas.DataFrame) -> numpy.ndarray
+
+      Predict on unseen data.
+
+      :return numpy array of predictions
+
+
+
+.. py:function:: test_bluecast_with_custom_model()
+
+

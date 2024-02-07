@@ -1,0 +1,98 @@
+:py:mod:`bluecast.tests.test_analyse`
+=====================================
+
+.. py:module:: bluecast.tests.test_analyse
+
+
+Module Contents
+---------------
+
+
+Functions
+~~~~~~~~~
+
+.. autoapisummary::
+
+   bluecast.tests.test_analyse.synthetic_train_test_data
+   bluecast.tests.test_analyse.synthetic_train_test_data_regression
+   bluecast.tests.test_analyse.synthetic_categorical_data
+   bluecast.tests.test_analyse.create_data_with_nulls
+   bluecast.tests.test_analyse.create_data_with_many_uniques
+   bluecast.tests.test_analyse.test_plot_pie_chart
+   bluecast.tests.test_analyse.test_univariate_plots
+   bluecast.tests.test_analyse.test_bi_variate_plots
+   bluecast.tests.test_analyse.test_correlation_heatmap
+   bluecast.tests.test_analyse.test_correlation_to_target
+   bluecast.tests.test_analyse.test_mutual_info_to_target
+   bluecast.tests.test_analyse.test_mutual_info_to_target_multiclass
+   bluecast.tests.test_analyse.test_mutual_info_to_target_regression
+   bluecast.tests.test_analyse.test_pca_plot
+   bluecast.tests.test_analyse.test_plot_pca_cumulative_variance
+   bluecast.tests.test_analyse.test_plot_tsne
+   bluecast.tests.test_analyse.test_plot_theil_u_heatmap
+   bluecast.tests.test_analyse.test_plot_count_pairs
+   bluecast.tests.test_analyse.test_plot_null_percentage
+   bluecast.tests.test_analyse.test_check_unique_values
+
+
+
+.. py:function:: synthetic_train_test_data() -> Tuple[pandas.DataFrame, pandas.DataFrame]
+
+
+.. py:function:: synthetic_train_test_data_regression() -> Tuple[pandas.DataFrame, pandas.DataFrame]
+
+
+.. py:function:: synthetic_categorical_data() -> pandas.DataFrame
+
+
+.. py:function:: create_data_with_nulls() -> pandas.DataFrame
+
+
+.. py:function:: create_data_with_many_uniques() -> pandas.DataFrame
+
+
+.. py:function:: test_plot_pie_chart(synthetic_train_test_data)
+
+
+.. py:function:: test_univariate_plots(synthetic_train_test_data)
+
+
+.. py:function:: test_bi_variate_plots(synthetic_train_test_data)
+
+
+.. py:function:: test_correlation_heatmap(synthetic_train_test_data)
+
+
+.. py:function:: test_correlation_to_target(synthetic_train_test_data)
+
+
+.. py:function:: test_mutual_info_to_target(synthetic_train_test_data)
+
+
+.. py:function:: test_mutual_info_to_target_multiclass(synthetic_train_test_data)
+
+
+.. py:function:: test_mutual_info_to_target_regression(synthetic_train_test_data_regression)
+
+
+.. py:function:: test_pca_plot(synthetic_train_test_data)
+
+
+.. py:function:: test_plot_pca_cumulative_variance(synthetic_train_test_data)
+
+
+.. py:function:: test_plot_tsne(synthetic_train_test_data)
+
+
+.. py:function:: test_plot_theil_u_heatmap(synthetic_categorical_data)
+
+
+.. py:function:: test_plot_count_pairs(synthetic_categorical_data)
+
+
+.. py:function:: test_plot_null_percentage(create_data_with_nulls)
+
+
+.. py:function:: test_check_unique_values(create_data_with_many_uniques)
+
+

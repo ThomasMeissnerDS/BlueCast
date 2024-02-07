@@ -1,0 +1,38 @@
+:py:mod:`bluecast.tests.test_custom_processing_base_class`
+==========================================================
+
+.. py:module:: bluecast.tests.test_custom_processing_base_class
+
+
+Module Contents
+---------------
+
+
+Functions
+~~~~~~~~~
+
+.. autoapisummary::
+
+   bluecast.tests.test_custom_processing_base_class.custom_preprocessing
+   bluecast.tests.test_custom_processing_base_class.test_fit_transform_returns_tuple
+   bluecast.tests.test_custom_processing_base_class.test_transform_returns_tuple
+   bluecast.tests.test_custom_processing_base_class.test_transform_returns_optional_target
+   bluecast.tests.test_custom_processing_base_class.test_transform_returns_optional_target_prediction_mode
+
+
+
+.. py:function:: custom_preprocessing()
+
+
+.. py:function:: test_fit_transform_returns_tuple(custom_preprocessing)
+
+
+.. py:function:: test_transform_returns_tuple(custom_preprocessing)
+
+
+.. py:function:: test_transform_returns_optional_target(custom_preprocessing)
+
+
+.. py:function:: test_transform_returns_optional_target_prediction_mode(custom_preprocessing)
+
+

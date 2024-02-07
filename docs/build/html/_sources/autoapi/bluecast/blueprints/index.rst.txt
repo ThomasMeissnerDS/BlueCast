@@ -1,0 +1,18 @@
+:py:mod:`bluecast.blueprints`
+=============================
+
+.. py:module:: bluecast.blueprints
+
+
+Submodules
+----------
+.. toctree::
+   :titlesonly:
+   :maxdepth: 1
+
+   cast/index.rst
+   cast_cv/index.rst
+   cast_cv_regression/index.rst
+   cast_regression/index.rst
+
+

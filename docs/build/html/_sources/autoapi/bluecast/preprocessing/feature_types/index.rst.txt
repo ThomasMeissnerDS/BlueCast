@@ -1,0 +1,70 @@
+:py:mod:`bluecast.preprocessing.feature_types`
+==============================================
+
+.. py:module:: bluecast.preprocessing.feature_types
+
+.. autoapi-nested-parse::
+
+   Feature type detection and casting.
+
+   This is a convenience class to detect and cast feature types in a DataFrame. It can be used to detect numerical,
+   categorical and datetime columns. It also casts columns to a specific type.
+
+
+
+Module Contents
+---------------
+
+Classes
+~~~~~~~
+
+.. autoapisummary::
+
+   bluecast.preprocessing.feature_types.FeatureTypeDetector
+
+
+
+
+.. py:class:: FeatureTypeDetector(num_columns: Optional[List[Union[str, int, float]]] = None, cat_columns: Optional[List[Union[str, int, float]]] = None, date_columns: Optional[List[Union[str, int, float]]] = None)
+
+
+   Detect and cast feature types in DataFrame.
+
+   Column names for individual feature types can be provided. Otherwise types will be inferred and casted accordingly.
+
+   .. py:method:: identify_num_columns(df: pandas.DataFrame)
+
+      Identify numerical columns based on already existing data type.
+
+
+   .. py:method:: identify_bool_columns(df: pandas.DataFrame) -> Tuple[List[Union[str, float, int]], List[Union[str, float, int]]]
+
+      Identify boolean columns based on data type
+
+
+   .. py:method:: identify_date_time_columns(df: pandas.DataFrame, no_bool_cols: List[Union[str, float, int]])
+
+      Try casting to datetime. Expected is a datetime format of YYYY-MM-DD
+
+
+   .. py:method:: cast_rest_columns_to_object(df: pandas.DataFrame, bool_cols: List[Union[str, float, int]]) -> pandas.DataFrame
+
+      Treat remaining columns.
+
+      Takes remaining columns and tries to cast them as numerical. If not successful, then columns are assumed to be
+      categorical.
+
+
+   .. py:method:: fit_transform_feature_types(df: pandas.DataFrame) -> pandas.DataFrame
+
+      Identify and transform feature types.
+
+      Wrapper function to orchester different detection methods.
+
+
+   .. py:method:: transform_feature_types(df: pandas.DataFrame, ignore_cols: List[Union[str, float, int, None]]) -> pandas.DataFrame
+
+      Transform feature types based on already mapped types.
+
+
+

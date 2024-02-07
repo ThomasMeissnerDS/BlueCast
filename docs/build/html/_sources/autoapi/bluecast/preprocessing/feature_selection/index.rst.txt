@@ -1,0 +1,37 @@
+:py:mod:`bluecast.preprocessing.feature_selection`
+==================================================
+
+.. py:module:: bluecast.preprocessing.feature_selection
+
+
+Module Contents
+---------------
+
+Classes
+~~~~~~~
+
+.. autoapisummary::
+
+   bluecast.preprocessing.feature_selection.RFECVSelector
+
+
+
+
+.. py:class:: RFECVSelector(random_state: int = 0, min_features_to_select: int = 5, class_problem=None)
+
+
+   Bases: :py:obj:`bluecast.preprocessing.custom.CustomPreprocessing`
+
+   Select top features based on selection_strategy defined in FeatureSelectionConfig.
+
+   On default cross-validated recursive feature elimination is used.
+
+   .. py:method:: fit_transform(df: pandas.DataFrame, target: pandas.Series) -> Tuple[pandas.DataFrame, Optional[pandas.Series]]
+
+
+   .. py:method:: transform(df: pandas.DataFrame, target: Optional[pandas.Series] = None, predicton_mode: bool = False) -> Tuple[pandas.DataFrame, Optional[pandas.Series]]
+
+      Use prediction mode to not process the missing target during inference.
+
+
+

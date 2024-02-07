@@ -1,0 +1,327 @@
+
+<!DOCTYPE html>
+
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="generator" content="Docutils 0.18.1: http://docutils.sourceforge.net/" />
+
+    <title>bluecast.eda.analyse &#8212; BlueCast 0.91 documentation</title>
+    <link rel="stylesheet" type="text/css" href="../../../../_static/pygments.css" />
+    <link rel="stylesheet" type="text/css" href="../../../../_static/alabaster.css" />
+    <link rel="stylesheet" type="text/css" href="../../../../_static/graphviz.css" />
+    <script data-url_root="../../../../" id="documentation_options" src="../../../../_static/documentation_options.js"></script>
+    <script src="../../../../_static/doctools.js"></script>
+    <script src="../../../../_static/sphinx_highlight.js"></script>
+    <link rel="index" title="Index" href="../../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../../search.html" />
+   
+  <link rel="stylesheet" href="../../../../_static/custom.css" type="text/css" />
+  
+  
+  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9" />
+
+  </head><body>
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          
+
+          <div class="body" role="main">
+            
+  <section id="module-bluecast.eda.analyse">
+<span id="bluecast-eda-analyse"></span><h1><a class="reference internal" href="#module-bluecast.eda.analyse" title="bluecast.eda.analyse"><code class="xref py py-mod docutils literal notranslate"><span class="pre">bluecast.eda.analyse</span></code></a><a class="headerlink" href="#module-bluecast.eda.analyse" title="Permalink to this heading">¶</a></h1>
+<section id="module-contents">
+<h2>Module Contents<a class="headerlink" href="#module-contents" title="Permalink to this heading">¶</a></h2>
+<section id="functions">
+<h3>Functions<a class="headerlink" href="#functions" title="Permalink to this heading">¶</a></h3>
+<table class="autosummary longtable docutils align-default">
+<tbody>
+<tr class="row-odd"><td><p><a class="reference internal" href="#bluecast.eda.analyse.plot_pie_chart" title="bluecast.eda.analyse.plot_pie_chart"><code class="xref py py-obj docutils literal notranslate"><span class="pre">plot_pie_chart</span></code></a>(→ None)</p></td>
+<td><p>Create a pie chart with labels, sizes, and optional explosion.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#bluecast.eda.analyse.plot_count_pair" title="bluecast.eda.analyse.plot_count_pair"><code class="xref py py-obj docutils literal notranslate"><span class="pre">plot_count_pair</span></code></a>(→ None)</p></td>
+<td><p>Compare the counts between two DataFrames of the chosen provided categorical column.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#bluecast.eda.analyse.plot_count_pairs" title="bluecast.eda.analyse.plot_count_pairs"><code class="xref py py-obj docutils literal notranslate"><span class="pre">plot_count_pairs</span></code></a>(→ None)</p></td>
+<td><p>Compare the counts between two DataFrames of each categorical column in the provided list.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#bluecast.eda.analyse.univariate_plots" title="bluecast.eda.analyse.univariate_plots"><code class="xref py py-obj docutils literal notranslate"><span class="pre">univariate_plots</span></code></a>(→ None)</p></td>
+<td><p>Plots univariate plots for all the columns in the dataframe. Only numerical columns are expected.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#bluecast.eda.analyse.bi_variate_plots" title="bluecast.eda.analyse.bi_variate_plots"><code class="xref py py-obj docutils literal notranslate"><span class="pre">bi_variate_plots</span></code></a>(→ None)</p></td>
+<td><p>Plots bivariate plots for all column combinations in the dataframe.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#bluecast.eda.analyse.correlation_heatmap" title="bluecast.eda.analyse.correlation_heatmap"><code class="xref py py-obj docutils literal notranslate"><span class="pre">correlation_heatmap</span></code></a>(→ None)</p></td>
+<td><p>Plots half of the heatmap showing correlations of all features.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#bluecast.eda.analyse.correlation_to_target" title="bluecast.eda.analyse.correlation_to_target"><code class="xref py py-obj docutils literal notranslate"><span class="pre">correlation_to_target</span></code></a>(→ None)</p></td>
+<td><p>Plots correlations for all the columns in the dataframe in relation to the target column.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#bluecast.eda.analyse.plot_pca" title="bluecast.eda.analyse.plot_pca"><code class="xref py py-obj docutils literal notranslate"><span class="pre">plot_pca</span></code></a>(→ None)</p></td>
+<td><p>Plots PCA for the dataframe. The target column must be part of the provided DataFrame.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#bluecast.eda.analyse.plot_pca_cumulative_variance" title="bluecast.eda.analyse.plot_pca_cumulative_variance"><code class="xref py py-obj docutils literal notranslate"><span class="pre">plot_pca_cumulative_variance</span></code></a>(→ None)</p></td>
+<td><p>Plot the cumulative variance of principal components.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#bluecast.eda.analyse.plot_tsne" title="bluecast.eda.analyse.plot_tsne"><code class="xref py py-obj docutils literal notranslate"><span class="pre">plot_tsne</span></code></a>(→ None)</p></td>
+<td><p>Plots t-SNE for the dataframe. The target column must be part of the provided DataFrame.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#bluecast.eda.analyse.conditional_entropy" title="bluecast.eda.analyse.conditional_entropy"><code class="xref py py-obj docutils literal notranslate"><span class="pre">conditional_entropy</span></code></a>(x, y)</p></td>
+<td><p></p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#bluecast.eda.analyse.theil_u" title="bluecast.eda.analyse.theil_u"><code class="xref py py-obj docutils literal notranslate"><span class="pre">theil_u</span></code></a>(x, y)</p></td>
+<td><p></p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#bluecast.eda.analyse.plot_theil_u_heatmap" title="bluecast.eda.analyse.plot_theil_u_heatmap"><code class="xref py py-obj docutils literal notranslate"><span class="pre">plot_theil_u_heatmap</span></code></a>(data, columns)</p></td>
+<td><p>Plot a heatmap for categorical data using Theil's U.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#bluecast.eda.analyse.plot_null_percentage" title="bluecast.eda.analyse.plot_null_percentage"><code class="xref py py-obj docutils literal notranslate"><span class="pre">plot_null_percentage</span></code></a>(→ None)</p></td>
+<td><p></p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#bluecast.eda.analyse.check_unique_values" title="bluecast.eda.analyse.check_unique_values"><code class="xref py py-obj docutils literal notranslate"><span class="pre">check_unique_values</span></code></a>(→ List[Union[str, int, float]])</p></td>
+<td><p>Check if the columns have an amount of unique values that is almost the number of total rows (being above the defined threshold)</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#bluecast.eda.analyse.mutual_info_to_target" title="bluecast.eda.analyse.mutual_info_to_target"><code class="xref py py-obj docutils literal notranslate"><span class="pre">mutual_info_to_target</span></code></a>(→ None)</p></td>
+<td><p>Plots mutual information scores for all the categorical columns in the DataFrame in relation to the target column.</p></td>
+</tr>
+</tbody>
+</table>
+<dl class="py function">
+<dt class="sig sig-object py" id="bluecast.eda.analyse.plot_pie_chart">
+<span class="sig-prename descclassname"><span class="pre">bluecast.eda.analyse.</span></span><span class="sig-name descname"><span class="pre">plot_pie_chart</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">df</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">pandas.DataFrame</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">column</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">explode</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">float</span><span class="p"><span class="pre">]</span></span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">colors</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="headerlink" href="#bluecast.eda.analyse.plot_pie_chart" title="Permalink to this definition">¶</a></dt>
+<dd><p>Create a pie chart with labels, sizes, and optional explosion.</p>
+<p>Parameters:
+- df: Pandas DataFrame holding the column of nterest
+- column: The column to be plottted
+- explode: (Optional) List of numerical values, representing the explosion distance for each segment.
+- colors: (Optional) List with hexadecimal representations of colors in the RGB color model</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="bluecast.eda.analyse.plot_count_pair">
+<span class="sig-prename descclassname"><span class="pre">bluecast.eda.analyse.</span></span><span class="sig-name descname"><span class="pre">plot_count_pair</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">df_1</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">pandas.DataFrame</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">df_2</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">pandas.DataFrame</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">df_aliases</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">feature</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">order</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">palette</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="headerlink" href="#bluecast.eda.analyse.plot_count_pair" title="Permalink to this definition">¶</a></dt>
+<dd><p>Compare the counts between two DataFrames of the chosen provided categorical column.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>df_1</strong> – Pandas DataFrame. I.e.: df_1 dataset</p></li>
+<li><p><strong>df_2</strong> – Pandas DataFrame. I.e.: Test dataset</p></li>
+<li><p><strong>df_aliases</strong> – List with names of DataFrames that shall be shown on the count plots to represent them.
+Format: [df_1 representation, df_2 representation]</p></li>
+<li><p><strong>feature</strong> – String indicating categorical column to plot</p></li>
+<li><p><strong>hue</strong> – Read the sns.countplot</p></li>
+<li><p><strong>order</strong> – List with category names to define the order they appear in the plot</p></li>
+<li><p><strong>palette</strong> – List with hexadecimal representations of colors in the RGB color model</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="bluecast.eda.analyse.plot_count_pairs">
+<span class="sig-prename descclassname"><span class="pre">bluecast.eda.analyse.</span></span><span class="sig-name descname"><span class="pre">plot_count_pairs</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">df_1</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">pandas.DataFrame</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">df_2</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">pandas.DataFrame</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cat_cols</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="n"><span class="pre">df_aliases</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">palette</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="headerlink" href="#bluecast.eda.analyse.plot_count_pairs" title="Permalink to this definition">¶</a></dt>
+<dd><p>Compare the counts between two DataFrames of each categorical column in the provided list.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>df_1</strong> – Pandas DataFrame. I.e.: Train dataset</p></li>
+<li><p><strong>df_2</strong> – Pandas DataFrame. I.e.: Test dataset</p></li>
+<li><p><strong>df_aliases</strong> – List with names of DataFrames that shall be shown on the count plots to represent them.
+Format: [df_1 representation, df_2 representation]</p></li>
+<li><p><strong>cat_cols</strong> – List with strings indicating categorical column names to plot</p></li>
+<li><p><strong>palette</strong> – List with hexadecimal representations of colors in the RGB color model</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="bluecast.eda.analyse.univariate_plots">
+<span class="sig-prename descclassname"><span class="pre">bluecast.eda.analyse.</span></span><span class="sig-name descname"><span class="pre">univariate_plots</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">df</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">pandas.DataFrame</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="headerlink" href="#bluecast.eda.analyse.univariate_plots" title="Permalink to this definition">¶</a></dt>
+<dd><p>Plots univariate plots for all the columns in the dataframe. Only numerical columns are expected.
+The target column does not need to be part of the provided DataFrame.</p>
+<p>Expects numeric columns only.</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="bluecast.eda.analyse.bi_variate_plots">
+<span class="sig-prename descclassname"><span class="pre">bluecast.eda.analyse.</span></span><span class="sig-name descname"><span class="pre">bi_variate_plots</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">df</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">pandas.DataFrame</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">target</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">num_cols_grid</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">4</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="headerlink" href="#bluecast.eda.analyse.bi_variate_plots" title="Permalink to this definition">¶</a></dt>
+<dd><p>Plots bivariate plots for all column combinations in the dataframe.
+The target column must be part of the provided DataFrame.
+Param num_cols_grid specifies how many columns the grid shall have.</p>
+<p>Expects numeric columns only.</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="bluecast.eda.analyse.correlation_heatmap">
+<span class="sig-prename descclassname"><span class="pre">bluecast.eda.analyse.</span></span><span class="sig-name descname"><span class="pre">correlation_heatmap</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">df</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">pandas.DataFrame</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="headerlink" href="#bluecast.eda.analyse.correlation_heatmap" title="Permalink to this definition">¶</a></dt>
+<dd><p>Plots half of the heatmap showing correlations of all features.</p>
+<p>Expects numeric columns only.</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="bluecast.eda.analyse.correlation_to_target">
+<span class="sig-prename descclassname"><span class="pre">bluecast.eda.analyse.</span></span><span class="sig-name descname"><span class="pre">correlation_to_target</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">df</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">pandas.DataFrame</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">target</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="headerlink" href="#bluecast.eda.analyse.correlation_to_target" title="Permalink to this definition">¶</a></dt>
+<dd><p>Plots correlations for all the columns in the dataframe in relation to the target column.
+The target column must be part of the provided DataFrame.</p>
+<p>Expects numeric columns only.</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="bluecast.eda.analyse.plot_pca">
+<span class="sig-prename descclassname"><span class="pre">bluecast.eda.analyse.</span></span><span class="sig-name descname"><span class="pre">plot_pca</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">df</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">pandas.DataFrame</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">target</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">scale_data</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="headerlink" href="#bluecast.eda.analyse.plot_pca" title="Permalink to this definition">¶</a></dt>
+<dd><p>Plots PCA for the dataframe. The target column must be part of the provided DataFrame.</p>
+<p>Expects numeric columns only.
+:param df: Pandas DataFrame. Should not include the target variable.
+:param scale_data: If true, standard scaling will be performed before applying PCA, otherwise the raw data is used.</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="bluecast.eda.analyse.plot_pca_cumulative_variance">
+<span class="sig-prename descclassname"><span class="pre">bluecast.eda.analyse.</span></span><span class="sig-name descname"><span class="pre">plot_pca_cumulative_variance</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">df</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">pandas.DataFrame</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">scale_data</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">n_components</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">10</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="headerlink" href="#bluecast.eda.analyse.plot_pca_cumulative_variance" title="Permalink to this definition">¶</a></dt>
+<dd><p>Plot the cumulative variance of principal components.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>df</strong> – Pandas DataFrame. Should not include the target variable.</p></li>
+<li><p><strong>scale_data</strong> – If true, standard scaling will be performed before applying PCA, otherwise the raw data is used.</p></li>
+<li><p><strong>n_components</strong> – Number of total components to compute.</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="bluecast.eda.analyse.plot_tsne">
+<span class="sig-prename descclassname"><span class="pre">bluecast.eda.analyse.</span></span><span class="sig-name descname"><span class="pre">plot_tsne</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">df</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">pandas.DataFrame</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">target</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">perplexity</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">50</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">random_state</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">42</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">scale_data</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="headerlink" href="#bluecast.eda.analyse.plot_tsne" title="Permalink to this definition">¶</a></dt>
+<dd><p>Plots t-SNE for the dataframe. The target column must be part of the provided DataFrame.</p>
+<p>Expects numeric columns only.
+:param df: Pandas DataFrame. Should not include the target variable.
+:param target: String indicating which column is the target column. Must be part of the provided DataFrame.
+:param perplexity: The perplexity parameter for t-SNE
+:param random_state: The random state for t-SNE
+:param scale_data: If true, standard scaling will be performed before applying t-SNE, otherwise the raw data is used.</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="bluecast.eda.analyse.conditional_entropy">
+<span class="sig-prename descclassname"><span class="pre">bluecast.eda.analyse.</span></span><span class="sig-name descname"><span class="pre">conditional_entropy</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">x</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">y</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#bluecast.eda.analyse.conditional_entropy" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="bluecast.eda.analyse.theil_u">
+<span class="sig-prename descclassname"><span class="pre">bluecast.eda.analyse.</span></span><span class="sig-name descname"><span class="pre">theil_u</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">x</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">y</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#bluecast.eda.analyse.theil_u" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="bluecast.eda.analyse.plot_theil_u_heatmap">
+<span class="sig-prename descclassname"><span class="pre">bluecast.eda.analyse.</span></span><span class="sig-name descname"><span class="pre">plot_theil_u_heatmap</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">data</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">pandas.DataFrame</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">columns</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">int</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">float</span><span class="p"><span class="pre">]</span></span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#bluecast.eda.analyse.plot_theil_u_heatmap" title="Permalink to this definition">¶</a></dt>
+<dd><p>Plot a heatmap for categorical data using Theil’s U.</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="bluecast.eda.analyse.plot_null_percentage">
+<span class="sig-prename descclassname"><span class="pre">bluecast.eda.analyse.</span></span><span class="sig-name descname"><span class="pre">plot_null_percentage</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">dataframe</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">pandas.DataFrame</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="headerlink" href="#bluecast.eda.analyse.plot_null_percentage" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="bluecast.eda.analyse.check_unique_values">
+<span class="sig-prename descclassname"><span class="pre">bluecast.eda.analyse.</span></span><span class="sig-name descname"><span class="pre">check_unique_values</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">df</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">pandas.DataFrame</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">columns</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">int</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">float</span><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="n"><span class="pre">threshold</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">int</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">float</span><span class="p"><span class="pre">]</span></span></span></span><a class="headerlink" href="#bluecast.eda.analyse.check_unique_values" title="Permalink to this definition">¶</a></dt>
+<dd><p>Check if the columns have an amount of unique values that is almost the number of total rows (being above the defined threshold)</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>df</strong> – The pandas DataFrame to check</p></li>
+<li><p><strong>columns</strong> – A list of column names to check</p></li>
+<li><p><strong>threshold</strong> – The threshold to check against</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>A list of column names that have a high amount of unique values</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="bluecast.eda.analyse.mutual_info_to_target">
+<span class="sig-prename descclassname"><span class="pre">bluecast.eda.analyse.</span></span><span class="sig-name descname"><span class="pre">mutual_info_to_target</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">df</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">pandas.DataFrame</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">target</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">class_problem</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Literal</span><span class="p"><span class="pre">[</span></span><span class="pre">binary</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">multiclass</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">regression</span><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">mut_params</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="headerlink" href="#bluecast.eda.analyse.mutual_info_to_target" title="Permalink to this definition">¶</a></dt>
+<dd><p>Plots mutual information scores for all the categorical columns in the DataFrame in relation to the target column.
+The target column must be part of the provided DataFrame.
+:param df: DataFrame containing all columns including target column. Features are expected to be numerical.
+:param target: String indicating which column is the target column.
+:param class_problem: Any of [“binary”, “multiclass”, “regression”]
+:param mut_params: Dictionary passing additional arguments into sklearn’s mutual_info_classif function.</p>
+<p>To be used for classification only.</p>
+</dd></dl>
+
+</section>
+</section>
+</section>
+
+
+          </div>
+          
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+<h1 class="logo"><a href="../../../../index.html">BlueCast</a></h1>
+
+
+
+
+
+
+
+
+<h3>Navigation</h3>
+
+<div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="../../../../index.html">Documentation overview</a><ul>
+  </ul></li>
+</ul>
+</div>
+<div id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../../../../search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"/>
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</div>
+<script>document.getElementById('searchbox').style.display = "block"</script>
+
+
+
+
+
+
+
+
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &copy;2023, Thomas Meißner.
+      
+      |
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 6.2.1</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.13</a>
+      
+      |
+      <a href="../../../../_sources/autoapi/bluecast/eda/analyse/index.rst.txt"
+          rel="nofollow">Page source</a>
+    </div>
+
+    
+
+    
+  </body>
+</html>

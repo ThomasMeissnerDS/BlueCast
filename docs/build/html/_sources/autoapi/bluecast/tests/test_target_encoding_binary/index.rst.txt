@@ -1,0 +1,26 @@
+:py:mod:`bluecast.tests.test_target_encoding_binary`
+====================================================
+
+.. py:module:: bluecast.tests.test_target_encoding_binary
+
+
+Module Contents
+---------------
+
+
+Functions
+~~~~~~~~~
+
+.. autoapisummary::
+
+   bluecast.tests.test_target_encoding_binary.sample_data
+   bluecast.tests.test_target_encoding_binary.test_transform_target_encode_binary_class
+
+
+
+.. py:function:: sample_data()
+
+
+.. py:function:: test_transform_target_encode_binary_class(sample_data)
+
+

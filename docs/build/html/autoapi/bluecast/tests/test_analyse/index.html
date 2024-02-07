@@ -1,0 +1,271 @@
+
+<!DOCTYPE html>
+
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="generator" content="Docutils 0.18.1: http://docutils.sourceforge.net/" />
+
+    <title>bluecast.tests.test_analyse &#8212; BlueCast 0.91 documentation</title>
+    <link rel="stylesheet" type="text/css" href="../../../../_static/pygments.css" />
+    <link rel="stylesheet" type="text/css" href="../../../../_static/alabaster.css" />
+    <link rel="stylesheet" type="text/css" href="../../../../_static/graphviz.css" />
+    <script data-url_root="../../../../" id="documentation_options" src="../../../../_static/documentation_options.js"></script>
+    <script src="../../../../_static/doctools.js"></script>
+    <script src="../../../../_static/sphinx_highlight.js"></script>
+    <link rel="index" title="Index" href="../../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../../search.html" />
+   
+  <link rel="stylesheet" href="../../../../_static/custom.css" type="text/css" />
+  
+  
+  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9" />
+
+  </head><body>
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          
+
+          <div class="body" role="main">
+            
+  <section id="module-bluecast.tests.test_analyse">
+<span id="bluecast-tests-test-analyse"></span><h1><a class="reference internal" href="#module-bluecast.tests.test_analyse" title="bluecast.tests.test_analyse"><code class="xref py py-mod docutils literal notranslate"><span class="pre">bluecast.tests.test_analyse</span></code></a><a class="headerlink" href="#module-bluecast.tests.test_analyse" title="Permalink to this heading">¶</a></h1>
+<section id="module-contents">
+<h2>Module Contents<a class="headerlink" href="#module-contents" title="Permalink to this heading">¶</a></h2>
+<section id="functions">
+<h3>Functions<a class="headerlink" href="#functions" title="Permalink to this heading">¶</a></h3>
+<table class="autosummary longtable docutils align-default">
+<tbody>
+<tr class="row-odd"><td><p><a class="reference internal" href="#bluecast.tests.test_analyse.synthetic_train_test_data" title="bluecast.tests.test_analyse.synthetic_train_test_data"><code class="xref py py-obj docutils literal notranslate"><span class="pre">synthetic_train_test_data</span></code></a>(→ Tuple[pandas.DataFrame, ...)</p></td>
+<td><p></p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#bluecast.tests.test_analyse.synthetic_train_test_data_regression" title="bluecast.tests.test_analyse.synthetic_train_test_data_regression"><code class="xref py py-obj docutils literal notranslate"><span class="pre">synthetic_train_test_data_regression</span></code></a>(...)</p></td>
+<td><p></p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#bluecast.tests.test_analyse.synthetic_categorical_data" title="bluecast.tests.test_analyse.synthetic_categorical_data"><code class="xref py py-obj docutils literal notranslate"><span class="pre">synthetic_categorical_data</span></code></a>(→ pandas.DataFrame)</p></td>
+<td><p></p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#bluecast.tests.test_analyse.create_data_with_nulls" title="bluecast.tests.test_analyse.create_data_with_nulls"><code class="xref py py-obj docutils literal notranslate"><span class="pre">create_data_with_nulls</span></code></a>(→ pandas.DataFrame)</p></td>
+<td><p></p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#bluecast.tests.test_analyse.create_data_with_many_uniques" title="bluecast.tests.test_analyse.create_data_with_many_uniques"><code class="xref py py-obj docutils literal notranslate"><span class="pre">create_data_with_many_uniques</span></code></a>(→ pandas.DataFrame)</p></td>
+<td><p></p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#bluecast.tests.test_analyse.test_plot_pie_chart" title="bluecast.tests.test_analyse.test_plot_pie_chart"><code class="xref py py-obj docutils literal notranslate"><span class="pre">test_plot_pie_chart</span></code></a>(synthetic_train_test_data)</p></td>
+<td><p></p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#bluecast.tests.test_analyse.test_univariate_plots" title="bluecast.tests.test_analyse.test_univariate_plots"><code class="xref py py-obj docutils literal notranslate"><span class="pre">test_univariate_plots</span></code></a>(synthetic_train_test_data)</p></td>
+<td><p></p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#bluecast.tests.test_analyse.test_bi_variate_plots" title="bluecast.tests.test_analyse.test_bi_variate_plots"><code class="xref py py-obj docutils literal notranslate"><span class="pre">test_bi_variate_plots</span></code></a>(synthetic_train_test_data)</p></td>
+<td><p></p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#bluecast.tests.test_analyse.test_correlation_heatmap" title="bluecast.tests.test_analyse.test_correlation_heatmap"><code class="xref py py-obj docutils literal notranslate"><span class="pre">test_correlation_heatmap</span></code></a>(synthetic_train_test_data)</p></td>
+<td><p></p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#bluecast.tests.test_analyse.test_correlation_to_target" title="bluecast.tests.test_analyse.test_correlation_to_target"><code class="xref py py-obj docutils literal notranslate"><span class="pre">test_correlation_to_target</span></code></a>(synthetic_train_test_data)</p></td>
+<td><p></p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#bluecast.tests.test_analyse.test_mutual_info_to_target" title="bluecast.tests.test_analyse.test_mutual_info_to_target"><code class="xref py py-obj docutils literal notranslate"><span class="pre">test_mutual_info_to_target</span></code></a>(synthetic_train_test_data)</p></td>
+<td><p></p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#bluecast.tests.test_analyse.test_mutual_info_to_target_multiclass" title="bluecast.tests.test_analyse.test_mutual_info_to_target_multiclass"><code class="xref py py-obj docutils literal notranslate"><span class="pre">test_mutual_info_to_target_multiclass</span></code></a>(...)</p></td>
+<td><p></p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#bluecast.tests.test_analyse.test_mutual_info_to_target_regression" title="bluecast.tests.test_analyse.test_mutual_info_to_target_regression"><code class="xref py py-obj docutils literal notranslate"><span class="pre">test_mutual_info_to_target_regression</span></code></a>(...)</p></td>
+<td><p></p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#bluecast.tests.test_analyse.test_pca_plot" title="bluecast.tests.test_analyse.test_pca_plot"><code class="xref py py-obj docutils literal notranslate"><span class="pre">test_pca_plot</span></code></a>(synthetic_train_test_data)</p></td>
+<td><p></p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#bluecast.tests.test_analyse.test_plot_pca_cumulative_variance" title="bluecast.tests.test_analyse.test_plot_pca_cumulative_variance"><code class="xref py py-obj docutils literal notranslate"><span class="pre">test_plot_pca_cumulative_variance</span></code></a>(...)</p></td>
+<td><p></p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#bluecast.tests.test_analyse.test_plot_tsne" title="bluecast.tests.test_analyse.test_plot_tsne"><code class="xref py py-obj docutils literal notranslate"><span class="pre">test_plot_tsne</span></code></a>(synthetic_train_test_data)</p></td>
+<td><p></p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#bluecast.tests.test_analyse.test_plot_theil_u_heatmap" title="bluecast.tests.test_analyse.test_plot_theil_u_heatmap"><code class="xref py py-obj docutils literal notranslate"><span class="pre">test_plot_theil_u_heatmap</span></code></a>(synthetic_categorical_data)</p></td>
+<td><p></p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#bluecast.tests.test_analyse.test_plot_count_pairs" title="bluecast.tests.test_analyse.test_plot_count_pairs"><code class="xref py py-obj docutils literal notranslate"><span class="pre">test_plot_count_pairs</span></code></a>(synthetic_categorical_data)</p></td>
+<td><p></p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#bluecast.tests.test_analyse.test_plot_null_percentage" title="bluecast.tests.test_analyse.test_plot_null_percentage"><code class="xref py py-obj docutils literal notranslate"><span class="pre">test_plot_null_percentage</span></code></a>(create_data_with_nulls)</p></td>
+<td><p></p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#bluecast.tests.test_analyse.test_check_unique_values" title="bluecast.tests.test_analyse.test_check_unique_values"><code class="xref py py-obj docutils literal notranslate"><span class="pre">test_check_unique_values</span></code></a>(create_data_with_many_uniques)</p></td>
+<td><p></p></td>
+</tr>
+</tbody>
+</table>
+<dl class="py function">
+<dt class="sig sig-object py" id="bluecast.tests.test_analyse.synthetic_train_test_data">
+<span class="sig-prename descclassname"><span class="pre">bluecast.tests.test_analyse.</span></span><span class="sig-name descname"><span class="pre">synthetic_train_test_data</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">pandas.DataFrame</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">pandas.DataFrame</span><span class="p"><span class="pre">]</span></span></span></span><a class="headerlink" href="#bluecast.tests.test_analyse.synthetic_train_test_data" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="bluecast.tests.test_analyse.synthetic_train_test_data_regression">
+<span class="sig-prename descclassname"><span class="pre">bluecast.tests.test_analyse.</span></span><span class="sig-name descname"><span class="pre">synthetic_train_test_data_regression</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">pandas.DataFrame</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">pandas.DataFrame</span><span class="p"><span class="pre">]</span></span></span></span><a class="headerlink" href="#bluecast.tests.test_analyse.synthetic_train_test_data_regression" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="bluecast.tests.test_analyse.synthetic_categorical_data">
+<span class="sig-prename descclassname"><span class="pre">bluecast.tests.test_analyse.</span></span><span class="sig-name descname"><span class="pre">synthetic_categorical_data</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">pandas.DataFrame</span></span></span><a class="headerlink" href="#bluecast.tests.test_analyse.synthetic_categorical_data" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="bluecast.tests.test_analyse.create_data_with_nulls">
+<span class="sig-prename descclassname"><span class="pre">bluecast.tests.test_analyse.</span></span><span class="sig-name descname"><span class="pre">create_data_with_nulls</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">pandas.DataFrame</span></span></span><a class="headerlink" href="#bluecast.tests.test_analyse.create_data_with_nulls" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="bluecast.tests.test_analyse.create_data_with_many_uniques">
+<span class="sig-prename descclassname"><span class="pre">bluecast.tests.test_analyse.</span></span><span class="sig-name descname"><span class="pre">create_data_with_many_uniques</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">pandas.DataFrame</span></span></span><a class="headerlink" href="#bluecast.tests.test_analyse.create_data_with_many_uniques" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="bluecast.tests.test_analyse.test_plot_pie_chart">
+<span class="sig-prename descclassname"><span class="pre">bluecast.tests.test_analyse.</span></span><span class="sig-name descname"><span class="pre">test_plot_pie_chart</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">synthetic_train_test_data</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#bluecast.tests.test_analyse.test_plot_pie_chart" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="bluecast.tests.test_analyse.test_univariate_plots">
+<span class="sig-prename descclassname"><span class="pre">bluecast.tests.test_analyse.</span></span><span class="sig-name descname"><span class="pre">test_univariate_plots</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">synthetic_train_test_data</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#bluecast.tests.test_analyse.test_univariate_plots" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="bluecast.tests.test_analyse.test_bi_variate_plots">
+<span class="sig-prename descclassname"><span class="pre">bluecast.tests.test_analyse.</span></span><span class="sig-name descname"><span class="pre">test_bi_variate_plots</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">synthetic_train_test_data</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#bluecast.tests.test_analyse.test_bi_variate_plots" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="bluecast.tests.test_analyse.test_correlation_heatmap">
+<span class="sig-prename descclassname"><span class="pre">bluecast.tests.test_analyse.</span></span><span class="sig-name descname"><span class="pre">test_correlation_heatmap</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">synthetic_train_test_data</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#bluecast.tests.test_analyse.test_correlation_heatmap" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="bluecast.tests.test_analyse.test_correlation_to_target">
+<span class="sig-prename descclassname"><span class="pre">bluecast.tests.test_analyse.</span></span><span class="sig-name descname"><span class="pre">test_correlation_to_target</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">synthetic_train_test_data</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#bluecast.tests.test_analyse.test_correlation_to_target" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="bluecast.tests.test_analyse.test_mutual_info_to_target">
+<span class="sig-prename descclassname"><span class="pre">bluecast.tests.test_analyse.</span></span><span class="sig-name descname"><span class="pre">test_mutual_info_to_target</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">synthetic_train_test_data</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#bluecast.tests.test_analyse.test_mutual_info_to_target" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="bluecast.tests.test_analyse.test_mutual_info_to_target_multiclass">
+<span class="sig-prename descclassname"><span class="pre">bluecast.tests.test_analyse.</span></span><span class="sig-name descname"><span class="pre">test_mutual_info_to_target_multiclass</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">synthetic_train_test_data</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#bluecast.tests.test_analyse.test_mutual_info_to_target_multiclass" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="bluecast.tests.test_analyse.test_mutual_info_to_target_regression">
+<span class="sig-prename descclassname"><span class="pre">bluecast.tests.test_analyse.</span></span><span class="sig-name descname"><span class="pre">test_mutual_info_to_target_regression</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">synthetic_train_test_data_regression</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#bluecast.tests.test_analyse.test_mutual_info_to_target_regression" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="bluecast.tests.test_analyse.test_pca_plot">
+<span class="sig-prename descclassname"><span class="pre">bluecast.tests.test_analyse.</span></span><span class="sig-name descname"><span class="pre">test_pca_plot</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">synthetic_train_test_data</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#bluecast.tests.test_analyse.test_pca_plot" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="bluecast.tests.test_analyse.test_plot_pca_cumulative_variance">
+<span class="sig-prename descclassname"><span class="pre">bluecast.tests.test_analyse.</span></span><span class="sig-name descname"><span class="pre">test_plot_pca_cumulative_variance</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">synthetic_train_test_data</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#bluecast.tests.test_analyse.test_plot_pca_cumulative_variance" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="bluecast.tests.test_analyse.test_plot_tsne">
+<span class="sig-prename descclassname"><span class="pre">bluecast.tests.test_analyse.</span></span><span class="sig-name descname"><span class="pre">test_plot_tsne</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">synthetic_train_test_data</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#bluecast.tests.test_analyse.test_plot_tsne" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="bluecast.tests.test_analyse.test_plot_theil_u_heatmap">
+<span class="sig-prename descclassname"><span class="pre">bluecast.tests.test_analyse.</span></span><span class="sig-name descname"><span class="pre">test_plot_theil_u_heatmap</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">synthetic_categorical_data</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#bluecast.tests.test_analyse.test_plot_theil_u_heatmap" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="bluecast.tests.test_analyse.test_plot_count_pairs">
+<span class="sig-prename descclassname"><span class="pre">bluecast.tests.test_analyse.</span></span><span class="sig-name descname"><span class="pre">test_plot_count_pairs</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">synthetic_categorical_data</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#bluecast.tests.test_analyse.test_plot_count_pairs" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="bluecast.tests.test_analyse.test_plot_null_percentage">
+<span class="sig-prename descclassname"><span class="pre">bluecast.tests.test_analyse.</span></span><span class="sig-name descname"><span class="pre">test_plot_null_percentage</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">create_data_with_nulls</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#bluecast.tests.test_analyse.test_plot_null_percentage" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="bluecast.tests.test_analyse.test_check_unique_values">
+<span class="sig-prename descclassname"><span class="pre">bluecast.tests.test_analyse.</span></span><span class="sig-name descname"><span class="pre">test_check_unique_values</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">create_data_with_many_uniques</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#bluecast.tests.test_analyse.test_check_unique_values" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</section>
+</section>
+</section>
+
+
+          </div>
+          
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+<h1 class="logo"><a href="../../../../index.html">BlueCast</a></h1>
+
+
+
+
+
+
+
+
+<h3>Navigation</h3>
+
+<div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="../../../../index.html">Documentation overview</a><ul>
+  </ul></li>
+</ul>
+</div>
+<div id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../../../../search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"/>
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</div>
+<script>document.getElementById('searchbox').style.display = "block"</script>
+
+
+
+
+
+
+
+
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &copy;2023, Thomas Meißner.
+      
+      |
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 6.2.1</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.13</a>
+      
+      |
+      <a href="../../../../_sources/autoapi/bluecast/tests/test_analyse/index.rst.txt"
+          rel="nofollow">Page source</a>
+    </div>
+
+    
+
+    
+  </body>
+</html>

@@ -1,0 +1,38 @@
+:py:mod:`bluecast.preprocessing.nulls_and_infs`
+===============================================
+
+.. py:module:: bluecast.preprocessing.nulls_and_infs
+
+.. autoapi-nested-parse::
+
+   This module contains functions to handle nulls and infinite values.
+
+   Only the handling of infinite values is part of the preprocessing pipeline as Xgboost can handle missing values out of
+   the box.
+
+
+
+Module Contents
+---------------
+
+
+Functions
+~~~~~~~~~
+
+.. autoapisummary::
+
+   bluecast.preprocessing.nulls_and_infs.fill_infinite_values
+   bluecast.preprocessing.nulls_and_infs.fill_nulls
+
+
+
+.. py:function:: fill_infinite_values(df: pandas.DataFrame, fill_with: Union[int, float] = 0)
+
+   Replace infinite values with NaN or given value.
+
+
+.. py:function:: fill_nulls(df: pandas.DataFrame, fill_with: Union[int, float] = 0)
+
+   Replace null values with NaN or given value.
+
+

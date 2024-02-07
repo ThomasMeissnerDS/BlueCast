@@ -1,0 +1,36 @@
+:py:mod:`bluecast.tests.test_shap_explanations`
+===============================================
+
+.. py:module:: bluecast.tests.test_shap_explanations
+
+
+Module Contents
+---------------
+
+
+Functions
+~~~~~~~~~
+
+.. autoapisummary::
+
+   bluecast.tests.test_shap_explanations.mock_model
+   bluecast.tests.test_shap_explanations.test_data
+   bluecast.tests.test_shap_explanations.test_shap_explanations
+   bluecast.tests.test_shap_explanations.test_eval_classifier_except
+
+
+
+.. py:function:: mock_model()
+
+
+.. py:function:: test_data()
+
+
+.. py:function:: test_shap_explanations()
+
+   Test that tests the BlueCast class
+
+
+.. py:function:: test_eval_classifier_except()
+
+

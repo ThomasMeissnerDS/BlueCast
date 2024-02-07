@@ -1,0 +1,41 @@
+:py:mod:`bluecast.config.base_classes`
+======================================
+
+.. py:module:: bluecast.config.base_classes
+
+
+Module Contents
+---------------
+
+Classes
+~~~~~~~
+
+.. autoapisummary::
+
+   bluecast.config.base_classes.BaseClassExperimentTracker
+
+
+
+
+.. py:class:: BaseClassExperimentTracker
+
+
+   Bases: :py:obj:`abc.ABC`
+
+   Base class for the experiment tracker.
+
+   Enforces the implementation of the add_results and retrieve_results_as_df methods.
+
+   .. py:method:: add_results(experiment_id: int, score_category: Literal[simple_train_test_score, cv_score, oof_score], training_config: bluecast.config.training_config.TrainingConfig, model_parameters: Dict[Any, Any], eval_scores: Union[float, int, None], metric_used: str, metric_higher_is_better: bool) -> None
+      :abstractmethod:
+
+      Add results to the ExperimentTracker class.
+
+
+   .. py:method:: retrieve_results_as_df() -> pandas.DataFrame
+      :abstractmethod:
+
+      Retrieve results from the ExperimentTracker class
+
+
+

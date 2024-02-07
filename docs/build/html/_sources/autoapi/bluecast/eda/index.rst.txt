@@ -1,0 +1,16 @@
+:py:mod:`bluecast.eda`
+======================
+
+.. py:module:: bluecast.eda
+
+
+Submodules
+----------
+.. toctree::
+   :titlesonly:
+   :maxdepth: 1
+
+   analyse/index.rst
+   data_leakage_checks/index.rst
+
+

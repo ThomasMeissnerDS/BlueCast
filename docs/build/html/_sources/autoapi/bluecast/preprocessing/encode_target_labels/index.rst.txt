@@ -1,0 +1,62 @@
+:py:mod:`bluecast.preprocessing.encode_target_labels`
+=====================================================
+
+.. py:module:: bluecast.preprocessing.encode_target_labels
+
+.. autoapi-nested-parse::
+
+   A module for encoding target column labels.
+
+   This is a convenience feature. It is only relevant when target column values are categorical.
+   In such cases they will be converted to numerical values, but reverse-transformed for the end-user at the end of the
+   pipeline.
+
+
+
+Module Contents
+---------------
+
+Classes
+~~~~~~~
+
+.. autoapisummary::
+
+   bluecast.preprocessing.encode_target_labels.TargetLabelEncoder
+
+
+
+
+.. py:class:: TargetLabelEncoder
+
+
+   Encode target column labels.
+
+   This function is only relevant when target column values are categorical. In such cases they will be converted
+   into numerical representation. This encoding can also be reversed to translate back.
+
+   .. py:method:: fit_label_encoder(targets: pandas.DataFrame) -> Dict[str, int]
+
+      Iterate through target values and map them to numerics.
+
+
+   .. py:method:: label_encoder_transform(targets: pandas.DataFrame, mapping: Dict[str, int], target_col: Optional[Union[str, int, float]] = None) -> pandas.DataFrame
+
+      Transform target column from categorical to numerical representation.
+
+
+   .. py:method:: fit_transform_target_labels(targets: pandas.DataFrame) -> pandas.DataFrame
+
+      Wrapper function that creates the mapping and transforms the target column.
+
+
+   .. py:method:: transform_target_labels(targets: pandas.DataFrame, target_col: Optional[Union[str, int, float]] = None) -> pandas.DataFrame
+
+      Transform the target column based on already created mappings.
+
+
+   .. py:method:: label_encoder_reverse_transform(targets: pandas.Series) -> pandas.DataFrame
+
+      Reverse numerical encodings back to original categories.
+
+
+

@@ -1,0 +1,42 @@
+:py:mod:`bluecast.tests.test_experiment_tracker`
+================================================
+
+.. py:module:: bluecast.tests.test_experiment_tracker
+
+
+Module Contents
+---------------
+
+
+Functions
+~~~~~~~~~
+
+.. autoapisummary::
+
+   bluecast.tests.test_experiment_tracker.experiment_tracker
+   bluecast.tests.test_experiment_tracker.test_add_results
+   bluecast.tests.test_experiment_tracker.test_retrieve_results_as_df
+   bluecast.tests.test_experiment_tracker.test_get_best_score_empty
+   bluecast.tests.test_experiment_tracker.test_get_best_score_higher_is_better
+   bluecast.tests.test_experiment_tracker.test_get_best_score_lower_is_better
+
+
+
+.. py:function:: experiment_tracker()
+
+
+.. py:function:: test_add_results(experiment_tracker)
+
+
+.. py:function:: test_retrieve_results_as_df(experiment_tracker)
+
+
+.. py:function:: test_get_best_score_empty(experiment_tracker)
+
+
+.. py:function:: test_get_best_score_higher_is_better(experiment_tracker)
+
+
+.. py:function:: test_get_best_score_lower_is_better(experiment_tracker)
+
+

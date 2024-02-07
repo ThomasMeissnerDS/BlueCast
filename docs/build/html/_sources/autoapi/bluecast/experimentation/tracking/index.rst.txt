@@ -1,0 +1,59 @@
+:py:mod:`bluecast.experimentation.tracking`
+===========================================
+
+.. py:module:: bluecast.experimentation.tracking
+
+
+Module Contents
+---------------
+
+Classes
+~~~~~~~
+
+.. autoapisummary::
+
+   bluecast.experimentation.tracking.ExperimentTracker
+
+
+
+
+.. py:class:: ExperimentTracker
+
+
+   Bases: :py:obj:`bluecast.config.base_classes.BaseClassExperimentTracker`
+
+   Default implementation of ExperimentTracker used in BlueCast
+   and BlueCastCV pipelines. This triggers automatically as long
+   as the default Xgboost model is used. For custom ml models
+   ueers need to create an own Tracker. The base class from
+   bluecast.config.base_classes can be used as an inspiration.
+
+   .. py:method:: add_results(experiment_id: int, score_category: Literal[simple_train_test_score, cv_score, oof_score], training_config: bluecast.config.training_config.TrainingConfig, model_parameters: Dict[Any, Any], eval_scores: Union[float, int, None], metric_used: str, metric_higher_is_better: bool) -> None
+
+      Add an individual experiment result into the tracker.
+
+      :param experiment_id: Sequential id. Make sure add an increment.
+      :param score_category: Chose one of ["simple_train_test_score", "cv_score", "oof_score"].
+          "simple_train_test_score" is the default where a simple train-test split is done. "cv_score" is called
+          when cross validation has been enabled in the TrainingConfig.
+      :param training_config: TrainingConfig instance from bluecast.config.training_config.
+      :param model_parameters: Dictionary with parameters of ml model (i.e. learning rate)
+      :param eval_scores: The actual score of the experiment.
+      :param metric_used: The name of the eval metric.
+      :param metric_higher_is_better: True or False.
+
+
+   .. py:method:: retrieve_results_as_df() -> pandas.DataFrame
+
+      Convert ExperimentTracker information into a Pandas DataFrame.
+
+      In the default implementation this contains TrainingConfig, XgboostConfig, hyperparameters, eval metric
+      and score.
+
+
+   .. py:method:: get_best_score(target_metric: str) -> Union[int, float]
+
+      Expects results in the tracker
+
+
+

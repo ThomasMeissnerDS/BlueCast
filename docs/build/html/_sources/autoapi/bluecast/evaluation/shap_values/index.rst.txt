@@ -1,0 +1,35 @@
+:py:mod:`bluecast.evaluation.shap_values`
+=========================================
+
+.. py:module:: bluecast.evaluation.shap_values
+
+.. autoapi-nested-parse::
+
+   Module to calculate SHAP values for a trained ML model.
+
+   The implementation is flexible and can be used for almost any ML model. The implementation is based on the SHAP library.
+
+
+
+Module Contents
+---------------
+
+
+Functions
+~~~~~~~~~
+
+.. autoapisummary::
+
+   bluecast.evaluation.shap_values.shap_explanations
+
+
+
+.. py:function:: shap_explanations(model, df: pandas.DataFrame) -> numpy.ndarray
+
+   See explanations under:
+   https://medium.com/rapids-ai/gpu-accelerated-shap-values-with-xgboost-1-3-and-rapids-587fad6822
+   :param model: Trained ML model
+   :param df: Test data to predict on.
+   :return: Shap values
+
+

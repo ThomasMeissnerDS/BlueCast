@@ -1,0 +1,53 @@
+:py:mod:`bluecast.general_utils.general_utils`
+==============================================
+
+.. py:module:: bluecast.general_utils.general_utils
+
+.. autoapi-nested-parse::
+
+   General utilities.
+
+
+
+Module Contents
+---------------
+
+
+Functions
+~~~~~~~~~
+
+.. autoapisummary::
+
+   bluecast.general_utils.general_utils.check_gpu_support
+   bluecast.general_utils.general_utils.logger
+   bluecast.general_utils.general_utils.save_to_production
+   bluecast.general_utils.general_utils.load_for_production
+
+
+
+.. py:function:: check_gpu_support() -> str
+
+
+.. py:function:: logger(message: str) -> None
+
+
+.. py:function:: save_to_production(class_instance: Any, file_path: Optional[str] = None, file_name: str = 'automl_instance', file_type: str = '.dat') -> None
+
+   Takes a pretrained model and saves it via dill.
+   :param class_instance: Takes instance of a BlueCast class.
+   :param file_path: Takes a string containing the full absolute path.
+   :param file_name: Takes a string containing the whole file name.
+   :param file_type: Takes the expected type of file to export.
+   :return:
+
+
+.. py:function:: load_for_production(file_path: Optional[str] = None, file_name: str = 'automl_instance', file_type: str = '.dat') -> Any
+
+   Load in a pretrained auto ml model. This function will try to load the model as provided.
+   It has a fallback logic to impute .dat as file_type in case the import fails initially.
+   :param file_path: Takes a string containing the full absolute path.
+   :param file_name: Takes a string containing the whole file name.
+   :param file_type: Takes the expected type of file to import.
+   :return:
+
+

@@ -1,0 +1,1039 @@
+
+<!DOCTYPE html>
+
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="generator" content="Docutils 0.18.1: http://docutils.sourceforge.net/" />
+
+    <title>BlueCast &#8212; BlueCast 0.91 documentation</title>
+    <link rel="stylesheet" type="text/css" href="_static/pygments.css" />
+    <link rel="stylesheet" type="text/css" href="_static/alabaster.css" />
+    <link rel="stylesheet" type="text/css" href="_static/graphviz.css" />
+    <script data-url_root="./" id="documentation_options" src="_static/documentation_options.js"></script>
+    <script src="_static/doctools.js"></script>
+    <script src="_static/sphinx_highlight.js"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+   
+  <link rel="stylesheet" href="_static/custom.css" type="text/css" />
+  
+  
+  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9" />
+
+  </head><body>
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          
+
+          <div class="body" role="main">
+            
+  <section id="bluecast">
+<h1>BlueCast<a class="headerlink" href="#bluecast" title="Permalink to this heading">¶</a></h1>
+<p><a class="reference external" href="https://codecov.io/gh/ThomasMeissnerDS/BlueCast"><img alt="codecov" src="https://codecov.io/gh/ThomasMeissnerDS/BlueCast/branch/main/graph/badge.svg?token=XRIS04O097" /></a>
+<a class="reference external" href="https://github.com/ThomasMeissnerDS/BlueCast/actions/workflows/workflow.yaml"><img alt="Codecov workflow" src="https://github.com/ThomasMeissnerDS/BlueCast/actions/workflows/workflow.yaml/badge.svg" /></a>
+<a class="reference external" href="https://github.com/pre-commit/pre-commit"><img alt="pre-commit" src="https://img.shields.io/badge/pre--commit-enabled-brightgreen?logo=pre-commit&amp;logoColor=white" /></a>
+<a class="reference external" href="https://github.com/psf/black"><img alt="Code style: black" src="https://img.shields.io/badge/code%20style-black-000000.svg" /></a>
+<a class="reference external" href="http://mypy-lang.org/"><img alt="Checked with mypy" src="http://www.mypy-lang.org/static/mypy_badge.svg" /></a>
+<a class="reference external" href="http://www.pydocstyle.org/en/stable/"><img alt="pydocstyle" src="https://img.shields.io/badge/pydocstyle-enabled-AD4CD3" /></a>
+<a class="reference external" href="https://bluecast.readthedocs.io/en/latest/?badge=latest"><img alt="Documentation Status" src="https://readthedocs.org/projects/bluecast/badge/?version=latest" /></a>
+<a class="reference external" href="https://pypi.python.org/pypi/bluecast/"><img alt="PyPI version" src="https://badge.fury.io/py/bluecast.svg" /></a>
+<a class="reference external" href="https://optuna.org"><img alt="Optuna" src="https://img.shields.io/badge/Optuna-integrated-blue" /></a>
+<a class="reference external" href="https://www.python.org"><img alt="python" src="https://img.shields.io/badge/Python-3.9-3776AB.svg?style=flat&amp;logo=python&amp;logoColor=white" /></a>
+<a class="reference external" href="https://www.python.org"><img alt="python" src="https://img.shields.io/badge/Python-3.10-3776AB.svg?style=flat&amp;logo=python&amp;logoColor=white" /></a>
+<a class="reference external" href="http://makeapullrequest.com"><img alt="PRs Welcome" src="https://img.shields.io/badge/PRs-welcome-brightgreen.svg?style=flat-square" /></a></p>
+<p>A lightweight and fast auto-ml library.
+BlueCast focuses on a few model architectures (on default Xgboost
+only) and a few preprocessing options (only what is
+needed for Xgboost). This allows for a much faster development
+cycle and a much more stable codebase while also having as few dependencies
+as possible for the library. Despite being lightweight in its core BlueCast
+offers high customization options for advanced users. Find
+the full documentation <a class="reference external" href="https://bluecast.readthedocs.io/en/latest/">here</a>.</p>
+<!-- toc -->
+<ul class="simple">
+<li><p><a class="reference internal" href="#installation"><span class="xref myst">Installation</span></a></p>
+<ul>
+<li><p><a class="reference internal" href="#installation-for-end-users"><span class="xref myst">Installation for end users</span></a></p></li>
+<li><p><a class="reference internal" href="#installation-for-developers"><span class="xref myst">Installation for developers</span></a></p></li>
+</ul>
+</li>
+<li><p><a class="reference internal" href="#general-usage"><span class="xref myst">General usage</span></a></p>
+<ul>
+<li><p><a class="reference internal" href="#basic-usage"><span class="xref myst">Basic usage</span></a></p></li>
+<li><p><a class="reference internal" href="#advanced-usage"><span class="xref myst">Advanced usage</span></a></p>
+<ul>
+<li><p><a class="reference internal" href="#explanatory-analysis"><span class="xref myst">Explanatory analysis</span></a></p></li>
+<li><p><a class="reference internal" href="#leakage-detection"><span class="xref myst">Leakage detection</span></a></p></li>
+<li><p><a class="reference internal" href="#enable-cross-validation"><span class="xref myst">Enable cross-validation</span></a></p></li>
+<li><p><a class="reference internal" href="#enable-even-more-overfitting-robust-cross-validation"><span class="xref myst">Enable even more overfitting-robust cross-validation</span></a></p></li>
+<li><p><a class="reference internal" href="#gaining-extra-performance"><span class="xref myst">Gaining extra performance</span></a></p></li>
+<li><p><a class="reference internal" href="#use-multi-model-blended-pipeline"><span class="xref myst">Use multi-model blended pipeline</span></a></p></li>
+<li><p><a class="reference internal" href="#categorical-encoding"><span class="xref myst">Categorical encoding</span></a></p></li>
+<li><p><a class="reference internal" href="#custom-training-configuration"><span class="xref myst">Custom training configuration</span></a></p></li>
+<li><p><a class="reference internal" href="#custom-preprocessing"><span class="xref myst">Custom preprocessing</span></a></p></li>
+<li><p><a class="reference internal" href="#custom-feature-selection"><span class="xref myst">Custom feature selection</span></a></p></li>
+<li><p><a class="reference internal" href="#custom-ml-model"><span class="xref myst">Custom ML model</span></a></p></li>
+<li><p><a class="reference internal" href="#using-the-inbuilt-experienttracker"><span class="xref myst">Using the inbuilt ExperientTracker</span></a></p></li>
+<li><p><a class="reference internal" href="#use-mlflow-via-custom-experienttracker-api"><span class="xref myst">Use Mlflow via custom ExperientTracker API</span></a></p></li>
+<li><p><a class="reference internal" href="#custom-data-drift-checker"><span class="xref myst">Custom data drift checker</span></a></p></li>
+</ul>
+</li>
+</ul>
+</li>
+<li><p><a class="reference internal" href="#convenience-features"><span class="xref myst">Convenience features</span></a></p></li>
+<li><p><a class="reference internal" href="#code-quality"><span class="xref myst">Code quality</span></a></p></li>
+<li><p><a class="reference internal" href="#documentation"><span class="xref myst">Documentation</span></a></p></li>
+<li><p><a class="reference internal" href="#kaggle-competition-results-and-example-notebooks"><span class="xref myst">Kaggle competition results and example notebooks</span></a></p></li>
+<li><p><a class="reference internal" href="#how-to-contribute"><span class="xref myst">How to contribute</span></a></p></li>
+<li><p><a class="reference internal" href="#meta"><span class="xref myst">Meta</span></a></p></li>
+</ul>
+<!-- tocstop -->
+<section id="installation">
+<h2>Installation<a class="headerlink" href="#installation" title="Permalink to this heading">¶</a></h2>
+<section id="installation-for-end-users">
+<h3>Installation for end users<a class="headerlink" href="#installation-for-end-users" title="Permalink to this heading">¶</a></h3>
+<p>From PyPI:</p>
+<div class="highlight-sh notranslate"><div class="highlight"><pre><span></span>pip<span class="w"> </span>install<span class="w"> </span>bluecast
+</pre></div>
+</div>
+<p>Using a fresh environment with Python 3.9 or higher is recommended. We consciously
+do not support Python 3.8 or lower to prevent the usage of outdated Python versions
+and issues connected to it.</p>
+</section>
+<section id="installation-for-developers">
+<h3>Installation for developers<a class="headerlink" href="#installation-for-developers" title="Permalink to this heading">¶</a></h3>
+<ul class="simple">
+<li><p>Clone the repository:</p></li>
+<li><p>Create a new conda environment with Python 3.9 or higher</p></li>
+<li><p>run <code class="docutils literal notranslate"><span class="pre">pip</span> <span class="pre">install</span> <span class="pre">poetry</span></code> to install poetry as dependency manager</p></li>
+<li><p>run <code class="docutils literal notranslate"><span class="pre">poetry</span> <span class="pre">install</span></code> to install all dependencies</p></li>
+</ul>
+</section>
+</section>
+<section id="general-usage">
+<h2>General usage<a class="headerlink" href="#general-usage" title="Permalink to this heading">¶</a></h2>
+<section id="basic-usage">
+<h3>Basic usage<a class="headerlink" href="#basic-usage" title="Permalink to this heading">¶</a></h3>
+<p>The module blueprints contains the main functionality of the library. The main
+entry point is the <code class="docutils literal notranslate"><span class="pre">Blueprint</span></code> class. It already includes needed preprocessing
+(including some convenience functionality like feature type detection)
+and model hyperparameter tuning.</p>
+<div class="highlight-sh notranslate"><div class="highlight"><pre><span></span>from<span class="w"> </span>bluecast.blueprints.cast<span class="w"> </span>import<span class="w"> </span>BlueCast
+
+<span class="nv">automl</span><span class="w"> </span><span class="o">=</span><span class="w"> </span>BlueCast<span class="o">(</span>
+<span class="w">        </span><span class="nv">class_problem</span><span class="o">=</span><span class="s2">&quot;binary&quot;</span>,
+<span class="w">    </span><span class="o">)</span>
+
+automl.fit<span class="o">(</span>df_train,<span class="w"> </span><span class="nv">target_col</span><span class="o">=</span><span class="s2">&quot;target&quot;</span><span class="o">)</span>
+y_probs,<span class="w"> </span><span class="nv">y_classes</span><span class="w"> </span><span class="o">=</span><span class="w"> </span>automl.predict<span class="o">(</span>df_val<span class="o">)</span>
+</pre></div>
+</div>
+<p>BlueCast has simple utilities to save and load your pipeline:</p>
+<div class="highlight-sh notranslate"><div class="highlight"><pre><span></span>from<span class="w"> </span>bluecast.general_utils.general_utils<span class="w"> </span>import<span class="w"> </span>save_to_production,<span class="w"> </span>load_for_production
+
+<span class="c1"># save pipeline including tracker</span>
+save_to_production<span class="o">(</span>automl,<span class="w"> </span><span class="s2">&quot;/kaggle/working/&quot;</span>,<span class="w"> </span><span class="s2">&quot;bluecast_cv_pipeline&quot;</span><span class="o">)</span>
+
+<span class="c1"># in production or for further experiments this can be loaded again</span>
+<span class="nv">automl</span><span class="w"> </span><span class="o">=</span><span class="w"> </span>load_for_production<span class="o">(</span><span class="s2">&quot;/kaggle/working/&quot;</span>,<span class="w"> </span><span class="s2">&quot;bluecast_cv_pipeline&quot;</span><span class="o">)</span>
+</pre></div>
+</div>
+<p>Since version 0.80 BlueCast offers regression as well:</p>
+<div class="highlight-sh notranslate"><div class="highlight"><pre><span></span>from<span class="w"> </span>bluecast.blueprints.cast_regression<span class="w"> </span>import<span class="w"> </span>BlueCastRegression
+
+<span class="nv">automl</span><span class="w"> </span><span class="o">=</span><span class="w"> </span>BlueCast<span class="o">(</span>
+<span class="w">        </span><span class="nv">class_problem</span><span class="o">=</span><span class="s2">&quot;regression&quot;</span>,
+<span class="w">    </span><span class="o">)</span>
+
+automl.fit<span class="o">(</span>df_train,<span class="w"> </span><span class="nv">target_col</span><span class="o">=</span><span class="s2">&quot;target&quot;</span><span class="o">)</span>
+<span class="nv">y_hat</span><span class="w"> </span><span class="o">=</span><span class="w"> </span>automl.predict<span class="o">(</span>df_val<span class="o">)</span>
+</pre></div>
+</div>
+</section>
+<section id="advanced-usage">
+<h3>Advanced usage<a class="headerlink" href="#advanced-usage" title="Permalink to this heading">¶</a></h3>
+<section id="explanatory-analysis">
+<h4>Explanatory analysis<a class="headerlink" href="#explanatory-analysis" title="Permalink to this heading">¶</a></h4>
+<p>BlueCast offers a simple way to get a first overview of the data:</p>
+<div class="highlight-sh notranslate"><div class="highlight"><pre><span></span>from<span class="w"> </span>bluecast.eda.analyse<span class="w"> </span>import<span class="w"> </span><span class="o">(</span>
+<span class="w">    </span>bi_variate_plots,
+<span class="w">    </span>univariate_plots,
+<span class="w">    </span>plot_count_pairs,
+<span class="w">    </span>correlation_heatmap,
+<span class="w">    </span>correlation_to_target,
+<span class="w">    </span>plot_pca,
+<span class="w">    </span>plot_theil_u_heatmap,
+<span class="w">    </span>plot_tsne,
+<span class="w">    </span>check_unique_values,
+<span class="w">    </span>plot_null_percentage,
+<span class="w">    </span>mutual_info_to_target,
+<span class="w">    </span>plot_pie_chart,
+<span class="o">)</span>
+
+from<span class="w"> </span>bluecast.preprocessing.feature_types<span class="w"> </span>import<span class="w"> </span>FeatureTypeDetector
+
+<span class="c1"># Here we automatically detect the numeric columns</span>
+<span class="nv">feat_type_detector</span><span class="w"> </span><span class="o">=</span><span class="w"> </span>FeatureTypeDetector<span class="o">()</span>
+<span class="nv">train_data</span><span class="w"> </span><span class="o">=</span><span class="w"> </span>feat_type_detector.fit_transform_feature_types<span class="o">(</span>train_data<span class="o">)</span>
+
+<span class="c1"># detect columns with a very high share of unique values</span>
+<span class="nv">many_unique_cols</span><span class="w"> </span><span class="o">=</span><span class="w"> </span>check_unique_values<span class="o">(</span>train_data,<span class="w"> </span>feat_type_detector.cat_columns<span class="o">)</span>
+</pre></div>
+</div>
+<div class="highlight-sh notranslate"><div class="highlight"><pre><span></span><span class="c1"># plot the percentage of Nulls for all features</span>
+plot_pie_chart<span class="o">(</span>
+<span class="w">        </span>synthetic_train_test_data<span class="o">[</span><span class="m">0</span><span class="o">]</span>,
+<span class="w">        </span><span class="s2">&quot;categorical_feature_1&quot;</span>,
+<span class="w">    </span><span class="o">)</span>
+</pre></div>
+</div>
+<p><img alt="QQplot example" src="_images/pie_chart.png" /></p>
+<div class="highlight-sh notranslate"><div class="highlight"><pre><span></span><span class="c1"># plot the percentage of Nulls for all features</span>
+plot_null_percentage<span class="o">(</span>
+<span class="w">    </span>train_data.loc<span class="o">[</span>:,<span class="w"> </span>feat_type_detector.num_columns<span class="o">]</span>,
+<span class="w">    </span><span class="o">)</span>
+</pre></div>
+</div>
+<p><img alt="QQplot example" src="_images/plot_nulls.png" /></p>
+<div class="highlight-sh notranslate"><div class="highlight"><pre><span></span><span class="c1"># show univariate plots</span>
+univariate_plots<span class="o">(</span>
+<span class="w">        </span>train_data.loc<span class="o">[</span>:,<span class="w"> </span>feat_type_detector.num_columns<span class="o">]</span>,<span class="w">  </span><span class="c1"># here the target column EC1 is already included</span>
+<span class="w">    </span><span class="o">)</span>
+</pre></div>
+</div>
+<p><img alt="QQplot example" src="_images/univariate_plots.png" /></p>
+<div class="highlight-sh notranslate"><div class="highlight"><pre><span></span><span class="c1"># show bi-variate plots</span>
+bi_variate_plots<span class="o">(</span>
+<span class="w">    </span>train_data.loc<span class="o">[</span>:,<span class="w"> </span>feat_type_detector.num_columns<span class="o">]</span>,
+<span class="w">      </span><span class="s2">&quot;EC1&quot;</span>
+<span class="w">      </span><span class="o">)</span>
+</pre></div>
+</div>
+<p><img alt="QQplot example" src="_images/bivariate_plots.png" /></p>
+<div class="highlight-sh notranslate"><div class="highlight"><pre><span></span><span class="c1"># show bi-variate plots</span>
+plot_count_pairs<span class="o">(</span>
+<span class="w">    </span>train,
+<span class="w">    </span>test,
+<span class="w">    </span><span class="nv">cat_cols</span><span class="o">=</span>train_data.loc<span class="o">[</span>:,<span class="w"> </span>feat_type_detector.cat_columns<span class="o">]</span>,
+<span class="w">      </span><span class="o">)</span>
+</pre></div>
+</div>
+<p><img alt="QQplot example" src="_images/pair_countplot.png" /></p>
+<div class="highlight-sh notranslate"><div class="highlight"><pre><span></span><span class="c1"># show correlation to target</span>
+correlation_to_target<span class="o">(</span>train_data.loc<span class="o">[</span>:,<span class="w"> </span>feat_type_detector.num_columns<span class="o">])</span>
+</pre></div>
+</div>
+<p><img alt="QQplot example" src="_images/correlation_to_target.png" /></p>
+<div class="highlight-sh notranslate"><div class="highlight"><pre><span></span><span class="c1"># show correlation heatmap</span>
+correlation_heatmap<span class="o">(</span>train_data.loc<span class="o">[</span>:,<span class="w"> </span>feat_type_detector.num_columns<span class="o">])</span>
+</pre></div>
+</div>
+<p><img alt="QQplot example" src="_images/correlation_heatmap.png" /></p>
+<div class="highlight-sh notranslate"><div class="highlight"><pre><span></span><span class="c1"># show a heatmap of assocations between categorical variables</span>
+<span class="nv">theil_matrix</span><span class="w"> </span><span class="o">=</span><span class="w"> </span>plot_theil_u_heatmap<span class="o">(</span>train_data,<span class="w"> </span>feat_type_detector.cat_columns<span class="o">)</span>
+</pre></div>
+</div>
+<p><img alt="QQplot example" src="_images/theil_u_matrix.png" /></p>
+<div class="highlight-sh notranslate"><div class="highlight"><pre><span></span><span class="c1"># show mutual information of categorical features to target</span>
+<span class="c1"># features are expected to be numerical format</span>
+<span class="c1"># class problem can be any of &quot;binary&quot;, &quot;multiclass&quot; or &quot;regression&quot;</span>
+<span class="nv">extra_params</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="o">{</span><span class="s2">&quot;random_state&quot;</span>:<span class="w"> </span><span class="m">30</span><span class="o">}</span>
+mutual_info_to_target<span class="o">(</span>train_data.loc<span class="o">[</span>:,<span class="w"> </span>feat_type_detector.num_columns<span class="o">]</span>,<span class="w"> </span><span class="s2">&quot;EC1&quot;</span>,<span class="w"> </span><span class="nv">class_problem</span><span class="o">=</span><span class="s2">&quot;binary&quot;</span>,<span class="w"> </span>**extra_params<span class="o">)</span>
+</pre></div>
+</div>
+<p><img alt="QQplot example" src="_images/mutual_information.png" /></p>
+<div class="highlight-sh notranslate"><div class="highlight"><pre><span></span><span class="c1">## show feature space after principal component analysis</span>
+plot_pca<span class="o">(</span>
+<span class="w">    </span>train_data.loc<span class="o">[</span>:,<span class="w"> </span>feat_type_detector.num_columns<span class="o">]</span>,
+<span class="w">    </span><span class="s2">&quot;target&quot;</span>
+<span class="w">    </span><span class="o">)</span>
+</pre></div>
+</div>
+<p><img alt="QQplot example" src="_images/plot_pca.png" /></p>
+<div class="highlight-sh notranslate"><div class="highlight"><pre><span></span><span class="c1">## show how many components are needed to explain certain variance</span>
+plot_pca_cumulative_variance<span class="o">(</span>
+<span class="w">    </span>train_data.loc<span class="o">[</span>:,<span class="w"> </span>feat_type_detector.num_columns<span class="o">]</span>,
+<span class="w">    </span><span class="s2">&quot;target&quot;</span>
+<span class="w">    </span><span class="o">)</span>
+</pre></div>
+</div>
+<p><img alt="QQplot example" src="_images/plot_cumulative_pca_variance.png" /></p>
+<div class="highlight-sh notranslate"><div class="highlight"><pre><span></span><span class="c1"># show feature space after t-SNE</span>
+plot_tsne<span class="o">(</span>
+<span class="w">    </span>train_data.loc<span class="o">[</span>:,<span class="w"> </span>feat_type_detector.num_columns<span class="o">]</span>,
+<span class="w">    </span><span class="s2">&quot;target&quot;</span>,
+<span class="w">    </span><span class="nv">perplexity</span><span class="o">=</span><span class="m">30</span>,
+<span class="w">    </span><span class="nv">random_state</span><span class="o">=</span><span class="m">0</span>
+<span class="w">    </span><span class="o">)</span>
+</pre></div>
+</div>
+<p><img alt="QQplot example" src="_images/t_sne_plot.png" /></p>
+</section>
+<section id="leakage-detection">
+<h4>Leakage detection<a class="headerlink" href="#leakage-detection" title="Permalink to this heading">¶</a></h4>
+<p>With big data and complex pipelines data leakage can easily sneak in.
+To detect leakage BlueCast offers two functions:</p>
+<div class="highlight-sh notranslate"><div class="highlight"><pre><span></span>from<span class="w"> </span>bluecast.eda.data_leakage_checks<span class="w"> </span>import<span class="w"> </span><span class="o">(</span>
+<span class="w">    </span>detect_categorical_leakage,
+<span class="w">    </span>detect_leakage_via_correlation,
+<span class="o">)</span>
+
+
+<span class="c1"># Detect leakage of numeric columns based on correlation</span>
+<span class="nv">result</span><span class="w"> </span><span class="o">=</span><span class="w"> </span>detect_leakage_via_correlation<span class="o">(</span>
+<span class="w">        </span>train_data.loc<span class="o">[</span>:,<span class="w"> </span>feat_type_detector.num_columns<span class="o">]</span>,<span class="w"> </span><span class="s2">&quot;target&quot;</span>,<span class="w"> </span><span class="nv">threshold</span><span class="o">=</span><span class="m">0</span>.9
+<span class="w">    </span><span class="o">)</span>
+
+<span class="c1"># Detect leakage of categorical columns based on Theil&#39;s U</span>
+<span class="nv">result</span><span class="w"> </span><span class="o">=</span><span class="w"> </span>detect_categorical_leakage<span class="o">(</span>
+<span class="w">        </span>train_data.loc<span class="o">[</span>:,<span class="w"> </span>feat_type_detector.cat_columns<span class="o">]</span>,<span class="w"> </span><span class="s2">&quot;target&quot;</span>,<span class="w"> </span><span class="nv">threshold</span><span class="o">=</span><span class="m">0</span>.9
+<span class="w">    </span><span class="o">)</span>
+</pre></div>
+</div>
+</section>
+<section id="enable-cross-validation">
+<h4>Enable cross-validation<a class="headerlink" href="#enable-cross-validation" title="Permalink to this heading">¶</a></h4>
+<p>While the default behaviour of BlueCast is to use a simple
+train-test-split, cross-validation can be enabled easily:</p>
+<div class="highlight-sh notranslate"><div class="highlight"><pre><span></span>from<span class="w"> </span>bluecast.blueprints.cast<span class="w"> </span>import<span class="w"> </span>BlueCast
+from<span class="w"> </span>bluecast.config.training_config<span class="w"> </span>import<span class="w"> </span>TrainingConfig
+
+
+<span class="c1"># Create a custom training config and adjust general training parameters</span>
+<span class="nv">train_config</span><span class="w"> </span><span class="o">=</span><span class="w"> </span>TrainingConfig<span class="o">()</span>
+train_config.hypertuning_cv_folds<span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="m">5</span><span class="w"> </span><span class="c1"># default is 1</span>
+
+<span class="c1"># Pass the custom configs to the BlueCast class</span>
+<span class="nv">automl</span><span class="w"> </span><span class="o">=</span><span class="w"> </span>BlueCast<span class="o">(</span>
+<span class="w">        </span><span class="nv">class_problem</span><span class="o">=</span><span class="s2">&quot;binary&quot;</span>,
+<span class="w">        </span><span class="nv">conf_training</span><span class="o">=</span>train_config,
+<span class="w">    </span><span class="o">)</span>
+
+automl.fit<span class="o">(</span>df_train,<span class="w"> </span><span class="nv">target_col</span><span class="o">=</span><span class="s2">&quot;target&quot;</span><span class="o">)</span>
+y_probs,<span class="w"> </span><span class="nv">y_classes</span><span class="w"> </span><span class="o">=</span><span class="w"> </span>automl.predict<span class="o">(</span>df_val<span class="o">)</span>
+</pre></div>
+</div>
+<p>This will use Xgboost’s inbuilt cross validation routine which allows BlueCast
+to execute early pruning on not promising hyperparameter sets. This way BlueCast
+can test many more hyperparameters than usual cross validation.</p>
+</section>
+<section id="enable-even-more-overfitting-robust-cross-validation">
+<h4>Enable even more overfitting-robust cross-validation<a class="headerlink" href="#enable-even-more-overfitting-robust-cross-validation" title="Permalink to this heading">¶</a></h4>
+<p>There might be situations where a preprocessing step has a high risk of overfitting
+and  needs even more careful evaluation (i.e. oversampling techniques). For such
+scenarios BlueCast offers a solution as well.</p>
+<div class="highlight-sh notranslate"><div class="highlight"><pre><span></span>from<span class="w"> </span>bluecast.blueprints.cast<span class="w"> </span>import<span class="w"> </span>BlueCast
+from<span class="w"> </span>bluecast.config.training_config<span class="w"> </span>import<span class="w"> </span>TrainingConfig
+
+
+<span class="c1"># Create a custom training config and adjust general training parameters</span>
+<span class="nv">train_config</span><span class="w"> </span><span class="o">=</span><span class="w"> </span>TrainingConfig<span class="o">()</span>
+train_config.hypertuning_cv_folds<span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="m">5</span><span class="w"> </span><span class="c1"># default is 1</span>
+train_config.precise_cv_tuning<span class="w"> </span><span class="o">=</span><span class="w"> </span>True<span class="w"> </span><span class="c1"># this enables the better routine</span>
+
+<span class="c1"># this only makes sense if we have an overfitting risky step</span>
+<span class="nv">custom_preprocessor</span><span class="w"> </span><span class="o">=</span><span class="w"> </span>MyCustomPreprocessing<span class="o">()</span><span class="w"> </span><span class="c1"># see section Custom Preprocessing for details</span>
+
+<span class="c1"># Pass the custom configs to the BlueCast class</span>
+<span class="nv">automl</span><span class="w"> </span><span class="o">=</span><span class="w"> </span>BlueCast<span class="o">(</span>
+<span class="w">        </span><span class="nv">class_problem</span><span class="o">=</span><span class="s2">&quot;binary&quot;</span>,
+<span class="w">        </span><span class="nv">conf_training</span><span class="o">=</span>train_config,
+<span class="w">        </span><span class="nv">custom_in_fold_preprocessor</span><span class="o">=</span>custom_preprocessor<span class="w"> </span><span class="c1"># this happens during each fold</span>
+<span class="w">    </span><span class="o">)</span>
+
+automl.fit<span class="o">(</span>df_train,<span class="w"> </span><span class="nv">target_col</span><span class="o">=</span><span class="s2">&quot;target&quot;</span><span class="o">)</span>
+y_probs,<span class="w"> </span><span class="nv">y_classes</span><span class="w"> </span><span class="o">=</span><span class="w"> </span>automl.predict<span class="o">(</span>df_val<span class="o">)</span>
+</pre></div>
+</div>
+<p>The custom in fold preprocessing takes place within the cross validation and
+executes the step on each fold. The evaluation metric is special here:
+Instead of calculating matthews correlation coefficient reversed only,
+it applied increasingly random noise to the eval dataset to find an even
+more robust hyperparameter set.</p>
+<p>This is much more robust, but does not offer
+early pruning and is much slower. BlueCastCV supports this as well.</p>
+<p>Please note that this is an experimental feature.</p>
+</section>
+<section id="gaining-extra-performance">
+<h4>Gaining extra performance<a class="headerlink" href="#gaining-extra-performance" title="Permalink to this heading">¶</a></h4>
+<p>By default BlueCast uses Optuna’s Bayesian hyperparameter optimization,
+however Bayesian methods give an estimate and do not necessarly find
+the ideal spot, thus BlueCast has an optional GridSearch setting
+that allows BlueCast to refine some of the parameters Optuna has found.
+This can be enabled by setting <code class="docutils literal notranslate"><span class="pre">enable_grid_search_fine_tuning</span></code> to True.
+This fine-tuning step uses a different random seed than the autotuning
+routine (seed from the settings + 1000).</p>
+<div class="highlight-sh notranslate"><div class="highlight"><pre><span></span>from<span class="w"> </span>bluecast.blueprints.cast<span class="w"> </span>import<span class="w"> </span>BlueCast
+from<span class="w"> </span>bluecast.config.training_config<span class="w"> </span>import<span class="w"> </span>TrainingConfig
+
+
+<span class="c1"># Create a custom training config and adjust general training parameters</span>
+<span class="nv">train_config</span><span class="w"> </span><span class="o">=</span><span class="w"> </span>TrainingConfig<span class="o">()</span>
+train_config.hypertuning_cv_folds<span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="m">5</span><span class="w"> </span><span class="c1"># default is 1</span>
+train_config.enable_grid_search_fine_tuning<span class="w"> </span><span class="o">=</span><span class="w"> </span>True<span class="w"> </span><span class="c1"># default is False</span>
+train_config.gridsearch_tuning_max_runtime_secs<span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="m">3600</span><span class="w"> </span><span class="c1"># max runtime in secs</span>
+train_config.gridsearch_nb_parameters_per_grid<span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="m">5</span><span class="w"> </span><span class="c1"># increasing this means X^3 trials atm</span>
+
+<span class="c1"># Pass the custom configs to the BlueCast class</span>
+<span class="nv">automl</span><span class="w"> </span><span class="o">=</span><span class="w"> </span>BlueCast<span class="o">(</span>
+<span class="w">        </span><span class="nv">class_problem</span><span class="o">=</span><span class="s2">&quot;binary&quot;</span>,
+<span class="w">        </span><span class="nv">conf_training</span><span class="o">=</span>train_config,
+<span class="w">    </span><span class="o">)</span>
+
+automl.fit<span class="o">(</span>df_train,<span class="w"> </span><span class="nv">target_col</span><span class="o">=</span><span class="s2">&quot;target&quot;</span><span class="o">)</span>
+y_probs,<span class="w"> </span><span class="nv">y_classes</span><span class="w"> </span><span class="o">=</span><span class="w"> </span>automl.predict<span class="o">(</span>df_val<span class="o">)</span>
+</pre></div>
+</div>
+<p>This comes with a tradeoff of longer runtime. This behaviour can be further
+controlled with two parameters:</p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">gridsearch_nb_parameters_per_grid</span></code>: Decides how
+many steps the grid shall have per parameter</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">gridsearch_tuning_max_runtime_secs</span></code>: Sets the maximum time in seconds
+the tuning shall run. This will finish the latest trial nd will exceed
+this limit though.</p></li>
+</ul>
+</section>
+<section id="use-multi-model-blended-pipeline">
+<h4>Use multi-model blended pipeline<a class="headerlink" href="#use-multi-model-blended-pipeline" title="Permalink to this heading">¶</a></h4>
+<p>By default, BlueCast trains a single model. However, it is possible to
+train multiple models with one call for extra robustness. <code class="docutils literal notranslate"><span class="pre">BlueCastCV</span></code>
+has a <code class="docutils literal notranslate"><span class="pre">fit</span></code> and a <code class="docutils literal notranslate"><span class="pre">fit_eval</span></code> method. The <code class="docutils literal notranslate"><span class="pre">fit_eval</span></code> method trains the
+models, but also provides out-of-fold validation. Also <code class="docutils literal notranslate"><span class="pre">BlueCastCV</span></code>
+allows to pass custom configurations.</p>
+<div class="highlight-sh notranslate"><div class="highlight"><pre><span></span>from<span class="w"> </span>bluecast.blueprints.cast_cv<span class="w"> </span>import<span class="w"> </span>BlueCastCV
+from<span class="w"> </span>bluecast.config.training_config<span class="w"> </span>import<span class="w"> </span>TrainingConfig,<span class="w"> </span>XgboostTuneParamsConfig
+
+<span class="c1"># Pass the custom configs to the BlueCast class</span>
+<span class="nv">automl</span><span class="w"> </span><span class="o">=</span><span class="w"> </span>BlueCastCV<span class="o">(</span>
+<span class="w">        </span><span class="nv">class_problem</span><span class="o">=</span><span class="s2">&quot;binary&quot;</span>,
+<span class="w">        </span><span class="c1">#conf_training=train_config,</span>
+<span class="w">        </span><span class="c1">#conf_xgboost=xgboost_param_config,</span>
+<span class="w">        </span><span class="c1">#custom_preprocessor=custom_preprocessor, # this takes place right after test_train_split</span>
+<span class="w">        </span><span class="c1">#custom_last_mile_computation=custom_last_mile_computation, # last step before model training/prediction</span>
+<span class="w">        </span><span class="c1">#custom_feature_selector=custom_feature_selector,</span>
+<span class="w">    </span><span class="o">)</span>
+
+<span class="c1"># this class has a train method:</span>
+<span class="c1"># automl.fit(df_train, target_col=&quot;target&quot;)</span>
+
+automl.fit_eval<span class="o">(</span>df_train,<span class="w"> </span><span class="nv">target_col</span><span class="o">=</span><span class="s2">&quot;target&quot;</span><span class="o">)</span>
+y_probs,<span class="w"> </span><span class="nv">y_classes</span><span class="w"> </span><span class="o">=</span><span class="w"> </span>automl.predict<span class="o">(</span>df_val<span class="o">)</span>
+</pre></div>
+</div>
+<p>Also here a variant for regression is available:</p>
+<div class="highlight-sh notranslate"><div class="highlight"><pre><span></span>from<span class="w"> </span>bluecast.blueprints.cast_cv_regression<span class="w"> </span>import<span class="w"> </span>BlueCastCVRegression
+from<span class="w"> </span>bluecast.config.training_config<span class="w"> </span>import<span class="w"> </span>TrainingConfig,<span class="w"> </span>XgboostTuneParamsConfig
+
+<span class="c1"># Pass the custom configs to the BlueCast class</span>
+<span class="nv">automl</span><span class="w"> </span><span class="o">=</span><span class="w"> </span>BlueCastCVRegression<span class="o">(</span>
+<span class="w">        </span><span class="nv">class_problem</span><span class="o">=</span><span class="s2">&quot;regression&quot;</span>,
+<span class="w">        </span><span class="c1">#conf_training=train_config,</span>
+<span class="w">        </span><span class="c1">#conf_xgboost=xgboost_param_config,</span>
+<span class="w">        </span><span class="c1">#custom_preprocessor=custom_preprocessor, # this takes place right after test_train_split</span>
+<span class="w">        </span><span class="c1">#custom_last_mile_computation=custom_last_mile_computation, # last step before model training/prediction</span>
+<span class="w">        </span><span class="c1">#custom_feature_selector=custom_feature_selector,</span>
+<span class="w">    </span><span class="o">)</span>
+
+<span class="c1"># this class has a train method:</span>
+<span class="c1"># automl.fit(df_train, target_col=&quot;target&quot;)</span>
+
+automl.fit_eval<span class="o">(</span>df_train,<span class="w"> </span><span class="nv">target_col</span><span class="o">=</span><span class="s2">&quot;target&quot;</span><span class="o">)</span>
+y_probs,<span class="w"> </span><span class="nv">y_classes</span><span class="w"> </span><span class="o">=</span><span class="w"> </span>automl.predict<span class="o">(</span>df_val<span class="o">)</span>
+</pre></div>
+</div>
+</section>
+<section id="categorical-encoding">
+<h4>Categorical encoding<a class="headerlink" href="#categorical-encoding" title="Permalink to this heading">¶</a></h4>
+<p>By default, BlueCast uses target encoding.
+This behaviour can be changed in the TrainingConfig by setting <code class="docutils literal notranslate"><span class="pre">cat_encoding_via_ml_algorithm</span></code>
+to True. This will change the expectations of <code class="docutils literal notranslate"><span class="pre">custom_last_mile_computation</span></code> though.
+If <code class="docutils literal notranslate"><span class="pre">cat_encoding_via_ml_algorithm</span></code> is set to False, <code class="docutils literal notranslate"><span class="pre">custom_last_mile_computation</span></code>
+will receive numerical features only as target encoding will apply before. If <code class="docutils literal notranslate"><span class="pre">cat_encoding_via_ml_algorithm</span></code>
+is True (default setting) <code class="docutils literal notranslate"><span class="pre">custom_last_mile_computation</span></code> will receive categorical
+features as well, because Xgboost’s inbuilt categorical encoding will be used.</p>
+</section>
+<section id="custom-training-configuration">
+<h4>Custom training configuration<a class="headerlink" href="#custom-training-configuration" title="Permalink to this heading">¶</a></h4>
+<p>Despite e2eml, BlueCast allows easy customization. Users can adjust the
+configuration and just pass it to the <code class="docutils literal notranslate"><span class="pre">BlueCast</span></code> class. Here is an example:</p>
+<div class="highlight-sh notranslate"><div class="highlight"><pre><span></span>from<span class="w"> </span>bluecast.blueprints.cast<span class="w"> </span>import<span class="w"> </span>BlueCast
+from<span class="w"> </span>bluecast.config.training_config<span class="w"> </span>import<span class="w"> </span>TrainingConfig,<span class="w"> </span>XgboostTuneParamsConfig
+
+<span class="c1"># Create a custom tuning config and adjust hyperparameter search space</span>
+<span class="nv">xgboost_param_config</span><span class="w"> </span><span class="o">=</span><span class="w"> </span>XgboostTuneParamsConfig<span class="o">()</span>
+xgboost_param_config.steps_max<span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="m">100</span>
+xgboost_param_config.max_leaves_max<span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="m">16</span>
+<span class="c1"># Create a custom training config and adjust general training parameters</span>
+<span class="nv">train_config</span><span class="w"> </span><span class="o">=</span><span class="w"> </span>TrainingConfig<span class="o">()</span>
+train_config.hyperparameter_tuning_rounds<span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="m">10</span>
+train_config.autotune_model<span class="w"> </span><span class="o">=</span><span class="w"> </span>False<span class="w"> </span><span class="c1"># we want to run just normal training, no hyperparameter tuning</span>
+<span class="c1"># We could even just overwrite the final Xgboost params using the XgboostFinalParamConfig class</span>
+
+<span class="c1"># Pass the custom configs to the BlueCast class</span>
+<span class="nv">automl</span><span class="w"> </span><span class="o">=</span><span class="w"> </span>BlueCast<span class="o">(</span>
+<span class="w">        </span><span class="nv">class_problem</span><span class="o">=</span><span class="s2">&quot;binary&quot;</span>,
+<span class="w">        </span><span class="nv">conf_training</span><span class="o">=</span>train_config,
+<span class="w">        </span><span class="nv">conf_xgboost</span><span class="o">=</span>xgboost_param_config,
+<span class="w">    </span><span class="o">)</span>
+
+automl.fit<span class="o">(</span>df_train,<span class="w"> </span><span class="nv">target_col</span><span class="o">=</span><span class="s2">&quot;target&quot;</span><span class="o">)</span>
+y_probs,<span class="w"> </span><span class="nv">y_classes</span><span class="w"> </span><span class="o">=</span><span class="w"> </span>automl.predict<span class="o">(</span>df_val<span class="o">)</span>
+</pre></div>
+</div>
+</section>
+<section id="custom-preprocessing">
+<h4>Custom preprocessing<a class="headerlink" href="#custom-preprocessing" title="Permalink to this heading">¶</a></h4>
+<p>The <code class="docutils literal notranslate"><span class="pre">BlueCast</span></code> class also allows for custom preprocessing. This is done by
+an abstract class that can be inherited and passed into the <code class="docutils literal notranslate"><span class="pre">BlueCast</span></code> class.
+BlueCast provides two entry points to inject custom preprocessing. The
+attribute <code class="docutils literal notranslate"><span class="pre">custom_preprocessor</span></code> is called right after the train_test_split.
+The attribute <code class="docutils literal notranslate"><span class="pre">custom_last_mile_computation</span></code> will be called before the model
+training or prediction starts (when only numerical features are present anymore)
+and allows users to execute last computations (i.e. sub sampling or final calculations).</p>
+<div class="highlight-sh notranslate"><div class="highlight"><pre><span></span>from<span class="w"> </span>bluecast.blueprints.cast<span class="w"> </span>import<span class="w"> </span>BlueCast
+from<span class="w"> </span>bluecast.preprocessing.custom<span class="w"> </span>import<span class="w"> </span>CustomPreprocessing
+
+<span class="c1"># Create a custom tuning config and adjust hyperparameter search space</span>
+<span class="nv">xgboost_param_config</span><span class="w"> </span><span class="o">=</span><span class="w"> </span>XgboostTuneParamsConfig<span class="o">()</span>
+xgboost_param_config.steps_max<span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="m">100</span>
+xgboost_param_config.max_leaves_max<span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="m">16</span>
+<span class="c1"># Create a custom training config and adjust general training parameters</span>
+<span class="nv">train_config</span><span class="w"> </span><span class="o">=</span><span class="w"> </span>TrainingConfig<span class="o">()</span>
+train_config.hyperparameter_tuning_rounds<span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="m">10</span>
+train_config.autotune_model<span class="w"> </span><span class="o">=</span><span class="w"> </span>False<span class="w"> </span><span class="c1"># we want to run just normal training, no hyperparameter tuning</span>
+<span class="c1"># We could even just overwrite the final Xgboost params using the XgboostFinalParamConfig class</span>
+
+class<span class="w"> </span>MyCustomPreprocessing<span class="o">(</span>CustomPreprocessing<span class="o">)</span>:
+<span class="w">    </span>def<span class="w"> </span>__init__<span class="o">(</span>self<span class="o">)</span>:
+<span class="w">        </span>self.trained_patterns<span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="o">{}</span>
+
+<span class="w">    </span>def<span class="w"> </span>fit_transform<span class="o">(</span>
+<span class="w">        </span>self,<span class="w"> </span>df:<span class="w"> </span>pd.DataFrame,<span class="w"> </span>target:<span class="w"> </span>pd.Series
+<span class="w">    </span><span class="o">)</span><span class="w"> </span>-&gt;<span class="w"> </span>Tuple<span class="o">[</span>pd.DataFrame,<span class="w"> </span>pd.Series<span class="o">]</span>:
+<span class="w">        </span><span class="nv">num_columns</span><span class="w"> </span><span class="o">=</span><span class="w"> </span>df.drop<span class="o">([</span><span class="s1">&#39;Beta&#39;</span>,<span class="w"> </span><span class="s1">&#39;Gamma&#39;</span>,<span class="w"> </span><span class="s1">&#39;Delta&#39;</span>,<span class="w"> </span><span class="s1">&#39;Alpha&#39;</span>,<span class="w"> </span><span class="s1">&#39;EJ&#39;</span><span class="o">]</span>,<span class="w"> </span><span class="nv">axis</span><span class="o">=</span><span class="m">1</span><span class="o">)</span>.columns
+<span class="w">        </span><span class="nv">cat_df</span><span class="w"> </span><span class="o">=</span><span class="w"> </span>df<span class="o">[[</span><span class="s1">&#39;Beta&#39;</span>,<span class="w"> </span><span class="s1">&#39;Gamma&#39;</span>,<span class="w"> </span><span class="s1">&#39;Delta&#39;</span>,<span class="w"> </span><span class="s1">&#39;Alpha&#39;</span>,<span class="w"> </span><span class="s1">&#39;EJ&#39;</span><span class="o">]]</span>.copy<span class="o">()</span>
+
+<span class="w">        </span><span class="nv">zscores</span><span class="w"> </span><span class="o">=</span><span class="w"> </span>Zscores<span class="o">()</span>
+<span class="w">        </span>zscores.fit_all<span class="o">(</span>df,<span class="w"> </span><span class="o">[</span><span class="s1">&#39;Beta&#39;</span>,<span class="w"> </span><span class="s1">&#39;Gamma&#39;</span>,<span class="w"> </span><span class="s1">&#39;Delta&#39;</span>,<span class="w"> </span><span class="s1">&#39;Alpha&#39;</span>,<span class="w"> </span><span class="s1">&#39;EJ&#39;</span><span class="o">])</span>
+<span class="w">        </span><span class="nv">df</span><span class="w"> </span><span class="o">=</span><span class="w"> </span>zscores.transform_all<span class="o">(</span>df,<span class="w"> </span><span class="o">[</span><span class="s1">&#39;Beta&#39;</span>,<span class="w"> </span><span class="s1">&#39;Gamma&#39;</span>,<span class="w"> </span><span class="s1">&#39;Delta&#39;</span>,<span class="w"> </span><span class="s1">&#39;Alpha&#39;</span>,<span class="w"> </span><span class="s1">&#39;EJ&#39;</span><span class="o">])</span>
+<span class="w">        </span>self.trained_patterns<span class="o">[</span><span class="s2">&quot;zscores&quot;</span><span class="o">]</span><span class="w"> </span><span class="o">=</span><span class="w"> </span>zscores
+
+<span class="w">        </span><span class="nv">imp_mean</span><span class="w"> </span><span class="o">=</span><span class="w"> </span>SimpleImputer<span class="o">(</span><span class="nv">missing_values</span><span class="o">=</span>np.nan,<span class="w"> </span><span class="nv">strategy</span><span class="o">=</span><span class="s1">&#39;median&#39;</span><span class="o">)</span>
+<span class="w">        </span><span class="nv">num_columns</span><span class="w"> </span><span class="o">=</span><span class="w"> </span>df.drop<span class="o">([</span><span class="s1">&#39;Beta&#39;</span>,<span class="w"> </span><span class="s1">&#39;Gamma&#39;</span>,<span class="w"> </span><span class="s1">&#39;Delta&#39;</span>,<span class="w"> </span><span class="s1">&#39;Alpha&#39;</span>,<span class="w"> </span><span class="s1">&#39;EJ&#39;</span><span class="o">]</span>,<span class="w"> </span><span class="nv">axis</span><span class="o">=</span><span class="m">1</span><span class="o">)</span>.columns
+<span class="w">        </span>imp_mean.fit<span class="o">(</span>df.loc<span class="o">[</span>:,<span class="w"> </span>num_columns<span class="o">])</span>
+<span class="w">        </span><span class="nv">df</span><span class="w"> </span><span class="o">=</span><span class="w"> </span>imp_mean.transform<span class="o">(</span>df.loc<span class="o">[</span>:,<span class="w"> </span>num_columns<span class="o">])</span>
+<span class="w">        </span>self.trained_patterns<span class="o">[</span><span class="s2">&quot;imputation&quot;</span><span class="o">]</span><span class="w"> </span><span class="o">=</span><span class="w"> </span>imp_mean
+
+<span class="w">        </span><span class="nv">df</span><span class="w"> </span><span class="o">=</span><span class="w"> </span>pd.DataFrame<span class="o">(</span>df,<span class="w"> </span><span class="nv">columns</span><span class="o">=</span>num_columns<span class="o">)</span>.merge<span class="o">(</span>cat_df,<span class="w"> </span><span class="nv">left_index</span><span class="o">=</span>True,<span class="w"> </span><span class="nv">right_index</span><span class="o">=</span>True,<span class="w"> </span><span class="nv">how</span><span class="o">=</span><span class="s2">&quot;left&quot;</span><span class="o">)</span>
+
+<span class="w">        </span><span class="nv">df</span><span class="w"> </span><span class="o">=</span><span class="w"> </span>df.drop<span class="o">([</span><span class="s1">&#39;Beta&#39;</span>,<span class="w"> </span><span class="s1">&#39;Gamma&#39;</span>,<span class="w"> </span><span class="s1">&#39;Delta&#39;</span>,<span class="w"> </span><span class="s1">&#39;Alpha&#39;</span><span class="o">]</span>,<span class="w"> </span><span class="nv">axis</span><span class="o">=</span><span class="m">1</span><span class="o">)</span>
+
+<span class="w">        </span><span class="k">return</span><span class="w"> </span>df,<span class="w"> </span>target
+
+<span class="w">    </span>def<span class="w"> </span>transform<span class="o">(</span>
+<span class="w">        </span>self,
+<span class="w">        </span>df:<span class="w"> </span>pd.DataFrame,
+<span class="w">        </span>target:<span class="w"> </span>Optional<span class="o">[</span>pd.Series<span class="o">]</span><span class="w"> </span><span class="o">=</span><span class="w"> </span>None,
+<span class="w">        </span>predicton_mode:<span class="w"> </span><span class="nv">bool</span><span class="w"> </span><span class="o">=</span><span class="w"> </span>False,
+<span class="w">    </span><span class="o">)</span><span class="w"> </span>-&gt;<span class="w"> </span>Tuple<span class="o">[</span>pd.DataFrame,<span class="w"> </span>Optional<span class="o">[</span>pd.Series<span class="o">]]</span>:
+<span class="w">        </span><span class="nv">num_columns</span><span class="w"> </span><span class="o">=</span><span class="w"> </span>df.drop<span class="o">([</span><span class="s1">&#39;Beta&#39;</span>,<span class="w"> </span><span class="s1">&#39;Gamma&#39;</span>,<span class="w"> </span><span class="s1">&#39;Delta&#39;</span>,<span class="w"> </span><span class="s1">&#39;Alpha&#39;</span>,<span class="w"> </span><span class="s1">&#39;EJ&#39;</span><span class="o">]</span>,<span class="w"> </span><span class="nv">axis</span><span class="o">=</span><span class="m">1</span><span class="o">)</span>.columns
+<span class="w">        </span><span class="nv">cat_df</span><span class="w"> </span><span class="o">=</span><span class="w"> </span>df<span class="o">[[</span><span class="s1">&#39;Beta&#39;</span>,<span class="w"> </span><span class="s1">&#39;Gamma&#39;</span>,<span class="w"> </span><span class="s1">&#39;Delta&#39;</span>,<span class="w"> </span><span class="s1">&#39;Alpha&#39;</span>,<span class="w"> </span><span class="s1">&#39;EJ&#39;</span><span class="o">]]</span>.copy<span class="o">()</span>
+
+<span class="w">        </span><span class="nv">df</span><span class="w"> </span><span class="o">=</span><span class="w"> </span>self.trained_patterns<span class="o">[</span><span class="s2">&quot;zscores&quot;</span><span class="o">]</span>.transform_all<span class="o">(</span>df,<span class="w"> </span><span class="o">[</span><span class="s1">&#39;Beta&#39;</span>,<span class="w"> </span><span class="s1">&#39;Gamma&#39;</span>,<span class="w"> </span><span class="s1">&#39;Delta&#39;</span>,<span class="w"> </span><span class="s1">&#39;Alpha&#39;</span>,<span class="w"> </span><span class="s1">&#39;EJ&#39;</span><span class="o">])</span>
+
+<span class="w">        </span><span class="nv">imp_mean</span><span class="w"> </span><span class="o">=</span><span class="w"> </span>self.trained_patterns<span class="o">[</span><span class="s2">&quot;imputation&quot;</span><span class="o">]</span>
+<span class="w">        </span><span class="nv">num_columns</span><span class="w"> </span><span class="o">=</span><span class="w"> </span>df.drop<span class="o">([</span><span class="s1">&#39;Beta&#39;</span>,<span class="w"> </span><span class="s1">&#39;Gamma&#39;</span>,<span class="w"> </span><span class="s1">&#39;Delta&#39;</span>,<span class="w"> </span><span class="s1">&#39;Alpha&#39;</span>,<span class="w"> </span><span class="s1">&#39;EJ&#39;</span><span class="o">]</span>,<span class="w"> </span><span class="nv">axis</span><span class="o">=</span><span class="m">1</span><span class="o">)</span>.columns
+<span class="w">        </span>df.loc<span class="o">[</span>:,<span class="w"> </span>num_columns<span class="o">]</span><span class="w"> </span><span class="o">=</span><span class="w"> </span>df.loc<span class="o">[</span>:,<span class="w"> </span>num_columns<span class="o">]</span>.replace<span class="o">([</span>np.inf,<span class="w"> </span>-np.inf<span class="o">]</span>,<span class="w"> </span>np.nan<span class="o">)</span>
+<span class="w">        </span><span class="nv">df</span><span class="w"> </span><span class="o">=</span><span class="w"> </span>imp_mean.transform<span class="o">(</span>df.loc<span class="o">[</span>:,<span class="w"> </span>num_columns<span class="o">])</span>
+
+<span class="w">        </span><span class="nv">df</span><span class="w"> </span><span class="o">=</span><span class="w"> </span>pd.DataFrame<span class="o">(</span>df,<span class="w"> </span><span class="nv">columns</span><span class="o">=</span>num_columns<span class="o">)</span>.merge<span class="o">(</span>cat_df,<span class="w"> </span><span class="nv">left_index</span><span class="o">=</span>True,<span class="w"> </span><span class="nv">right_index</span><span class="o">=</span>True,<span class="w"> </span><span class="nv">how</span><span class="o">=</span><span class="s2">&quot;left&quot;</span><span class="o">)</span>
+
+<span class="w">        </span><span class="nv">df</span><span class="w"> </span><span class="o">=</span><span class="w"> </span>df.drop<span class="o">([</span><span class="s1">&#39;Beta&#39;</span>,<span class="w"> </span><span class="s1">&#39;Gamma&#39;</span>,<span class="w"> </span><span class="s1">&#39;Delta&#39;</span>,<span class="w"> </span><span class="s1">&#39;Alpha&#39;</span><span class="o">]</span>,<span class="w"> </span><span class="nv">axis</span><span class="o">=</span><span class="m">1</span><span class="o">)</span>
+
+<span class="w">        </span><span class="k">return</span><span class="w"> </span>df,<span class="w"> </span>target
+
+<span class="c1"># add custom last mile computation</span>
+class<span class="w"> </span>MyCustomLastMilePreprocessing<span class="o">(</span>CustomPreprocessing<span class="o">)</span>:
+<span class="w">    </span>def<span class="w"> </span>custom_function<span class="o">(</span>self,<span class="w"> </span>df:<span class="w"> </span>pd.DataFrame<span class="o">)</span><span class="w"> </span>-&gt;<span class="w"> </span>pd.DataFrame:
+<span class="w">        </span><span class="nv">df</span><span class="w"> </span><span class="o">=</span><span class="w"> </span>df<span class="w"> </span>/<span class="w"> </span><span class="m">2</span>
+<span class="w">        </span>df<span class="o">[</span><span class="s2">&quot;custom_col&quot;</span><span class="o">]</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="m">5</span>
+<span class="w">        </span><span class="k">return</span><span class="w"> </span>df
+
+<span class="w">    </span><span class="c1"># Please note: The base class enforces that the fit_transform method is implemented</span>
+<span class="w">    </span>def<span class="w"> </span>fit_transform<span class="o">(</span>
+<span class="w">        </span>self,<span class="w"> </span>df:<span class="w"> </span>pd.DataFrame,<span class="w"> </span>target:<span class="w"> </span>pd.Series
+<span class="w">    </span><span class="o">)</span><span class="w"> </span>-&gt;<span class="w"> </span>Tuple<span class="o">[</span>pd.DataFrame,<span class="w"> </span>pd.Series<span class="o">]</span>:
+<span class="w">        </span><span class="nv">df</span><span class="w"> </span><span class="o">=</span><span class="w"> </span>self.custom_function<span class="o">(</span>df<span class="o">)</span>
+<span class="w">        </span><span class="nv">df</span><span class="w"> </span><span class="o">=</span><span class="w"> </span>df.head<span class="o">(</span><span class="m">1000</span><span class="o">)</span>
+<span class="w">        </span><span class="nv">target</span><span class="w"> </span><span class="o">=</span><span class="w"> </span>target.head<span class="o">(</span><span class="m">1000</span><span class="o">)</span>
+<span class="w">        </span><span class="k">return</span><span class="w"> </span>df,<span class="w"> </span>target
+
+<span class="w">    </span><span class="c1"># Please note: The base class enforces that the fit_transform method is implemented</span>
+<span class="w">    </span>def<span class="w"> </span>transform<span class="o">(</span>
+<span class="w">        </span>self,
+<span class="w">        </span>df:<span class="w"> </span>pd.DataFrame,
+<span class="w">        </span>target:<span class="w"> </span>Optional<span class="o">[</span>pd.Series<span class="o">]</span><span class="w"> </span><span class="o">=</span><span class="w"> </span>None,
+<span class="w">        </span>predicton_mode:<span class="w"> </span><span class="nv">bool</span><span class="w"> </span><span class="o">=</span><span class="w"> </span>False,
+<span class="w">    </span><span class="o">)</span><span class="w"> </span>-&gt;<span class="w"> </span>Tuple<span class="o">[</span>pd.DataFrame,<span class="w"> </span>Optional<span class="o">[</span>pd.Series<span class="o">]]</span>:
+<span class="w">        </span><span class="nv">df</span><span class="w"> </span><span class="o">=</span><span class="w"> </span>self.custom_function<span class="o">(</span>df<span class="o">)</span>
+<span class="w">        </span><span class="k">if</span><span class="w"> </span>not<span class="w"> </span>predicton_mode<span class="w"> </span>and<span class="w"> </span>isinstance<span class="o">(</span>target,<span class="w"> </span>pd.Series<span class="o">)</span>:
+<span class="w">            </span><span class="nv">df</span><span class="w"> </span><span class="o">=</span><span class="w"> </span>df.head<span class="o">(</span><span class="m">100</span><span class="o">)</span>
+<span class="w">            </span><span class="nv">target</span><span class="w"> </span><span class="o">=</span><span class="w"> </span>target.head<span class="o">(</span><span class="m">100</span><span class="o">)</span>
+<span class="w">        </span><span class="k">return</span><span class="w"> </span>df,<span class="w"> </span>targe
+
+<span class="nv">custom_last_mile_computation</span><span class="w"> </span><span class="o">=</span><span class="w"> </span>MyCustomLastMilePreprocessing<span class="o">()</span>
+<span class="nv">custom_preprocessor</span><span class="w"> </span><span class="o">=</span><span class="w"> </span>MyCustomPreprocessing<span class="o">()</span>
+
+<span class="c1"># Pass the custom configs to the BlueCast class</span>
+<span class="nv">automl</span><span class="w"> </span><span class="o">=</span><span class="w"> </span>BlueCast<span class="o">(</span>
+<span class="w">        </span><span class="nv">class_problem</span><span class="o">=</span><span class="s2">&quot;binary&quot;</span>,
+<span class="w">        </span><span class="nv">conf_training</span><span class="o">=</span>train_config,
+<span class="w">        </span><span class="nv">conf_xgboost</span><span class="o">=</span>xgboost_param_config,
+<span class="w">        </span><span class="nv">custom_preprocessor</span><span class="o">=</span>custom_preprocessor,<span class="w"> </span><span class="c1"># this takes place right after test_train_split</span>
+<span class="w">        </span><span class="nv">custom_last_mile_computation</span><span class="o">=</span>custom_last_mile_computation,<span class="w"> </span><span class="c1"># last step before model training/prediction</span>
+<span class="w">    </span><span class="o">)</span>
+
+automl.fit<span class="o">(</span>df_train,<span class="w"> </span><span class="nv">target_col</span><span class="o">=</span><span class="s2">&quot;target&quot;</span><span class="o">)</span>
+y_probs,<span class="w"> </span><span class="nv">y_classes</span><span class="w"> </span><span class="o">=</span><span class="w"> </span>automl.predict<span class="o">(</span>df_val<span class="o">)</span>
+</pre></div>
+</div>
+</section>
+<section id="custom-feature-selection">
+<h4>Custom feature selection<a class="headerlink" href="#custom-feature-selection" title="Permalink to this heading">¶</a></h4>
+<p>BlueCast offers automated feature selection. On default the feature
+selection is disabled, but BlueCast raises a warning to inform the
+user about this option. The behaviour can be controlled via the
+<code class="docutils literal notranslate"><span class="pre">TrainingConfig</span></code>.</p>
+<div class="highlight-sh notranslate"><div class="highlight"><pre><span></span>from<span class="w"> </span>bluecast.blueprints.cast<span class="w"> </span>import<span class="w"> </span>BlueCast
+from<span class="w"> </span>bluecast.preprocessing.custom<span class="w"> </span>import<span class="w"> </span>CustomPreprocessing
+from<span class="w"> </span>bluecast.config.training_config<span class="w"> </span>import<span class="w"> </span>TrainingConfig
+
+<span class="c1"># Create a custom training config and adjust general training parameters</span>
+<span class="nv">train_config</span><span class="w"> </span><span class="o">=</span><span class="w"> </span>TrainingConfig<span class="o">()</span>
+train_config.hyperparameter_tuning_rounds<span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="m">10</span>
+train_config.autotune_model<span class="w"> </span><span class="o">=</span><span class="w"> </span>False<span class="w"> </span><span class="c1"># we want to run just normal training, no hyperparameter tuning</span>
+train_config.enable_feature_selection<span class="w"> </span><span class="o">=</span><span class="w"> </span>True
+
+<span class="c1"># Pass the custom configs to the BlueCast class</span>
+<span class="nv">automl</span><span class="w"> </span><span class="o">=</span><span class="w"> </span>BlueCast<span class="o">(</span>
+<span class="w">        </span><span class="nv">class_problem</span><span class="o">=</span><span class="s2">&quot;binary&quot;</span>,
+<span class="w">        </span><span class="nv">conf_training</span><span class="o">=</span>train_config,
+<span class="w">    </span><span class="o">)</span>
+
+automl.fit<span class="o">(</span>df_train,<span class="w"> </span><span class="nv">target_col</span><span class="o">=</span><span class="s2">&quot;target&quot;</span><span class="o">)</span>
+y_probs,<span class="w"> </span><span class="nv">y_classes</span><span class="w"> </span><span class="o">=</span><span class="w"> </span>automl.predict<span class="o">(</span>df_val<span class="o">)</span>
+</pre></div>
+</div>
+<p>Also this step can be customized. The following example shows how to:</p>
+<div class="highlight-sh notranslate"><div class="highlight"><pre><span></span>from<span class="w"> </span>bluecast.config.training_config<span class="w"> </span>import<span class="w"> </span>TrainingConfig
+from<span class="w"> </span>bluecast.preprocessing.custom<span class="w"> </span>import<span class="w"> </span>CustomPreprocessing
+from<span class="w"> </span>sklearn.feature_selection<span class="w"> </span>import<span class="w"> </span>RFECV
+from<span class="w"> </span>sklearn.metrics<span class="w"> </span>import<span class="w"> </span>make_scorer,<span class="w"> </span>matthews_corrcoef
+from<span class="w"> </span>sklearn.model_selection<span class="w"> </span>import<span class="w"> </span>StratifiedKFold
+from<span class="w"> </span>typing<span class="w"> </span>import<span class="w"> </span>Optional,<span class="w"> </span>Tuple
+
+
+<span class="c1"># Create a custom training config and adjust general training parameters</span>
+<span class="nv">train_config</span><span class="w"> </span><span class="o">=</span><span class="w"> </span>TrainingConfig<span class="o">()</span>
+train_config.enable_feature_selection<span class="w"> </span><span class="o">=</span><span class="w"> </span>True
+
+<span class="c1"># add custom feature selection</span>
+class<span class="w"> </span>RFECVSelector<span class="o">(</span>CustomPreprocessing<span class="o">)</span>:
+<span class="w">    </span>def<span class="w"> </span>__init__<span class="o">(</span>self,<span class="w"> </span>random_state:<span class="w"> </span><span class="nv">int</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="m">0</span><span class="o">)</span>:
+<span class="w">        </span>super<span class="o">()</span>.__init__<span class="o">()</span>
+<span class="w">        </span>self.selected_features<span class="w"> </span><span class="o">=</span><span class="w"> </span>None
+<span class="w">        </span>self.random_state<span class="w"> </span><span class="o">=</span><span class="w"> </span>random_state
+<span class="w">        </span>self.selection_strategy:<span class="w"> </span><span class="nv">RFECV</span><span class="w"> </span><span class="o">=</span><span class="w"> </span>RFECV<span class="o">(</span>
+<span class="w">            </span><span class="nv">estimator</span><span class="o">=</span>xgb.XGBClassifier<span class="o">()</span>,
+<span class="w">            </span><span class="nv">step</span><span class="o">=</span><span class="m">1</span>,
+<span class="w">            </span><span class="nv">cv</span><span class="o">=</span>StratifiedKFold<span class="o">(</span><span class="m">5</span>,<span class="w"> </span><span class="nv">random_state</span><span class="o">=</span>random_state,<span class="w"> </span><span class="nv">shuffle</span><span class="o">=</span>True<span class="o">)</span>,
+<span class="w">            </span><span class="nv">min_features_to_select</span><span class="o">=</span><span class="m">1</span>,
+<span class="w">            </span><span class="nv">scoring</span><span class="o">=</span>make_scorer<span class="o">(</span>matthews_corrcoef<span class="o">)</span>,
+<span class="w">            </span><span class="nv">n_jobs</span><span class="o">=</span><span class="m">2</span>,
+<span class="w">        </span><span class="o">)</span>
+
+<span class="w">    </span>def<span class="w"> </span>fit_transform<span class="o">(</span>self,<span class="w"> </span>df:<span class="w"> </span>pd.DataFrame,<span class="w"> </span>target:<span class="w"> </span>pd.Series<span class="o">)</span><span class="w"> </span>-&gt;<span class="w"> </span>Tuple<span class="o">[</span>pd.DataFrame,<span class="w"> </span>Optional<span class="o">[</span>pd.Series<span class="o">]]</span>:
+<span class="w">        </span>self.selection_strategy.fit<span class="o">(</span>df,<span class="w"> </span>target<span class="o">)</span>
+<span class="w">        </span>self.selected_features<span class="w"> </span><span class="o">=</span><span class="w"> </span>self.selection_strategy.support_
+<span class="w">        </span><span class="nv">df</span><span class="w"> </span><span class="o">=</span><span class="w"> </span>df.loc<span class="o">[</span>:,<span class="w"> </span>self.selected_features<span class="o">]</span>
+<span class="w">        </span><span class="k">return</span><span class="w"> </span>df,<span class="w"> </span>target
+
+<span class="w">    </span>def<span class="w"> </span>transform<span class="o">(</span>self,
+<span class="w">                  </span>df:<span class="w"> </span>pd.DataFrame,
+<span class="w">                  </span>target:<span class="w"> </span>Optional<span class="o">[</span>pd.Series<span class="o">]</span><span class="w"> </span><span class="o">=</span><span class="w"> </span>None,
+<span class="w">                  </span>predicton_mode:<span class="w"> </span><span class="nv">bool</span><span class="w"> </span><span class="o">=</span><span class="w"> </span>False<span class="o">)</span><span class="w"> </span>-&gt;<span class="w"> </span>Tuple<span class="o">[</span>pd.DataFrame,<span class="w"> </span>Optional<span class="o">[</span>pd.Series<span class="o">]]</span>:
+<span class="w">        </span><span class="nv">df</span><span class="w"> </span><span class="o">=</span><span class="w"> </span>df.loc<span class="o">[</span>:,<span class="w"> </span>self.selected_features<span class="o">]</span>
+<span class="w">        </span><span class="k">return</span><span class="w"> </span>df,<span class="w"> </span>target
+
+<span class="nv">custom_feature_selector</span><span class="w"> </span><span class="o">=</span><span class="w"> </span>RFECVSelector<span class="o">()</span>
+
+<span class="c1"># Create an instance of the BlueCast class with the custom model</span>
+<span class="nv">bluecast</span><span class="w"> </span><span class="o">=</span><span class="w"> </span>BlueCast<span class="o">(</span>
+<span class="w">    </span><span class="nv">class_problem</span><span class="o">=</span><span class="s2">&quot;binary&quot;</span>,
+<span class="w">    </span><span class="nv">conf_feature_selection</span><span class="o">=</span>custom_feat_sel,
+<span class="w">    </span><span class="nv">conf_training</span><span class="o">=</span>train_config,
+<span class="w">    </span><span class="nv">custom_feature_selector</span><span class="o">=</span>custom_feature_selector,
+
+<span class="c1"># Create some sample data for testing</span>
+<span class="nv">x_train</span><span class="w"> </span><span class="o">=</span><span class="w"> </span>pd.DataFrame<span class="o">(</span>
+<span class="w">    </span><span class="o">{</span><span class="s2">&quot;feature1&quot;</span>:<span class="w"> </span><span class="o">[</span>i<span class="w"> </span><span class="k">for</span><span class="w"> </span>i<span class="w"> </span><span class="k">in</span><span class="w"> </span>range<span class="o">(</span><span class="m">10</span><span class="o">)]</span>,<span class="w"> </span><span class="s2">&quot;feature2&quot;</span>:<span class="w"> </span><span class="o">[</span>i<span class="w"> </span><span class="k">for</span><span class="w"> </span>i<span class="w"> </span><span class="k">in</span><span class="w"> </span>range<span class="o">(</span><span class="m">10</span><span class="o">)]}</span>
+<span class="o">)</span>
+<span class="nv">y_train</span><span class="w"> </span><span class="o">=</span><span class="w"> </span>pd.Series<span class="o">([</span><span class="m">0</span>,<span class="w"> </span><span class="m">1</span>,<span class="w"> </span><span class="m">0</span>,<span class="w"> </span><span class="m">1</span>,<span class="w"> </span><span class="m">0</span>,<span class="w"> </span><span class="m">1</span>,<span class="w"> </span><span class="m">0</span>,<span class="w"> </span><span class="m">1</span>,<span class="w"> </span><span class="m">0</span>,<span class="w"> </span><span class="m">1</span><span class="o">])</span>
+<span class="nv">x_test</span><span class="w"> </span><span class="o">=</span><span class="w"> </span>pd.DataFrame<span class="o">(</span>
+<span class="w">    </span><span class="o">{</span><span class="s2">&quot;feature1&quot;</span>:<span class="w"> </span><span class="o">[</span>i<span class="w"> </span><span class="k">for</span><span class="w"> </span>i<span class="w"> </span><span class="k">in</span><span class="w"> </span>range<span class="o">(</span><span class="m">10</span><span class="o">)]</span>,<span class="w"> </span><span class="s2">&quot;feature2&quot;</span>:<span class="w"> </span><span class="o">[</span>i<span class="w"> </span><span class="k">for</span><span class="w"> </span>i<span class="w"> </span><span class="k">in</span><span class="w"> </span>range<span class="o">(</span><span class="m">10</span><span class="o">)]}</span>
+
+x_train<span class="o">[</span><span class="s2">&quot;target&quot;</span><span class="o">]</span><span class="w"> </span><span class="o">=</span><span class="w"> </span>y_trai
+<span class="c1"># Fit the BlueCast model using the custom model</span>
+bluecast.fit<span class="o">(</span>x_train,<span class="w"> </span><span class="s2">&quot;target&quot;</span><span class="o">)</span>
+<span class="c1"># Predict on the test data using the custom model</span>
+predicted_probas,<span class="w"> </span><span class="nv">predicted_classes</span><span class="w"> </span><span class="o">=</span><span class="w"> </span>bluecast.predict<span class="o">(</span>x_test<span class="o">)</span>
+</pre></div>
+</div>
+</section>
+<section id="custom-ml-model">
+<h4>Custom ML model<a class="headerlink" href="#custom-ml-model" title="Permalink to this heading">¶</a></h4>
+<p>For some users it might just be convenient to use the BlueCast class to
+enjoy convenience features (details see below), but use a custom ML model.
+This is possible by passing a custom model to the BlueCast class. The needed properties
+are defined via the BaseClassMlModel class. Here is an example:</p>
+<div class="highlight-sh notranslate"><div class="highlight"><pre><span></span>from<span class="w"> </span>bluecast.ml_modelling.base_classes<span class="w"> </span>import<span class="w"> </span><span class="o">(</span>
+<span class="w">    </span>BaseClassMlModel,
+<span class="w">    </span>PredictedClasses,<span class="w">  </span><span class="c1"># just for linting checks</span>
+<span class="w">    </span>PredictedProbas,<span class="w">  </span><span class="c1"># just for linting checks</span>
+<span class="o">)</span>
+
+
+class<span class="w"> </span>CustomModel<span class="o">(</span>BaseClassMlModel<span class="o">)</span>:
+<span class="w">    </span>def<span class="w"> </span>__init__<span class="o">(</span>self<span class="o">)</span>:
+<span class="w">        </span>self.model<span class="w"> </span><span class="o">=</span><span class="w"> </span>None
+
+<span class="w">    </span>def<span class="w"> </span>fit<span class="o">(</span>
+<span class="w">        </span>self,
+<span class="w">        </span>x_train:<span class="w"> </span>pd.DataFrame,
+<span class="w">        </span>x_test:<span class="w"> </span>pd.DataFrame,
+<span class="w">        </span>y_train:<span class="w"> </span>pd.Series,
+<span class="w">        </span>y_test:<span class="w"> </span>pd.Series,
+<span class="w">    </span><span class="o">)</span><span class="w"> </span>-&gt;<span class="w"> </span>None:
+<span class="w">        </span>self.model<span class="w"> </span><span class="o">=</span><span class="w"> </span>LogisticRegression<span class="o">()</span>
+<span class="w">        </span>self.model.fit<span class="o">(</span>x_train,<span class="w"> </span>y_train<span class="o">)</span>
+<span class="w">        </span><span class="c1"># if you wih to track experiments using an own ExperimentTracker add it here</span>
+<span class="w">        </span><span class="c1"># or in the fit method itself</span>
+
+<span class="w">    </span>def<span class="w"> </span>predict<span class="o">(</span>self,<span class="w"> </span>df:<span class="w"> </span>pd.DataFrame<span class="o">)</span><span class="w"> </span>-&gt;<span class="w"> </span>Tuple<span class="o">[</span>PredictedProbas,<span class="w"> </span>PredictedClasses<span class="o">]</span>:
+<span class="w">        </span><span class="nv">predicted_probas</span><span class="w"> </span><span class="o">=</span><span class="w"> </span>self.model.predict_proba<span class="o">(</span>df<span class="o">)</span>
+<span class="w">        </span><span class="nv">predicted_classes</span><span class="w"> </span><span class="o">=</span><span class="w"> </span>self.model.predict<span class="o">(</span>df<span class="o">)</span>
+<span class="w">        </span><span class="k">return</span><span class="w"> </span>predicted_probas,<span class="w"> </span>predicted_classes
+
+<span class="nv">custom_model</span><span class="w"> </span><span class="o">=</span><span class="w"> </span>CustomModel<span class="o">()</span>
+
+<span class="c1"># Create an instance of the BlueCast class with the custom model</span>
+<span class="nv">bluecast</span><span class="w"> </span><span class="o">=</span><span class="w"> </span>BlueCast<span class="o">(</span>
+<span class="w">    </span><span class="nv">class_problem</span><span class="o">=</span><span class="s2">&quot;binary&quot;</span>,
+<span class="w">    </span><span class="nv">ml_model</span><span class="o">=</span>custom_model,
+
+<span class="c1"># Create some sample data for testing</span>
+<span class="nv">x_train</span><span class="w"> </span><span class="o">=</span><span class="w"> </span>pd.DataFrame<span class="o">(</span>
+<span class="w">    </span><span class="o">{</span><span class="s2">&quot;feature1&quot;</span>:<span class="w"> </span><span class="o">[</span>i<span class="w"> </span><span class="k">for</span><span class="w"> </span>i<span class="w"> </span><span class="k">in</span><span class="w"> </span>range<span class="o">(</span><span class="m">10</span><span class="o">)]</span>,<span class="w"> </span><span class="s2">&quot;feature2&quot;</span>:<span class="w"> </span><span class="o">[</span>i<span class="w"> </span><span class="k">for</span><span class="w"> </span>i<span class="w"> </span><span class="k">in</span><span class="w"> </span>range<span class="o">(</span><span class="m">10</span><span class="o">)]}</span>
+<span class="o">)</span>
+<span class="nv">y_train</span><span class="w"> </span><span class="o">=</span><span class="w"> </span>pd.Series<span class="o">([</span><span class="m">0</span>,<span class="w"> </span><span class="m">1</span>,<span class="w"> </span><span class="m">0</span>,<span class="w"> </span><span class="m">1</span>,<span class="w"> </span><span class="m">0</span>,<span class="w"> </span><span class="m">1</span>,<span class="w"> </span><span class="m">0</span>,<span class="w"> </span><span class="m">1</span>,<span class="w"> </span><span class="m">0</span>,<span class="w"> </span><span class="m">1</span><span class="o">])</span>
+<span class="nv">x_test</span><span class="w"> </span><span class="o">=</span><span class="w"> </span>pd.DataFrame<span class="o">(</span>
+<span class="w">    </span><span class="o">{</span><span class="s2">&quot;feature1&quot;</span>:<span class="w"> </span><span class="o">[</span>i<span class="w"> </span><span class="k">for</span><span class="w"> </span>i<span class="w"> </span><span class="k">in</span><span class="w"> </span>range<span class="o">(</span><span class="m">10</span><span class="o">)]</span>,<span class="w"> </span><span class="s2">&quot;feature2&quot;</span>:<span class="w"> </span><span class="o">[</span>i<span class="w"> </span><span class="k">for</span><span class="w"> </span>i<span class="w"> </span><span class="k">in</span><span class="w"> </span>range<span class="o">(</span><span class="m">10</span><span class="o">)]}</span>
+
+x_train<span class="o">[</span><span class="s2">&quot;target&quot;</span><span class="o">]</span><span class="w"> </span><span class="o">=</span><span class="w"> </span>y_trai
+<span class="c1"># Fit the BlueCast model using the custom model</span>
+bluecast.fit<span class="o">(</span>x_train,<span class="w"> </span><span class="s2">&quot;target&quot;</span>
+<span class="c1"># Predict on the test data using the custom model</span>
+predicted_probas,<span class="w"> </span><span class="nv">predicted_classes</span><span class="w"> </span><span class="o">=</span><span class="w"> </span>bluecast.predict<span class="o">(</span>x_test<span class="o">)</span>
+</pre></div>
+</div>
+<p>Please note that custom ML models require user defined hyperparameter tuning. Pre-defined
+configurations are not available for custom models.
+Also note that the calculation of SHAP values only works with tree based models by
+default. For other model architectures disable SHAP values in the TrainingConfig
+via:</p>
+<p><code class="docutils literal notranslate"><span class="pre">train_config.calculate_shap_values</span> <span class="pre">=</span> <span class="pre">True</span></code></p>
+<p>Just instantiate a new instance of the TrainingConfig, update the param as above
+and pass the config as an argument to the BlueCast instance during instantiation.
+Feature importance can be added in the custom model definition.</p>
+</section>
+<section id="using-the-inbuilt-experienttracker">
+<h4>Using the inbuilt ExperientTracker<a class="headerlink" href="#using-the-inbuilt-experienttracker" title="Permalink to this heading">¶</a></h4>
+<p>For experimentation environments it can be useful to store all variables
+and results from model runs.
+BlueCast has an inbuilt experiment tracker to enhance the provided insights.
+No setup is required. BlueCast will automatically store all necessary data
+after each hyperparameter tuning trial.</p>
+<div class="highlight-sh notranslate"><div class="highlight"><pre><span></span><span class="c1"># instantiate and train BlueCast</span>
+from<span class="w"> </span>bluecast.blueprints.cast<span class="w"> </span>import<span class="w"> </span>BlueCast
+
+<span class="nv">automl</span><span class="w"> </span><span class="o">=</span><span class="w"> </span>BlueCast<span class="o">(</span>
+<span class="w">        </span><span class="nv">class_problem</span><span class="o">=</span><span class="s2">&quot;binary&quot;</span>,
+<span class="w">    </span><span class="o">)</span>
+
+automl.fit_eval<span class="o">(</span>df_train,<span class="w"> </span>df_eval,<span class="w"> </span>y_eval,<span class="w"> </span><span class="nv">target_col</span><span class="o">=</span><span class="s2">&quot;target&quot;</span><span class="o">)</span>
+
+<span class="c1"># access the experiment tracker</span>
+<span class="nv">tracker</span><span class="w"> </span><span class="o">=</span><span class="w"> </span>automl.experiment_tracker
+
+<span class="c1"># see all stored information as a Pandas DataFrame</span>
+<span class="nv">tracker_df</span><span class="w"> </span><span class="o">=</span><span class="w"> </span>tracker.retrieve_results_as_df<span class="o">()</span>
+</pre></div>
+</div>
+<p>Now from here you could even feed selected columns back into a BlueCast
+instance and try to predict the eval_score to check the get the feature
+importance of your experiment data! Maybe you uncover hidden patterns
+for your model training.</p>
+<p>Please note that the number of stored experiments will probably be lower
+than the number of started hyperparameter tuning trials. The experiment tracker
+is skipped whenever Optuna prunes a trial.
+The experiment triggers whenever the <code class="docutils literal notranslate"><span class="pre">fit</span></code> or <code class="docutils literal notranslate"><span class="pre">fit_eval</span></code> methods of a BlueCast
+class instance are called (also within BlueCastCV). This means for custom
+models the tracker will not trigger automatically and has to be added manually.</p>
+</section>
+<section id="use-mlflow-via-custom-experienttracker-api">
+<h4>Use Mlflow via custom ExperientTracker API<a class="headerlink" href="#use-mlflow-via-custom-experienttracker-api" title="Permalink to this heading">¶</a></h4>
+<p>The inbuilt experiment tracker is handy to start with, however in production
+environments it might be required to send metrics to a Mlflow server or
+comparable solutions. BlueCast allows to pass a custom experiment tracker.</p>
+<div class="highlight-sh notranslate"><div class="highlight"><pre><span></span><span class="c1"># instantiate and train BlueCast</span>
+from<span class="w"> </span>bluecast.blueprints.cast<span class="w"> </span>import<span class="w"> </span>BlueCast
+from<span class="w"> </span>bluecast.cnfig.base_classes<span class="w"> </span>import<span class="w"> </span>BaseClassExperimentTracker
+
+class<span class="w"> </span>CustomExperimentTracker<span class="o">(</span>BaseClassExperimentTracker<span class="o">)</span>:
+<span class="w">    </span><span class="s2">&quot;&quot;&quot;Base class for the experiment tracker.</span>
+
+<span class="s2">    Enforces the implementation of the add_results and retrieve_results_as_df methods.</span>
+<span class="s2">    &quot;&quot;&quot;</span>
+
+<span class="w">    </span>@abstractmethod
+<span class="w">    </span>def<span class="w"> </span>add_results<span class="o">(</span>
+<span class="w">        </span>self,
+<span class="w">        </span>experiment_id:<span class="w"> </span>int,
+<span class="w">        </span>score_category:<span class="w"> </span>Literal<span class="o">[</span><span class="s2">&quot;simple_train_test_score&quot;</span>,<span class="w"> </span><span class="s2">&quot;cv_score&quot;</span>,<span class="w"> </span><span class="s2">&quot;oof_score&quot;</span><span class="o">]</span>,
+<span class="w">        </span>training_config:<span class="w"> </span>TrainingConfig,
+<span class="w">        </span>model_parameters:<span class="w"> </span>Dict<span class="o">[</span>Any,<span class="w"> </span>Any<span class="o">]</span>,
+<span class="w">        </span>eval_scores:<span class="w"> </span>Union<span class="o">[</span>float,<span class="w"> </span>int,<span class="w"> </span>None<span class="o">]</span>,
+<span class="w">        </span>metric_used:<span class="w"> </span>str,
+<span class="w">        </span>metric_higher_is_better:<span class="w"> </span>bool,
+<span class="w">    </span><span class="o">)</span><span class="w"> </span>-&gt;<span class="w"> </span>None:
+<span class="w">        </span><span class="s2">&quot;&quot;&quot;</span>
+<span class="s2">        Add results to the ExperimentTracker class.</span>
+<span class="s2">        &quot;&quot;&quot;</span>
+<span class="w">        </span>pass<span class="w"> </span><span class="c1"># add Mlflow tracking i.e.</span>
+
+<span class="w">    </span>@abstractmethod
+<span class="w">    </span>def<span class="w"> </span>retrieve_results_as_df<span class="o">(</span>self<span class="o">)</span><span class="w"> </span>-&gt;<span class="w"> </span>pd.DataFrame:
+<span class="w">        </span><span class="s2">&quot;&quot;&quot;</span>
+<span class="s2">        Retrieve results from the ExperimentTracker class</span>
+<span class="s2">        &quot;&quot;&quot;</span>
+<span class="w">        </span>pass
+
+
+<span class="nv">experiment_tracker</span><span class="w"> </span><span class="o">=</span><span class="w"> </span>CustomExperimentTracker<span class="o">()</span>
+
+<span class="nv">automl</span><span class="w"> </span><span class="o">=</span><span class="w"> </span>BlueCast<span class="o">(</span>
+<span class="w">        </span><span class="nv">class_problem</span><span class="o">=</span><span class="s2">&quot;binary&quot;</span>,
+<span class="w">        </span><span class="nv">experiment_tracker</span><span class="o">=</span>experiment_tracker,
+<span class="w">    </span><span class="o">)</span>
+
+automl.fit_eval<span class="o">(</span>df_train,<span class="w"> </span>df_eval,<span class="w"> </span>y_eval,<span class="w"> </span><span class="nv">target_col</span><span class="o">=</span><span class="s2">&quot;target&quot;</span><span class="o">)</span>
+
+<span class="c1"># access the experiment tracker</span>
+<span class="nv">tracker</span><span class="w"> </span><span class="o">=</span><span class="w"> </span>automl.experiment_tracker
+
+<span class="c1"># see all stored information as a Pandas DataFrame</span>
+<span class="nv">tracker_df</span><span class="w"> </span><span class="o">=</span><span class="w"> </span>tracker.retrieve_results_as_df<span class="o">()</span>
+</pre></div>
+</div>
+</section>
+<section id="custom-data-drift-checker">
+<h4>Custom data drift checker<a class="headerlink" href="#custom-data-drift-checker" title="Permalink to this heading">¶</a></h4>
+<p>Since version 0.90 BlueCast checks for data drift for numerical
+and categorical columns. The checks happen on the raw data.
+Categories will be stored anonymized by default. Data drift
+checks are not part of the model pipeline, but have to be called separately:</p>
+<div class="highlight-sh notranslate"><div class="highlight"><pre><span></span>from<span class="w"> </span>bluecast.monitoring.data_monitoring<span class="w"> </span>import<span class="w"> </span>DataDrift
+
+
+<span class="nv">data_drift_checker</span><span class="w"> </span><span class="o">=</span><span class="w"> </span>DataDrift<span class="o">()</span>
+<span class="c1"># statistical data drift checks for numerical features</span>
+data_drift_checker.kolmogorov_smirnov_test<span class="o">(</span>data,<span class="w"> </span>new_data,<span class="w"> </span><span class="nv">threshold</span><span class="o">=</span><span class="m">0</span>.05<span class="o">)</span>
+<span class="c1"># show flags</span>
+print<span class="o">(</span>data_drift_checker.kolmogorov_smirnov_flags<span class="o">)</span>
+
+<span class="c1"># statistical data drift checks for categorical features</span>
+data_drift_checker.population_stability_index<span class="o">(</span>data,<span class="w"> </span>new_data<span class="o">)</span>
+<span class="c1"># show flags</span>
+print<span class="o">(</span>data_drift_checker.population_stability_index_flags<span class="o">)</span>
+<span class="c1"># show psi values</span>
+print<span class="o">(</span>data_drift_checker.population_stability_index_values<span class="o">)</span>
+
+<span class="c1"># QQplot for two numerical columns</span>
+data_drift_checker.qqplot_two_samples<span class="o">(</span>train<span class="o">[</span><span class="s2">&quot;feature1&quot;</span><span class="o">]</span>,<span class="w"> </span>test<span class="o">[</span><span class="s2">&quot;feature1&quot;</span><span class="o">]</span>,<span class="w"> </span><span class="nv">x_label</span><span class="o">=</span><span class="s2">&quot;X&quot;</span>,<span class="w"> </span><span class="nv">y_label</span><span class="o">=</span><span class="s2">&quot;Y&quot;</span><span class="o">)</span>
+</pre></div>
+</div>
+<p><img alt="QQplot example" src="_images/qqplot_sample.png" /></p>
+</section>
+</section>
+</section>
+<section id="convenience-features">
+<h2>Convenience features<a class="headerlink" href="#convenience-features" title="Permalink to this heading">¶</a></h2>
+<p>Despite being a lightweight library, BlueCast also includes some convenience
+with the following features:</p>
+<ul class="simple">
+<li><p>automatic feature type detection and casting</p></li>
+<li><p>automatic DataFrame schema detection: checks if unseen data has new or
+missing columns</p></li>
+<li><p>categorical feature encoding (target encoding or directly in Xgboost)</p></li>
+<li><p>datetime feature encoding</p></li>
+<li><p>automated GPU availability check and usage for Xgboost
+a fit_eval method to fit a model and evaluate it on a validation set
+to mimic production environment reality</p></li>
+<li><p>functions to save and load a trained pipeline</p></li>
+<li><p>shapley values</p></li>
+<li><p>ROC AUC curve &amp; lift chart</p></li>
+<li><p>warnings for potential misconfigurations</p></li>
+</ul>
+<p>The fit_eval method can be used like this:</p>
+<div class="highlight-sh notranslate"><div class="highlight"><pre><span></span>from<span class="w"> </span>bluecast.blueprints.cast<span class="w"> </span>import<span class="w"> </span>BlueCast
+
+<span class="nv">automl</span><span class="w"> </span><span class="o">=</span><span class="w"> </span>BlueCast<span class="o">(</span>
+<span class="w">        </span><span class="nv">class_problem</span><span class="o">=</span><span class="s2">&quot;binary&quot;</span>,
+<span class="w">    </span><span class="o">)</span>
+
+automl.fit_eval<span class="o">(</span>df_train,<span class="w"> </span>df_eval,<span class="w"> </span>y_eval,<span class="w"> </span><span class="nv">target_col</span><span class="o">=</span><span class="s2">&quot;target&quot;</span><span class="o">)</span>
+y_probs,<span class="w"> </span><span class="nv">y_classes</span><span class="w"> </span><span class="o">=</span><span class="w"> </span>automl.predict<span class="o">(</span>df_val<span class="o">)</span>
+</pre></div>
+</div>
+<p>It is important to note that df_train contains the target column while
+df_eval does not. The target column is passed separately as y_eval.</p>
+</section>
+<section id="code-quality">
+<h2>Code quality<a class="headerlink" href="#code-quality" title="Permalink to this heading">¶</a></h2>
+<p>To ensure code quality, we use the following tools:</p>
+<ul class="simple">
+<li><p>various pre-commit libraries</p></li>
+<li><p>strong type hinting in the code base</p></li>
+<li><p>unit tests using Pytest</p></li>
+</ul>
+<p>For contributors, it is expected that all pre-commit and unit tests pass.
+For new features it is expected that unit tests are added.</p>
+</section>
+<section id="documentation">
+<h2>Documentation<a class="headerlink" href="#documentation" title="Permalink to this heading">¶</a></h2>
+<p>Documentation is provided via <a class="reference external" href="https://bluecast.readthedocs.io/en/latest/">Read the Docs</a></p>
+</section>
+<section id="kaggle-competition-results-and-example-notebooks">
+<h2>Kaggle competition results and example notebooks<a class="headerlink" href="#kaggle-competition-results-and-example-notebooks" title="Permalink to this heading">¶</a></h2>
+<p>Even though BlueCast has been designed to be a lightweight
+automl framework, it still offers the possibilities to
+reach very good performance. We tested BlueCast in Kaggle
+competitions to showcase the libraries capabilities
+feature- and performance-wise.</p>
+<ul class="simple">
+<li><p>ICR top 20% finish with over 6000 participants (<a class="reference external" href="https://www.kaggle.com/code/thomasmeiner/icr-bluecast-automl-almost-bronze-ranks">notebook</a>)</p></li>
+<li><p>An advanced example covering lots of functionalities (<a class="reference external" href="https://www.kaggle.com/code/thomasmeiner/ps3e23-automl-eda-outlier-detection/notebook">notebook</a>)</p></li>
+<li><p>PS3E23: Predict software defects top 12% finish (<a class="reference external" href="https://www.kaggle.com/code/thomasmeiner/ps3e23-automl-eda-outlier-detection?scriptVersionId=145650820">notebook</a>)</p></li>
+<li><p>PS3E25: Predict hardness of steel via regression (<a class="reference external" href="https://www.kaggle.com/code/thomasmeiner/ps3e25-bluecast-automl?scriptVersionId=153347618">notebook</a>)</p></li>
+</ul>
+</section>
+<section id="how-to-contribute">
+<h2>How to contribute<a class="headerlink" href="#how-to-contribute" title="Permalink to this heading">¶</a></h2>
+<p>Contributions are welcome. Please follow the following steps:</p>
+<ul class="simple">
+<li><p>Create a new branch from develop branch</p></li>
+<li><p>Add your feature or fix</p></li>
+<li><p>Add unit tests for new features</p></li>
+<li><p>Run pre-commit checks and unit tests (using Pytest)</p></li>
+<li><p>Adjust the <code class="docutils literal notranslate"><span class="pre">index.md</span></code> file</p></li>
+<li><p>Copy paste the content of the <code class="docutils literal notranslate"><span class="pre">index.md</span></code> file into the
+<code class="docutils literal notranslate"><span class="pre">README.md</span></code> file</p></li>
+<li><p>Push your changes and create a pull request</p></li>
+</ul>
+<p>If library or dev dependencies have to be changed, adjust the pyproject.toml.
+For readthedocs it is also requited to update the
+<code class="docutils literal notranslate"><span class="pre">docs/srtd_requirements.txt</span></code> file. Simply run:</p>
+<div class="highlight-sh notranslate"><div class="highlight"><pre><span></span>poetry<span class="w"> </span><span class="nb">export</span><span class="w"> </span>--with<span class="w"> </span>dev<span class="w"> </span>-f<span class="w"> </span>requirements.txt<span class="w"> </span>--output<span class="w"> </span>docs/rtd_requirements.txt
+</pre></div>
+</div>
+<p>If readthedocs will be able to create the documentation can be tested via:</p>
+<div class="highlight-sh notranslate"><div class="highlight"><pre><span></span>poetry<span class="w"> </span>run<span class="w"> </span>sphinx-autobuild<span class="w"> </span>docs/source<span class="w"> </span>docs/build/html
+</pre></div>
+</div>
+<p>This will show a localhost link containing the documentation.</p>
+</section>
+<section id="meta">
+<h2>Meta<a class="headerlink" href="#meta" title="Permalink to this heading">¶</a></h2>
+<p>Creator: Thomas Meißner – <a class="reference external" href="https://www.linkedin.com/in/thomas-mei%C3%9Fner-m-a-3808b346">LinkedIn</a></p>
+</section>
+</section>
+
+
+          </div>
+          
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+<h1 class="logo"><a href="#">BlueCast</a></h1>
+
+
+
+
+
+
+
+
+<h3>Navigation</h3>
+
+<div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="#">Documentation overview</a><ul>
+  </ul></li>
+</ul>
+</div>
+<div id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"/>
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</div>
+<script>document.getElementById('searchbox').style.display = "block"</script>
+
+
+
+
+
+
+
+
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &copy;2023, Thomas Meißner.
+      
+      |
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 6.2.1</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.13</a>
+      
+      |
+      <a href="_sources/index.md.txt"
+          rel="nofollow">Page source</a>
+    </div>
+
+    
+
+    
+  </body>
+</html>

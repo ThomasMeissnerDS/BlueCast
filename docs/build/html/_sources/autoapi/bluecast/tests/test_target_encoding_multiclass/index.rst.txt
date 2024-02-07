@@ -1,0 +1,22 @@
+:py:mod:`bluecast.tests.test_target_encoding_multiclass`
+========================================================
+
+.. py:module:: bluecast.tests.test_target_encoding_multiclass
+
+
+Module Contents
+---------------
+
+
+Functions
+~~~~~~~~~
+
+.. autoapisummary::
+
+   bluecast.tests.test_target_encoding_multiclass.test_multi_class_target_encoder
+
+
+
+.. py:function:: test_multi_class_target_encoder()
+
+

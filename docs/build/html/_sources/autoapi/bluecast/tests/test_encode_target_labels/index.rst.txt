@@ -1,0 +1,50 @@
+:py:mod:`bluecast.tests.test_encode_target_labels`
+==================================================
+
+.. py:module:: bluecast.tests.test_encode_target_labels
+
+
+Module Contents
+---------------
+
+
+Functions
+~~~~~~~~~
+
+.. autoapisummary::
+
+   bluecast.tests.test_encode_target_labels.label_encoder
+   bluecast.tests.test_encode_target_labels.sample_data
+   bluecast.tests.test_encode_target_labels.trained_label_encoder
+   bluecast.tests.test_encode_target_labels.test_fit_label_encoder
+   bluecast.tests.test_encode_target_labels.test_label_encoder_transform
+   bluecast.tests.test_encode_target_labels.test_fit_transform_target_labels
+   bluecast.tests.test_encode_target_labels.test_transform_target_labels
+   bluecast.tests.test_encode_target_labels.test_label_encoder_reverse_transform
+
+
+
+.. py:function:: label_encoder()
+
+
+.. py:function:: sample_data()
+
+
+.. py:function:: trained_label_encoder(label_encoder, sample_data)
+
+
+.. py:function:: test_fit_label_encoder(label_encoder, sample_data)
+
+
+.. py:function:: test_label_encoder_transform(trained_label_encoder, sample_data)
+
+
+.. py:function:: test_fit_transform_target_labels(label_encoder, sample_data)
+
+
+.. py:function:: test_transform_target_labels(trained_label_encoder, sample_data)
+
+
+.. py:function:: test_label_encoder_reverse_transform(trained_label_encoder, sample_data)
+
+
