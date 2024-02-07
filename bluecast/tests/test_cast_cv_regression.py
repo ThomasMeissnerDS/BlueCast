@@ -189,7 +189,6 @@ def test_bluecast_cv_fit_eval_with_custom_model():
     # Create an instance of the BlueCast class with the custom model
     bluecast = BlueCastRegression(
         class_problem="regression",
-        target_column="target",
         ml_model=custom_model,
     )
 
@@ -331,7 +330,6 @@ def test_bluecast_cv_with_custom_objects():
     # Create an instance of the BlueCast class with the custom model
     bluecast = BlueCastRegression(
         class_problem="regression",
-        target_column="target",
         ml_model=custom_model,
         conf_xgboost=xgboost_param_config,
         conf_training=train_config,

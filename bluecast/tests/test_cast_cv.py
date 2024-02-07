@@ -128,7 +128,6 @@ def test_bluecast_cv_fit_eval_with_custom_model():
     # Create an instance of the BlueCast class with the custom model
     bluecast = BlueCast(
         class_problem="binary",
-        target_column="target",
         ml_model=custom_model,
     )
 

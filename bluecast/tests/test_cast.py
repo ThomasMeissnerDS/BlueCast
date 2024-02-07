@@ -77,7 +77,6 @@ def test_blueprint_xgboost(
 
     automl = BlueCast(
         class_problem="binary",
-        target_column="target",
         conf_xgboost=xgboost_param_config,
         custom_last_mile_computation=custom_last_mile_computation,
     )
