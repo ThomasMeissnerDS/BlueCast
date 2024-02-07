@@ -124,7 +124,6 @@ class BlueCastCVRegression:
 
             automl = BlueCastRegression(
                 class_problem=self.class_problem,
-                target_column=target_col,
                 conf_training=self.conf_training,
                 conf_xgboost=self.conf_xgboost,
                 conf_params_xgboost=self.conf_params_xgboost,
@@ -177,7 +176,6 @@ class BlueCastCVRegression:
 
             automl = BlueCastRegression(
                 class_problem=self.class_problem,
-                target_column=target_col,
                 conf_training=self.conf_training,
                 conf_xgboost=self.conf_xgboost,
                 conf_params_xgboost=self.conf_params_xgboost,

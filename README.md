@@ -88,7 +88,6 @@ from bluecast.blueprints.cast import BlueCast
 
 automl = BlueCast(
         class_problem="binary",
-        target_column="target"
     )
 
 automl.fit(df_train, target_col="target")
@@ -114,7 +113,6 @@ from bluecast.blueprints.cast_regression import BlueCastRegression
 
 automl = BlueCast(
         class_problem="regression",
-        target_column="target"
     )
 
 automl.fit(df_train, target_col="target")
@@ -306,7 +304,6 @@ train_config.hypertuning_cv_folds = 5 # default is 1
 # Pass the custom configs to the BlueCast class
 automl = BlueCast(
         class_problem="binary",
-        target_column="target"
         conf_training=train_config,
     )
 
@@ -340,7 +337,6 @@ custom_preprocessor = MyCustomPreprocessing() # see section Custom Preprocessing
 # Pass the custom configs to the BlueCast class
 automl = BlueCast(
         class_problem="binary",
-        target_column="target"
         conf_training=train_config,
         custom_in_fold_preprocessor=custom_preprocessor # this happens during each fold
     )
@@ -385,7 +381,6 @@ train_config.gridsearch_nb_parameters_per_grid = 5 # increasing this means X^3 t
 # Pass the custom configs to the BlueCast class
 automl = BlueCast(
         class_problem="binary",
-        target_column="target"
         conf_training=train_config,
     )
 
@@ -486,7 +481,6 @@ train_config.autotune_model = False # we want to run just normal training, no hy
 # Pass the custom configs to the BlueCast class
 automl = BlueCast(
         class_problem="binary",
-        target_column="target"
         conf_training=train_config,
         conf_xgboost=xgboost_param_config,
     )
@@ -603,7 +597,6 @@ custom_preprocessor = MyCustomPreprocessing()
 # Pass the custom configs to the BlueCast class
 automl = BlueCast(
         class_problem="binary",
-        target_column="target"
         conf_training=train_config,
         conf_xgboost=xgboost_param_config,
         custom_preprocessor=custom_preprocessor, # this takes place right after test_train_split
@@ -635,7 +628,6 @@ train_config.enable_feature_selection = True
 # Pass the custom configs to the BlueCast class
 automl = BlueCast(
         class_problem="binary",
-        target_column="target"
         conf_training=train_config,
     )
 
@@ -691,7 +683,6 @@ custom_feature_selector = RFECVSelector()
 # Create an instance of the BlueCast class with the custom model
 bluecast = BlueCast(
     class_problem="binary",
-    target_column="target",
     conf_feature_selection=custom_feat_sel,
     conf_training=train_config,
     custom_feature_selector=custom_feature_selector,
@@ -752,7 +743,6 @@ custom_model = CustomModel()
 # Create an instance of the BlueCast class with the custom model
 bluecast = BlueCast(
     class_problem="binary",
-    target_column="target",
     ml_model=custom_model,
 
 # Create some sample data for testing
@@ -765,7 +755,7 @@ x_test = pd.DataFrame(
 
 x_train["target"] = y_trai
 # Fit the BlueCast model using the custom model
-bluecast.fit(x_train, "target"
+bluecast.fit(x_train, "target")
 # Predict on the test data using the custom model
 predicted_probas, predicted_classes = bluecast.predict(x_test)
 ```
@@ -796,7 +786,6 @@ from bluecast.blueprints.cast import BlueCast
 
 automl = BlueCast(
         class_problem="binary",
-        target_column="target"
     )
 
 automl.fit_eval(df_train, df_eval, y_eval, target_col="target")
@@ -865,7 +854,6 @@ experiment_tracker = CustomExperimentTracker()
 
 automl = BlueCast(
         class_problem="binary",
-        target_column="target",
         experiment_tracker=experiment_tracker,
     )
 
@@ -933,7 +921,6 @@ from bluecast.blueprints.cast import BlueCast
 
 automl = BlueCast(
         class_problem="binary",
-        target_column="target"
     )
 
 automl.fit_eval(df_train, df_eval, y_eval, target_col="target")

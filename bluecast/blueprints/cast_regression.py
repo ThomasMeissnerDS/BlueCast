@@ -66,7 +66,6 @@ class BlueCastRegression:
     def __init__(
         self,
         class_problem: Literal["regression"],
-        target_column: Union[str, float, int],
         cat_columns: Optional[List[Union[str, float, int]]] = None,
         date_columns: Optional[List[Union[str, float, int]]] = None,
         time_split_column: Optional[str] = None,
@@ -87,7 +86,7 @@ class BlueCastRegression:
         self.cat_columns = cat_columns
         self.date_columns = date_columns
         self.time_split_column = time_split_column
-        self.target_column = target_column
+        self.target_column = "Undefined"
         self.conf_training = conf_training
         self.conf_xgboost = conf_xgboost
         self.conf_params_xgboost = conf_params_xgboost
@@ -206,6 +205,7 @@ class BlueCastRegression:
 
     def fit(self, df: pd.DataFrame, target_col: str) -> None:
         """Train a full ML pipeline."""
+        self.target_column = target_col
         check_gpu_support()
         feat_type_detector = FeatureTypeDetector(
             cat_columns=[], num_columns=[], date_columns=[]

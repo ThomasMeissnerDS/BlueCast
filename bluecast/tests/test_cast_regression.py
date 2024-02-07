@@ -64,7 +64,6 @@ def test_blueprint_xgboost(synthetic_train_test_data):
 
     automl = BlueCastRegression(
         class_problem="regression",
-        target_column="target",
         conf_xgboost=xgboost_param_config,
         custom_last_mile_computation=custom_last_mile_computation,
     )
@@ -199,7 +198,6 @@ def test_bluecast_with_custom_model():
     # Create an instance of the BlueCast class with the custom model
     bluecast = BlueCastRegression(
         class_problem="regression",
-        target_column="target",
         ml_model=custom_model,
         conf_xgboost=xgboost_param_config,
         conf_training=train_config,
@@ -250,7 +248,6 @@ def test_bluecast_with_custom_model():
     # Create an instance of the BlueCast class with the custom model
     bluecast = BlueCastRegression(
         class_problem="regression",
-        target_column="target",
         ml_model=custom_model,
         conf_xgboost=xgboost_param_config,
         conf_training=train_config,
