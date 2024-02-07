@@ -315,6 +315,7 @@ def bluecast_instance():
     custom_config = TrainingConfig()
     # Create a fixture to instantiate the BlueCast class with default values for testing
     bluecast_instance = BlueCast(class_problem="binary", conf_training=custom_config)
+    bluecast_instance.target_column = "target"
     return bluecast_instance
 
 
