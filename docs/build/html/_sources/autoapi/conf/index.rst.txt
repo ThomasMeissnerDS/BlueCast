@@ -59,5 +59,3 @@ Module Contents
 
 .. py:data:: html_static_path
    :value: ['_static']
-
-
