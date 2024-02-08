@@ -148,6 +148,7 @@ class XgboostFinalParamConfig:
 
     params = {
         "objective": "multi:softprob",  # OR  'binary:logistic' #the loss function being used
+        "booster": "gbtree",
         "eval_metric": "mlogloss",
         "tree_method": "exact",  # use GPU for training
         "max_depth": 3,  # maximum depth of the decision trees being trained
@@ -160,7 +161,6 @@ class XgboostFinalParamConfig:
         "colsample_bylevel": 0.8,
         "eta": 0.1,
         "steps": 1000,
-        "num_parallel_tree": 1,
     }
     sample_weight: Optional[Dict[str, float]] = None
     classification_threshold: float = 0.5
