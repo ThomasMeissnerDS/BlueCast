@@ -151,7 +151,7 @@ class XgboostFinalParamConfig:
         "booster": "gbtree",
         "eval_metric": "mlogloss",
         "tree_method": "exact",  # use GPU for training
-        "max_depth": 3,  # maximum depth of the decision trees being trained
+        "max_depth": 7,  # maximum depth of the decision trees being trained
         "alpha": 0.1,
         "lambda": 0.1,
         "gamma": 0.0,

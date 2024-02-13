@@ -613,10 +613,6 @@ class XgboostModelRegression(BaseClassMlRegressionModel):
                 "At least one of the configs or experiment_tracker is None, which is not allowed"
             )
 
-        self.conf_training.global_random_state += (
-            1000  # to have correct tracking information and different splits
-        )
-
         def objective(trial):
             d_train, d_test = self.create_d_matrices(x_train, y_train, x_test, y_test)
 
@@ -640,10 +636,16 @@ class XgboostModelRegression(BaseClassMlRegressionModel):
                 self.conf_params_xgboost.params["gamma"] * 0.9,
                 self.conf_params_xgboost.params["gamma"] * 1.1,
             )
+            eta_space = trial.suggest_float(
+                "eta",
+                self.conf_params_xgboost.params["eta"] * 0.9,
+                self.conf_params_xgboost.params["eta"] * 1.1,
+            )
 
             tuned_params["alpha"] = alpha_space
             tuned_params["lambda"] = lambda_space
             tuned_params["gamma"] = gamma_space
+            tuned_params["eta"] = eta_space
 
             steps = tuned_params.pop("steps", 300)
 
@@ -702,6 +704,7 @@ class XgboostModelRegression(BaseClassMlRegressionModel):
             isinstance(self.conf_params_xgboost.params["alpha"], float)
             and isinstance(self.conf_params_xgboost.params["lambda"], float)
             and isinstance(self.conf_params_xgboost.params["gamma"], float)
+            and isinstance(self.conf_params_xgboost.params["eta"], float)
         ):
             search_space = {
                 "alpha": np.linspace(
@@ -720,6 +723,12 @@ class XgboostModelRegression(BaseClassMlRegressionModel):
                 "gamma": np.linspace(
                     self.conf_params_xgboost.params["gamma"] * 0.9,
                     self.conf_params_xgboost.params["gamma"] * 1.1,
+                    self.conf_training.gridsearch_nb_parameters_per_grid,
+                    dtype=float,
+                ),
+                "eta": np.linspace(
+                    self.conf_params_xgboost.params["eta"] * 0.9,
+                    self.conf_params_xgboost.params["eta"] * 1.1,
                     self.conf_training.gridsearch_nb_parameters_per_grid,
                     dtype=float,
                 ),
@@ -758,6 +767,7 @@ class XgboostModelRegression(BaseClassMlRegressionModel):
                 "lambda"
             ]
             self.conf_params_xgboost.params["gamma"] = xgboost_grid_best_param["gamma"]
+            self.conf_params_xgboost.params["eta"] = xgboost_grid_best_param["eta"]
             logger(
                 f"Grid search improved eval metric from {best_score_cv} to {best_score_cv_grid}."
             )
@@ -766,8 +776,6 @@ class XgboostModelRegression(BaseClassMlRegressionModel):
             logger(
                 f"Grid search could not improve eval metric of {best_score_cv}. Best score reached was {best_score_cv_grid}"
             )
-
-        self.conf_training.global_random_state -= 1000  # back to original setting
 
     def predict(self, df: pd.DataFrame) -> np.ndarray:
         """Predict on unseen data."""
