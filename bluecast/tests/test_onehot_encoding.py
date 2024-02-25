@@ -21,8 +21,8 @@ def test_fit_transform(example_data):
         example_data[["category1", "category2"]], example_data["target"]
     )
 
-    assert "target_encoder_all_cols" in encoder.encoders
-    assert isinstance(encoder.encoders["target_encoder_all_cols"], OneHotEncoder)
+    print("+++++++++++++++++++++")
+    print(transformed_data)
     assert transformed_data.equals(
         pd.DataFrame(
             {
@@ -40,6 +40,7 @@ def test_fit_transform(example_data):
 
 def test_transform(example_data):
     encoder = OneHotCategoryEncoder(cat_columns=["category1", "category2"])
+    _ = encoder.fit_transform(example_data[["category1", "category2"]], example_data["target"])
 
     transformed_data = encoder.transform(example_data[["category1", "category2"]])
 

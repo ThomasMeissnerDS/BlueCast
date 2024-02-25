@@ -26,9 +26,10 @@ class OneHotCategoryEncoder:
         """Fit onehot encoder and transform column."""
         logger(f"{datetime.utcnow()}: Start fitting binary target encoder.")
         enc = OneHotEncoder(cols=self.cat_columns)
-        x.loc[:, self.cat_columns] = enc.fit_transform(x[self.cat_columns], y)
-        x[self.cat_columns] = x[self.cat_columns].astype(float)
-        self.encoders["target_encoder_all_cols"] = enc
+        encoded_cats = enc.fit_transform(x[self.cat_columns], y)
+        x = x.drop(self.cat_columns, axis=1)
+        x[encoded_cats.columns.to_list()] = encoded_cats
+        self.encoders["onehot_encoder_all_cols"] = enc
         return x
 
     def transform(self, x: pd.DataFrame) -> pd.DataFrame:
@@ -36,7 +37,8 @@ class OneHotCategoryEncoder:
         logger(
             f"{datetime.utcnow()}: Start transforming categories with binary target encoder."
         )
-        enc = self.encoders["target_encoder_all_cols"]
-        x.loc[:, self.cat_columns] = enc.transform(x[self.cat_columns])
-        x[self.cat_columns] = x[self.cat_columns].astype(float)
+        enc = self.encoders["onehot_encoder_all_cols"]
+        encoded_cats = enc.transform(x[self.cat_columns])
+        x = x.drop(self.cat_columns, axis=1)
+        x[encoded_cats.columns.to_list()] = encoded_cats
         return x
