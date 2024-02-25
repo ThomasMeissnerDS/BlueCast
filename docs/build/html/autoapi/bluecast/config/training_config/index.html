@@ -6,7 +6,7 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="generator" content="Docutils 0.18.1: http://docutils.sourceforge.net/" />
 
-    <title>bluecast.config.training_config &#8212; BlueCast 0.91 documentation</title>
+    <title>bluecast.config.training_config &#8212; BlueCast 0.93 documentation</title>
     <link rel="stylesheet" type="text/css" href="../../../../_static/pygments.css" />
     <link rel="stylesheet" type="text/css" href="../../../../_static/alabaster.css" />
     <link rel="stylesheet" type="text/css" href="../../../../_static/graphviz.css" />
@@ -15,22 +15,23 @@
     <script src="../../../../_static/sphinx_highlight.js"></script>
     <link rel="index" title="Index" href="../../../../genindex.html" />
     <link rel="search" title="Search" href="../../../../search.html" />
-
+   
   <link rel="stylesheet" href="../../../../_static/custom.css" type="text/css" />
+  
 
-
-  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9" />
+  
+  
 
   </head><body>
-
+  
 
     <div class="document">
       <div class="documentwrapper">
         <div class="bodywrapper">
-
+          
 
           <div class="body" role="main">
-
+            
   <section id="module-bluecast.config.training_config">
 <span id="bluecast-config-training-config"></span><h1><a class="reference internal" href="#module-bluecast.config.training_config" title="bluecast.config.training_config"><code class="xref py py-mod docutils literal notranslate"><span class="pre">bluecast.config.training_config</span></code></a><a class="headerlink" href="#module-bluecast.config.training_config" title="Permalink to this heading">¶</a></h1>
 <p>Define training and common configuration parameters.</p>
@@ -73,7 +74,7 @@ Default configurations can be loaded, adjusted and passed into the blueprints.</
 
 <dl class="py class">
 <dt class="sig sig-object py" id="bluecast.config.training_config.TrainingConfig">
-<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">bluecast.config.training_config.</span></span><span class="sig-name descname"><span class="pre">TrainingConfig</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">data</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Any</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#bluecast.config.training_config.TrainingConfig" title="Permalink to this definition">¶</a></dt>
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">bluecast.config.training_config.</span></span><span class="sig-name descname"><span class="pre">TrainingConfig</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">/</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">**data:</span> <span class="pre">Any</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#bluecast.config.training_config.TrainingConfig" title="Permalink to this definition">¶</a></dt>
 <dd><p>Bases: <code class="xref py py-obj docutils literal notranslate"><span class="pre">pydantic.BaseModel</span></code></p>
 <p>Define general training parameters.</p>
 <dl class="field-list simple">
@@ -103,6 +104,9 @@ compatible with all ML models. See the SHAP documentation for more details.</p><
 Not used when custom ML model is passed.</p></li>
 <li><p><strong>min_features_to_select</strong> – Minimum number of features to select. Only used when enable_feature_selection is
 True.</p></li>
+<li><p><strong>cardinality_threshold_for_onehot_encoding</strong> – Categorical features with a cardinality of less or equal
+this threshold will be onehot encoded. The rest will be target encoded. Will be ignored if
+cat_encoding_via_ml_algorithm is set to true.</p></li>
 <li><p><strong>cat_encoding_via_ml_algorithm</strong> – Whether to use an ML algorithm for categorical encoding. If True, the
 categorical encoding is done via a ML algorithm. If False, the categorical encoding is done via a  target
 encoding in the preprocessing steps. See the ReadMe for more details.</p></li>
@@ -192,6 +196,11 @@ the latest trial nd will exceed this limit though.</p></li>
 <dd></dd></dl>
 
 <dl class="py attribute">
+<dt class="sig sig-object py" id="bluecast.config.training_config.TrainingConfig.cardinality_threshold_for_onehot_encoding">
+<span class="sig-name descname"><span class="pre">cardinality_threshold_for_onehot_encoding</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">int</span></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">5</span></em><a class="headerlink" href="#bluecast.config.training_config.TrainingConfig.cardinality_threshold_for_onehot_encoding" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
 <dt class="sig sig-object py" id="bluecast.config.training_config.TrainingConfig.cat_encoding_via_ml_algorithm">
 <span class="sig-name descname"><span class="pre">cat_encoding_via_ml_algorithm</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">bool</span></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">False</span></em><a class="headerlink" href="#bluecast.config.training_config.TrainingConfig.cat_encoding_via_ml_algorithm" title="Permalink to this definition">¶</a></dt>
 <dd></dd></dl>
@@ -230,7 +239,7 @@ the latest trial nd will exceed this limit though.</p></li>
 
 <dl class="py class">
 <dt class="sig sig-object py" id="bluecast.config.training_config.XgboostTuneParamsConfig">
-<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">bluecast.config.training_config.</span></span><span class="sig-name descname"><span class="pre">XgboostTuneParamsConfig</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">data</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Any</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#bluecast.config.training_config.XgboostTuneParamsConfig" title="Permalink to this definition">¶</a></dt>
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">bluecast.config.training_config.</span></span><span class="sig-name descname"><span class="pre">XgboostTuneParamsConfig</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">/</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">**data:</span> <span class="pre">Any</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#bluecast.config.training_config.XgboostTuneParamsConfig" title="Permalink to this definition">¶</a></dt>
 <dd><p>Bases: <code class="xref py py-obj docutils literal notranslate"><span class="pre">pydantic.BaseModel</span></code></p>
 <p>Define hyperparameter tuning search space.</p>
 <dl class="py attribute">
@@ -372,7 +381,7 @@ the latest trial nd will exceed this limit though.</p></li>
 
 <dl class="py class">
 <dt class="sig sig-object py" id="bluecast.config.training_config.XgboostTuneParamsRegressionConfig">
-<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">bluecast.config.training_config.</span></span><span class="sig-name descname"><span class="pre">XgboostTuneParamsRegressionConfig</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">data</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Any</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#bluecast.config.training_config.XgboostTuneParamsRegressionConfig" title="Permalink to this definition">¶</a></dt>
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">bluecast.config.training_config.</span></span><span class="sig-name descname"><span class="pre">XgboostTuneParamsRegressionConfig</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">/</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">**data:</span> <span class="pre">Any</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#bluecast.config.training_config.XgboostTuneParamsRegressionConfig" title="Permalink to this definition">¶</a></dt>
 <dd><p>Bases: <code class="xref py py-obj docutils literal notranslate"><span class="pre">pydantic.BaseModel</span></code></p>
 <p>Define hyperparameter tuning search space.</p>
 <dl class="py attribute">
@@ -539,7 +548,7 @@ the latest trial nd will exceed this limit though.</p></li>
 
 
           </div>
-
+          
         </div>
       </div>
       <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
@@ -585,19 +594,19 @@ the latest trial nd will exceed this limit though.</p></li>
       <div class="clearer"></div>
     </div>
     <div class="footer">
-      &copy;2023, Thomas Meißner.
-
+      &#169;2023, Thomas Meißner.
+      
       |
-      Powered by <a href="http://sphinx-doc.org/">Sphinx 6.2.1</a>
-      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.13</a>
-
+      Powered by <a href="https://www.sphinx-doc.org/">Sphinx 6.2.1</a>
+      &amp; <a href="https://alabaster.readthedocs.io">Alabaster 0.7.16</a>
+      
       |
       <a href="../../../../_sources/autoapi/bluecast/config/training_config/index.rst.txt"
           rel="nofollow">Page source</a>
     </div>
 
+    
 
-
-
+    
   </body>
 </html>

@@ -18,3 +18,5 @@ Functions
 
 
 .. py:function:: test_feature_type_detector()
+
+

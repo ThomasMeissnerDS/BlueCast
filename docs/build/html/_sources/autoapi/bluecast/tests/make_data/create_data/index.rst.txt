@@ -26,3 +26,5 @@ Functions
 
 
 .. py:function:: create_synthetic_dataframe_regression(num_samples=1000, random_state: int = 20) -> pandas.DataFrame
+
+

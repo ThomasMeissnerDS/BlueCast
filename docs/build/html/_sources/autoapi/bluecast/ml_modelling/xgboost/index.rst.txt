@@ -95,3 +95,6 @@ Classes
    .. py:method:: predict(df: pandas.DataFrame) -> Tuple[numpy.ndarray, numpy.ndarray]
 
       Predict on unseen data.
+
+
+

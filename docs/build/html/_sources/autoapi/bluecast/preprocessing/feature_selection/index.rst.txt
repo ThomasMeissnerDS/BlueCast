@@ -32,3 +32,6 @@ Classes
    .. py:method:: transform(df: pandas.DataFrame, target: Optional[pandas.Series] = None, predicton_mode: bool = False) -> Tuple[pandas.DataFrame, Optional[pandas.Series]]
 
       Use prediction mode to not process the missing target during inference.
+
+
+

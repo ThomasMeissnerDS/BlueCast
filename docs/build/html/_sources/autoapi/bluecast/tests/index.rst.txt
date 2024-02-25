@@ -25,6 +25,7 @@ Submodules
    test_cast_cv_multiclass/index.rst
    test_cast_cv_regression/index.rst
    test_cast_regression/index.rst
+   test_category_encoder_orchestrator/index.rst
    test_check_gpu_support/index.rst
    test_custom_processing_base_class/index.rst
    test_data_leakage_checks/index.rst
@@ -36,9 +37,12 @@ Submodules
    test_fine_tune/index.rst
    test_load_for_production/index.rst
    test_nulls_and_infs/index.rst
+   test_onehot_encoding/index.rst
    test_save_to_production/index.rst
    test_schema_checks/index.rst
    test_shap_explanations/index.rst
    test_target_encoding_binary/index.rst
    test_target_encoding_multiclass/index.rst
    test_train_test_split/index.rst
+
+

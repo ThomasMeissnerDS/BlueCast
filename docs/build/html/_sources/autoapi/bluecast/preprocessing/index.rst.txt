@@ -10,12 +10,16 @@ Submodules
    :titlesonly:
    :maxdepth: 1
 
+   category_encoder_orchestration/index.rst
    custom/index.rst
    datetime_features/index.rst
    encode_target_labels/index.rst
    feature_selection/index.rst
    feature_types/index.rst
    nulls_and_infs/index.rst
+   onehot_encoding/index.rst
    schema_checks/index.rst
    target_encoding/index.rst
    train_test_split/index.rst
+
+
