@@ -286,9 +286,12 @@ class BlueCastRegression:
         if (
             self.cat_columns is not None
             and self.class_problem == "regression"
+            and self.category_encoder_orchestrator
             and not self.conf_training.cat_encoding_via_ml_algorithm
         ):
-            self.cat_encoder = BinaryClassTargetEncoder(feat_type_detector.cat_columns)
+            self.cat_encoder = BinaryClassTargetEncoder(
+                self.category_encoder_orchestrator.to_target_encode
+            )
             x_train = self.cat_encoder.fit_target_encode_binary_class(x_train, y_train)
             x_test = self.cat_encoder.transform_target_encode_binary_class(x_test)
         elif self.conf_training.cat_encoding_via_ml_algorithm:

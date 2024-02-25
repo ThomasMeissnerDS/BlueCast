@@ -320,7 +320,7 @@ class BlueCast:
             and not self.conf_training.cat_encoding_via_ml_algorithm
         ):
             self.cat_encoder = MultiClassTargetEncoder(
-                feat_type_detector.cat_columns, self.target_column
+                self.category_encoder_orchestrator.to_target_encode, self.target_column
             )
             x_train = self.cat_encoder.fit_target_encode_multiclass(x_train, y_train)
             x_test = self.cat_encoder.transform_target_encode_multiclass(x_test)

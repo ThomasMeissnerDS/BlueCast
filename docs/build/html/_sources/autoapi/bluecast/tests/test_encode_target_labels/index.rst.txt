@@ -46,5 +46,3 @@ Functions
 
 
 .. py:function:: test_label_encoder_reverse_transform(trained_label_encoder, sample_data)
-
-

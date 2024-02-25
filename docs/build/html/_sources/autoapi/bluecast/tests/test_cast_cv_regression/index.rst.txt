@@ -107,5 +107,3 @@ Functions
 
 
 .. py:function:: test_bluecast_cv_with_custom_objects()
-
-

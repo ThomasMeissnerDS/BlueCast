@@ -1,6 +1,5 @@
 import pandas as pd
 import pytest
-from category_encoders import OneHotEncoder
 
 from bluecast.preprocessing.onehot_encoding import OneHotCategoryEncoder
 

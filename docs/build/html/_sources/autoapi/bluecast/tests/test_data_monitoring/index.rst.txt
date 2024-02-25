@@ -30,5 +30,3 @@ Functions
 
 
 .. py:function:: test_qqplot_two_samples()
-
-
