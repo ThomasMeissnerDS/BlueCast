@@ -33,6 +33,7 @@ def test_fit_assigns_to_onehot_when_cardinality_below_threshold(
 def test_fit_assigns_to_target_when_cardinality_above_threshold(
     encoder_orchestrator, sample_data
 ):
-    cat_columns = ["cat_col1"]
+    cat_columns = ["cat_col1", "cat_col2"]
     encoder_orchestrator.fit(sample_data, cat_columns, threshold=6)
-    assert encoder_orchestrator.to_target_encode == ["cat_col1", "cat_col2"]
+    assert encoder_orchestrator.to_onehot_encode == ["cat_col1", "cat_col2"]
+    assert encoder_orchestrator.to_target_encode == []
