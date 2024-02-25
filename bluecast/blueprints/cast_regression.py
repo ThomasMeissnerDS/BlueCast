@@ -22,12 +22,16 @@ from bluecast.evaluation.shap_values import shap_explanations
 from bluecast.experimentation.tracking import ExperimentTracker
 from bluecast.general_utils.general_utils import check_gpu_support, logger
 from bluecast.ml_modelling.xgboost_regression import XgboostModelRegression
+from bluecast.preprocessing.category_encoder_orchestration import (
+    CategoryEncoderOrchestrator,
+)
 from bluecast.preprocessing.custom import CustomPreprocessing
 from bluecast.preprocessing.datetime_features import date_converter
 from bluecast.preprocessing.encode_target_labels import TargetLabelEncoder
 from bluecast.preprocessing.feature_selection import RFECVSelector
 from bluecast.preprocessing.feature_types import FeatureTypeDetector
 from bluecast.preprocessing.nulls_and_infs import fill_infinite_values
+from bluecast.preprocessing.onehot_encoding import OneHotCategoryEncoder
 from bluecast.preprocessing.schema_checks import SchemaDetector
 from bluecast.preprocessing.target_encoding import (
     BinaryClassTargetEncoder,
@@ -94,6 +98,8 @@ class BlueCastRegression:
         self.cat_encoder: Optional[
             Union[BinaryClassTargetEncoder, MultiClassTargetEncoder]
         ] = None
+        self.onehot_encoder: Optional[OneHotCategoryEncoder] = None
+        self.category_encoder_orchestrator: Optional[CategoryEncoderOrchestrator] = None
         self.target_label_encoder: Optional[TargetLabelEncoder] = None
         self.schema_detector: Optional[SchemaDetector] = None
         self.ml_model: Optional[XgboostModelRegression] = ml_model
@@ -262,6 +268,23 @@ class BlueCastRegression:
 
         if (
             self.cat_columns is not None
+            and not self.conf_training.cat_encoding_via_ml_algorithm
+        ):
+            self.category_encoder_orchestrator = CategoryEncoderOrchestrator()
+            self.category_encoder_orchestrator.fit(
+                x_train,
+                feat_type_detector.cat_columns,
+                self.conf_training.cardinality_threshold_for_onehot_encoding,
+            )
+
+            self.onehot_encoder = OneHotCategoryEncoder(
+                self.category_encoder_orchestrator.to_onehot_encode
+            )
+            x_train = self.onehot_encoder.fit_transform(x_train, y_train)
+            x_test = self.onehot_encoder.transform(x_test)
+
+        if (
+            self.cat_columns is not None
             and self.class_problem == "regression"
             and not self.conf_training.cat_encoding_via_ml_algorithm
         ):
@@ -394,10 +417,18 @@ class BlueCastRegression:
             df = self.schema_detector.transform(df)
 
         if (
+            self.cat_columns is not None
+            and self.onehot_encoder
+            and not self.conf_training.cat_encoding_via_ml_algorithm
+        ):
+            df = self.onehot_encoder.transform(df)
+
+        if (
             self.cat_columns
             and self.cat_encoder
             and self.class_problem == "regression"
             and isinstance(self.cat_encoder, BinaryClassTargetEncoder)
+            and self.category_encoder_orchestrator
             and not self.conf_training.cat_encoding_via_ml_algorithm
         ):
             df = self.cat_encoder.transform_target_encode_binary_class(df)

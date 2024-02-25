@@ -957,6 +957,7 @@ feature- and performance-wise.
 * An advanced example covering lots of functionalities ([notebook](https://www.kaggle.com/code/thomasmeiner/ps3e23-automl-eda-outlier-detection/notebook))
 * PS3E23: Predict software defects top 12% finish ([notebook](https://www.kaggle.com/code/thomasmeiner/ps3e23-automl-eda-outlier-detection?scriptVersionId=145650820))
 * PS3E25: Predict hardness of steel via regression ([notebook](https://www.kaggle.com/code/thomasmeiner/ps3e25-bluecast-automl?scriptVersionId=153347618))
+* PS4E1: Bank churn top 13% finish ([notebook](https://www.kaggle.com/code/thomasmeiner/ps4e1-eda-feature-engineering-modelling?scriptVersionId=158121062))
 
 ## How to contribute
 
