@@ -37,7 +37,9 @@ def test_fit_transform(example_data):
 
 def test_transform(example_data):
     encoder = OneHotCategoryEncoder(cat_columns=["category1", "category2"])
-    _ = encoder.fit_transform(example_data[["category1", "category2"]], example_data["target"])
+    _ = encoder.fit_transform(
+        example_data[["category1", "category2"]], example_data["target"]
+    )
 
     transformed_data = encoder.transform(example_data[["category1", "category2"]])
 

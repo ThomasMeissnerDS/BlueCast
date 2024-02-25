@@ -29,7 +29,9 @@ class OneHotCategoryEncoder:
         encoded_cats = enc.fit_transform(x[self.cat_columns], y)
         x = x.drop(self.cat_columns, axis=1)
         x[encoded_cats.columns.to_list()] = encoded_cats
-        x[encoded_cats.columns.to_list()] = x[encoded_cats.columns.to_list()].astype(int)
+        x[encoded_cats.columns.to_list()] = x[encoded_cats.columns.to_list()].astype(
+            int
+        )
         self.encoders["onehot_encoder_all_cols"] = enc
         return x
 
@@ -42,5 +44,7 @@ class OneHotCategoryEncoder:
         encoded_cats = enc.transform(x[self.cat_columns])
         x = x.drop(self.cat_columns, axis=1)
         x[encoded_cats.columns.to_list()] = encoded_cats
-        x[encoded_cats.columns.to_list()] = x[encoded_cats.columns.to_list()].astype(int)
+        x[encoded_cats.columns.to_list()] = x[encoded_cats.columns.to_list()].astype(
+            int
+        )
         return x
