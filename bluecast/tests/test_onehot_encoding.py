@@ -21,8 +21,6 @@ def test_fit_transform(example_data):
         example_data[["category1", "category2"]], example_data["target"]
     )
 
-    print("+++++++++++++++++++++")
-    print(transformed_data)
     assert transformed_data.equals(
         pd.DataFrame(
             {
@@ -32,7 +30,6 @@ def test_fit_transform(example_data):
                 "category2_1": [1, 0, 0, 1],
                 "category2_2": [0, 1, 0, 0],
                 "category2_3": [0, 0, 1, 0],
-                "target": [1, 0, 1, 0],
             }
         )
     )
