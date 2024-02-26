@@ -65,3 +65,6 @@ Classes
    .. py:method:: transform_feature_types(df: pandas.DataFrame, ignore_cols: List[Union[str, float, int, None]]) -> pandas.DataFrame
 
       Transform feature types based on already mapped types.
+
+
+

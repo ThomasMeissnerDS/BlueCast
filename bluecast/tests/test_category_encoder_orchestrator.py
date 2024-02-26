@@ -8,7 +8,7 @@ from bluecast.preprocessing.category_encoder_orchestration import (
 
 @pytest.fixture
 def encoder_orchestrator():
-    return CategoryEncoderOrchestrator()
+    return CategoryEncoderOrchestrator(target_col="num_col")
 
 
 @pytest.fixture

@@ -90,3 +90,6 @@ Classes
    .. py:method:: predict(df: pandas.DataFrame) -> numpy.ndarray
 
       Predict on unseen data.
+
+
+

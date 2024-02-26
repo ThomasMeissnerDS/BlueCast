@@ -62,3 +62,6 @@ Classes
    .. py:method:: predict(df: pandas.DataFrame, return_sub_models_preds: bool = False) -> Union[pandas.DataFrame, pandas.Series]
 
       Predict on unseen data using multiple trained BlueCastRegression instances
+
+
+

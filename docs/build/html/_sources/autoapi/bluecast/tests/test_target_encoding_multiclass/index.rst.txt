@@ -18,3 +18,5 @@ Functions
 
 
 .. py:function:: test_multi_class_target_encoder()
+
+

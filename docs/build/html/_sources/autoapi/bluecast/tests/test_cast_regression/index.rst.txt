@@ -93,3 +93,5 @@ Functions
 
 
 .. py:function:: test_precise_cv_tuning_warnings(bluecast_instance)
+
+

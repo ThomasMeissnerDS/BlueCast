@@ -37,7 +37,7 @@ Classes
    .. py:attribute:: arbitrary_types_allowed
       :value: True
 
-
+      
 
 
 .. py:class:: TrainingConfig(/, **data: Any)
@@ -89,138 +89,138 @@ Classes
       :type: int
       :value: 10
 
-
+      
 
    .. py:attribute:: increase_random_state_in_bluecast_cv_by
       :type: int
       :value: 33
 
-
+      
 
    .. py:attribute:: shuffle_during_training
       :type: bool
       :value: True
 
-
+      
 
    .. py:attribute:: hyperparameter_tuning_rounds
       :type: int
       :value: 200
 
-
+      
 
    .. py:attribute:: hyperparameter_tuning_max_runtime_secs
       :type: int
       :value: 3600
 
-
+      
 
    .. py:attribute:: hypertuning_cv_folds
       :type: int
       :value: 1
 
-
+      
 
    .. py:attribute:: precise_cv_tuning
       :type: bool
       :value: False
 
-
+      
 
    .. py:attribute:: early_stopping_rounds
       :type: Optional[int]
 
-
+      
 
    .. py:attribute:: autotune_model
       :type: bool
       :value: True
 
-
+      
 
    .. py:attribute:: enable_feature_selection
       :type: bool
       :value: False
 
-
+      
 
    .. py:attribute:: calculate_shap_values
       :type: bool
       :value: True
 
-
+      
 
    .. py:attribute:: train_size
       :type: float
       :value: 0.8
 
-
+      
 
    .. py:attribute:: train_split_stratify
       :type: bool
       :value: True
 
-
+      
 
    .. py:attribute:: use_full_data_for_final_model
       :type: bool
       :value: False
 
-
+      
 
    .. py:attribute:: min_features_to_select
       :type: int
       :value: 5
 
-
+      
 
    .. py:attribute:: cardinality_threshold_for_onehot_encoding
       :type: int
       :value: 5
 
-
+      
 
    .. py:attribute:: cat_encoding_via_ml_algorithm
       :type: bool
       :value: False
 
-
+      
 
    .. py:attribute:: show_detailed_tuning_logs
       :type: bool
       :value: False
 
-
+      
 
    .. py:attribute:: optuna_sampler_n_startup_trials
       :type: int
       :value: 10
 
-
+      
 
    .. py:attribute:: enable_grid_search_fine_tuning
       :type: bool
       :value: False
 
-
+      
 
    .. py:attribute:: gridsearch_tuning_max_runtime_secs
       :type: int
       :value: 3600
 
-
+      
 
    .. py:attribute:: gridsearch_nb_parameters_per_grid
       :type: int
       :value: 5
 
-
+      
 
    .. py:attribute:: experiment_name
       :type: str
       :value: 'new experiment'
 
-
+      
 
 
 .. py:class:: XgboostTuneParamsConfig(/, **data: Any)
@@ -234,163 +234,163 @@ Classes
       :type: int
       :value: 2
 
-
+      
 
    .. py:attribute:: max_depth_max
       :type: int
       :value: 6
 
-
+      
 
    .. py:attribute:: alpha_min
       :type: float
       :value: 0.0
 
-
+      
 
    .. py:attribute:: alpha_max
       :type: float
       :value: 10.0
 
-
+      
 
    .. py:attribute:: lambda_min
       :type: float
       :value: 0.0
 
-
+      
 
    .. py:attribute:: lambda_max
       :type: float
       :value: 10.0
 
-
+      
 
    .. py:attribute:: gamma_min
       :type: float
       :value: 0.0
 
-
+      
 
    .. py:attribute:: gamma_max
       :type: float
       :value: 10.0
 
-
+      
 
    .. py:attribute:: subsample_min
       :type: float
       :value: 0.0
 
-
+      
 
    .. py:attribute:: subsample_max
       :type: float
       :value: 10.0
 
-
+      
 
    .. py:attribute:: max_leaves_min
       :type: int
       :value: 0
 
-
+      
 
    .. py:attribute:: max_leaves_max
       :type: int
       :value: 0
 
-
+      
 
    .. py:attribute:: sub_sample_min
       :type: float
       :value: 0.3
 
-
+      
 
    .. py:attribute:: sub_sample_max
       :type: float
       :value: 1.0
 
-
+      
 
    .. py:attribute:: col_sample_by_tree_min
       :type: float
       :value: 0.3
 
-
+      
 
    .. py:attribute:: col_sample_by_tree_max
       :type: float
       :value: 1.0
 
-
+      
 
    .. py:attribute:: col_sample_by_level_min
       :type: float
       :value: 0.3
 
-
+      
 
    .. py:attribute:: col_sample_by_level_max
       :type: float
       :value: 1.0
 
-
+      
 
    .. py:attribute:: eta_min
       :type: float
       :value: 0.001
 
-
+      
 
    .. py:attribute:: eta_max
       :type: float
       :value: 0.3
 
-
+      
 
    .. py:attribute:: steps_min
       :type: int
       :value: 2
 
-
+      
 
    .. py:attribute:: steps_max
       :type: int
       :value: 1000
 
-
+      
 
    .. py:attribute:: model_verbosity
       :type: int
       :value: 0
 
-
+      
 
    .. py:attribute:: model_verbosity_during_final_training
       :type: int
       :value: 0
 
-
+      
 
    .. py:attribute:: model_objective
       :type: str
       :value: 'multi:softprob'
 
-
+      
 
    .. py:attribute:: model_eval_metric
       :type: str
       :value: 'mlogloss'
 
-
+      
 
    .. py:attribute:: booster
       :type: str
       :value: 'gbtree'
 
-
+      
 
 
 .. py:class:: XgboostTuneParamsRegressionConfig(/, **data: Any)
@@ -404,163 +404,163 @@ Classes
       :type: int
       :value: 2
 
-
+      
 
    .. py:attribute:: max_depth_max
       :type: int
       :value: 6
 
-
+      
 
    .. py:attribute:: alpha_min
       :type: float
       :value: 0.0
 
-
+      
 
    .. py:attribute:: alpha_max
       :type: float
       :value: 10.0
 
-
+      
 
    .. py:attribute:: lambda_min
       :type: float
       :value: 0.0
 
-
+      
 
    .. py:attribute:: lambda_max
       :type: float
       :value: 10.0
 
-
+      
 
    .. py:attribute:: gamma_min
       :type: float
       :value: 0.0
 
-
+      
 
    .. py:attribute:: gamma_max
       :type: float
       :value: 10.0
 
-
+      
 
    .. py:attribute:: subsample_min
       :type: float
       :value: 0.0
 
-
+      
 
    .. py:attribute:: subsample_max
       :type: float
       :value: 10.0
 
-
+      
 
    .. py:attribute:: max_leaves_min
       :type: int
       :value: 0
 
-
+      
 
    .. py:attribute:: max_leaves_max
       :type: int
       :value: 0
 
-
+      
 
    .. py:attribute:: sub_sample_min
       :type: float
       :value: 0.3
 
-
+      
 
    .. py:attribute:: sub_sample_max
       :type: float
       :value: 1.0
 
-
+      
 
    .. py:attribute:: col_sample_by_tree_min
       :type: float
       :value: 0.3
 
-
+      
 
    .. py:attribute:: col_sample_by_tree_max
       :type: float
       :value: 1.0
 
-
+      
 
    .. py:attribute:: col_sample_by_level_min
       :type: float
       :value: 0.3
 
-
+      
 
    .. py:attribute:: col_sample_by_level_max
       :type: float
       :value: 1.0
 
-
+      
 
    .. py:attribute:: eta_min
       :type: float
       :value: 0.001
 
-
+      
 
    .. py:attribute:: eta_max
       :type: float
       :value: 0.3
 
-
+      
 
    .. py:attribute:: steps_min
       :type: int
       :value: 2
 
-
+      
 
    .. py:attribute:: steps_max
       :type: int
       :value: 1000
 
-
+      
 
    .. py:attribute:: model_verbosity
       :type: int
       :value: 0
 
-
+      
 
    .. py:attribute:: model_verbosity_during_final_training
       :type: int
       :value: 0
 
-
+      
 
    .. py:attribute:: model_objective
       :type: str
       :value: 'reg:squarederror'
 
-
+      
 
    .. py:attribute:: model_eval_metric
       :type: str
       :value: 'rmse'
 
-
+      
 
    .. py:attribute:: booster
       :type: str
       :value: 'gbtree'
 
-
+      
 
 
 .. py:class:: XgboostFinalParamConfig
@@ -570,13 +570,17 @@ Classes
 
    .. py:attribute:: params
 
-
+      
 
    .. py:attribute:: sample_weight
       :type: Optional[Dict[str, float]]
 
-
+      
 
    .. py:attribute:: classification_threshold
       :type: float
       :value: 0.5
+
+      
+
+

@@ -22,3 +22,5 @@ Functions
 
 
 .. py:function:: test_transform_target_encode_binary_class(sample_data)
+
+
