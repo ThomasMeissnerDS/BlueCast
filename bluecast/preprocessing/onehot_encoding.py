@@ -17,14 +17,22 @@ from bluecast.general_utils.general_utils import logger
 class OneHotCategoryEncoder:
     """Onehot encode categorical features."""
 
-    def __init__(self, cat_columns: List[Union[str, float, int]]):
+    def __init__(
+        self,
+        cat_columns: List[Union[str, float, int]],
+        target_col: Union[str, float, int],
+    ):
         self.encoders: Dict[str, OneHotEncoder] = {}
         self.prediction_mode: bool = False
         self.cat_columns = cat_columns
+        self.target_col = target_col
 
     def fit_transform(self, x: pd.DataFrame, y: pd.Series) -> pd.DataFrame:
         """Fit onehot encoder and transform column."""
         logger(f"{datetime.utcnow()}: Start fitting binary target encoder.")
+        if self.target_col in self.cat_columns:
+            self.cat_columns.remove(self.target_col)
+
         enc = OneHotEncoder(cols=self.cat_columns)
         encoded_cats = enc.fit_transform(x[self.cat_columns], y)
         x = x.drop(self.cat_columns, axis=1)

@@ -289,7 +289,9 @@ class BlueCast:
             self.cat_columns is not None
             and not self.conf_training.cat_encoding_via_ml_algorithm
         ):
-            self.category_encoder_orchestrator = CategoryEncoderOrchestrator()
+            self.category_encoder_orchestrator = CategoryEncoderOrchestrator(
+                self.target_column
+            )
             self.category_encoder_orchestrator.fit(
                 x_train,
                 feat_type_detector.cat_columns,
@@ -297,10 +299,10 @@ class BlueCast:
             )
 
             self.onehot_encoder = OneHotCategoryEncoder(
-                self.category_encoder_orchestrator.to_onehot_encode
+                self.category_encoder_orchestrator.to_onehot_encode, self.target_column
             )
-            x_train = self.onehot_encoder.fit_transform(x_train, y_train)
-            x_test = self.onehot_encoder.transform(x_test)
+            x_train = self.onehot_encoder.fit_transform(x_train.copy(), y_train)
+            x_test = self.onehot_encoder.transform(x_test.copy())
 
         if (
             self.cat_columns is not None
@@ -322,18 +324,20 @@ class BlueCast:
             self.cat_encoder = MultiClassTargetEncoder(
                 self.category_encoder_orchestrator.to_target_encode, self.target_column
             )
-            x_train = self.cat_encoder.fit_target_encode_multiclass(x_train, y_train)
-            x_test = self.cat_encoder.transform_target_encode_multiclass(x_test)
+            x_train = self.cat_encoder.fit_target_encode_multiclass(
+                x_train.copy(), y_train
+            )
+            x_test = self.cat_encoder.transform_target_encode_multiclass(x_test.copy())
         elif self.conf_training.cat_encoding_via_ml_algorithm:
             x_train[self.cat_columns] = x_train[self.cat_columns].astype("category")
             x_test[self.cat_columns] = x_test[self.cat_columns].astype("category")
 
         if self.custom_last_mile_computation:
             x_train, y_train = self.custom_last_mile_computation.fit_transform(
-                x_train, y_train
+                x_train.copy(), y_train
             )
             x_test, y_test = self.custom_last_mile_computation.transform(
-                x_test, y_test, predicton_mode=False
+                x_test.copy(), y_test, predicton_mode=False
             )
 
         if not self.custom_feature_selector:
@@ -345,10 +349,10 @@ class BlueCast:
 
         if self.conf_training.enable_feature_selection:
             x_train, y_train = self.custom_feature_selector.fit_transform(
-                x_train, y_train
+                x_train.copy(), y_train
             )
             x_test, _ = self.custom_feature_selector.transform(
-                x_test, predicton_mode=False
+                x_test.copy(), predicton_mode=False
             )
 
         if not self.ml_model:
@@ -364,7 +368,7 @@ class BlueCast:
 
         if self.custom_in_fold_preprocessor:
             x_test, _ = self.custom_in_fold_preprocessor.transform(
-                x_test, None, predicton_mode=True
+                x_test.copy(), None, predicton_mode=True
             )
 
         if self.conf_training and self.conf_training.calculate_shap_values:
@@ -467,7 +471,7 @@ class BlueCast:
             and self.onehot_encoder
             and not self.conf_training.cat_encoding_via_ml_algorithm
         ):
-            df = self.onehot_encoder.transform(df)
+            df = self.onehot_encoder.transform(df.copy())
 
         if (
             self.cat_columns
@@ -476,7 +480,7 @@ class BlueCast:
             and isinstance(self.cat_encoder, BinaryClassTargetEncoder)
             and not self.conf_training.cat_encoding_via_ml_algorithm
         ):
-            df = self.cat_encoder.transform_target_encode_binary_class(df)
+            df = self.cat_encoder.transform_target_encode_binary_class(df.copy())
         elif (
             self.cat_columns
             and self.cat_encoder
@@ -484,15 +488,19 @@ class BlueCast:
             and isinstance(self.cat_encoder, MultiClassTargetEncoder)
             and not self.conf_training.cat_encoding_via_ml_algorithm
         ):
-            df = self.cat_encoder.transform_target_encode_multiclass(df)
+            df = self.cat_encoder.transform_target_encode_multiclass(df.copy())
         elif self.conf_training.cat_encoding_via_ml_algorithm:
             df[self.cat_columns] = df[self.cat_columns].astype("category")
 
         if self.custom_last_mile_computation:
-            df, _ = self.custom_last_mile_computation.transform(df, predicton_mode=True)
+            df, _ = self.custom_last_mile_computation.transform(
+                df.copy(), predicton_mode=True
+            )
 
         if self.custom_feature_selector and self.conf_training.enable_feature_selection:
-            df, _ = self.custom_feature_selector.transform(df, predicton_mode=True)
+            df, _ = self.custom_feature_selector.transform(
+                df.copy(), predicton_mode=True
+            )
 
         return df
 

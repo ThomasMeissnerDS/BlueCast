@@ -4,9 +4,13 @@ import pandas as pd
 
 
 class CategoryEncoderOrchestrator:
-    def __init__(self):
+    def __init__(
+        self,
+        target_col: Union[str, float, int],
+    ):
         self.to_onehot_encode: List[Union[str, int, float]] = []
         self.to_target_encode: List[Union[str, int, float]] = []
+        self.target_col = target_col
 
     def fit(
         self,
@@ -25,8 +29,9 @@ class CategoryEncoderOrchestrator:
             encoding, otherwise target encoding will be assigned.
         """
         for col in cat_columns:
-            cardinality = df[col].nunique()
-            if cardinality <= threshold:
-                self.to_onehot_encode.append(col)
-            else:
-                self.to_target_encode.append(col)
+            if col != self.target_col:
+                cardinality = df[col].nunique()
+                if cardinality <= threshold:
+                    self.to_onehot_encode.append(col)
+                else:
+                    self.to_target_encode.append(col)
