@@ -26,5 +26,3 @@ Functions
 
 
 .. py:function:: test_transform_extra_columns()
-
-

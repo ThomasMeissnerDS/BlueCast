@@ -165,5 +165,3 @@ Functions
    :param mut_params: Dictionary passing additional arguments into sklearn's mutual_info_classif function.
 
    To be used for classification only.
-
-

@@ -61,6 +61,3 @@ Classes
    .. py:method:: transform_target_encode_multiclass(x: pandas.DataFrame) -> pandas.DataFrame
 
       Transform categories based on already trained encoder.
-
-
-

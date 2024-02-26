@@ -54,6 +54,3 @@ Classes
    .. py:method:: get_best_score(target_metric: str) -> Union[int, float]
 
       Expects results in the tracker
-
-
-

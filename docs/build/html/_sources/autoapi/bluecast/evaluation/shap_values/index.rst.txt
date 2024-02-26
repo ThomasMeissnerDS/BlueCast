@@ -31,5 +31,3 @@ Functions
    :param model: Trained ML model
    :param df: Test data to predict on.
    :return: Shap values
-
-

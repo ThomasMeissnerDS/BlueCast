@@ -10,55 +10,54 @@ Module Contents
 .. py:data:: project
    :value: 'BlueCast'
 
-   
+
 
 .. py:data:: copyright
    :value: '2023, Thomas Meißner'
 
-   
+
 
 .. py:data:: author
    :value: 'Thomas Meißner'
 
-   
+
 
 .. py:data:: release
    :value: '0.93'
 
-   
+
 
 .. py:data:: extensions
    :value: ['myst_parser', 'sphinx.ext.autodoc', 'autoapi.extension', 'sphinx.ext.napoleon']
 
-   
+
 
 .. py:data:: autoapi_type
    :value: 'python'
 
-   
+
 
 .. py:data:: autoapi_dirs
 
-   
+
 
 .. py:data:: templates_path
    :value: ['_templates']
 
-   
+
 
 .. py:data:: exclude_patterns
    :type: Any
    :value: []
 
-   
+
 
 .. py:data:: html_theme
    :value: 'alabaster'
 
-   
+
 
 .. py:data:: html_static_path
    :value: ['_static']
 
-   
 

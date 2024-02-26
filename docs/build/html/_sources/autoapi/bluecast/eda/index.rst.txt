@@ -12,5 +12,3 @@ Submodules
 
    analyse/index.rst
    data_leakage_checks/index.rst
-
-

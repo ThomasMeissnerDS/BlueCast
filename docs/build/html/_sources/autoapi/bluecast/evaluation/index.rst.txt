@@ -12,5 +12,3 @@ Submodules
 
    eval_metrics/index.rst
    shap_values/index.rst
-
-

@@ -34,5 +34,3 @@ Functions
 
 
 .. py:function:: test_transform_returns_optional_target_prediction_mode(custom_preprocessing)
-
-

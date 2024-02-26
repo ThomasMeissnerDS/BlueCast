@@ -57,5 +57,3 @@ Functions
 
 
 .. py:function:: test_bluecast_cv_fit_eval_with_custom_model()
-
-
