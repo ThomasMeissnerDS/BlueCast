@@ -64,7 +64,6 @@ def test_blueprint_xgboost(synthetic_train_test_data):
 
     automl = BlueCastRegression(
         class_problem="regression",
-        target_column="target",
         conf_xgboost=xgboost_param_config,
         custom_last_mile_computation=custom_last_mile_computation,
     )
@@ -199,7 +198,6 @@ def test_bluecast_with_custom_model():
     # Create an instance of the BlueCast class with the custom model
     bluecast = BlueCastRegression(
         class_problem="regression",
-        target_column="target",
         ml_model=custom_model,
         conf_xgboost=xgboost_param_config,
         conf_training=train_config,
@@ -250,7 +248,6 @@ def test_bluecast_with_custom_model():
     # Create an instance of the BlueCast class with the custom model
     bluecast = BlueCastRegression(
         class_problem="regression",
-        target_column="target",
         ml_model=custom_model,
         conf_xgboost=xgboost_param_config,
         conf_training=train_config,
@@ -296,3 +293,117 @@ def test_bluecast_with_custom_model():
     assert (
         len(bluecast.experiment_tracker.experiment_id) == 0
     )  # due to custom model and fit method
+
+
+@pytest.fixture
+def bluecast_instance():
+    custom_config = TrainingConfig()
+    # Create a fixture to instantiate the BlueCast class with default values for testing
+    bluecast_instance = BlueCastRegression(
+        class_problem="regression", conf_training=custom_config
+    )
+    bluecast_instance.target_column = "target"
+    return bluecast_instance
+
+
+def test_enable_feature_selection_warning(bluecast_instance):
+    # Test if a warning is raised when feature selection is disabled
+    df = pd.DataFrame({"feature1": [1, 2, 3], "target": [0, 1, 0]})
+    with pytest.warns(UserWarning, match="Feature selection is disabled."):
+        bluecast_instance.initial_checks(df)
+
+
+def test_hypertuning_cv_folds_warning(bluecast_instance):
+    # Test if a warning is raised when hypertuning_cv_folds is set to 1
+    df = pd.DataFrame({"feature1": [1, 2, 3], "target": [0, 1, 0]})
+    with pytest.warns(UserWarning, match="Cross validation is disabled."):
+        bluecast_instance.conf_training.hypertuning_cv_folds = 1
+        bluecast_instance.initial_checks(df)
+
+
+def test_missing_feature_selector_warning(bluecast_instance):
+    # Test if a warning is raised when feature selection is enabled but no feature selector is provided
+    df = pd.DataFrame({"feature1": [1, 2, 3], "target": [0, 1, 0]})
+    bluecast_instance.conf_training.enable_feature_selection = True
+    with pytest.warns(
+        UserWarning,
+        match="Feature selection is enabled but no feature selector has been provided.",
+    ):
+        bluecast_instance.initial_checks(df)
+
+
+def test_missing_xgboost_tune_params_config_warning(bluecast_instance):
+    # Test if a warning is raised when XgboostTuneParamsConfig is not provided
+    df = pd.DataFrame({"feature1": [1, 2, 3], "target": [0, 1, 0]})
+    bluecast_instance.conf_xgboost = None
+    with pytest.warns(
+        UserWarning, match="No XgboostTuneParamsConfig has been provided."
+    ):
+        bluecast_instance.initial_checks(df)
+
+
+def test_min_features_to_select_warning(bluecast_instance):
+    # Test if a warning is raised when min_features_to_select is greater than or equal to the number of features
+    df = pd.DataFrame({"feature1": [1, 2, 3], "target": [0, 1, 0]})
+    bluecast_instance.conf_training.enable_feature_selection = True
+    bluecast_instance.conf_training.min_features_to_select = 3
+    message = """The minimum number of features to select is greater or equal to the number of features in
+            the dataset while feature selection is enabled. Consider reducing the minimum number of features to
+            select or disabling feature selection via TrainingConfig."""
+    with pytest.warns(
+        UserWarning,
+        match=message,
+    ):
+        bluecast_instance.initial_checks(df)
+
+
+def test_shap_values_and_ml_algorithm_warning(bluecast_instance):
+    # Test if a warning is raised when calculate_shap_values is True and cat_encoding_via_ml_algorithm is True
+    df = pd.DataFrame({"feature1": [1, 2, 3], "target": [0, 1, 0]})
+    bluecast_instance.conf_training.calculate_shap_values = True
+    bluecast_instance.conf_training.cat_encoding_via_ml_algorithm = True
+    with pytest.warns(
+        UserWarning,
+        match="SHAP values cannot be calculated when categorical encoding via ML algorithm is enabled.",
+    ):
+        bluecast_instance.initial_checks(df)
+
+
+def test_cat_encoding_via_ml_algorithm_and_ml_model_warning():
+    # Test if a warning is raised when cat_encoding_via_ml_algorithm is True and ml_model is provided
+    df = pd.DataFrame({"feature1": [1, 2, 3], "target": [0, 1, 0]})
+    custom_config = TrainingConfig()
+    custom_config.cat_encoding_via_ml_algorithm = True
+    bluecast_instance = BlueCastRegression(
+        class_problem="regression", conf_training=custom_config
+    )
+    from sklearn.linear_model import LinearRegression
+
+    bluecast_instance.ml_model = LinearRegression()
+    message = """Categorical encoding via ML algorithm is enabled. Make sure to handle categorical features
+            within the provided ml model or consider disabling categorical encoding via ML algorithm in the
+            TrainingConfig alternatively."""
+    with pytest.warns(
+        UserWarning,
+        match=message,
+    ):
+        bluecast_instance.initial_checks(df)
+
+
+def test_precise_cv_tuning_warnings(bluecast_instance):
+    # Test if warnings are raised for precise_cv_tuning conditions
+    df = pd.DataFrame({"feature1": [1, 2, 3], "target": [0, 1, 0]})
+    bluecast_instance.conf_training.precise_cv_tuning = True
+    with pytest.warns(UserWarning, match="Precise fine tuning has been enabled."):
+        bluecast_instance.initial_checks(df)
+    with pytest.warns(
+        UserWarning,
+        match="Precise fine tuning has been enabled, but no custom_in_fold_preprocessor has been provided.",
+    ):
+        bluecast_instance.initial_checks(df)
+    with pytest.warns(
+        UserWarning,
+        match="Precise fine tuning has been enabled, but number of hypertuning_cv_folds is less than 2.",
+    ):
+        bluecast_instance.conf_training.hypertuning_cv_folds = 1
+        bluecast_instance.initial_checks(df)

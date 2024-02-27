@@ -1,0 +1,41 @@
+:py:mod:`bluecast.preprocessing.train_test_split`
+=================================================
+
+.. py:module:: bluecast.preprocessing.train_test_split
+
+.. autoapi-nested-parse::
+
+   This module contains functions to split data into train and test sets.
+
+   The train-test split can be done in two ways:
+       - Randomly
+       - Based on a provided order (i.e. time)
+
+
+
+Module Contents
+---------------
+
+
+Functions
+~~~~~~~~~
+
+.. autoapisummary::
+
+   bluecast.preprocessing.train_test_split.train_test_split_cross
+   bluecast.preprocessing.train_test_split.train_test_split_time
+   bluecast.preprocessing.train_test_split.train_test_split
+
+
+
+.. py:function:: train_test_split_cross(df: pandas.DataFrame, target_col: str, train_size=0.8, random_state: int = 100, stratify: bool = False)
+
+   Split data into train and test. Stratification is possible.
+
+
+.. py:function:: train_test_split_time(df: pandas.DataFrame, target_col: str, split_by_col: str, train_size: float = 0.8)
+
+   Split data into train and test based on a provided order (i.e. time).
+
+
+.. py:function:: train_test_split(df: pandas.DataFrame, target_col: str, split_by_col: Optional[str] = None, train_size: float = 0.8, random_state: int = 0, stratify: bool = False)

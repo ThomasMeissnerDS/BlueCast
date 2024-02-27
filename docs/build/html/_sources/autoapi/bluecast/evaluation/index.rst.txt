@@ -1,0 +1,14 @@
+:py:mod:`bluecast.evaluation`
+=============================
+
+.. py:module:: bluecast.evaluation
+
+
+Submodules
+----------
+.. toctree::
+   :titlesonly:
+   :maxdepth: 1
+
+   eval_metrics/index.rst
+   shap_values/index.rst

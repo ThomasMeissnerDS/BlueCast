@@ -1,0 +1,194 @@
+
+<!DOCTYPE html>
+
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="generator" content="Docutils 0.18.1: http://docutils.sourceforge.net/" />
+
+    <title>bluecast.blueprints.cast &#8212; BlueCast 0.93 documentation</title>
+    <link rel="stylesheet" type="text/css" href="../../../../_static/pygments.css" />
+    <link rel="stylesheet" type="text/css" href="../../../../_static/alabaster.css" />
+    <link rel="stylesheet" type="text/css" href="../../../../_static/graphviz.css" />
+    <script data-url_root="../../../../" id="documentation_options" src="../../../../_static/documentation_options.js"></script>
+    <script src="../../../../_static/doctools.js"></script>
+    <script src="../../../../_static/sphinx_highlight.js"></script>
+    <link rel="index" title="Index" href="../../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../../search.html" />
+
+  <link rel="stylesheet" href="../../../../_static/custom.css" type="text/css" />
+
+
+
+
+
+  </head><body>
+
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+
+
+          <div class="body" role="main">
+
+  <section id="module-bluecast.blueprints.cast">
+<span id="bluecast-blueprints-cast"></span><h1><a class="reference internal" href="#module-bluecast.blueprints.cast" title="bluecast.blueprints.cast"><code class="xref py py-mod docutils literal notranslate"><span class="pre">bluecast.blueprints.cast</span></code></a><a class="headerlink" href="#module-bluecast.blueprints.cast" title="Permalink to this heading">¶</a></h1>
+<p>Run fully configured classification blueprint.</p>
+<p>Customization via class attributes is possible. Configs can be instantiated and provided to change Xgboost training.
+Default hyperparameter search space is relatively light-weight to speed up the prototyping.
+Can deal with binary and multi-class classification problems.
+Hyperparameter tuning can be switched off or even strengthened via cross-validation. This behaviour can be controlled
+via the config class attributes from config.training_config module.</p>
+<section id="module-contents">
+<h2>Module Contents<a class="headerlink" href="#module-contents" title="Permalink to this heading">¶</a></h2>
+<section id="classes">
+<h3>Classes<a class="headerlink" href="#classes" title="Permalink to this heading">¶</a></h3>
+<table class="autosummary longtable docutils align-default">
+<tbody>
+<tr class="row-odd"><td><p><a class="reference internal" href="#bluecast.blueprints.cast.BlueCast" title="bluecast.blueprints.cast.BlueCast"><code class="xref py py-obj docutils literal notranslate"><span class="pre">BlueCast</span></code></a></p></td>
+<td><p>Run fully configured classification blueprint.</p></td>
+</tr>
+</tbody>
+</table>
+<dl class="py class">
+<dt class="sig sig-object py" id="bluecast.blueprints.cast.BlueCast">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">bluecast.blueprints.cast.</span></span><span class="sig-name descname"><span class="pre">BlueCast</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">class_problem</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Literal</span><span class="p"><span class="pre">[</span></span><span class="pre">binary</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">multiclass</span><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cat_columns</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">float</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">int</span><span class="p"><span class="pre">]</span></span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">date_columns</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">float</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">int</span><span class="p"><span class="pre">]</span></span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">time_split_column</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ml_model</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="../../ml_modelling/xgboost/index.html#bluecast.ml_modelling.xgboost.XgboostModel" title="bluecast.ml_modelling.xgboost.XgboostModel"><span class="pre">bluecast.ml_modelling.xgboost.XgboostModel</span></a><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">Any</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">custom_in_fold_preprocessor</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="../../preprocessing/custom/index.html#bluecast.preprocessing.custom.CustomPreprocessing" title="bluecast.preprocessing.custom.CustomPreprocessing"><span class="pre">bluecast.preprocessing.custom.CustomPreprocessing</span></a><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">custom_last_mile_computation</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="../../preprocessing/custom/index.html#bluecast.preprocessing.custom.CustomPreprocessing" title="bluecast.preprocessing.custom.CustomPreprocessing"><span class="pre">bluecast.preprocessing.custom.CustomPreprocessing</span></a><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">custom_preprocessor</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="../../preprocessing/custom/index.html#bluecast.preprocessing.custom.CustomPreprocessing" title="bluecast.preprocessing.custom.CustomPreprocessing"><span class="pre">bluecast.preprocessing.custom.CustomPreprocessing</span></a><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">custom_feature_selector</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="../../preprocessing/feature_selection/index.html#bluecast.preprocessing.feature_selection.RFECVSelector" title="bluecast.preprocessing.feature_selection.RFECVSelector"><span class="pre">bluecast.preprocessing.feature_selection.RFECVSelector</span></a><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference internal" href="../../preprocessing/custom/index.html#bluecast.preprocessing.custom.CustomPreprocessing" title="bluecast.preprocessing.custom.CustomPreprocessing"><span class="pre">bluecast.preprocessing.custom.CustomPreprocessing</span></a><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">conf_training</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="../../config/training_config/index.html#bluecast.config.training_config.TrainingConfig" title="bluecast.config.training_config.TrainingConfig"><span class="pre">bluecast.config.training_config.TrainingConfig</span></a><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">conf_xgboost</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="../../config/training_config/index.html#bluecast.config.training_config.XgboostTuneParamsConfig" title="bluecast.config.training_config.XgboostTuneParamsConfig"><span class="pre">bluecast.config.training_config.XgboostTuneParamsConfig</span></a><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">conf_params_xgboost</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="../../config/training_config/index.html#bluecast.config.training_config.XgboostFinalParamConfig" title="bluecast.config.training_config.XgboostFinalParamConfig"><span class="pre">bluecast.config.training_config.XgboostFinalParamConfig</span></a><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">experiment_tracker</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="../../experimentation/tracking/index.html#bluecast.experimentation.tracking.ExperimentTracker" title="bluecast.experimentation.tracking.ExperimentTracker"><span class="pre">bluecast.experimentation.tracking.ExperimentTracker</span></a><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#bluecast.blueprints.cast.BlueCast" title="Permalink to this definition">¶</a></dt>
+<dd><p>Run fully configured classification blueprint.</p>
+<p>Customization via class attributes is possible. Configs can be instantiated and provided to change Xgboost training.
+Default hyperparameter search space is relatively light-weight to speed up the prototyping.
+:param :class_problem: Takes a string containing the class problem type. Either “binary” or “multiclass”.
+:param :target_column: Takes a string containing the name of the target column.
+:param :cat_columns: Takes a list of strings containing the names of the categorical columns. If not provided,</p>
+<blockquote>
+<div><p>BlueCast will infer these automatically.</p>
+</div></blockquote>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>:date_columns</strong> – Takes a list of strings containing the names of the date columns. If not provided,
+BlueCast will infer these automatically.</p></li>
+<li><p><strong>:time_split_column</strong> – Takes a string containing the name of the time split column. If not provided,
+BlueCast will not split the data by time or order, but do a random split instead.</p></li>
+<li><p><strong>:ml_model</strong> – Takes an instance of a XgboostModel class. If not provided, BlueCast will instantiate one.
+This is an API to pass any model class. Inherit the baseclass from ml_modelling.base_model.BaseModel.</p></li>
+<li><p><strong>custom_in_fold_preprocessor</strong> – Takes an instance of a CustomPreprocessing class. Allows users to eeecute
+preprocessing after the train test split within cv folds. This will be executed only if precise_cv_tuning in
+the conf_Training is True. Custom ML models need to implement this themselves. This step is only useful when
+the proprocessing step has a high chance of overfitting otherwise (i.e: oversampling techniques).</p></li>
+<li><p><strong>custom_preprocessor</strong> – Takes an instance of a CustomPreprocessing class. Allows users to inject custom
+preprocessing steps which take place right after the train test spit.</p></li>
+<li><p><strong>custom_last_mile_computation</strong> – Takes an instance of a CustomPreprocessing class. Allows users to inject custom
+preprocessing steps which take place right before the model training.</p></li>
+<li><p><strong>experiment_tracker</strong> – Takes an instance of an ExperimentTracker class. If not provided this will be initialized
+automatically.</p></li>
+</ul>
+</dd>
+</dl>
+<dl class="py method">
+<dt class="sig sig-object py" id="bluecast.blueprints.cast.BlueCast.initial_checks">
+<span class="sig-name descname"><span class="pre">initial_checks</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">df</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">pandas.DataFrame</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="headerlink" href="#bluecast.blueprints.cast.BlueCast.initial_checks" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="bluecast.blueprints.cast.BlueCast.fit">
+<span class="sig-name descname"><span class="pre">fit</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">df</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">pandas.DataFrame</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">target_col</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="headerlink" href="#bluecast.blueprints.cast.BlueCast.fit" title="Permalink to this definition">¶</a></dt>
+<dd><p>Train a full ML pipeline.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="bluecast.blueprints.cast.BlueCast.fit_eval">
+<span class="sig-name descname"><span class="pre">fit_eval</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">df</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">pandas.DataFrame</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">df_eval</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">pandas.DataFrame</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">target_eval</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">pandas.Series</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">target_col</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Any</span><span class="p"><span class="pre">]</span></span></span></span><a class="headerlink" href="#bluecast.blueprints.cast.BlueCast.fit_eval" title="Permalink to this definition">¶</a></dt>
+<dd><p>Train a full ML pipeline and evaluate on a holdout set.</p>
+<p>This is a convenience function to train and evaluate on a holdout set. It is recommended to use this for model
+exploration. On production the simple fit() function should be used.
+:param :df: Takes a pandas DataFrame containing the training data and the targets.
+:param :df_eval: Takes a pandas DataFrame containing the evaluation data, but not the targets.
+:param :target_eval: Takes a pandas Series containing the evaluation targets.
+:param :target_col: Takes a string containing the name of the target column inside the training data df.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="bluecast.blueprints.cast.BlueCast.transform_new_data">
+<span class="sig-name descname"><span class="pre">transform_new_data</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">df</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">pandas.DataFrame</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">pandas.DataFrame</span></span></span><a class="headerlink" href="#bluecast.blueprints.cast.BlueCast.transform_new_data" title="Permalink to this definition">¶</a></dt>
+<dd><p>Transform new data according to preprocessing pipeline.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="bluecast.blueprints.cast.BlueCast.predict">
+<span class="sig-name descname"><span class="pre">predict</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">df</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">pandas.DataFrame</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">numpy.ndarray</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">numpy.ndarray</span><span class="p"><span class="pre">]</span></span></span></span><a class="headerlink" href="#bluecast.blueprints.cast.BlueCast.predict" title="Permalink to this definition">¶</a></dt>
+<dd><p>Predict on unseen data.</p>
+<p>Return the predicted probabilities and the predicted classes:
+y_probs, y_classes = predict(df)</p>
+</dd></dl>
+
+</dd></dl>
+
+</section>
+</section>
+</section>
+
+
+          </div>
+
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+<h1 class="logo"><a href="../../../../index.html">BlueCast</a></h1>
+
+
+
+
+
+
+
+
+<h3>Navigation</h3>
+
+<div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="../../../../index.html">Documentation overview</a><ul>
+  </ul></li>
+</ul>
+</div>
+<div id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../../../../search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"/>
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</div>
+<script>document.getElementById('searchbox').style.display = "block"</script>
+
+
+
+
+
+
+
+
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &#169;2023, Thomas Meißner.
+
+      |
+      Powered by <a href="https://www.sphinx-doc.org/">Sphinx 6.2.1</a>
+      &amp; <a href="https://alabaster.readthedocs.io">Alabaster 0.7.16</a>
+
+      |
+      <a href="../../../../_sources/autoapi/bluecast/blueprints/cast/index.rst.txt"
+          rel="nofollow">Page source</a>
+    </div>
+
+
+
+
+  </body>
+</html>

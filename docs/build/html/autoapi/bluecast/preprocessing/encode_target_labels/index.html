@@ -1,0 +1,157 @@
+
+<!DOCTYPE html>
+
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="generator" content="Docutils 0.18.1: http://docutils.sourceforge.net/" />
+
+    <title>bluecast.preprocessing.encode_target_labels &#8212; BlueCast 0.93 documentation</title>
+    <link rel="stylesheet" type="text/css" href="../../../../_static/pygments.css" />
+    <link rel="stylesheet" type="text/css" href="../../../../_static/alabaster.css" />
+    <link rel="stylesheet" type="text/css" href="../../../../_static/graphviz.css" />
+    <script data-url_root="../../../../" id="documentation_options" src="../../../../_static/documentation_options.js"></script>
+    <script src="../../../../_static/doctools.js"></script>
+    <script src="../../../../_static/sphinx_highlight.js"></script>
+    <link rel="index" title="Index" href="../../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../../search.html" />
+
+  <link rel="stylesheet" href="../../../../_static/custom.css" type="text/css" />
+
+
+
+
+
+  </head><body>
+
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+
+
+          <div class="body" role="main">
+
+  <section id="module-bluecast.preprocessing.encode_target_labels">
+<span id="bluecast-preprocessing-encode-target-labels"></span><h1><a class="reference internal" href="#module-bluecast.preprocessing.encode_target_labels" title="bluecast.preprocessing.encode_target_labels"><code class="xref py py-mod docutils literal notranslate"><span class="pre">bluecast.preprocessing.encode_target_labels</span></code></a><a class="headerlink" href="#module-bluecast.preprocessing.encode_target_labels" title="Permalink to this heading">¶</a></h1>
+<p>A module for encoding target column labels.</p>
+<p>This is a convenience feature. It is only relevant when target column values are categorical.
+In such cases they will be converted to numerical values, but reverse-transformed for the end-user at the end of the
+pipeline.</p>
+<section id="module-contents">
+<h2>Module Contents<a class="headerlink" href="#module-contents" title="Permalink to this heading">¶</a></h2>
+<section id="classes">
+<h3>Classes<a class="headerlink" href="#classes" title="Permalink to this heading">¶</a></h3>
+<table class="autosummary longtable docutils align-default">
+<tbody>
+<tr class="row-odd"><td><p><a class="reference internal" href="#bluecast.preprocessing.encode_target_labels.TargetLabelEncoder" title="bluecast.preprocessing.encode_target_labels.TargetLabelEncoder"><code class="xref py py-obj docutils literal notranslate"><span class="pre">TargetLabelEncoder</span></code></a></p></td>
+<td><p>Encode target column labels.</p></td>
+</tr>
+</tbody>
+</table>
+<dl class="py class">
+<dt class="sig sig-object py" id="bluecast.preprocessing.encode_target_labels.TargetLabelEncoder">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">bluecast.preprocessing.encode_target_labels.</span></span><span class="sig-name descname"><span class="pre">TargetLabelEncoder</span></span><a class="headerlink" href="#bluecast.preprocessing.encode_target_labels.TargetLabelEncoder" title="Permalink to this definition">¶</a></dt>
+<dd><p>Encode target column labels.</p>
+<p>This function is only relevant when target column values are categorical. In such cases they will be converted
+into numerical representation. This encoding can also be reversed to translate back.</p>
+<dl class="py method">
+<dt class="sig sig-object py" id="bluecast.preprocessing.encode_target_labels.TargetLabelEncoder.fit_label_encoder">
+<span class="sig-name descname"><span class="pre">fit_label_encoder</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">targets</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">pandas.DataFrame</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">int</span><span class="p"><span class="pre">]</span></span></span></span><a class="headerlink" href="#bluecast.preprocessing.encode_target_labels.TargetLabelEncoder.fit_label_encoder" title="Permalink to this definition">¶</a></dt>
+<dd><p>Iterate through target values and map them to numerics.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="bluecast.preprocessing.encode_target_labels.TargetLabelEncoder.label_encoder_transform">
+<span class="sig-name descname"><span class="pre">label_encoder_transform</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">targets</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">pandas.DataFrame</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">mapping</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">int</span><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="n"><span class="pre">target_col</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">int</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">float</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">pandas.DataFrame</span></span></span><a class="headerlink" href="#bluecast.preprocessing.encode_target_labels.TargetLabelEncoder.label_encoder_transform" title="Permalink to this definition">¶</a></dt>
+<dd><p>Transform target column from categorical to numerical representation.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="bluecast.preprocessing.encode_target_labels.TargetLabelEncoder.fit_transform_target_labels">
+<span class="sig-name descname"><span class="pre">fit_transform_target_labels</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">targets</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">pandas.DataFrame</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">pandas.DataFrame</span></span></span><a class="headerlink" href="#bluecast.preprocessing.encode_target_labels.TargetLabelEncoder.fit_transform_target_labels" title="Permalink to this definition">¶</a></dt>
+<dd><p>Wrapper function that creates the mapping and transforms the target column.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="bluecast.preprocessing.encode_target_labels.TargetLabelEncoder.transform_target_labels">
+<span class="sig-name descname"><span class="pre">transform_target_labels</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">targets</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">pandas.DataFrame</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">target_col</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">int</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">float</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">pandas.DataFrame</span></span></span><a class="headerlink" href="#bluecast.preprocessing.encode_target_labels.TargetLabelEncoder.transform_target_labels" title="Permalink to this definition">¶</a></dt>
+<dd><p>Transform the target column based on already created mappings.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="bluecast.preprocessing.encode_target_labels.TargetLabelEncoder.label_encoder_reverse_transform">
+<span class="sig-name descname"><span class="pre">label_encoder_reverse_transform</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">targets</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">pandas.Series</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">pandas.DataFrame</span></span></span><a class="headerlink" href="#bluecast.preprocessing.encode_target_labels.TargetLabelEncoder.label_encoder_reverse_transform" title="Permalink to this definition">¶</a></dt>
+<dd><p>Reverse numerical encodings back to original categories.</p>
+</dd></dl>
+
+</dd></dl>
+
+</section>
+</section>
+</section>
+
+
+          </div>
+
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+<h1 class="logo"><a href="../../../../index.html">BlueCast</a></h1>
+
+
+
+
+
+
+
+
+<h3>Navigation</h3>
+
+<div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="../../../../index.html">Documentation overview</a><ul>
+  </ul></li>
+</ul>
+</div>
+<div id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../../../../search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"/>
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</div>
+<script>document.getElementById('searchbox').style.display = "block"</script>
+
+
+
+
+
+
+
+
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &#169;2023, Thomas Meißner.
+
+      |
+      Powered by <a href="https://www.sphinx-doc.org/">Sphinx 6.2.1</a>
+      &amp; <a href="https://alabaster.readthedocs.io">Alabaster 0.7.16</a>
+
+      |
+      <a href="../../../../_sources/autoapi/bluecast/preprocessing/encode_target_labels/index.rst.txt"
+          rel="nofollow">Page source</a>
+    </div>
+
+
+
+
+  </body>
+</html>

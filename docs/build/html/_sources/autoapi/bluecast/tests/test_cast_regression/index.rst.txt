@@ -1,0 +1,95 @@
+:py:mod:`bluecast.tests.test_cast_regression`
+=============================================
+
+.. py:module:: bluecast.tests.test_cast_regression
+
+
+Module Contents
+---------------
+
+Classes
+~~~~~~~
+
+.. autoapisummary::
+
+   bluecast.tests.test_cast_regression.CustomModel
+
+
+
+Functions
+~~~~~~~~~
+
+.. autoapisummary::
+
+   bluecast.tests.test_cast_regression.synthetic_train_test_data
+   bluecast.tests.test_cast_regression.test_blueprint_xgboost
+   bluecast.tests.test_cast_regression.test_bluecast_with_custom_model
+   bluecast.tests.test_cast_regression.bluecast_instance
+   bluecast.tests.test_cast_regression.test_enable_feature_selection_warning
+   bluecast.tests.test_cast_regression.test_hypertuning_cv_folds_warning
+   bluecast.tests.test_cast_regression.test_missing_feature_selector_warning
+   bluecast.tests.test_cast_regression.test_missing_xgboost_tune_params_config_warning
+   bluecast.tests.test_cast_regression.test_min_features_to_select_warning
+   bluecast.tests.test_cast_regression.test_shap_values_and_ml_algorithm_warning
+   bluecast.tests.test_cast_regression.test_cat_encoding_via_ml_algorithm_and_ml_model_warning
+   bluecast.tests.test_cast_regression.test_precise_cv_tuning_warnings
+
+
+
+.. py:function:: synthetic_train_test_data() -> Tuple[pandas.DataFrame, pandas.DataFrame]
+
+
+.. py:function:: test_blueprint_xgboost(synthetic_train_test_data)
+
+   Test that tests the BlueCast class
+
+
+.. py:class:: CustomModel
+
+
+   Bases: :py:obj:`bluecast.ml_modelling.base_classes.BaseClassMlRegressionModel`
+
+   Base class for all ML models.
+
+   Enforces the implementation of the fit and predict methods.
+   If hyperparameter tuning is required, then the fit method should implement the tuning.
+
+   .. py:method:: fit(x_train: pandas.DataFrame, x_test: pandas.DataFrame, y_train: pandas.Series, y_test: pandas.Series) -> None
+
+
+   .. py:method:: predict(df: pandas.DataFrame) -> numpy.ndarray
+
+      Predict on unseen data.
+
+      :return numpy array of predictions
+
+
+
+.. py:function:: test_bluecast_with_custom_model()
+
+
+.. py:function:: bluecast_instance()
+
+
+.. py:function:: test_enable_feature_selection_warning(bluecast_instance)
+
+
+.. py:function:: test_hypertuning_cv_folds_warning(bluecast_instance)
+
+
+.. py:function:: test_missing_feature_selector_warning(bluecast_instance)
+
+
+.. py:function:: test_missing_xgboost_tune_params_config_warning(bluecast_instance)
+
+
+.. py:function:: test_min_features_to_select_warning(bluecast_instance)
+
+
+.. py:function:: test_shap_values_and_ml_algorithm_warning(bluecast_instance)
+
+
+.. py:function:: test_cat_encoding_via_ml_algorithm_and_ml_model_warning()
+
+
+.. py:function:: test_precise_cv_tuning_warnings(bluecast_instance)

@@ -1,0 +1,40 @@
+:py:mod:`bluecast.preprocessing.schema_checks`
+==============================================
+
+.. py:module:: bluecast.preprocessing.schema_checks
+
+.. autoapi-nested-parse::
+
+   Module for DataFrame schema checks.
+
+
+
+Module Contents
+---------------
+
+Classes
+~~~~~~~
+
+.. autoapisummary::
+
+   bluecast.preprocessing.schema_checks.SchemaDetector
+
+
+
+
+.. py:class:: SchemaDetector
+
+
+   Detect and check DataFrame schema.
+
+   .. py:method:: fit(df: pandas.DataFrame)
+
+      Store the schema of the train dataset.
+
+
+   .. py:method:: transform(df: pandas.DataFrame)
+
+      Check if the test dataset has the same schema as the train dataset.
+
+      Will raise an error if schema length does not match and will raise a warning indicating the missing or extra
+      columns.

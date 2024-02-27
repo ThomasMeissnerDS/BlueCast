@@ -1,0 +1,582 @@
+:py:mod:`bluecast.config.training_config`
+=========================================
+
+.. py:module:: bluecast.config.training_config
+
+.. autoapi-nested-parse::
+
+   Define training and common configuration parameters.
+
+   Pydantic dataclasses are used to define the configuration parameters. This allows for type checking and validation of
+   the configuration parameters. The configuration parameters are used in the training pipeline and in the evaluation
+   pipeline. Pydantic dataclasses are used to allow users a pythonic way to define the configuration parameters.
+   Default configurations can be loaded, adjusted and passed into the blueprints.
+
+
+
+Module Contents
+---------------
+
+Classes
+~~~~~~~
+
+.. autoapisummary::
+
+   bluecast.config.training_config.Config
+   bluecast.config.training_config.TrainingConfig
+   bluecast.config.training_config.XgboostTuneParamsConfig
+   bluecast.config.training_config.XgboostTuneParamsRegressionConfig
+   bluecast.config.training_config.XgboostFinalParamConfig
+
+
+
+
+.. py:class:: Config
+
+
+   .. py:attribute:: arbitrary_types_allowed
+      :value: True
+
+
+
+
+.. py:class:: TrainingConfig(/, **data: Any)
+
+
+   Bases: :py:obj:`pydantic.BaseModel`
+
+   Define general training parameters.
+
+   :param global_random_state: Global random state to use for reproducibility.
+   :param increase_random_state_in_bluecast_cv_by: In BlueCastCV multiple models are trained. Define by how much the
+       random state changes with each additional model.
+   :param shuffle_during_training: Whether to shuffle the data during training when hypertuning_cv_folds > 1.
+   :param hyperparameter_tuning_rounds: Number of hyperparameter tuning rounds. Not used when custom ML model is passed.
+   :param hyperparameter_tuning_max_runtime_secs: Maximum runtime in seconds for hyperparameter tuning. Not used when
+       custom ML model is passed.
+   :param hypertuning_cv_folds: Number of cross-validation folds to use for hyperparameter tuning. Not used when
+       custom ML model is passed.
+   :param precise_cv_tuning: If enabled will switch from using Xgboost's own cv method to a custom cross validation
+       routine. This is needed when the in-fold preprocessing is necessary that would cause overfitting with usual cv.
+       This has a much longer runtime as Optuna's pruning call is missing and all trials will run until the end.
+   :param early_stopping_rounds: Number of early stopping rounds. Not used when custom ML model is passed. Also
+       not used when hypertuning_cv_folds is greater than 1.
+   :param autotune_model: Whether to autotune the model. Not used when custom ML model is passed.
+   :param enable_feature_selection: Whether to enable recursive feature selection.
+   :param calculate_shap_values: Whether to calculate shap values. Also used when custom ML model is passed. Not
+       compatible with all ML models. See the SHAP documentation for more details.
+   :param train_size: Train size to use for train-test split.
+   :param train_split_stratify: Whether to stratify the train-test split. Not used when custom ML model is passed.
+   :param use_full_data_for_final_model: Whether to use the full data for the final model. This might cause overfitting.
+       Not used when custom ML model is passed.
+   :param min_features_to_select: Minimum number of features to select. Only used when enable_feature_selection is
+       True.
+   :param cardinality_threshold_for_onehot_encoding: Categorical features with a cardinality of less or equal
+       this threshold will be onehot encoded. The rest will be target encoded. Will be ignored if
+       cat_encoding_via_ml_algorithm is set to true.
+   :param cat_encoding_via_ml_algorithm: Whether to use an ML algorithm for categorical encoding. If True, the
+       categorical encoding is done via a ML algorithm. If False, the categorical encoding is done via a  target
+       encoding in the preprocessing steps. See the ReadMe for more details.
+   :param show_detailed_tuning_logs: Whether to show detailed tuning logs. Not used when custom ML model is passed.
+   :param enable_grid_search_fine_tuning: After hyperparameter tuning run Gridsearch tuning on a fine-grained grid
+       based on the previous hyperparameter tuning. Only possible when autotune_model is True.
+   :param gridsearch_nb_parameters_per_grid: Decides how many steps the grid shall have per parameter.
+   :param gridsearch_tuning_max_runtime_secs: Sets the maximum time in seconds the tuning shall run. This will finish
+       the latest trial nd will exceed this limit though.
+   :param experiment_name: Name of the experiment. Will be logged inside the ExperimentTracker.
+
+   .. py:attribute:: global_random_state
+      :type: int
+      :value: 10
+
+
+
+   .. py:attribute:: increase_random_state_in_bluecast_cv_by
+      :type: int
+      :value: 33
+
+
+
+   .. py:attribute:: shuffle_during_training
+      :type: bool
+      :value: True
+
+
+
+   .. py:attribute:: hyperparameter_tuning_rounds
+      :type: int
+      :value: 200
+
+
+
+   .. py:attribute:: hyperparameter_tuning_max_runtime_secs
+      :type: int
+      :value: 3600
+
+
+
+   .. py:attribute:: hypertuning_cv_folds
+      :type: int
+      :value: 1
+
+
+
+   .. py:attribute:: precise_cv_tuning
+      :type: bool
+      :value: False
+
+
+
+   .. py:attribute:: early_stopping_rounds
+      :type: Optional[int]
+
+
+
+   .. py:attribute:: autotune_model
+      :type: bool
+      :value: True
+
+
+
+   .. py:attribute:: enable_feature_selection
+      :type: bool
+      :value: False
+
+
+
+   .. py:attribute:: calculate_shap_values
+      :type: bool
+      :value: True
+
+
+
+   .. py:attribute:: train_size
+      :type: float
+      :value: 0.8
+
+
+
+   .. py:attribute:: train_split_stratify
+      :type: bool
+      :value: True
+
+
+
+   .. py:attribute:: use_full_data_for_final_model
+      :type: bool
+      :value: False
+
+
+
+   .. py:attribute:: min_features_to_select
+      :type: int
+      :value: 5
+
+
+
+   .. py:attribute:: cardinality_threshold_for_onehot_encoding
+      :type: int
+      :value: 5
+
+
+
+   .. py:attribute:: cat_encoding_via_ml_algorithm
+      :type: bool
+      :value: False
+
+
+
+   .. py:attribute:: show_detailed_tuning_logs
+      :type: bool
+      :value: False
+
+
+
+   .. py:attribute:: optuna_sampler_n_startup_trials
+      :type: int
+      :value: 10
+
+
+
+   .. py:attribute:: enable_grid_search_fine_tuning
+      :type: bool
+      :value: False
+
+
+
+   .. py:attribute:: gridsearch_tuning_max_runtime_secs
+      :type: int
+      :value: 3600
+
+
+
+   .. py:attribute:: gridsearch_nb_parameters_per_grid
+      :type: int
+      :value: 5
+
+
+
+   .. py:attribute:: experiment_name
+      :type: str
+      :value: 'new experiment'
+
+
+
+
+.. py:class:: XgboostTuneParamsConfig(/, **data: Any)
+
+
+   Bases: :py:obj:`pydantic.BaseModel`
+
+   Define hyperparameter tuning search space.
+
+   .. py:attribute:: max_depth_min
+      :type: int
+      :value: 2
+
+
+
+   .. py:attribute:: max_depth_max
+      :type: int
+      :value: 6
+
+
+
+   .. py:attribute:: alpha_min
+      :type: float
+      :value: 0.0
+
+
+
+   .. py:attribute:: alpha_max
+      :type: float
+      :value: 10.0
+
+
+
+   .. py:attribute:: lambda_min
+      :type: float
+      :value: 0.0
+
+
+
+   .. py:attribute:: lambda_max
+      :type: float
+      :value: 10.0
+
+
+
+   .. py:attribute:: gamma_min
+      :type: float
+      :value: 0.0
+
+
+
+   .. py:attribute:: gamma_max
+      :type: float
+      :value: 10.0
+
+
+
+   .. py:attribute:: subsample_min
+      :type: float
+      :value: 0.0
+
+
+
+   .. py:attribute:: subsample_max
+      :type: float
+      :value: 10.0
+
+
+
+   .. py:attribute:: max_leaves_min
+      :type: int
+      :value: 0
+
+
+
+   .. py:attribute:: max_leaves_max
+      :type: int
+      :value: 0
+
+
+
+   .. py:attribute:: sub_sample_min
+      :type: float
+      :value: 0.3
+
+
+
+   .. py:attribute:: sub_sample_max
+      :type: float
+      :value: 1.0
+
+
+
+   .. py:attribute:: col_sample_by_tree_min
+      :type: float
+      :value: 0.3
+
+
+
+   .. py:attribute:: col_sample_by_tree_max
+      :type: float
+      :value: 1.0
+
+
+
+   .. py:attribute:: col_sample_by_level_min
+      :type: float
+      :value: 0.3
+
+
+
+   .. py:attribute:: col_sample_by_level_max
+      :type: float
+      :value: 1.0
+
+
+
+   .. py:attribute:: eta_min
+      :type: float
+      :value: 0.001
+
+
+
+   .. py:attribute:: eta_max
+      :type: float
+      :value: 0.3
+
+
+
+   .. py:attribute:: steps_min
+      :type: int
+      :value: 2
+
+
+
+   .. py:attribute:: steps_max
+      :type: int
+      :value: 1000
+
+
+
+   .. py:attribute:: model_verbosity
+      :type: int
+      :value: 0
+
+
+
+   .. py:attribute:: model_verbosity_during_final_training
+      :type: int
+      :value: 0
+
+
+
+   .. py:attribute:: model_objective
+      :type: str
+      :value: 'multi:softprob'
+
+
+
+   .. py:attribute:: model_eval_metric
+      :type: str
+      :value: 'mlogloss'
+
+
+
+   .. py:attribute:: booster
+      :type: str
+      :value: 'gbtree'
+
+
+
+
+.. py:class:: XgboostTuneParamsRegressionConfig(/, **data: Any)
+
+
+   Bases: :py:obj:`pydantic.BaseModel`
+
+   Define hyperparameter tuning search space.
+
+   .. py:attribute:: max_depth_min
+      :type: int
+      :value: 2
+
+
+
+   .. py:attribute:: max_depth_max
+      :type: int
+      :value: 6
+
+
+
+   .. py:attribute:: alpha_min
+      :type: float
+      :value: 0.0
+
+
+
+   .. py:attribute:: alpha_max
+      :type: float
+      :value: 10.0
+
+
+
+   .. py:attribute:: lambda_min
+      :type: float
+      :value: 0.0
+
+
+
+   .. py:attribute:: lambda_max
+      :type: float
+      :value: 10.0
+
+
+
+   .. py:attribute:: gamma_min
+      :type: float
+      :value: 0.0
+
+
+
+   .. py:attribute:: gamma_max
+      :type: float
+      :value: 10.0
+
+
+
+   .. py:attribute:: subsample_min
+      :type: float
+      :value: 0.0
+
+
+
+   .. py:attribute:: subsample_max
+      :type: float
+      :value: 10.0
+
+
+
+   .. py:attribute:: max_leaves_min
+      :type: int
+      :value: 0
+
+
+
+   .. py:attribute:: max_leaves_max
+      :type: int
+      :value: 0
+
+
+
+   .. py:attribute:: sub_sample_min
+      :type: float
+      :value: 0.3
+
+
+
+   .. py:attribute:: sub_sample_max
+      :type: float
+      :value: 1.0
+
+
+
+   .. py:attribute:: col_sample_by_tree_min
+      :type: float
+      :value: 0.3
+
+
+
+   .. py:attribute:: col_sample_by_tree_max
+      :type: float
+      :value: 1.0
+
+
+
+   .. py:attribute:: col_sample_by_level_min
+      :type: float
+      :value: 0.3
+
+
+
+   .. py:attribute:: col_sample_by_level_max
+      :type: float
+      :value: 1.0
+
+
+
+   .. py:attribute:: eta_min
+      :type: float
+      :value: 0.001
+
+
+
+   .. py:attribute:: eta_max
+      :type: float
+      :value: 0.3
+
+
+
+   .. py:attribute:: steps_min
+      :type: int
+      :value: 2
+
+
+
+   .. py:attribute:: steps_max
+      :type: int
+      :value: 1000
+
+
+
+   .. py:attribute:: model_verbosity
+      :type: int
+      :value: 0
+
+
+
+   .. py:attribute:: model_verbosity_during_final_training
+      :type: int
+      :value: 0
+
+
+
+   .. py:attribute:: model_objective
+      :type: str
+      :value: 'reg:squarederror'
+
+
+
+   .. py:attribute:: model_eval_metric
+      :type: str
+      :value: 'rmse'
+
+
+
+   .. py:attribute:: booster
+      :type: str
+      :value: 'gbtree'
+
+
+
+
+.. py:class:: XgboostFinalParamConfig
+
+
+   Define final hyper parameters.
+
+   .. py:attribute:: params
+
+
+
+   .. py:attribute:: sample_weight
+      :type: Optional[Dict[str, float]]
+
+
+
+   .. py:attribute:: classification_threshold
+      :type: float
+      :value: 0.5

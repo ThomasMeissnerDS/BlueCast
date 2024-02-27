@@ -1,4 +1,5 @@
 """Module for DataFrame schema checks."""
+
 from datetime import datetime
 from typing import List, Union
 

@@ -1,0 +1,89 @@
+:py:mod:`bluecast.blueprints.cast`
+==================================
+
+.. py:module:: bluecast.blueprints.cast
+
+.. autoapi-nested-parse::
+
+   Run fully configured classification blueprint.
+
+   Customization via class attributes is possible. Configs can be instantiated and provided to change Xgboost training.
+   Default hyperparameter search space is relatively light-weight to speed up the prototyping.
+   Can deal with binary and multi-class classification problems.
+   Hyperparameter tuning can be switched off or even strengthened via cross-validation. This behaviour can be controlled
+   via the config class attributes from config.training_config module.
+
+
+
+Module Contents
+---------------
+
+Classes
+~~~~~~~
+
+.. autoapisummary::
+
+   bluecast.blueprints.cast.BlueCast
+
+
+
+
+.. py:class:: BlueCast(class_problem: Literal[binary, multiclass], cat_columns: Optional[List[Union[str, float, int]]] = None, date_columns: Optional[List[Union[str, float, int]]] = None, time_split_column: Optional[str] = None, ml_model: Optional[Union[bluecast.ml_modelling.xgboost.XgboostModel, Any]] = None, custom_in_fold_preprocessor: Optional[bluecast.preprocessing.custom.CustomPreprocessing] = None, custom_last_mile_computation: Optional[bluecast.preprocessing.custom.CustomPreprocessing] = None, custom_preprocessor: Optional[bluecast.preprocessing.custom.CustomPreprocessing] = None, custom_feature_selector: Optional[Union[bluecast.preprocessing.feature_selection.RFECVSelector, bluecast.preprocessing.custom.CustomPreprocessing]] = None, conf_training: Optional[bluecast.config.training_config.TrainingConfig] = None, conf_xgboost: Optional[bluecast.config.training_config.XgboostTuneParamsConfig] = None, conf_params_xgboost: Optional[bluecast.config.training_config.XgboostFinalParamConfig] = None, experiment_tracker: Optional[bluecast.experimentation.tracking.ExperimentTracker] = None)
+
+
+   Run fully configured classification blueprint.
+
+   Customization via class attributes is possible. Configs can be instantiated and provided to change Xgboost training.
+   Default hyperparameter search space is relatively light-weight to speed up the prototyping.
+   :param :class_problem: Takes a string containing the class problem type. Either "binary" or "multiclass".
+   :param :target_column: Takes a string containing the name of the target column.
+   :param :cat_columns: Takes a list of strings containing the names of the categorical columns. If not provided,
+       BlueCast will infer these automatically.
+   :param :date_columns: Takes a list of strings containing the names of the date columns. If not provided,
+       BlueCast will infer these automatically.
+   :param :time_split_column: Takes a string containing the name of the time split column. If not provided,
+       BlueCast will not split the data by time or order, but do a random split instead.
+   :param :ml_model: Takes an instance of a XgboostModel class. If not provided, BlueCast will instantiate one.
+       This is an API to pass any model class. Inherit the baseclass from ml_modelling.base_model.BaseModel.
+   :param custom_in_fold_preprocessor: Takes an instance of a CustomPreprocessing class. Allows users to eeecute
+       preprocessing after the train test split within cv folds. This will be executed only if precise_cv_tuning in
+       the conf_Training is True. Custom ML models need to implement this themselves. This step is only useful when
+       the proprocessing step has a high chance of overfitting otherwise (i.e: oversampling techniques).
+   :param custom_preprocessor: Takes an instance of a CustomPreprocessing class. Allows users to inject custom
+       preprocessing steps which take place right after the train test spit.
+   :param custom_last_mile_computation: Takes an instance of a CustomPreprocessing class. Allows users to inject custom
+       preprocessing steps which take place right before the model training.
+   :param experiment_tracker: Takes an instance of an ExperimentTracker class. If not provided this will be initialized
+       automatically.
+
+   .. py:method:: initial_checks(df: pandas.DataFrame) -> None
+
+
+   .. py:method:: fit(df: pandas.DataFrame, target_col: str) -> None
+
+      Train a full ML pipeline.
+
+
+   .. py:method:: fit_eval(df: pandas.DataFrame, df_eval: pandas.DataFrame, target_eval: pandas.Series, target_col: str) -> Dict[str, Any]
+
+      Train a full ML pipeline and evaluate on a holdout set.
+
+      This is a convenience function to train and evaluate on a holdout set. It is recommended to use this for model
+      exploration. On production the simple fit() function should be used.
+      :param :df: Takes a pandas DataFrame containing the training data and the targets.
+      :param :df_eval: Takes a pandas DataFrame containing the evaluation data, but not the targets.
+      :param :target_eval: Takes a pandas Series containing the evaluation targets.
+      :param :target_col: Takes a string containing the name of the target column inside the training data df.
+
+
+   .. py:method:: transform_new_data(df: pandas.DataFrame) -> pandas.DataFrame
+
+      Transform new data according to preprocessing pipeline.
+
+
+   .. py:method:: predict(df: pandas.DataFrame) -> Tuple[numpy.ndarray, numpy.ndarray]
+
+      Predict on unseen data.
+
+      Return the predicted probabilities and the predicted classes:
+      y_probs, y_classes = predict(df)

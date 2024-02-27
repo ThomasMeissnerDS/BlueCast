@@ -1,0 +1,34 @@
+:py:mod:`bluecast.preprocessing.datetime_features`
+==================================================
+
+.. py:module:: bluecast.preprocessing.datetime_features
+
+.. autoapi-nested-parse::
+
+   Module for extracting date parts from datetime columns.
+
+   Cyclic transformations are not implemented as they aren't a good match for tree models.
+
+
+
+Module Contents
+---------------
+
+
+Functions
+~~~~~~~~~
+
+.. autoapisummary::
+
+   bluecast.preprocessing.datetime_features.date_converter
+
+
+
+.. py:function:: date_converter(df: pandas.DataFrame, date_columns: Optional[List[Union[str, int, float]]], date_parts: List[str]) -> pandas.DataFrame
+
+   Takes in a df and loops through datetime columns to and extracts the date parts month, day, dayofweek
+   and hour and adds them as additional columns.
+   :param date_columns: List of datetime columns.
+   :param df: Dataframe to be processed.
+   :param date_parts: List of date parts to be extracted.
+   :return: Returns modified df.

@@ -6,6 +6,7 @@ Can deal with binary and multi-class classification problems.
 Hyperparameter tuning can be switched off or even strengthened via cross-validation. This behaviour can be controlled
 via the config class attributes from config.training_config module.
 """
+
 import warnings
 from datetime import datetime
 from typing import Any, Dict, List, Literal, Optional, Union
@@ -22,12 +23,16 @@ from bluecast.evaluation.shap_values import shap_explanations
 from bluecast.experimentation.tracking import ExperimentTracker
 from bluecast.general_utils.general_utils import check_gpu_support, logger
 from bluecast.ml_modelling.xgboost_regression import XgboostModelRegression
+from bluecast.preprocessing.category_encoder_orchestration import (
+    CategoryEncoderOrchestrator,
+)
 from bluecast.preprocessing.custom import CustomPreprocessing
 from bluecast.preprocessing.datetime_features import date_converter
 from bluecast.preprocessing.encode_target_labels import TargetLabelEncoder
 from bluecast.preprocessing.feature_selection import RFECVSelector
 from bluecast.preprocessing.feature_types import FeatureTypeDetector
 from bluecast.preprocessing.nulls_and_infs import fill_infinite_values
+from bluecast.preprocessing.onehot_encoding import OneHotCategoryEncoder
 from bluecast.preprocessing.schema_checks import SchemaDetector
 from bluecast.preprocessing.target_encoding import (
     BinaryClassTargetEncoder,
@@ -66,7 +71,6 @@ class BlueCastRegression:
     def __init__(
         self,
         class_problem: Literal["regression"],
-        target_column: Union[str, float, int],
         cat_columns: Optional[List[Union[str, float, int]]] = None,
         date_columns: Optional[List[Union[str, float, int]]] = None,
         time_split_column: Optional[str] = None,
@@ -87,7 +91,7 @@ class BlueCastRegression:
         self.cat_columns = cat_columns
         self.date_columns = date_columns
         self.time_split_column = time_split_column
-        self.target_column = target_column
+        self.target_column = "Undefined"
         self.conf_training = conf_training
         self.conf_xgboost = conf_xgboost
         self.conf_params_xgboost = conf_params_xgboost
@@ -95,6 +99,8 @@ class BlueCastRegression:
         self.cat_encoder: Optional[
             Union[BinaryClassTargetEncoder, MultiClassTargetEncoder]
         ] = None
+        self.onehot_encoder: Optional[OneHotCategoryEncoder] = None
+        self.category_encoder_orchestrator: Optional[CategoryEncoderOrchestrator] = None
         self.target_label_encoder: Optional[TargetLabelEncoder] = None
         self.schema_detector: Optional[SchemaDetector] = None
         self.ml_model: Optional[XgboostModelRegression] = ml_model
@@ -206,6 +212,7 @@ class BlueCastRegression:
 
     def fit(self, df: pd.DataFrame, target_col: str) -> None:
         """Train a full ML pipeline."""
+        self.target_column = target_col
         check_gpu_support()
         feat_type_detector = FeatureTypeDetector(
             cat_columns=[], num_columns=[], date_columns=[]
@@ -231,9 +238,11 @@ class BlueCastRegression:
         )
 
         if self.custom_preprocessor:
-            x_train, y_train = self.custom_preprocessor.fit_transform(x_train, y_train)
+            x_train, y_train = self.custom_preprocessor.fit_transform(
+                x_train.copy(), y_train
+            )
             x_test, y_test = self.custom_preprocessor.transform(
-                x_test, y_test, predicton_mode=False
+                x_test.copy(), y_test, predicton_mode=False
             )
             feat_type_detector = FeatureTypeDetector(
                 cat_columns=[], num_columns=[], date_columns=[]
@@ -262,22 +271,48 @@ class BlueCastRegression:
 
         if (
             self.cat_columns is not None
-            and self.class_problem == "regression"
             and not self.conf_training.cat_encoding_via_ml_algorithm
         ):
-            self.cat_encoder = BinaryClassTargetEncoder(feat_type_detector.cat_columns)
-            x_train = self.cat_encoder.fit_target_encode_binary_class(x_train, y_train)
-            x_test = self.cat_encoder.transform_target_encode_binary_class(x_test)
+            self.category_encoder_orchestrator = CategoryEncoderOrchestrator(
+                self.target_column
+            )
+            self.category_encoder_orchestrator.fit(
+                x_train,
+                feat_type_detector.cat_columns,
+                self.conf_training.cardinality_threshold_for_onehot_encoding,
+            )
+
+            self.onehot_encoder = OneHotCategoryEncoder(
+                self.category_encoder_orchestrator.to_onehot_encode, self.target_column
+            )
+            x_train = self.onehot_encoder.fit_transform(x_train.copy(), y_train)
+            x_test = self.onehot_encoder.transform(x_test.copy())
+
+        if (
+            self.cat_columns is not None
+            and self.class_problem == "regression"
+            and self.category_encoder_orchestrator
+            and not self.conf_training.cat_encoding_via_ml_algorithm
+        ):
+            self.cat_encoder = BinaryClassTargetEncoder(
+                self.category_encoder_orchestrator.to_target_encode
+            )
+            x_train = self.cat_encoder.fit_target_encode_binary_class(
+                x_train.copy(), y_train
+            )
+            x_test = self.cat_encoder.transform_target_encode_binary_class(
+                x_test.copy()
+            )
         elif self.conf_training.cat_encoding_via_ml_algorithm:
             x_train[self.cat_columns] = x_train[self.cat_columns].astype("category")
             x_test[self.cat_columns] = x_test[self.cat_columns].astype("category")
 
         if self.custom_last_mile_computation:
             x_train, y_train = self.custom_last_mile_computation.fit_transform(
-                x_train, y_train
+                x_train.copy(), y_train
             )
             x_test, y_test = self.custom_last_mile_computation.transform(
-                x_test, y_test, predicton_mode=False
+                x_test.copy(), y_test, predicton_mode=False
             )
 
         if not self.custom_feature_selector:
@@ -289,10 +324,10 @@ class BlueCastRegression:
 
         if self.conf_training.enable_feature_selection:
             x_train, y_train = self.custom_feature_selector.fit_transform(
-                x_train, y_train
+                x_train.copy(), y_train
             )
             x_test, _ = self.custom_feature_selector.transform(
-                x_test, predicton_mode=False
+                x_test.copy(), predicton_mode=False
             )
 
         if not self.ml_model:
@@ -308,7 +343,7 @@ class BlueCastRegression:
 
         if self.custom_in_fold_preprocessor:
             x_test, _ = self.custom_in_fold_preprocessor.transform(
-                x_test, None, predicton_mode=True
+                x_test.copy(), None, predicton_mode=True
             )
 
         if self.conf_training and self.conf_training.calculate_shap_values:
@@ -394,21 +429,33 @@ class BlueCastRegression:
             df = self.schema_detector.transform(df)
 
         if (
+            self.cat_columns is not None
+            and self.onehot_encoder
+            and not self.conf_training.cat_encoding_via_ml_algorithm
+        ):
+            df = self.onehot_encoder.transform(df.copy())
+
+        if (
             self.cat_columns
             and self.cat_encoder
             and self.class_problem == "regression"
             and isinstance(self.cat_encoder, BinaryClassTargetEncoder)
+            and self.category_encoder_orchestrator
             and not self.conf_training.cat_encoding_via_ml_algorithm
         ):
-            df = self.cat_encoder.transform_target_encode_binary_class(df)
+            df = self.cat_encoder.transform_target_encode_binary_class(df.copy())
         elif self.conf_training.cat_encoding_via_ml_algorithm:
             df[self.cat_columns] = df[self.cat_columns].astype("category")
 
         if self.custom_last_mile_computation:
-            df, _ = self.custom_last_mile_computation.transform(df, predicton_mode=True)
+            df, _ = self.custom_last_mile_computation.transform(
+                df.copy(), predicton_mode=True
+            )
 
         if self.custom_feature_selector and self.conf_training.enable_feature_selection:
-            df, _ = self.custom_feature_selector.transform(df, predicton_mode=True)
+            df, _ = self.custom_feature_selector.transform(
+                df.copy(), predicton_mode=True
+            )
 
         return df
 

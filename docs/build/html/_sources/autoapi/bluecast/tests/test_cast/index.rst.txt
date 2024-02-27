@@ -1,0 +1,103 @@
+:py:mod:`bluecast.tests.test_cast`
+==================================
+
+.. py:module:: bluecast.tests.test_cast
+
+
+Module Contents
+---------------
+
+Classes
+~~~~~~~
+
+.. autoapisummary::
+
+   bluecast.tests.test_cast.CustomModel
+
+
+
+Functions
+~~~~~~~~~
+
+.. autoapisummary::
+
+   bluecast.tests.test_cast.synthetic_train_test_data
+   bluecast.tests.test_cast.synthetic_multiclass_train_test_data
+   bluecast.tests.test_cast.test_blueprint_xgboost
+   bluecast.tests.test_cast.test_bluecast_with_custom_model
+   bluecast.tests.test_cast.bluecast_instance
+   bluecast.tests.test_cast.test_enable_feature_selection_warning
+   bluecast.tests.test_cast.test_hypertuning_cv_folds_warning
+   bluecast.tests.test_cast.test_missing_feature_selector_warning
+   bluecast.tests.test_cast.test_missing_xgboost_tune_params_config_warning
+   bluecast.tests.test_cast.test_min_features_to_select_warning
+   bluecast.tests.test_cast.test_shap_values_and_ml_algorithm_warning
+   bluecast.tests.test_cast.test_cat_encoding_via_ml_algorithm_and_ml_model_warning
+   bluecast.tests.test_cast.test_precise_cv_tuning_warnings
+   bluecast.tests.test_cast.test_class_problem_mismatch_warnings
+
+
+
+.. py:function:: synthetic_train_test_data() -> Tuple[pandas.DataFrame, pandas.DataFrame]
+
+
+.. py:function:: synthetic_multiclass_train_test_data() -> Tuple[pandas.DataFrame, pandas.DataFrame]
+
+
+.. py:function:: test_blueprint_xgboost(synthetic_train_test_data, synthetic_multiclass_train_test_data)
+
+   Test that tests the BlueCast class
+
+
+.. py:class:: CustomModel
+
+
+   Bases: :py:obj:`bluecast.ml_modelling.base_classes.BaseClassMlModel`
+
+   Base class for all ML models.
+
+   Enforces the implementation of the fit and predict methods.
+   If hyperparameter tuning is required, then the fit method should implement the tuning.
+
+   .. py:method:: fit(x_train: pandas.DataFrame, x_test: pandas.DataFrame, y_train: pandas.Series, y_test: pandas.Series) -> None
+
+
+   .. py:method:: predict(df: pandas.DataFrame) -> Tuple[bluecast.ml_modelling.base_classes.PredictedProbas, bluecast.ml_modelling.base_classes.PredictedClasses]
+
+      Predict on unseen data.
+
+      :return tuple of predicted probabilities and predicted classes
+
+
+
+.. py:function:: test_bluecast_with_custom_model()
+
+
+.. py:function:: bluecast_instance()
+
+
+.. py:function:: test_enable_feature_selection_warning(bluecast_instance)
+
+
+.. py:function:: test_hypertuning_cv_folds_warning(bluecast_instance)
+
+
+.. py:function:: test_missing_feature_selector_warning(bluecast_instance)
+
+
+.. py:function:: test_missing_xgboost_tune_params_config_warning(bluecast_instance)
+
+
+.. py:function:: test_min_features_to_select_warning(bluecast_instance)
+
+
+.. py:function:: test_shap_values_and_ml_algorithm_warning(bluecast_instance)
+
+
+.. py:function:: test_cat_encoding_via_ml_algorithm_and_ml_model_warning()
+
+
+.. py:function:: test_precise_cv_tuning_warnings(bluecast_instance)
+
+
+.. py:function:: test_class_problem_mismatch_warnings(bluecast_instance)

@@ -5,6 +5,7 @@ The train-test split can be done in two ways:
     - Randomly
     - Based on a provided order (i.e. time)
 """
+
 from datetime import datetime
 from typing import Optional
 

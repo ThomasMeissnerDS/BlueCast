@@ -5,6 +5,7 @@ the configuration parameters. The configuration parameters are used in the train
 pipeline. Pydantic dataclasses are used to allow users a pythonic way to define the configuration parameters.
 Default configurations can be loaded, adjusted and passed into the blueprints.
 """
+
 from typing import Dict, Optional
 
 from pydantic import BaseModel
@@ -42,6 +43,9 @@ class TrainingConfig(BaseModel):
         Not used when custom ML model is passed.
     :param min_features_to_select: Minimum number of features to select. Only used when enable_feature_selection is
         True.
+    :param cardinality_threshold_for_onehot_encoding: Categorical features with a cardinality of less or equal
+        this threshold will be onehot encoded. The rest will be target encoded. Will be ignored if
+        cat_encoding_via_ml_algorithm is set to true.
     :param cat_encoding_via_ml_algorithm: Whether to use an ML algorithm for categorical encoding. If True, the
         categorical encoding is done via a ML algorithm. If False, the categorical encoding is done via a  target
         encoding in the preprocessing steps. See the ReadMe for more details.
@@ -69,6 +73,7 @@ class TrainingConfig(BaseModel):
     train_split_stratify: bool = True
     use_full_data_for_final_model: bool = False
     min_features_to_select: int = 5
+    cardinality_threshold_for_onehot_encoding: int = 5
     cat_encoding_via_ml_algorithm: bool = False
     show_detailed_tuning_logs: bool = False
     optuna_sampler_n_startup_trials: int = 10
@@ -148,9 +153,10 @@ class XgboostFinalParamConfig:
 
     params = {
         "objective": "multi:softprob",  # OR  'binary:logistic' #the loss function being used
+        "booster": "gbtree",
         "eval_metric": "mlogloss",
         "tree_method": "exact",  # use GPU for training
-        "max_depth": 3,  # maximum depth of the decision trees being trained
+        "max_depth": 7,  # maximum depth of the decision trees being trained
         "alpha": 0.1,
         "lambda": 0.1,
         "gamma": 0.0,
@@ -160,7 +166,6 @@ class XgboostFinalParamConfig:
         "colsample_bylevel": 0.8,
         "eta": 0.1,
         "steps": 1000,
-        "num_parallel_tree": 1,
     }
     sample_weight: Optional[Dict[str, float]] = None
     classification_threshold: float = 0.5

@@ -1,0 +1,28 @@
+:py:mod:`bluecast.tests.test_fine_tune`
+=======================================
+
+.. py:module:: bluecast.tests.test_fine_tune
+
+
+Module Contents
+---------------
+
+
+Functions
+~~~~~~~~~
+
+.. autoapisummary::
+
+   bluecast.tests.test_fine_tune.xgboost_model
+   bluecast.tests.test_fine_tune.test_fine_tune_runs_without_errors
+   bluecast.tests.test_fine_tune.test_fine_tune_runs_without_errors_using_cv
+
+
+
+.. py:function:: xgboost_model()
+
+
+.. py:function:: test_fine_tune_runs_without_errors(xgboost_model)
+
+
+.. py:function:: test_fine_tune_runs_without_errors_using_cv(xgboost_model)

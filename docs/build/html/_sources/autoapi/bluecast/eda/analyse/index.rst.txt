@@ -1,0 +1,167 @@
+:py:mod:`bluecast.eda.analyse`
+==============================
+
+.. py:module:: bluecast.eda.analyse
+
+
+Module Contents
+---------------
+
+
+Functions
+~~~~~~~~~
+
+.. autoapisummary::
+
+   bluecast.eda.analyse.plot_pie_chart
+   bluecast.eda.analyse.plot_count_pair
+   bluecast.eda.analyse.plot_count_pairs
+   bluecast.eda.analyse.univariate_plots
+   bluecast.eda.analyse.bi_variate_plots
+   bluecast.eda.analyse.correlation_heatmap
+   bluecast.eda.analyse.correlation_to_target
+   bluecast.eda.analyse.plot_pca
+   bluecast.eda.analyse.plot_pca_cumulative_variance
+   bluecast.eda.analyse.plot_tsne
+   bluecast.eda.analyse.conditional_entropy
+   bluecast.eda.analyse.theil_u
+   bluecast.eda.analyse.plot_theil_u_heatmap
+   bluecast.eda.analyse.plot_null_percentage
+   bluecast.eda.analyse.check_unique_values
+   bluecast.eda.analyse.mutual_info_to_target
+
+
+
+.. py:function:: plot_pie_chart(df: pandas.DataFrame, column: str, explode: Optional[List[float]] = None, colors: Optional[List[str]] = None) -> None
+
+   Create a pie chart with labels, sizes, and optional explosion.
+
+   Parameters:
+   - df: Pandas DataFrame holding the column of nterest
+   - column: The column to be plottted
+   - explode: (Optional) List of numerical values, representing the explosion distance for each segment.
+   - colors: (Optional) List with hexadecimal representations of colors in the RGB color model
+
+
+.. py:function:: plot_count_pair(df_1: pandas.DataFrame, df_2: pandas.DataFrame, df_aliases: Optional[List[str]], feature: str, order: Optional[List[str]] = None, palette: Optional[List[str]] = None) -> None
+
+   Compare the counts between two DataFrames of the chosen provided categorical column.
+
+   :param df_1: Pandas DataFrame. I.e.: df_1 dataset
+   :param df_2: Pandas DataFrame. I.e.: Test dataset
+   :param df_aliases: List with names of DataFrames that shall be shown on the count plots to represent them.
+       Format: [df_1 representation, df_2 representation]
+   :param feature: String indicating categorical column to plot
+   :param hue: Read the sns.countplot
+   :param order: List with category names to define the order they appear in the plot
+   :param palette:  List with hexadecimal representations of colors in the RGB color model
+
+
+.. py:function:: plot_count_pairs(df_1: pandas.DataFrame, df_2: pandas.DataFrame, cat_cols: List[str], df_aliases: Optional[List[str]] = None, palette: Optional[List[str]] = None) -> None
+
+   Compare the counts between two DataFrames of each categorical column in the provided list.
+
+   :param df_1: Pandas DataFrame. I.e.: Train dataset
+   :param df_2: Pandas DataFrame. I.e.: Test dataset
+   :param df_aliases: List with names of DataFrames that shall be shown on the count plots to represent them.
+       Format: [df_1 representation, df_2 representation]
+   :param cat_cols: List with strings indicating categorical column names to plot
+   :param palette:  List with hexadecimal representations of colors in the RGB color model
+
+
+.. py:function:: univariate_plots(df: pandas.DataFrame) -> None
+
+   Plots univariate plots for all the columns in the dataframe. Only numerical columns are expected.
+   The target column does not need to be part of the provided DataFrame.
+
+   Expects numeric columns only.
+
+
+.. py:function:: bi_variate_plots(df: pandas.DataFrame, target: str, num_cols_grid: int = 4) -> None
+
+   Plots bivariate plots for all column combinations in the dataframe.
+   The target column must be part of the provided DataFrame.
+   Param num_cols_grid specifies how many columns the grid shall have.
+
+   Expects numeric columns only.
+
+
+.. py:function:: correlation_heatmap(df: pandas.DataFrame) -> None
+
+   Plots half of the heatmap showing correlations of all features.
+
+   Expects numeric columns only.
+
+
+.. py:function:: correlation_to_target(df: pandas.DataFrame, target: str) -> None
+
+   Plots correlations for all the columns in the dataframe in relation to the target column.
+   The target column must be part of the provided DataFrame.
+
+   Expects numeric columns only.
+
+
+.. py:function:: plot_pca(df: pandas.DataFrame, target: str, scale_data: bool = True) -> None
+
+   Plots PCA for the dataframe. The target column must be part of the provided DataFrame.
+
+   Expects numeric columns only.
+   :param df: Pandas DataFrame. Should not include the target variable.
+   :param scale_data: If true, standard scaling will be performed before applying PCA, otherwise the raw data is used.
+
+
+.. py:function:: plot_pca_cumulative_variance(df: pandas.DataFrame, scale_data: bool = True, n_components: int = 10) -> None
+
+   Plot the cumulative variance of principal components.
+
+   :param df: Pandas DataFrame. Should not include the target variable.
+   :param scale_data: If true, standard scaling will be performed before applying PCA, otherwise the raw data is used.
+   :param n_components: Number of total components to compute.
+
+
+.. py:function:: plot_tsne(df: pandas.DataFrame, target: str, perplexity=50, random_state=42, scale_data: bool = True) -> None
+
+   Plots t-SNE for the dataframe. The target column must be part of the provided DataFrame.
+
+   Expects numeric columns only.
+   :param df: Pandas DataFrame. Should not include the target variable.
+   :param target: String indicating which column is the target column. Must be part of the provided DataFrame.
+   :param perplexity: The perplexity parameter for t-SNE
+   :param random_state: The random state for t-SNE
+   :param scale_data: If true, standard scaling will be performed before applying t-SNE, otherwise the raw data is used.
+
+
+.. py:function:: conditional_entropy(x, y)
+
+
+.. py:function:: theil_u(x, y)
+
+
+.. py:function:: plot_theil_u_heatmap(data: pandas.DataFrame, columns: List[Union[str, int, float]])
+
+   Plot a heatmap for categorical data using Theil's U.
+
+
+.. py:function:: plot_null_percentage(dataframe: pandas.DataFrame) -> None
+
+
+.. py:function:: check_unique_values(df: pandas.DataFrame, columns: List[Union[str, int, float]], threshold: float) -> List[Union[str, int, float]]
+
+   Check if the columns have an amount of unique values that is almost the number of total rows (being above the defined threshold)
+
+   :param df: The pandas DataFrame to check
+   :param columns: A list of column names to check
+   :param threshold: The threshold to check against
+   :returns: A list of column names that have a high amount of unique values
+
+
+.. py:function:: mutual_info_to_target(df: pandas.DataFrame, target: str, class_problem: Literal[binary, multiclass, regression], **mut_params) -> None
+
+   Plots mutual information scores for all the categorical columns in the DataFrame in relation to the target column.
+   The target column must be part of the provided DataFrame.
+   :param df: DataFrame containing all columns including target column. Features are expected to be numerical.
+   :param target: String indicating which column is the target column.
+   :param class_problem: Any of ["binary", "multiclass", "regression"]
+   :param mut_params: Dictionary passing additional arguments into sklearn's mutual_info_classif function.
+
+   To be used for classification only.

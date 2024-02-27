@@ -327,15 +327,26 @@ def correlation_to_target(df: pd.DataFrame, target: str) -> None:
     plt.show()
 
 
-def plot_pca(df: pd.DataFrame, target: str) -> None:
+def plot_pca(df: pd.DataFrame, target: str, scale_data: bool = True) -> None:
     """
     Plots PCA for the dataframe. The target column must be part of the provided DataFrame.
 
     Expects numeric columns only.
+    :param df: Pandas DataFrame. Should not include the target variable.
+    :param scale_data: If true, standard scaling will be performed before applying PCA, otherwise the raw data is used.
     """
     if target not in df.columns.to_list():
         raise ValueError("Target column must be part of the provided DataFrame")
+
     pca = PCA(n_components=2)
+
+    if scale_data:
+        scaler = StandardScaler()
+        df.drop([target], axis=1).loc[:, :] = scaler.fit_transform(
+            df.drop([target], axis=1).loc[:, :]
+        )
+    else:
+        df = df.copy()
 
     pca_df = pd.DataFrame(pca.fit_transform(df.drop([target], axis=1)))
     pca_df[target] = df[target].values
@@ -424,14 +435,34 @@ def plot_pca_cumulative_variance(
     plt.show()
 
 
-def plot_tsne(df: pd.DataFrame, target: str, perplexity=50, random_state=42) -> None:
+def plot_tsne(
+    df: pd.DataFrame,
+    target: str,
+    perplexity=50,
+    random_state=42,
+    scale_data: bool = True,
+) -> None:
     """
     Plots t-SNE for the dataframe. The target column must be part of the provided DataFrame.
 
     Expects numeric columns only.
+    :param df: Pandas DataFrame. Should not include the target variable.
+    :param target: String indicating which column is the target column. Must be part of the provided DataFrame.
+    :param perplexity: The perplexity parameter for t-SNE
+    :param random_state: The random state for t-SNE
+    :param scale_data: If true, standard scaling will be performed before applying t-SNE, otherwise the raw data is used.
     """
     if target not in df.columns.to_list():
         raise ValueError("Target column must be part of the provided DataFrame")
+
+    if scale_data:
+        scaler = StandardScaler()
+        df.drop([target], axis=1).loc[:, :] = scaler.fit_transform(
+            df.drop([target], axis=1).loc[:, :]
+        )
+    else:
+        df = df.copy()
+
     tsne = TSNE(n_components=2, perplexity=perplexity, random_state=random_state)
 
     tsne_df = pd.DataFrame(tsne.fit_transform(df.drop([target], axis=1)))

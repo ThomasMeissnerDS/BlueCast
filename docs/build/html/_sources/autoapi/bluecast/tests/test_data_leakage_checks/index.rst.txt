@@ -1,0 +1,32 @@
+:py:mod:`bluecast.tests.test_data_leakage_checks`
+=================================================
+
+.. py:module:: bluecast.tests.test_data_leakage_checks
+
+
+Module Contents
+---------------
+
+
+Functions
+~~~~~~~~~
+
+.. autoapisummary::
+
+   bluecast.tests.test_data_leakage_checks.create_to_target_correlated_features
+   bluecast.tests.test_data_leakage_checks.create_to_target_correlated_categorical_features
+   bluecast.tests.test_data_leakage_checks.test_detect_leakage_via_correlation
+   bluecast.tests.test_data_leakage_checks.test_detect_categorical_leakage
+
+
+
+.. py:function:: create_to_target_correlated_features() -> pandas.DataFrame
+
+
+.. py:function:: create_to_target_correlated_categorical_features() -> pandas.DataFrame
+
+
+.. py:function:: test_detect_leakage_via_correlation(create_to_target_correlated_features)
+
+
+.. py:function:: test_detect_categorical_leakage(create_to_target_correlated_categorical_features)

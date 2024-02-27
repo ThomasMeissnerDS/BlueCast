@@ -35,7 +35,6 @@ def test_shap_explanations():
 
     automl = BlueCast(
         class_problem="binary",
-        target_column="target",
         conf_training=train_config,
         conf_xgboost=xgboost_param_config,
     )

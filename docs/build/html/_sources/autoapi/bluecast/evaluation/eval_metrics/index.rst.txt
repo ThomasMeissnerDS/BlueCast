@@ -1,0 +1,60 @@
+:py:mod:`bluecast.evaluation.eval_metrics`
+==========================================
+
+.. py:module:: bluecast.evaluation.eval_metrics
+
+.. autoapi-nested-parse::
+
+   Module for evaluation metrics.
+
+   This is called as part of the fit_eval function.
+
+
+
+Module Contents
+---------------
+
+
+Functions
+~~~~~~~~~
+
+.. autoapisummary::
+
+   bluecast.evaluation.eval_metrics.plot_lift_chart
+   bluecast.evaluation.eval_metrics.plot_roc_auc
+   bluecast.evaluation.eval_metrics.plot_probability_distribution
+   bluecast.evaluation.eval_metrics.balanced_log_loss
+   bluecast.evaluation.eval_metrics.eval_classifier
+   bluecast.evaluation.eval_metrics.eval_regressor
+
+
+
+.. py:function:: plot_lift_chart(y_probs: numpy.array, y_true: numpy.array, num_bins: int = 20) -> None
+
+
+.. py:function:: plot_roc_auc(y_true: numpy.array, predicted_probabilities: numpy.array, title='ROC Curve') -> None
+
+   Plot the ROC curve and calculate the AUC (Area Under the Curve).
+
+   :param y_true: True labels (0 or 1) for the binary classification problem.
+   :param predicted_probabilities: Predicted probabilities for the positive class.
+   :param title: Title for the ROC curve plot.
+
+
+.. py:function:: plot_probability_distribution(y_probs: numpy.array, num_bins: int = 20, title: str = 'Probability Distribution') -> None
+
+   Plot the distribution of predicted probabilities as a histogram using Matplotlib.
+
+   Parameters:
+   :param y_probs: NumPy array of predicted probabilities.
+   :param num_bins: Number of bins for the histogram (default is 20).
+   :param title: Title for the plot (default is "Probability Distribution").
+
+
+.. py:function:: balanced_log_loss(y_true, y_pred)
+
+
+.. py:function:: eval_classifier(y_true: numpy.ndarray, y_probs: numpy.ndarray, y_classes: numpy.ndarray) -> Dict[str, Any]
+
+
+.. py:function:: eval_regressor(y_true: numpy.ndarray, y_preds: numpy.ndarray) -> Dict[str, Any]

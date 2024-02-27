@@ -4,6 +4,7 @@ This module contains functions to handle nulls and infinite values.
 Only the handling of infinite values is part of the preprocessing pipeline as Xgboost can handle missing values out of
 the box.
 """
+
 from datetime import datetime
 from typing import Union
 

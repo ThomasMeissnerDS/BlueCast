@@ -1,4 +1,5 @@
 """General utilities."""
+
 import logging
 from datetime import datetime
 from typing import Any, Optional
@@ -86,7 +87,7 @@ def load_for_production(
     :param file_path: Takes a string containing the full absolute path.
     :param file_name: Takes a string containing the whole file name.
     :param file_type: Takes the expected type of file to import.
-    :return:
+    :return: The loaded model object
     """
     logger(f"{datetime.utcnow()}: Start loading class instance.")
     if file_path:
@@ -94,9 +95,9 @@ def load_for_production(
     else:
         full_path = file_name
     try:
-        filehandler = open(full_path, "rb")
+        with open(full_path, "rb") as filehandler:
+            automl_model = pickle.load(filehandler)
     except Exception:
-        filehandler = open(full_path + file_type, "rb")
-    automl_model = pickle.Unpickler(filehandler)
-    filehandler.close()
+        with open(full_path + file_type, "rb") as filehandler:
+            automl_model = pickle.load(filehandler)
     return automl_model

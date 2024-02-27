@@ -1,0 +1,85 @@
+:py:mod:`bluecast.ml_modelling.base_classes`
+============================================
+
+.. py:module:: bluecast.ml_modelling.base_classes
+
+.. autoapi-nested-parse::
+
+   Base classes for all ML models.
+
+
+
+Module Contents
+---------------
+
+Classes
+~~~~~~~
+
+.. autoapisummary::
+
+   bluecast.ml_modelling.base_classes.BaseClassMlModel
+   bluecast.ml_modelling.base_classes.BaseClassMlRegressionModel
+
+
+
+
+Attributes
+~~~~~~~~~~
+
+.. autoapisummary::
+
+   bluecast.ml_modelling.base_classes.PredictedProbas
+   bluecast.ml_modelling.base_classes.PredictedClasses
+
+
+.. py:data:: PredictedProbas
+
+
+
+.. py:data:: PredictedClasses
+
+
+
+.. py:class:: BaseClassMlModel
+
+
+   Bases: :py:obj:`abc.ABC`
+
+   Base class for all ML models.
+
+   Enforces the implementation of the fit and predict methods.
+   If hyperparameter tuning is required, then the fit method should implement the tuning.
+
+   .. py:method:: fit(x_train: pandas.DataFrame, x_test: pandas.DataFrame, y_train: pandas.Series, y_test: pandas.Series) -> Optional[Any]
+      :abstractmethod:
+
+
+   .. py:method:: predict(df: pandas.DataFrame) -> Tuple[PredictedProbas, PredictedClasses]
+      :abstractmethod:
+
+      Predict on unseen data.
+
+      :return tuple of predicted probabilities and predicted classes
+
+
+
+.. py:class:: BaseClassMlRegressionModel
+
+
+   Bases: :py:obj:`abc.ABC`
+
+   Base class for all ML models.
+
+   Enforces the implementation of the fit and predict methods.
+   If hyperparameter tuning is required, then the fit method should implement the tuning.
+
+   .. py:method:: fit(x_train: pandas.DataFrame, x_test: pandas.DataFrame, y_train: pandas.Series, y_test: pandas.Series) -> Optional[Any]
+      :abstractmethod:
+
+
+   .. py:method:: predict(df: pandas.DataFrame) -> numpy.ndarray
+      :abstractmethod:
+
+      Predict on unseen data.
+
+      :return numpy array of predictions

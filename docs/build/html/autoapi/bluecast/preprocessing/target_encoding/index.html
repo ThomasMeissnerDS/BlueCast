@@ -1,0 +1,163 @@
+
+<!DOCTYPE html>
+
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="generator" content="Docutils 0.18.1: http://docutils.sourceforge.net/" />
+
+    <title>bluecast.preprocessing.target_encoding &#8212; BlueCast 0.93 documentation</title>
+    <link rel="stylesheet" type="text/css" href="../../../../_static/pygments.css" />
+    <link rel="stylesheet" type="text/css" href="../../../../_static/alabaster.css" />
+    <link rel="stylesheet" type="text/css" href="../../../../_static/graphviz.css" />
+    <script data-url_root="../../../../" id="documentation_options" src="../../../../_static/documentation_options.js"></script>
+    <script src="../../../../_static/doctools.js"></script>
+    <script src="../../../../_static/sphinx_highlight.js"></script>
+    <link rel="index" title="Index" href="../../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../../search.html" />
+
+  <link rel="stylesheet" href="../../../../_static/custom.css" type="text/css" />
+
+
+
+
+
+  </head><body>
+
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+
+
+          <div class="body" role="main">
+
+  <section id="module-bluecast.preprocessing.target_encoding">
+<span id="bluecast-preprocessing-target-encoding"></span><h1><a class="reference internal" href="#module-bluecast.preprocessing.target_encoding" title="bluecast.preprocessing.target_encoding"><code class="xref py py-mod docutils literal notranslate"><span class="pre">bluecast.preprocessing.target_encoding</span></code></a><a class="headerlink" href="#module-bluecast.preprocessing.target_encoding" title="Permalink to this heading">¶</a></h1>
+<p>Target encoding is a method to encode categorical features. It is a supervised encoding technique, meaning it uses the
+target variable to encode the features. The target variable is used to calculate the mean of the target for each
+category and then replace the category variable with the mean value. This is a powerful technique that can be used to
+create new features from categorical variables. It is also a powerful technique to deal with high cardinality features
+as it reduces the dimensionality of the categorical features.</p>
+<p>The target encoding technique is implemented in the category_encoders library. The library offers a variety of
+different encoding techniques. The target encoding technique is implemented in the TargetEncoder class. For multiclass
+uses cases a special implementation is available as the category-encoders implementation is not suitable for
+multiclass.</p>
+<section id="module-contents">
+<h2>Module Contents<a class="headerlink" href="#module-contents" title="Permalink to this heading">¶</a></h2>
+<section id="classes">
+<h3>Classes<a class="headerlink" href="#classes" title="Permalink to this heading">¶</a></h3>
+<table class="autosummary longtable docutils align-default">
+<tbody>
+<tr class="row-odd"><td><p><a class="reference internal" href="#bluecast.preprocessing.target_encoding.BinaryClassTargetEncoder" title="bluecast.preprocessing.target_encoding.BinaryClassTargetEncoder"><code class="xref py py-obj docutils literal notranslate"><span class="pre">BinaryClassTargetEncoder</span></code></a></p></td>
+<td><p>Target encode categorical features in the context of binary classification.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#bluecast.preprocessing.target_encoding.MultiClassTargetEncoder" title="bluecast.preprocessing.target_encoding.MultiClassTargetEncoder"><code class="xref py py-obj docutils literal notranslate"><span class="pre">MultiClassTargetEncoder</span></code></a></p></td>
+<td><p>Target encode categorical features in the context of multiclass classification.</p></td>
+</tr>
+</tbody>
+</table>
+<dl class="py class">
+<dt class="sig sig-object py" id="bluecast.preprocessing.target_encoding.BinaryClassTargetEncoder">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">bluecast.preprocessing.target_encoding.</span></span><span class="sig-name descname"><span class="pre">BinaryClassTargetEncoder</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">cat_columns</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">float</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">int</span><span class="p"><span class="pre">]</span></span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#bluecast.preprocessing.target_encoding.BinaryClassTargetEncoder" title="Permalink to this definition">¶</a></dt>
+<dd><p>Target encode categorical features in the context of binary classification.</p>
+<dl class="py method">
+<dt class="sig sig-object py" id="bluecast.preprocessing.target_encoding.BinaryClassTargetEncoder.fit_target_encode_binary_class">
+<span class="sig-name descname"><span class="pre">fit_target_encode_binary_class</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">x</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">pandas.DataFrame</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">y</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">pandas.Series</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">pandas.DataFrame</span></span></span><a class="headerlink" href="#bluecast.preprocessing.target_encoding.BinaryClassTargetEncoder.fit_target_encode_binary_class" title="Permalink to this definition">¶</a></dt>
+<dd><p>Fit target encoder and transform column.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="bluecast.preprocessing.target_encoding.BinaryClassTargetEncoder.transform_target_encode_binary_class">
+<span class="sig-name descname"><span class="pre">transform_target_encode_binary_class</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">x</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">pandas.DataFrame</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">pandas.DataFrame</span></span></span><a class="headerlink" href="#bluecast.preprocessing.target_encoding.BinaryClassTargetEncoder.transform_target_encode_binary_class" title="Permalink to this definition">¶</a></dt>
+<dd><p>Transform categories based on already trained encoder.</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="bluecast.preprocessing.target_encoding.MultiClassTargetEncoder">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">bluecast.preprocessing.target_encoding.</span></span><span class="sig-name descname"><span class="pre">MultiClassTargetEncoder</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">cat_columns</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">float</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">int</span><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="n"><span class="pre">target_col</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">float</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">int</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#bluecast.preprocessing.target_encoding.MultiClassTargetEncoder" title="Permalink to this definition">¶</a></dt>
+<dd><p>Target encode categorical features in the context of multiclass classification.</p>
+<dl class="py method">
+<dt class="sig sig-object py" id="bluecast.preprocessing.target_encoding.MultiClassTargetEncoder.fit_target_encode_multiclass">
+<span class="sig-name descname"><span class="pre">fit_target_encode_multiclass</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">x</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">pandas.DataFrame</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">y</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">pandas.Series</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">pandas.DataFrame</span></span></span><a class="headerlink" href="#bluecast.preprocessing.target_encoding.MultiClassTargetEncoder.fit_target_encode_multiclass" title="Permalink to this definition">¶</a></dt>
+<dd><p>Fit target encoder and transform column.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="bluecast.preprocessing.target_encoding.MultiClassTargetEncoder.transform_target_encode_multiclass">
+<span class="sig-name descname"><span class="pre">transform_target_encode_multiclass</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">x</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">pandas.DataFrame</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">pandas.DataFrame</span></span></span><a class="headerlink" href="#bluecast.preprocessing.target_encoding.MultiClassTargetEncoder.transform_target_encode_multiclass" title="Permalink to this definition">¶</a></dt>
+<dd><p>Transform categories based on already trained encoder.</p>
+</dd></dl>
+
+</dd></dl>
+
+</section>
+</section>
+</section>
+
+
+          </div>
+
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+<h1 class="logo"><a href="../../../../index.html">BlueCast</a></h1>
+
+
+
+
+
+
+
+
+<h3>Navigation</h3>
+
+<div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="../../../../index.html">Documentation overview</a><ul>
+  </ul></li>
+</ul>
+</div>
+<div id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../../../../search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"/>
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</div>
+<script>document.getElementById('searchbox').style.display = "block"</script>
+
+
+
+
+
+
+
+
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &#169;2023, Thomas Meißner.
+
+      |
+      Powered by <a href="https://www.sphinx-doc.org/">Sphinx 6.2.1</a>
+      &amp; <a href="https://alabaster.readthedocs.io">Alabaster 0.7.16</a>
+
+      |
+      <a href="../../../../_sources/autoapi/bluecast/preprocessing/target_encoding/index.rst.txt"
+          rel="nofollow">Page source</a>
+    </div>
+
+
+
+
+  </body>
+</html>

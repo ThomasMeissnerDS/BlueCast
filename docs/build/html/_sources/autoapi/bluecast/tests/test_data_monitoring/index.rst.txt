@@ -1,0 +1,32 @@
+:py:mod:`bluecast.tests.test_data_monitoring`
+=============================================
+
+.. py:module:: bluecast.tests.test_data_monitoring
+
+
+Module Contents
+---------------
+
+
+Functions
+~~~~~~~~~
+
+.. autoapisummary::
+
+   bluecast.tests.test_data_monitoring.mock_logger
+   bluecast.tests.test_data_monitoring.test_kolmogorov_smirnov_test
+   bluecast.tests.test_data_monitoring.test_population_stability_index
+   bluecast.tests.test_data_monitoring.test_qqplot_two_samples
+
+
+
+.. py:function:: mock_logger()
+
+
+.. py:function:: test_kolmogorov_smirnov_test(mock_logger)
+
+
+.. py:function:: test_population_stability_index(mock_logger)
+
+
+.. py:function:: test_qqplot_two_samples()

@@ -77,7 +77,6 @@ def test_blueprint_xgboost(
 
     automl = BlueCast(
         class_problem="binary",
-        target_column="target",
         conf_xgboost=xgboost_param_config,
         custom_last_mile_computation=custom_last_mile_computation,
     )
@@ -99,7 +98,6 @@ def test_blueprint_xgboost(
 
     automl = BlueCast(
         class_problem="multiclass",
-        target_column="target",
         conf_xgboost=xgboost_param_config,
         custom_last_mile_computation=custom_last_mile_computation,
     )
@@ -122,7 +120,6 @@ def test_blueprint_xgboost(
 
     automl = BlueCast(
         class_problem="multiclass",
-        target_column="target",
         conf_xgboost=xgboost_param_config,
         conf_training=custom_config,
         custom_last_mile_computation=custom_last_mile_computation,
@@ -265,7 +262,6 @@ def test_bluecast_with_custom_model():
     # Create an instance of the BlueCast class with the custom model
     bluecast = BlueCast(
         class_problem="binary",
-        target_column="target",
         ml_model=custom_model,
         conf_xgboost=xgboost_param_config,
         conf_training=train_config,
@@ -318,9 +314,8 @@ def test_bluecast_with_custom_model():
 def bluecast_instance():
     custom_config = TrainingConfig()
     # Create a fixture to instantiate the BlueCast class with default values for testing
-    bluecast_instance = BlueCast(
-        class_problem="binary", target_column="target", conf_training=custom_config
-    )
+    bluecast_instance = BlueCast(class_problem="binary", conf_training=custom_config)
+    bluecast_instance.target_column = "target"
     return bluecast_instance
 
 
@@ -392,9 +387,8 @@ def test_cat_encoding_via_ml_algorithm_and_ml_model_warning():
     df = pd.DataFrame({"feature1": [1, 2, 3], "target": [0, 1, 0]})
     custom_config = TrainingConfig()
     custom_config.cat_encoding_via_ml_algorithm = True
-    bluecast_instance = BlueCast(
-        class_problem="binary", target_column="target", conf_training=custom_config
-    )
+    bluecast_instance = BlueCast(class_problem="binary", conf_training=custom_config)
+    bluecast_instance.target_column = "target"
     from sklearn.linear_model import LogisticRegression
 
     bluecast_instance.ml_model = LogisticRegression()
@@ -436,7 +430,8 @@ def test_class_problem_mismatch_warnings(bluecast_instance):
             unique target classes have been found. Did you mean 'multiclass' instead?"""
 
     with pytest.warns(UserWarning, match=message):
-        bluecast_binary = BlueCast(class_problem="binary", target_column="target")
+        bluecast_binary = BlueCast(class_problem="binary")
+        bluecast_binary.target_column = "target"
         bluecast_binary.initial_checks(df_multiclass)
 
     message = """During class instantiation class_problem = 'multiclass' has been passed. However less than 3
@@ -444,6 +439,7 @@ def test_class_problem_mismatch_warnings(bluecast_instance):
 
     with pytest.warns(UserWarning, match=message):
         bluecast_multiclass = BlueCast(
-            class_problem="multiclass", target_column="target"
+            class_problem="multiclass",
         )
+        bluecast_multiclass.target_column = "target"
         bluecast_multiclass.initial_checks(df_binary)

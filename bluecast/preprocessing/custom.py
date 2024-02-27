@@ -1,5 +1,6 @@
 """This module contains the CustomPreprocessing class. This is an entry point for last mile computations before model
 training or tuning."""
+
 from abc import ABC, abstractmethod
 from typing import Any, Optional, Tuple
 

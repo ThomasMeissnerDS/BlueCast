@@ -10,6 +10,7 @@ different encoding techniques. The target encoding technique is implemented in t
 uses cases a special implementation is available as the category-encoders implementation is not suitable for
 multiclass.
 """
+
 from datetime import datetime
 from typing import Dict, List, Optional, Union
 

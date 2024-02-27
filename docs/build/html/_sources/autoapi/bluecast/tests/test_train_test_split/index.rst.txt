@@ -1,0 +1,24 @@
+:py:mod:`bluecast.tests.test_train_test_split`
+==============================================
+
+.. py:module:: bluecast.tests.test_train_test_split
+
+
+Module Contents
+---------------
+
+
+Functions
+~~~~~~~~~
+
+.. autoapisummary::
+
+   bluecast.tests.test_train_test_split.test_train_test_split_cross
+   bluecast.tests.test_train_test_split.test_train_test_split_time
+
+
+
+.. py:function:: test_train_test_split_cross()
+
+
+.. py:function:: test_train_test_split_time()
