@@ -6,6 +6,7 @@ Can deal with binary and multi-class classification problems.
 Hyperparameter tuning can be switched off or even strengthened via cross-validation. This behaviour can be controlled
 via the config class attributes from config.training_config module.
 """
+
 import warnings
 from datetime import datetime
 from typing import Any, Dict, List, Literal, Optional, Tuple, Union
@@ -232,10 +233,10 @@ class BlueCast:
         if self.feat_type_detector.cat_columns:
             if self.target_column in self.feat_type_detector.cat_columns:
                 self.target_label_encoder = TargetLabelEncoder()
-                df.loc[
-                    :, self.target_column
-                ] = self.target_label_encoder.fit_transform_target_labels(
-                    df.loc[:, self.target_column]
+                df.loc[:, self.target_column] = (
+                    self.target_label_encoder.fit_transform_target_labels(
+                        df.loc[:, self.target_column]
+                    )
                 )
 
         self.cat_columns = self.feat_type_detector.cat_columns

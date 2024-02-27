@@ -6,6 +6,7 @@ Can deal with binary and multi-class classification problems.
 Hyperparameter tuning can be switched off or even strengthened via cross-validation. This behaviour can be controlled
 via the config class attributes from config.training_config module.
 """
+
 import warnings
 from datetime import datetime
 from typing import Any, Dict, List, Literal, Optional, Union

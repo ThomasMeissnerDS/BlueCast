@@ -4,6 +4,7 @@ This module contains a wrapper for the Xgboost classification model. It can be u
 It also calculates class weights for imbalanced datasets. The weights may or may not be used deepending on the
 hyperparameter tuning.
 """
+
 from copy import deepcopy
 from datetime import datetime
 from typing import Any, Dict, List, Literal, Optional

@@ -3,6 +3,7 @@ Module containing classes and function to monitor data drifts.
 
 This is meant for pipelines on production.
 """
+
 import numbers
 from datetime import datetime
 from typing import Any, Dict
@@ -60,13 +61,13 @@ class DataDrift:
                 )
 
                 if p_value < threshold:
-                    self.kolmogorov_smirnov_flags[
-                        column
-                    ] = True  # not drawn from same distribution
+                    self.kolmogorov_smirnov_flags[column] = (
+                        True  # not drawn from same distribution
+                    )
                 else:
-                    self.kolmogorov_smirnov_flags[
-                        column
-                    ] = False  # drawn from same distribution
+                    self.kolmogorov_smirnov_flags[column] = (
+                        False  # drawn from same distribution
+                    )
 
     def _calculate_psi(self, expected, actual, buckets=10) -> float:
         def scale_range(input, min_val, max_val):

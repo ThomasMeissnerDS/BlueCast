@@ -6,24 +6,24 @@ repos:
         -   id: end-of-file-fixer
         -   id: trailing-whitespace
   -   repo: https://github.com/psf/black
-      rev: 3aad6e385bfbd4348b2e13695cb6741806951160
+      rev: 24.2.0
       hooks:
         -   id: black
             exclude: ^.github/
   -   repo: https://github.com/pre-commit/mirrors-mypy
-      rev: v1.6.1 #0.910
+      rev: v1.8.0 #0.910
       hooks:
         -   id: mypy
             additional_dependencies: [types-requests]
             exclude: ^.github/
   -   repo: https://github.com/pycqa/isort
-      rev: 5.12.0
+      rev: 5.13.2
       hooks:
         - id: isort
           args: [--profile, black, --filter-files]
           exclude: ^.github/
   -   repo: https://github.com/pycqa/flake8
-      rev: 6.1.0 #4.0.1
+      rev: 7.0.0 #4.0.1
       hooks:
         -   id: flake8
             additional_dependencies: [flake8-bugbear]
@@ -42,7 +42,7 @@ repos:
             files: ^README\.md$
             args: [-i, --bullets, "*"]
   -   repo: https://github.com/DavidAnson/markdownlint-cli2
-      rev: v0.10.0 #v0.2.0
+      rev: v0.12.1 #v0.2.0
       hooks:
         -   id: markdownlint-cli2
             exclude: ^.github/

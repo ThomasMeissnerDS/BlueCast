@@ -5,6 +5,7 @@ It is not recommended for features with high cardinality.
 The onehot encoding technique is implemented in the category_encoders library. The library offers a variety of
 different encoding techniques. The onehot encoding technique is implemented in the OneHotEncoder class.
 """
+
 from datetime import datetime
 from typing import Dict, List, Union
 

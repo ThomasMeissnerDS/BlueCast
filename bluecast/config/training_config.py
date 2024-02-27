@@ -5,6 +5,7 @@ the configuration parameters. The configuration parameters are used in the train
 pipeline. Pydantic dataclasses are used to allow users a pythonic way to define the configuration parameters.
 Default configurations can be loaded, adjusted and passed into the blueprints.
 """
+
 from typing import Dict, Optional
 
 from pydantic import BaseModel
