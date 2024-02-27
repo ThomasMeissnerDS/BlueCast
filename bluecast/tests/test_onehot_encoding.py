@@ -25,12 +25,12 @@ def test_fit_transform(example_data):
     assert transformed_data.equals(
         pd.DataFrame(
             {
-                "category1_1": [1, 0, 1, 0],
-                "category1_2": [0, 1, 0, 0],
-                "category1_3": [0, 0, 0, 1],
-                "category2_1": [1, 0, 0, 1],
-                "category2_2": [0, 1, 0, 0],
-                "category2_3": [0, 0, 1, 0],
+                "category1_A": [1, 0, 1, 0],
+                "category1_B": [0, 1, 0, 0],
+                "category1_C": [0, 0, 0, 1],
+                "category2_X": [1, 0, 0, 1],
+                "category2_Y": [0, 1, 0, 0],
+                "category2_Z": [0, 0, 1, 0],
             }
         )
     )
@@ -49,12 +49,12 @@ def test_transform(example_data):
     assert transformed_data.equals(
         pd.DataFrame(
             {
-                "category1_1": [1, 0, 1, 0],
-                "category1_2": [0, 1, 0, 0],
-                "category1_3": [0, 0, 0, 1],
-                "category2_1": [1, 0, 0, 1],
-                "category2_2": [0, 1, 0, 0],
-                "category2_3": [0, 0, 1, 0],
+                "category1_A": [1, 0, 1, 0],
+                "category1_B": [0, 1, 0, 0],
+                "category1_C": [0, 0, 0, 1],
+                "category2_X": [1, 0, 0, 1],
+                "category2_Y": [0, 1, 0, 0],
+                "category2_Z": [0, 0, 1, 0],
             }
         )
     )

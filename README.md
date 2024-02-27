@@ -451,13 +451,18 @@ y_probs, y_classes = automl.predict(df_val)
 
 #### Categorical encoding
 
-By default, BlueCast uses target encoding.
+By default, BlueCast uses onehot and target encoding. An orchestrator measures the
+columns' cardinality and routes each categorical column to onehot or target encoding.
+Onehot encoding is applied when the cardinality is less or equal
+`cardinality_threshold_for_onehot_encoding` from the training config (5 by default).
+
 This behaviour can be changed in the TrainingConfig by setting `cat_encoding_via_ml_algorithm`
 to True. This will change the expectations of `custom_last_mile_computation` though.
 If `cat_encoding_via_ml_algorithm` is set to False, `custom_last_mile_computation`
 will receive numerical features only as target encoding will apply before. If `cat_encoding_via_ml_algorithm`
 is True (default setting) `custom_last_mile_computation` will receive categorical
-features as well, because Xgboost's inbuilt categorical encoding will be used.
+features as well, because Xgboost's or a custom model's inbuilt categorical encoding
+will be used.
 
 #### Custom training configuration
 

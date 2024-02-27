@@ -450,13 +450,17 @@ y_probs,<span class="w"> </span><span class="nv">y_classes</span><span class="w"
 </section>
 <section id="categorical-encoding">
 <h4>Categorical encoding<a class="headerlink" href="#categorical-encoding" title="Permalink to this heading">¶</a></h4>
-<p>By default, BlueCast uses target encoding.
-This behaviour can be changed in the TrainingConfig by setting <code class="docutils literal notranslate"><span class="pre">cat_encoding_via_ml_algorithm</span></code>
+<p>By default, BlueCast uses onehot and target encoding. An orchestrator measures the
+columns’ cardinality and routes each categorical column to onehot or target encoding.
+Onehot encoding is applied when the cardinality is less or equal
+<code class="docutils literal notranslate"><span class="pre">cardinality_threshold_for_onehot_encoding</span></code> from the training config (5 by default).</p>
+<p>This behaviour can be changed in the TrainingConfig by setting <code class="docutils literal notranslate"><span class="pre">cat_encoding_via_ml_algorithm</span></code>
 to True. This will change the expectations of <code class="docutils literal notranslate"><span class="pre">custom_last_mile_computation</span></code> though.
 If <code class="docutils literal notranslate"><span class="pre">cat_encoding_via_ml_algorithm</span></code> is set to False, <code class="docutils literal notranslate"><span class="pre">custom_last_mile_computation</span></code>
 will receive numerical features only as target encoding will apply before. If <code class="docutils literal notranslate"><span class="pre">cat_encoding_via_ml_algorithm</span></code>
 is True (default setting) <code class="docutils literal notranslate"><span class="pre">custom_last_mile_computation</span></code> will receive categorical
-features as well, because Xgboost’s inbuilt categorical encoding will be used.</p>
+features as well, because Xgboost’s or a custom model’s inbuilt categorical encoding
+will be used.</p>
 </section>
 <section id="custom-training-configuration">
 <h4>Custom training configuration<a class="headerlink" href="#custom-training-configuration" title="Permalink to this heading">¶</a></h4>
