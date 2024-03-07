@@ -77,9 +77,9 @@ def save_to_production(
 
 
 def load_for_production(
-    file_path: Optional[str] = None,
-    file_name: str = "automl_instance",
-    file_type: str = ".dat",
+        file_path: Optional[str] = None,
+        file_name: str = "automl_instance",
+        file_type: str = ".dat",
 ) -> Any:
     """
     Load in a pretrained auto ml model. This function will try to load the model as provided.
@@ -89,7 +89,6 @@ def load_for_production(
     :param file_type: Takes the expected type of file to import.
     :return: The loaded model object
     """
-    logger(f"{datetime.utcnow()}: Start loading class instance.")
     if file_path:
         full_path = file_path + file_name
     else:
