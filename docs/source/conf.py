@@ -15,9 +15,9 @@ for x in os.walk("../../src"):
     sys.path.insert(0, x[0])
 
 project = "BlueCast"
-copyright = "2023, Thomas Meißner"
+copyright = "2024, Thomas Meißner"
 author = "Thomas Meißner"
-release = "0.93"
+release = "0.95"
 
 # -- General configuration ---------------------------------------------------
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#general-configuration
