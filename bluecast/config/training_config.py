@@ -28,6 +28,9 @@ class TrainingConfig(BaseModel):
         custom ML model is passed.
     :param hypertuning_cv_folds: Number of cross-validation folds to use for hyperparameter tuning. Not used when
         custom ML model is passed.
+    :param calibrate_model: If True, model will be calibrated using conformal prediction. Only applicable when
+        fit_eval method of any BlueCast/-CV/-Regression instance is used. In classification tasks only applcable for
+        binary classification problems.
     :param precise_cv_tuning: If enabled will switch from using Xgboost's own cv method to a custom cross validation
         routine. This is needed when the in-fold preprocessing is necessary that would cause overfitting with usual cv.
         This has a much longer runtime as Optuna's pruning call is missing and all trials will run until the end.
@@ -64,6 +67,7 @@ class TrainingConfig(BaseModel):
     hyperparameter_tuning_rounds: int = 200
     hyperparameter_tuning_max_runtime_secs: int = 3600
     hypertuning_cv_folds: int = 1
+    calibrate_model: bool = False
     precise_cv_tuning: bool = False
     early_stopping_rounds: Optional[int] = None
     autotune_model: bool = True

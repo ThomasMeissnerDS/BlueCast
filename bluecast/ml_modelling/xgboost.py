@@ -130,29 +130,19 @@ class XgboostModel(BaseClassMlModel):
             x_train = pd.concat([x_train, x_test])
             y_train = pd.concat([y_train, y_test])
 
-        d_train, d_test = self.create_d_matrices(x_train, y_train, x_test, y_test)
-        eval_set = [(d_train, "train"), (d_test, "test")]
-
         steps = self.conf_params_xgboost.params.pop("steps", 300)
 
-        if self.conf_training.hypertuning_cv_folds == 1 and self.conf_xgboost:
-            self.model = xgb.train(
-                self.conf_params_xgboost.params,
-                d_train,
-                num_boost_round=steps,
-                early_stopping_rounds=self.conf_training.early_stopping_rounds,
-                evals=eval_set,
-                verbose_eval=self.conf_xgboost.model_verbosity_during_final_training,
-            )
-        elif self.conf_xgboost:
-            self.model = xgb.train(
-                self.conf_params_xgboost.params,
-                d_train,
-                num_boost_round=steps,
-                early_stopping_rounds=self.conf_training.early_stopping_rounds,
-                evals=eval_set,
-                verbose_eval=self.conf_xgboost.model_verbosity_during_final_training,
-            )
+        self.model = xgb.XGBClassifier(**self.conf_params_xgboost.params, use_label_encoder=False)
+        self.model.fit(
+            x_train,
+            y_train,
+            eval_set=[(x_test, y_test)],
+            eval_metric=['auc'],
+            early_stopping_rounds=self.conf_training.early_stopping_rounds,
+            verbose=self.conf_xgboost.model_verbosity_during_final_training,
+            sample_weight=class_weight # self.conf_params_xgboost.sample_weight
+        )
+
         logger("Finished training")
         return self.model
 
@@ -608,19 +598,11 @@ class XgboostModel(BaseClassMlModel):
                 evals=eval_set,
                 verbose_eval=self.conf_xgboost.model_verbosity,
             )
-            # d_eval = xgb.DMatrix(
-            #    X_test_fold,
-            #    label=y_test_fold,
-            #    enable_categorical=self.conf_training.cat_encoding_via_ml_algorithm,
-            # )
-            # preds = model.predict(d_eval)
             losses = self.increasing_noise_evaluator(
                 model, X_test_fold, y_test_fold, 100
             )
             constant_loss_degregation = self.constant_loss_degregation_factor(losses)
             fold_losses.append(constant_loss_degregation)
-            # pred_labels = np.asarray([np.argmax(line) for line in preds])
-            # fold_losses.append(matthews_corrcoef(y_test_fold, pred_labels) * -1)
 
         matthews_mean = np.mean(np.asarray(fold_losses))
 

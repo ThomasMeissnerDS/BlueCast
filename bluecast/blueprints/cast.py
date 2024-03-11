@@ -440,6 +440,10 @@ class BlueCast:
                 metric_used=metric,
                 metric_higher_is_better=higher_is_better,
             )
+
+        if self.conf_training.calibrate_model and self.class_problem == 'binary':
+            pass
+
         return eval_dict
 
     def transform_new_data(self, df: pd.DataFrame) -> pd.DataFrame:
