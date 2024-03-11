@@ -135,16 +135,7 @@ class XgboostModel(BaseClassMlModel):
 
         steps = self.conf_params_xgboost.params.pop("steps", 300)
 
-        if self.conf_training.hypertuning_cv_folds == 1 and self.conf_xgboost:
-            self.model = xgb.train(
-                self.conf_params_xgboost.params,
-                d_train,
-                num_boost_round=steps,
-                early_stopping_rounds=self.conf_training.early_stopping_rounds,
-                evals=eval_set,
-                verbose_eval=self.conf_xgboost.model_verbosity_during_final_training,
-            )
-        elif self.conf_xgboost:
+        if self.conf_xgboost:
             self.model = xgb.train(
                 self.conf_params_xgboost.params,
                 d_train,
