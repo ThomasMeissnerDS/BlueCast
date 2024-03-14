@@ -1,4 +1,5 @@
 from unittest import mock
+from unittest.mock import patch
 
 import numpy as np
 import pandas as pd
@@ -8,7 +9,7 @@ from sklearn.linear_model import LogisticRegression
 from bluecast.blueprints.cast import BlueCast
 from bluecast.config.training_config import TrainingConfig, XgboostTuneParamsConfig
 from bluecast.evaluation.eval_metrics import matthews_corrcoef
-from bluecast.evaluation.shap_values import shap_explanations
+from bluecast.evaluation.shap_values import shap_explanations, shap_summary_plot
 from bluecast.tests.make_data.create_data import create_synthetic_dataframe
 
 
@@ -68,3 +69,40 @@ def test_eval_classifier_except():
     y_classes = np.array([1, 1, 1, 1])
     result = matthews_corrcoef(y_true, y_classes)
     assert result == 0
+
+
+def test_shap_summary_plot():
+    # Create mock data
+    model_shap_values = np.array([[0.1, 0.2], [0.3, 0.4]])
+    data = pd.DataFrame({"feature1": [1, 2], "feature2": [3, 4]})
+    nb_rows = 2
+    plot_type = "violin"
+
+    # Mock the shap.summary_plot function
+    with patch("shap.summary_plot") as mock_summary_plot:
+        # Call the function
+        shap_summary_plot(model_shap_values, data, nb_rows, plot_type)
+
+        # Check if the shap.summary_plot function was called with the correct arguments
+        mock_summary_plot.assert_called_once_with(
+            model_shap_values[:nb_rows, :],
+            data.iloc[:nb_rows, :],
+            plot_type=plot_type,
+            max_display=nb_rows,
+            show=True,
+        )
+
+    # Test case where nb_rows is greater than the number of rows in data
+    nb_rows_greater_than_data = 3
+    with patch("shap.summary_plot") as mock_summary_plot:
+        # Call the function
+        shap_summary_plot(model_shap_values, data, nb_rows_greater_than_data, plot_type)
+
+        # Check if the shap.summary_plot function was called with the correct arguments
+        mock_summary_plot.assert_called_once_with(
+            model_shap_values[: len(data.index), :],
+            data.iloc[: len(data.index), :],
+            plot_type=plot_type,
+            max_display=len(data.index),
+            show=True,
+        )

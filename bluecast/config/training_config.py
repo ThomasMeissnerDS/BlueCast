@@ -37,6 +37,8 @@ class TrainingConfig(BaseModel):
     :param enable_feature_selection: Whether to enable recursive feature selection.
     :param calculate_shap_values: Whether to calculate shap values. Also used when custom ML model is passed. Not
         compatible with all ML models. See the SHAP documentation for more details.
+    :param shap_summary_plot_type: Type of SHAP summary plot (i.e.: bar, layered_violin or violin). Not used when custom
+        ML model is passed.
     :param train_size: Train size to use for train-test split.
     :param train_split_stratify: Whether to stratify the train-test split. Not used when custom ML model is passed.
     :param use_full_data_for_final_model: Whether to use the full data for the final model. This might cause overfitting.
@@ -69,6 +71,7 @@ class TrainingConfig(BaseModel):
     autotune_model: bool = True
     enable_feature_selection: bool = False
     calculate_shap_values: bool = True
+    shap_summary_plot_type: str = "violin"
     train_size: float = 0.8
     train_split_stratify: bool = True
     use_full_data_for_final_model: bool = False

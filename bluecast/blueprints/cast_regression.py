@@ -19,7 +19,7 @@ from bluecast.config.training_config import (
     XgboostTuneParamsRegressionConfig as XgboostTuneParamsConfig,
 )
 from bluecast.evaluation.eval_metrics import eval_regressor
-from bluecast.evaluation.shap_values import shap_explanations
+from bluecast.evaluation.shap_values import shap_explanations, shap_summary_plot
 from bluecast.experimentation.tracking import ExperimentTracker
 from bluecast.general_utils.general_utils import check_gpu_support, logger
 from bluecast.ml_modelling.xgboost_regression import XgboostModelRegression
@@ -348,6 +348,12 @@ class BlueCastRegression:
 
         if self.conf_training and self.conf_training.calculate_shap_values:
             self.shap_values = shap_explanations(self.ml_model.model, x_test)
+            shap_summary_plot(
+                self.shap_values,
+                x_test,
+                self.conf_training.shap_nb_rows,
+                self.conf_training.shap_summary_plot_type,
+            )
         self.prediction_mode = True
 
     def fit_eval(
