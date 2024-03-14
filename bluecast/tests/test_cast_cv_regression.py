@@ -367,7 +367,7 @@ def test_bluecast_cv_with_custom_objects():
     bluecast.fit(x_train, "target")
 
     # Predict on the test data using the custom model
-    preds = bluecast.predict(x_test)
+    preds = bluecast.predict(x_test.copy())
 
     # Assert the expected results
     assert isinstance(preds, np.ndarray)
