@@ -351,7 +351,7 @@ class BlueCastRegression:
             shap_summary_plot(
                 self.shap_values,
                 x_test,
-                self.conf_training.shap_nb_rows,
+                self.conf_training.shap_summary_plot_nb_rows,
                 self.conf_training.shap_summary_plot_type,
             )
         self.prediction_mode = True
