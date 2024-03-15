@@ -44,7 +44,6 @@ def shap_explanations(model, df: pd.DataFrame) -> Tuple[np.ndarray, shap.Explain
             feature_names=df.columns,
         )
     except (AssertionError, shap.utils._exceptions.InvalidModelError):
-        print("AssertionError")
         explainer = shap.KernelExplainer(model.predict, df)
         model_shap_values = explainer.shap_values(df)
         explainer = explainer(df)
