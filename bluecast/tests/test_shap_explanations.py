@@ -10,11 +10,7 @@ from sklearn.linear_model import LogisticRegression
 from bluecast.blueprints.cast import BlueCast
 from bluecast.config.training_config import TrainingConfig, XgboostTuneParamsConfig
 from bluecast.evaluation.eval_metrics import matthews_corrcoef
-from bluecast.evaluation.shap_values import (
-    shap_explanations,
-    shap_summary_plot,
-    shap_waterfall_plot,
-)
+from bluecast.evaluation.shap_values import shap_explanations, shap_waterfall_plot
 from bluecast.tests.make_data.create_data import create_synthetic_dataframe
 
 
@@ -74,21 +70,6 @@ def test_eval_classifier_except():
     y_classes = np.array([1, 1, 1, 1])
     result = matthews_corrcoef(y_true, y_classes)
     assert result == 0
-
-
-def test_shap_summary_plot():
-    # Create mock data
-    model_shap_values = np.array([[0.1, 0.2], [0.3, 0.4]])
-    data = pd.DataFrame({"feature1": [1, 2], "feature2": [3, 4]})
-    nb_rows = 2
-    plot_type = "violin"
-
-    shap_summary_plot(model_shap_values, data, nb_rows, plot_type)
-
-    # Test case where nb_rows is greater than the number of rows in data
-    nb_rows_greater_than_data = 3
-    shap_summary_plot(model_shap_values, data, nb_rows_greater_than_data, plot_type)
-    assert True
 
 
 def test_shap_waterfall_plot():

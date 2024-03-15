@@ -37,9 +37,6 @@ class TrainingConfig(BaseModel):
     :param enable_feature_selection: Whether to enable recursive feature selection.
     :param calculate_shap_values: Whether to calculate shap values. Also used when custom ML model is passed. Not
         compatible with all ML models. See the SHAP documentation for more details.
-    :param shap_summary_plot_nb_rows: Number of rows to plot in the SHAP summary plot.
-    :param shap_summary_plot_type: Type of SHAP summary plot (i.e.: bar, layered_violin or violin). Not used when custom
-        ML model is passed.
     :param shap_waterfall_indices: List of sample indices to plot. Each index represents a sample (i.e.: [0, 1, 499]).
     :param store_shap_values_in_instance: Whether to store the SHAP values in the BlueCast instance. Not applicable when
         custom ML model is used.
@@ -75,8 +72,6 @@ class TrainingConfig(BaseModel):
     autotune_model: bool = True
     enable_feature_selection: bool = False
     calculate_shap_values: bool = True
-    shap_summary_plot_nb_rows: int = 1000
-    shap_summary_plot_type: str = "violin"
     shap_waterfall_indices: List[int] = [0]
     store_shap_values_in_instance: bool = False
     train_size: float = 0.8

@@ -40,31 +40,6 @@ def shap_explanations(model, df: pd.DataFrame) -> Tuple[np.ndarray, shap.Explain
     return model_shap_values, explainer
 
 
-def shap_summary_plot(
-    model_shap_values: np.ndarray,
-    data: pd.DataFrame,
-    nb_rows: int,
-    plot_type: str = "violin",
-) -> None:
-    """
-    Plot the SHAP summary plot.
-    :param model_shap_values: SHAP values
-    :param data: Test data
-    :param nb_rows: Number of rows to plot
-    :param plot_type: Type of plot (i.e.: bar, layered_violin or violin)
-    :return: None
-    """
-    if nb_rows > len(data.index):
-        nb_rows = len(data.index)
-    shap.summary_plot(
-        model_shap_values[:nb_rows, :],
-        data.iloc[:nb_rows, :],
-        plot_type=plot_type,
-        max_display=nb_rows,
-        show=True,
-    )
-
-
 def shap_waterfall_plot(
     explainer: shap.Explainer,
     indices: List[int],
