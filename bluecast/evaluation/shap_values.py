@@ -115,10 +115,11 @@ def get_most_important_features_by_shap_values(
     """
 
     feature_names = df.columns
-    if len(shap_values.shape) == 3:
-        shap_values = shap_values[:, :, 1]
 
-    result_df = pd.DataFrame(shap_values, columns=feature_names)
+    try:
+        result_df = pd.DataFrame(shap_values, columns=feature_names)
+    except Exception:
+        result_df = pd.DataFrame(shap_values[:, :, 1], columns=feature_names)
 
     vals = np.abs(result_df.values).mean(0)
     shap_importance = pd.DataFrame(
