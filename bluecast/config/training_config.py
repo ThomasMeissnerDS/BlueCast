@@ -6,7 +6,7 @@ pipeline. Pydantic dataclasses are used to allow users a pythonic way to define 
 Default configurations can be loaded, adjusted and passed into the blueprints.
 """
 
-from typing import Dict, Optional
+from typing import Dict, List, Optional
 
 from pydantic import BaseModel
 from pydantic.dataclasses import dataclass
@@ -40,6 +40,9 @@ class TrainingConfig(BaseModel):
     :param shap_summary_plot_nb_rows: Number of rows to plot in the SHAP summary plot.
     :param shap_summary_plot_type: Type of SHAP summary plot (i.e.: bar, layered_violin or violin). Not used when custom
         ML model is passed.
+    :param shap_waterfall_indices: List of sample indices to plot. Each index represents a sample (i.e.: [0, 1, 499]).
+    :param store_shap_values_in_instance: Whether to store the SHAP values in the BlueCast instance. Not applicable when
+        custom ML model is used.
     :param train_size: Train size to use for train-test split.
     :param train_split_stratify: Whether to stratify the train-test split. Not used when custom ML model is passed.
     :param use_full_data_for_final_model: Whether to use the full data for the final model. This might cause overfitting.
@@ -74,6 +77,8 @@ class TrainingConfig(BaseModel):
     calculate_shap_values: bool = True
     shap_summary_plot_nb_rows: int = 1000
     shap_summary_plot_type: str = "violin"
+    shap_waterfall_indices: List[int] = [0]
+    store_shap_values_in_instance: bool = False
     train_size: float = 0.8
     train_split_stratify: bool = True
     use_full_data_for_final_model: bool = False
