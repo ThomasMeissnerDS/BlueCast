@@ -31,7 +31,7 @@ def shap_explanations(model, x: pd.DataFrame) -> Tuple[np.ndarray, shap.Explaine
             data=x.values,
             feature_names=x.columns,
         )
-        shap.summary_plot(model_shap_values, x, plot_type="bar", show=True)
+        shap.summary_plot(model_shap_values, x, plot_type="violin", show=True)
     except IndexError:
         explainer = shap.TreeExplainer(model)
         model_shap_values = explainer.shap_values(x)
@@ -42,7 +42,7 @@ def shap_explanations(model, x: pd.DataFrame) -> Tuple[np.ndarray, shap.Explaine
             data=x.values,
             feature_names=x.columns,
         )
-        shap.summary_plot(model_shap_values, x, plot_type="bar", show=True)
+        shap.summary_plot(model_shap_values, x, plot_type="violin", show=True)
     except (AssertionError, shap.utils._exceptions.InvalidModelError):
         print("AssertionError")
         explainer = shap.KernelExplainer(model.predict, x)
@@ -146,6 +146,7 @@ def shap_dependence_plots(
         show_dependence_plots_of_top_n_features = len(df.columns)
 
     sorted_shap_df = get_most_important_features_by_shap_values(shap_values, df)
+    # We can also use the special "rank(i)" systax to specify the i'th most important feature
 
     for col in sorted_shap_df["col_name"].values[
         :show_dependence_plots_of_top_n_features
