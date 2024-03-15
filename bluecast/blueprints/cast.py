@@ -20,7 +20,11 @@ from bluecast.config.training_config import (
     XgboostTuneParamsConfig,
 )
 from bluecast.evaluation.eval_metrics import eval_classifier
-from bluecast.evaluation.shap_values import shap_explanations, shap_waterfall_plot
+from bluecast.evaluation.shap_values import (
+    shap_dependence_plots,
+    shap_explanations,
+    shap_waterfall_plot,
+)
 from bluecast.experimentation.tracking import ExperimentTracker
 from bluecast.general_utils.general_utils import check_gpu_support, logger
 from bluecast.ml_modelling.xgboost import XgboostModel
@@ -378,6 +382,11 @@ class BlueCast:
                 self.shap_values = shap_values
             shap_waterfall_plot(
                 explainer, self.conf_training.shap_waterfall_indices, self.class_problem
+            )
+            shap_dependence_plots(
+                shap_values,
+                x_test,
+                self.conf_training.show_dependence_plots_of_top_n_features,
             )
         self.prediction_mode = True
 

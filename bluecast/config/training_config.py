@@ -38,6 +38,8 @@ class TrainingConfig(BaseModel):
     :param calculate_shap_values: Whether to calculate shap values. Also used when custom ML model is passed. Not
         compatible with all ML models. See the SHAP documentation for more details.
     :param shap_waterfall_indices: List of sample indices to plot. Each index represents a sample (i.e.: [0, 1, 499]).
+    :param show_dependence_plots_of_top_n_features: Maximum number of dependence plots to show. Not used when custom ML
+        model is passed.
     :param store_shap_values_in_instance: Whether to store the SHAP values in the BlueCast instance. Not applicable when
         custom ML model is used.
     :param train_size: Train size to use for train-test split.
@@ -73,6 +75,7 @@ class TrainingConfig(BaseModel):
     enable_feature_selection: bool = False
     calculate_shap_values: bool = True
     shap_waterfall_indices: List[int] = [0]
+    show_dependence_plots_of_top_n_features: int = 5
     store_shap_values_in_instance: bool = False
     train_size: float = 0.8
     train_split_stratify: bool = True
