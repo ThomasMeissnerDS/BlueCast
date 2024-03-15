@@ -12,7 +12,7 @@ import shap
 from bluecast.general_utils.general_utils import logger
 
 
-def shap_explanations(model, x: pd.DataFrame) -> Tuple[np.ndarray, shap.Explainer]:
+def shap_explanations(model, df: pd.DataFrame) -> Tuple[np.ndarray, shap.Explainer]:
     """
     See explanations under:
     https://medium.com/rapids-ai/gpu-accelerated-shap-values-with-xgboost-1-3-and-rapids-587fad6822
@@ -23,32 +23,32 @@ def shap_explanations(model, x: pd.DataFrame) -> Tuple[np.ndarray, shap.Explaine
     shap.initjs()
     try:
         explainer = shap.TreeExplainer(model)
-        model_shap_values = explainer.shap_values(x)
-        explainer = explainer(x)
+        model_shap_values = explainer.shap_values(df)
+        shap.summary_plot(model_shap_values, df, plot_type="bar", show=True)
+        explainer = explainer(df)
         explainer = shap.Explanation(
             explainer.values[:, :, 1],
             explainer.base_values[:, :, 1],
-            data=x.values,
-            feature_names=x.columns,
+            data=df.values,
+            feature_names=df.columns,
         )
-        shap.summary_plot(model_shap_values, x, plot_type="violin", show=True)
     except IndexError:
         explainer = shap.TreeExplainer(model)
-        model_shap_values = explainer.shap_values(x)
-        explainer = explainer(x)
+        model_shap_values = explainer.shap_values(df)
+        shap.summary_plot(model_shap_values, df, plot_type="bar", show=True)
+        explainer = explainer(df)
         explainer = shap.Explanation(
             explainer.values,
             explainer.base_values,
-            data=x.values,
-            feature_names=x.columns,
+            data=df.values,
+            feature_names=df.columns,
         )
-        shap.summary_plot(model_shap_values, x, plot_type="violin", show=True)
     except (AssertionError, shap.utils._exceptions.InvalidModelError):
         print("AssertionError")
-        explainer = shap.KernelExplainer(model.predict, x)
-        model_shap_values = explainer.shap_values(x)
-        explainer = explainer(x)
-        shap.summary_plot(model_shap_values, x, show=True)
+        explainer = shap.KernelExplainer(model.predict, df)
+        model_shap_values = explainer.shap_values(df)
+        explainer = explainer(df)
+        shap.summary_plot(model_shap_values, df, show=True)
     return model_shap_values, explainer
 
 
@@ -73,7 +73,7 @@ def shap_waterfall_plot(
     for idx in indices:
         if class_problem == "regression":
             logger(f"Show SHAP waterfall plot for idx {idx}.")
-            explainer_values = explainer[idx]
+            explainer_values = explainer[idx, :]
             shap.waterfall_plot(
                 explainer_values,
                 show=True,
