@@ -116,16 +116,19 @@ def get_most_important_features_by_shap_values(
 
     feature_names = df.columns
 
-    try:
-        result_df = pd.DataFrame(shap_values, columns=feature_names)
-    except TypeError:
+    if len(np.asarray(shap_values).shape) == 3:
         dfs = []
         for class_shap_values in shap_values:  # Loop through classes
             class_df = pd.DataFrame(class_shap_values, columns=feature_names)
             dfs.append(class_df)
         result_df = pd.concat(dfs)
-    except Exception:
-        result_df = pd.DataFrame(np.array(shap_values)[:, :, 1], columns=feature_names)
+    else:
+        try:
+            result_df = pd.DataFrame(shap_values, columns=feature_names)
+        except Exception:
+            result_df = pd.DataFrame(
+                np.array(shap_values)[:, :, 1], columns=feature_names
+            )
 
     vals = np.abs(result_df.values).mean(0)
     shap_importance = pd.DataFrame(
@@ -148,6 +151,8 @@ def shap_dependence_plots(
     :param df: Pandas DataFrame
     :param show_dependence_plots_of_top_n_features: Number of features to show the dependence plots for.
     """
+
+    logger("Plotting interactions of most important features by global SHAP values...")
     if show_dependence_plots_of_top_n_features > len(df.columns):
         show_dependence_plots_of_top_n_features = len(df.columns)
 
@@ -162,7 +167,7 @@ def shap_dependence_plots(
                 col, np.array(shap_values)[:, :, 1], df, feature_names=df.columns
             )
         except IndexError:
-            shap.dependence_plot(col, shap_values, df, feature_names=df.columns)
+            shap.dependence_plot(col, shap_values[0], df, feature_names=df.columns)
         except TypeError:
             for class_shap_values in shap_values:
                 shap.dependence_plot(

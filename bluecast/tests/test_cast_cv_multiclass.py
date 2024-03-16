@@ -127,4 +127,4 @@ def test_bluecast_cv_fit_eval_multiclass_without_custom_model():
     predicted_probas, predicted_classes = bluecast.predict(x_test)
 
     # Assert the expected results
-    assert isinstance(predicted_probas, type(predicted_classes))
+    assert isinstance(predicted_probas, pd.Series)
