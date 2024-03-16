@@ -117,7 +117,7 @@ class CustomLRModel(BaseClassMlModel):
         self.model.fit(x_train, y_train)
 
     def predict(self, df: pd.DataFrame) -> Tuple[PredictedProbas, PredictedClasses]:
-        predicted_probas = self.model.predict_proba(df)[:, 1]
+        predicted_probas = self.model.predict_proba(df)
         predicted_classes = self.model.predict(df)
         return predicted_probas, predicted_classes
 
