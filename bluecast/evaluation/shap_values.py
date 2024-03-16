@@ -169,7 +169,7 @@ def shap_dependence_plots(
         if len(np.asarray(shap_values).shape) == 2:
             try:
                 shap.dependence_plot(col, shap_values[0], df, feature_names=df.columns)
-            except IndexError:
+            except (IndexError, AssertionError):
                 shap.dependence_plot(col, shap_values, df, feature_names=df.columns)
         else:
             try:
