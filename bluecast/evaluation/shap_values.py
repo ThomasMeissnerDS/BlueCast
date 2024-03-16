@@ -166,14 +166,18 @@ def shap_dependence_plots(
     for col in sorted_shap_df["col_name"].values[
         :show_dependence_plots_of_top_n_features
     ]:
-        try:
-            shap.dependence_plot(
-                col, np.array(shap_values)[:, :, 1], df, feature_names=df.columns
-            )
-        except IndexError:
-            shap.dependence_plot(col, shap_values[0], df, feature_names=df.columns)
-        except TypeError:
-            for class_shap_values in shap_values:
+        if len(np.asarray(shap_values).shape) == 2:
+            try:
+                shap.dependence_plot(col, shap_values[0], df, feature_names=df.columns)
+            except IndexError:
+                shap.dependence_plot(col, shap_values[0], df, feature_names=df.columns)
+        else:
+            try:
+                for class_shap_values in shap_values:
+                    shap.dependence_plot(
+                        col, class_shap_values, df, feature_names=df.columns
+                    )
+            except IndexError:
                 shap.dependence_plot(
-                    col, class_shap_values, df, feature_names=df.columns
+                    col, np.array(shap_values)[:, :, 1], df, feature_names=df.columns
                 )
