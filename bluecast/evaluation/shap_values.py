@@ -116,7 +116,11 @@ def get_most_important_features_by_shap_values(
 
     feature_names = df.columns
 
-    if len(np.asarray(shap_values).shape) == 3:
+    # shap values might arrive as (nb_rows, nb_cols, nb_classes) or (nb_classes, nb_rows, nb_cols)
+    if (
+        np.asarray(shap_values).shape[0] != df.shape[0]
+        or np.asarray(shap_values).shape[1] != df.shape[1]
+    ):
         dfs = []
         for class_shap_values in shap_values:  # Loop through classes
             class_df = pd.DataFrame(class_shap_values, columns=feature_names)
