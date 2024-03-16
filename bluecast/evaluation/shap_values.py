@@ -24,7 +24,6 @@ def shap_explanations(model, df: pd.DataFrame) -> Tuple[np.ndarray, shap.Explain
     try:
         explainer = shap.TreeExplainer(model)
         model_shap_values = explainer.shap_values(df)
-        shap.summary_plot(model_shap_values, df, plot_type="bar", show=True)
         explainer = explainer(df)
         explainer = shap.Explanation(
             explainer.values[:, :, 1],
@@ -32,10 +31,10 @@ def shap_explanations(model, df: pd.DataFrame) -> Tuple[np.ndarray, shap.Explain
             data=df.values,
             feature_names=df.columns,
         )
+        shap.summary_plot(model_shap_values, df, plot_type="bar", show=True)
     except IndexError:
         explainer = shap.TreeExplainer(model)
         model_shap_values = explainer.shap_values(df)
-        shap.summary_plot(model_shap_values, df, plot_type="bar", show=True)
         explainer = explainer(df)
         explainer = shap.Explanation(
             explainer.values,
@@ -43,6 +42,7 @@ def shap_explanations(model, df: pd.DataFrame) -> Tuple[np.ndarray, shap.Explain
             data=df.values,
             feature_names=df.columns,
         )
+        shap.summary_plot(model_shap_values, df, plot_type="bar", show=True)
     except (AssertionError, shap.utils._exceptions.InvalidModelError):
         explainer = shap.KernelExplainer(model.predict, df)
         model_shap_values = explainer.shap_values(df)
@@ -118,8 +118,14 @@ def get_most_important_features_by_shap_values(
 
     try:
         result_df = pd.DataFrame(shap_values, columns=feature_names)
+    except TypeError:
+        dfs = []
+        for class_shap_values in shap_values:  # Loop through classes
+            class_df = pd.DataFrame(class_shap_values, columns=feature_names)
+            dfs.append(class_df)
+        result_df = pd.concat(dfs)
     except Exception:
-        result_df = pd.DataFrame(shap_values[:, :, 1], columns=feature_names)
+        result_df = pd.DataFrame(np.array(shap_values)[:, :, 1], columns=feature_names)
 
     vals = np.abs(result_df.values).mean(0)
     shap_importance = pd.DataFrame(
@@ -153,7 +159,12 @@ def shap_dependence_plots(
     ]:
         try:
             shap.dependence_plot(
-                col, shap_values[:, :, 1], df, feature_names=df.columns
+                col, np.array(shap_values)[:, :, 1], df, feature_names=df.columns
             )
         except IndexError:
             shap.dependence_plot(col, shap_values, df, feature_names=df.columns)
+        except TypeError:
+            for class_shap_values in shap_values:
+                shap.dependence_plot(
+                    col, class_shap_values, df, feature_names=df.columns
+                )
