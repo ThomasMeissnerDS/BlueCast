@@ -4,7 +4,7 @@ import numpy as np
 import pandas as pd
 import pytest
 import xgboost
-from sklearn.ensemble import RandomForestClassifier
+from sklearn.ensemble import RandomForestRegressor
 from sklearn.feature_selection import RFECV
 from sklearn.metrics import make_scorer, mean_absolute_error
 from sklearn.model_selection import KFold
@@ -130,7 +130,7 @@ class CustomLRModel(BaseClassMlRegressionModel):
         y_train: pd.Series,
         y_test: pd.Series,
     ) -> None:
-        self.model = RandomForestClassifier()
+        self.model = RandomForestRegressor()
         self.model.fit(x_train, y_train)
 
     def predict(self, df: pd.DataFrame) -> np.ndarray:
@@ -175,7 +175,7 @@ class CustomModel(BaseClassMlRegressionModel):
         y_train: pd.Series,
         y_test: pd.Series,
     ) -> None:
-        self.model = RandomForestClassifier()
+        self.model = RandomForestRegressor()
         self.model.fit(x_train, y_train)
 
     def predict(self, df: pd.DataFrame) -> np.ndarray:
@@ -367,7 +367,7 @@ def test_bluecast_cv_with_custom_objects():
     bluecast.fit(x_train, "target")
 
     # Predict on the test data using the custom model
-    preds = bluecast.predict(x_test)
+    preds = bluecast.predict(x_test.copy())
 
     # Assert the expected results
     assert isinstance(preds, np.ndarray)

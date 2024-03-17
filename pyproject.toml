@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "bluecast"
-version = "0.93"
+version = "0.94"
 description = "A lightweight and fast automl framework"
 authors = ["Thomas Meißner <meissnercorporation@gmx.de>"]
 license = "GPL-3.0-only"

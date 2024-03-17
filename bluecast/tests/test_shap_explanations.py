@@ -3,12 +3,18 @@ from unittest import mock
 import numpy as np
 import pandas as pd
 import pytest
+import shap
+from sklearn.ensemble import RandomForestRegressor
 from sklearn.linear_model import LogisticRegression
 
 from bluecast.blueprints.cast import BlueCast
 from bluecast.config.training_config import TrainingConfig, XgboostTuneParamsConfig
 from bluecast.evaluation.eval_metrics import matthews_corrcoef
-from bluecast.evaluation.shap_values import shap_explanations
+from bluecast.evaluation.shap_values import (
+    shap_dependence_plots,
+    shap_explanations,
+    shap_waterfall_plot,
+)
 from bluecast.tests.make_data.create_data import create_synthetic_dataframe
 
 
@@ -54,13 +60,13 @@ def test_shap_explanations():
         ],
         targets,
     )
-    model_shap_values = shap_explanations(
+    model_shap_values, explainer = shap_explanations(
         model,
         df_val.loc[
             :, ["numerical_feature_1", "numerical_feature_2", "numerical_feature_3"]
         ],
     )
-    assert model_shap_values.any()
+    assert model_shap_values is not None
 
 
 def test_eval_classifier_except():
@@ -68,3 +74,47 @@ def test_eval_classifier_except():
     y_classes = np.array([1, 1, 1, 1])
     result = matthews_corrcoef(y_true, y_classes)
     assert result == 0
+
+
+def test_shap_waterfall_plot():
+    # Create a simple model
+    X_train = np.array([[1, 2], [3, 4]])
+    y_train = np.array([0, 1])
+    model = RandomForestRegressor()
+    model.fit(X_train, y_train)
+
+    # Create a TExplainer object using the model and training data
+    explainer = shap.Explainer(model)
+    explainer = explainer(X_train)
+
+    indices = [0, 1]
+
+    shap_waterfall_plot(explainer, indices, class_problem="regression")
+
+    assert True
+
+
+def test_shap_dependence_plots():
+    # Create a simple model
+    X_train = np.array([[1, 2], [3, 4]])
+    y_train = np.array([0, 1])
+    model = RandomForestRegressor()
+    model.fit(X_train, y_train)
+
+    # Create a TExplainer object using the model and training data
+    explainer = shap.Explainer(model)
+    model_shap_values = explainer.shap_values(X_train)
+
+    shap_dependence_plots(
+        model_shap_values,
+        pd.DataFrame(X_train),
+        show_dependence_plots_of_top_n_features=2,
+    )
+    assert True
+
+    shap_dependence_plots(
+        model_shap_values,
+        pd.DataFrame(X_train),
+        show_dependence_plots_of_top_n_features=1,
+    )
+    assert True

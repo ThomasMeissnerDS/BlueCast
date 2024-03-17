@@ -19,7 +19,11 @@ from bluecast.config.training_config import (
     XgboostTuneParamsRegressionConfig as XgboostTuneParamsConfig,
 )
 from bluecast.evaluation.eval_metrics import eval_regressor
-from bluecast.evaluation.shap_values import shap_explanations
+from bluecast.evaluation.shap_values import (
+    shap_dependence_plots,
+    shap_explanations,
+    shap_waterfall_plot,
+)
 from bluecast.experimentation.tracking import ExperimentTracker
 from bluecast.general_utils.general_utils import check_gpu_support, logger
 from bluecast.ml_modelling.xgboost_regression import XgboostModelRegression
@@ -347,7 +351,17 @@ class BlueCastRegression:
             )
 
         if self.conf_training and self.conf_training.calculate_shap_values:
-            self.shap_values = shap_explanations(self.ml_model.model, x_test)
+            shap_values, explainer = shap_explanations(self.ml_model.model, x_test)
+            if self.conf_training.store_shap_values_in_instance:
+                self.shap_values = shap_values
+            shap_waterfall_plot(
+                explainer, self.conf_training.shap_waterfall_indices, self.class_problem
+            )
+            shap_dependence_plots(
+                shap_values,
+                x_test,
+                self.conf_training.show_dependence_plots_of_top_n_features,
+            )
         self.prediction_mode = True
 
     def fit_eval(
