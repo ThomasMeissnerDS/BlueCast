@@ -173,7 +173,10 @@ def shap_dependence_plots(
                 shap.dependence_plot(col, shap_values[0], df, feature_names=df.columns)
         else:
             try:
-                for class_shap_values in shap_values:
+                for idx, class_shap_values in enumerate(shap_values):
+                    logger(
+                        f"Showing dependence plots f top features for class {idx}..."
+                    )
                     shap.dependence_plot(
                         col, class_shap_values, df, feature_names=df.columns
                     )
