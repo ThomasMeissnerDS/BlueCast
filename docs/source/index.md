@@ -720,10 +720,90 @@ from bluecast.ml_modelling.base_classes import (
     PredictedProbas,  # just for linting checks
 )
 
-
 class CustomModel(BaseClassMlModel):
     def __init__(self):
         self.model = None
+
+    def autotune(
+        self,
+        x_train: pd.DataFrame,
+        x_test: pd.DataFrame,
+        y_train: pd.Series,
+        y_test: pd.Series,
+    ):
+
+        eval_dataset = Pool(x_test, y_test, cat_features=["DMAR", "LD_INDL", "RF_CESAR", "SEX"])
+
+        alpha = 0.05
+        quantile_levels = [alpha, 1 - alpha]
+        quantile_str = str(quantile_levels).replace('[','').replace(']','')
+
+        def objective(trial):
+            # this part is taken from: https://www.kaggle.com/code/syerramilli/catboost-multi-quantile-regression
+            param = {
+                'n_estimators': trial.suggest_int('n_estimators', 50, 2000, log=True),
+                "min_data_in_leaf": trial.suggest_int("min_data_in_leaf", 5, 100),
+                "learning_rate": trial.suggest_float("learning_rate", 1e-3, 0.3, log=True),
+                'depth': trial.suggest_int('depth', 2, 10, log=True),
+                "l2_leaf_reg": trial.suggest_loguniform("l2_leaf_reg", 1e-3, 1e6),
+                'colsample_bylevel': trial.suggest_float("colsample_bylevel", 0.1, 1),
+                'subsample': trial.suggest_float("subsample", 0.3, 1)
+            }
+            model = CatBoostRegressor(
+                loss_function=f'MultiQuantile:alpha={quantile_str}',
+                thread_count= 4,
+                cat_features=["DMAR", "LD_INDL", "RF_CESAR", "SEX"],
+                bootstrap_type =  "Bernoulli",
+                sampling_frequency= 'PerTree',
+                **param
+            )
+
+            # train model
+            model.fit(x_train, y_train, verbose=0)
+
+            # get predictions
+            preds = model.predict(x_test)
+
+            # get perfomance metrics
+            MWIS, coverage = MWIS_metric.score(
+                y_test, preds[:, 0], preds[:, 1], alpha=0.1
+            )
+
+            if coverage < 0.9:
+                raise optuna.exceptions.TrialPruned()
+
+            return MWIS
+
+        sampler = optuna.samplers.TPESampler(
+                multivariate=True, seed=1000
+            )
+        study = optuna.create_study(
+            direction="minimize", sampler=sampler, study_name=f"catboost"
+        )
+        study.optimize(
+            objective,
+            n_trials=500,
+            timeout=60 * 60 * 2,
+            gc_after_trial=True,
+            show_progress_bar=True,
+        )
+        best_parameters = study.best_trial.params
+        self.model = CatBoostRegressor(
+                loss_function=f'MultiQuantile:alpha={quantile_str}',
+                thread_count= 4,
+                cat_features=["DMAR", "LD_INDL", "RF_CESAR", "SEX"],
+                bootstrap_type =  "Bernoulli",
+                sampling_frequency= 'PerTree',
+                **best_parameters
+            ).fit(
+            x_train,
+            y_train,
+            eval_set=eval_dataset,
+            use_best_model=True,
+            early_stopping_rounds=20,
+            plot=True,
+        )
+
 
     def fit(
         self,
@@ -732,36 +812,31 @@ class CustomModel(BaseClassMlModel):
         y_train: pd.Series,
         y_test: pd.Series,
     ) -> None:
-        self.model = LogisticRegression()
-        self.model.fit(x_train, y_train)
-        # if you wih to track experiments using an own ExperimentTracker add it here
-        # or in the fit method itself
+        self.autotune(x_train, x_test, y_train, y_test)
 
     def predict(self, df: pd.DataFrame) -> Tuple[PredictedProbas, PredictedClasses]:
-        predicted_probas = self.model.predict_proba(df)
-        predicted_classes = self.model.predict(df)
-        return predicted_probas, predicted_classes
+        # predict Catboost classifier
+        preds = self.model.predict(df)
 
-custom_model = CustomModel()
+        return preds
 
-# Create an instance of the BlueCast class with the custom model
-bluecast = BlueCast(
-    class_problem="binary",
-    ml_model=custom_model,
 
-# Create some sample data for testing
-x_train = pd.DataFrame(
-    {"feature1": [i for i in range(10)], "feature2": [i for i in range(10)]}
-)
-y_train = pd.Series([0, 1, 0, 1, 0, 1, 0, 1, 0, 1])
-x_test = pd.DataFrame(
-    {"feature1": [i for i in range(10)], "feature2": [i for i in range(10)]}
+train_config = TrainingConfig()
+train_config.global_random_state = i
+train_config.calculate_shap_values = False
+train_config.train_size = 0.8
+train_config.enable_feature_selection = False
+train_config.cat_encoding_via_ml_algorithm = True # use catboosts own cat encoding
 
-x_train["target"] = y_trai
-# Fit the BlueCast model using the custom model
-bluecast.fit(x_train, "target"
-# Predict on the test data using the custom model
-predicted_probas, predicted_classes = bluecast.predict(x_test)
+catboost_model = CustomModel()
+
+automl = BlueCastRegression(  # BlueCastCVRegression is not possible here, because the quantile regression predictions have an incompatible shape
+        class_problem="regression",
+        conf_training=train_config,
+        ml_model=catboost_model,
+        )
+automl.fit(train.copy(), target_col=target) # fit_eval is not possible here, because the predictions have an incompatible shape
+ml_models.append(automl)
 ```
 
 Please note that custom ML models require user defined hyperparameter tuning. Pre-defined
@@ -770,7 +845,7 @@ Also note that the calculation of SHAP values only works with tree based models 
 default. For other model architectures disable SHAP values in the TrainingConfig
 via:
 
-`train_config.calculate_shap_values = True`
+`train_config.calculate_shap_values = False`
 
 Just instantiate a new instance of the TrainingConfig, update the param as above
 and pass the config as an argument to the BlueCast instance during instantiation.
@@ -812,6 +887,80 @@ is skipped whenever Optuna prunes a trial.
 The experiment triggers whenever the `fit` or `fit_eval` methods of a BlueCast
 class instance are called (also within BlueCastCV). This means for custom
 models the tracker will not trigger automatically and has to be added manually.
+
+#### Gain insights across experiments
+
+The inbuilt experiment tracker can be used to capture information across experiments:
+
+* In non-CV instances it contains information about all hyperparameter tuning runs
+* In CV instances it collects the same information across multiple model trainings
+* It can be passed from one instance to another to collect information across several
+runs:
+
+```sh
+# instantiate and train BlueCast
+from bluecast.blueprints.cast import BlueCast
+
+# train model 1
+automl = BlueCast(
+        class_problem="binary",
+    )
+
+automl.fit_eval(df_train, df_eval, y_eval, target_col="target")
+
+# access the experiment tracker
+tracker = automl.experiment_tracker
+
+# pass experiment tracker to nd instance or training run
+automl = BlueCast(
+        class_problem="binary",
+        experiment_tracker=tracker
+    )
+```
+
+We can use the information to derive insights across model trainings:
+
+```sh
+from sklearn.ensemble import RandomForestRegressor
+import shap
+
+cols = [
+    "shuffle_during_training",
+    "global_random_state",
+    "early_stopping_rounds",
+    "autotune_model",
+    "enable_feature_selection",
+    "train_split_stratify",
+    "use_full_data_for_final_model",
+    "eta",
+    "max_depth",
+    "alpha",
+    "lambda",
+    "gamma",
+    "max_leaves",
+    "subsample",
+    "colsample_bytree",
+    "colsample_bylevel"
+]
+
+regr = RandomForestRegressor(max_depth=4, random_state=0)
+
+tracker_df = tracker_df.loc[tracker_df["score_category"] == "oof_score"]
+
+experiment_feats_df, experiment_feats_target = tracker_df.loc[:, cols], tracker_df.loc[:, "eval_scores"]
+
+regr.fit(experiment_feats_df.fillna(0), experiment_feats_target.fillna(99))
+
+explainer = shap.TreeExplainer(regr)
+
+
+shap_values = explainer.shap_values(experiment_feats_df)
+shap.summary_plot(shap_values, experiment_feats_df)
+```
+
+![SHAP experiment tracker](shap_experiment_tracker.png)
+
+Here it seems like random seeds had significant impact.
 
 #### Use Mlflow via custom ExperientTracker API
 
@@ -1010,6 +1159,8 @@ fig.set_size_inches(150, 80)
 plt.show()
 ```
 
+![Xgboost tree](xgboost_tree.png)
+
 ##### BlueCastCV classes
 
 BlueCast have two characteristics to pay attention two:
@@ -1029,6 +1180,11 @@ for model in automl.bluecast_models:
     fig.set_size_inches(150, 80)
     plt.show()
 ```
+
+This way we loop through all stored ml models and see the decision trees for each
+of them. This can reveal significant differences in the trees.
+
+![Xgboost tree](docs/source/xgboost_multi_tree.png)
 
 ## Convenience features
 
@@ -1091,6 +1247,8 @@ feature- and performance-wise.
 * An advanced example covering lots of functionalities ([notebook](https://www.kaggle.com/code/thomasmeiner/ps3e23-automl-eda-outlier-detection/notebook))
 * PS3E23: Predict software defects top 12% finish ([notebook](https://www.kaggle.com/code/thomasmeiner/ps3e23-automl-eda-outlier-detection?scriptVersionId=145650820))
 * PS3E25: Predict hardness of steel via regression ([notebook](https://www.kaggle.com/code/thomasmeiner/ps3e25-bluecast-automl?scriptVersionId=153347618))
+* A comprehensive guide about BlueCast showing many capabilities ([notebook](https://www.kaggle.com/code/thomasmeiner/ps4e3-bluecast-a-comprehensive-overview))
+* BlueCast using a custom Catboost model for quantile regression ([notebook](https://www.kaggle.com/code/thomasmeiner/birth-weight-with-bluecast-catboost))
 
 ## How to contribute
 
