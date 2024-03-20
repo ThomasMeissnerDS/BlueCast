@@ -42,6 +42,7 @@ the full documentation [here](https://bluecast.readthedocs.io/en/latest/).
     * [Custom feature selection](#custom-feature-selection)
     * [Custom ML model](#custom-ml-model)
     * [Using the inbuilt ExperientTracker](#using-the-inbuilt-experienttracker)
+    * [Gain insights across experiments](#gain-insights-across-experiments)
     * [Use Mlflow via custom ExperientTracker API](#use-mlflow-via-custom-experienttracker-api)
     * [Custom data drift checker](#custom-data-drift-checker)
   * [Model explainability](#model-explainability)
@@ -896,6 +897,80 @@ is skipped whenever Optuna prunes a trial.
 The experiment triggers whenever the `fit` or `fit_eval` methods of a BlueCast
 class instance are called (also within BlueCastCV). This means for custom
 models the tracker will not trigger automatically and has to be added manually.
+
+#### Gain insights across experiments
+
+The inbuilt experiment tracker can be used to capture information across experiments:
+
+* In non-CV instances it contains information about all hyperparameter tuning runs
+* In CV instances it collects the same information across multiple model trainings
+* It can be passed from one instance to another to collect information across several
+runs:
+
+```sh
+# instantiate and train BlueCast
+from bluecast.blueprints.cast import BlueCast
+
+# train model 1
+automl = BlueCast(
+        class_problem="binary",
+    )
+
+automl.fit_eval(df_train, df_eval, y_eval, target_col="target")
+
+# access the experiment tracker
+tracker = automl.experiment_tracker
+
+# pass experiment tracker to nd instance or training run
+automl = BlueCast(
+        class_problem="binary",
+        experiment_tracker=tracker
+    )
+```
+
+We can use the information to derive insights across model trainings:
+
+```sh
+from sklearn.ensemble import RandomForestRegressor
+import shap
+
+cols = [
+    "shuffle_during_training",
+    "global_random_state",
+    "early_stopping_rounds",
+    "autotune_model",
+    "enable_feature_selection",
+    "train_split_stratify",
+    "use_full_data_for_final_model",
+    "eta",
+    "max_depth",
+    "alpha",
+    "lambda",
+    "gamma",
+    "max_leaves",
+    "subsample",
+    "colsample_bytree",
+    "colsample_bylevel"
+]
+
+regr = RandomForestRegressor(max_depth=4, random_state=0)
+
+tracker_df = tracker_df.loc[tracker_df["score_category"] == "oof_score"]
+
+experiment_feats_df, experiment_feats_target = tracker_df.loc[:, cols], tracker_df.loc[:, "eval_scores"]
+
+regr.fit(experiment_feats_df.fillna(0), experiment_feats_target.fillna(99))
+
+explainer = shap.TreeExplainer(regr)
+
+
+shap_values = explainer.shap_values(experiment_feats_df)
+shap.summary_plot(shap_values, experiment_feats_df)
+```
+
+![SHAP experiment tracker](docs/source/shap_experiment_tracker.png)
+
+Here it seems like random seeds had significant impact.
 
 #### Use Mlflow via custom ExperientTracker API
 
