@@ -3,7 +3,7 @@ from typing import Tuple
 import numpy as np
 import pandas as pd
 
-from bluecast.conformal_prediction.effectiveness_nonconformity_measures import one_c
+from bluecast.conformal_prediction.effectiveness_nonconformity_measures import avg_c, one_c
 
 
 def create_synthetic_binary_data() -> Tuple[np.ndarray, pd.Series]:
@@ -28,3 +28,8 @@ def create_synthetic_prediction_set() -> np.ndarray:
 def test_one_c():
     synthetic_results_sets = create_synthetic_prediction_set()
     assert one_c(synthetic_results_sets) == 2 / 3
+
+
+def test_avg_c():
+    synthetic_results_sets = create_synthetic_prediction_set()
+    assert avg_c(synthetic_results_sets) == 5 / 3
