@@ -30,9 +30,10 @@ def test_hinge_loss():
     assert hinge_loss(y_true_binary, synthetic_results_binary) == np.asarray(
         [0.7, 0.7, 0.0]
     )
-    assert hinge_loss(y_true_multiclass, synthetic_results_multiclass) == np.asarray(
-        [0.3, 0.7, 1.0]
-    )
+    assert (
+        hinge_loss(y_true_multiclass, synthetic_results_multiclass)
+        == np.asarray([0.3, 0.7, 1.0])
+    ).all()
 
 
 def test_margin_nonconformity_measure():
@@ -41,17 +42,20 @@ def test_margin_nonconformity_measure():
     assert margin_nonconformity_measure(
         y_true_binary, synthetic_results_binary
     ) == np.asarray([-0.4, -0.4, 1.0])
-    assert margin_nonconformity_measure(
-        y_true_multiclass, synthetic_results_multiclass
-    ) == np.asarray([0.4, -0.4, -0.7])
+    assert (
+        margin_nonconformity_measure(y_true_multiclass, synthetic_results_multiclass)
+        == np.asarray([0.4, -0.4, -0.7])
+    ).all()
 
 
 def test_brier_score():
     synthetic_results_binary, y_true_binary = create_synthetic_binary_data()
     synthetic_results_multiclass, y_true_multiclass = create_synthetic_multiclass_data()
-    assert brier_score(y_true_binary, synthetic_results_binary) == np.asarray(
-        [0.09, 0.09, 1.0]
-    )
-    assert brier_score(y_true_multiclass, synthetic_results_multiclass) == np.asarray(
-        [0.09, 0.09, 1.0]
-    )
+    assert (
+        brier_score(y_true_binary, synthetic_results_binary)
+        == np.asarray([0.09, 0.09, 1.0])
+    ).all()
+    assert (
+        brier_score(y_true_multiclass, synthetic_results_multiclass)
+        == np.asarray([0.09, 0.09, 1.0])
+    ).all()
