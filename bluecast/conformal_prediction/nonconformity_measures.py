@@ -14,12 +14,7 @@ def hinge_loss(y_true: pd.Series, y_hat: np.ndarray) -> np.ndarray:
     """
     hinge_losses = []
     if len(y_hat.shape) == 1:  # if a binary classifier only gives proba of target class
-        y_hat = np.asarray(
-            [
-                1 - y_hat,
-                y_hat
-            ]
-        ).T
+        y_hat = np.asarray([1 - y_hat, y_hat]).T
 
     for true_class, preds_arr in zip(y_true, y_hat):
         hinge_losses.append(1 - preds_arr[true_class])
@@ -37,13 +32,8 @@ def margin_nonconformity_measure(y_true: pd.Series, y_hat: np.ndarray) -> np.nda
     :return: Margin nonconformity score loss per row
     """
     mnm_losses = []
-    if len(y_hat.shape) == 1: # if a binary classifier only gives proba of target class
-        y_hat = np.asarray(
-            [
-                1 - y_hat,
-                y_hat
-            ]
-        ).T
+    if len(y_hat.shape) == 1:  # if a binary classifier only gives proba of target class
+        y_hat = np.asarray([1 - y_hat, y_hat]).T
 
     for true_class, preds_arr in zip(y_true, y_hat):
         prob_y_true = preds_arr[true_class]
@@ -51,7 +41,7 @@ def margin_nonconformity_measure(y_true: pd.Series, y_hat: np.ndarray) -> np.nda
         # remove true label proba
         probas_y_false = np.delete(preds_arr, true_class)
         prob_y_most_likely_false = np.max(probas_y_false)
-        mnm_losses.append(prob_y_true-prob_y_most_likely_false)
+        mnm_losses.append(prob_y_true - prob_y_most_likely_false)
     return np.asarray(mnm_losses)
 
 

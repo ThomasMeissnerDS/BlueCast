@@ -1,5 +1,4 @@
 import numpy as np
-import pandas as pd
 
 
 def one_c(y_hat: np.ndarray):
