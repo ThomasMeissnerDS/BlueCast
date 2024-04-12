@@ -57,5 +57,8 @@ def brier_score(y_true: pd.Series, y_hat: np.ndarray) -> np.ndarray:
     """
     brier_losses = []
     for true_class, preds_arr in zip(y_true, y_hat):
-        brier_losses.append((1 - preds_arr[true_class]) ** 2)
+        if isinstance(preds_arr, float):
+            brier_losses.append((1 - preds_arr) ** 2)
+        else:
+            brier_losses.append((1 - preds_arr[true_class]) ** 2)
     return np.asarray(brier_losses)
