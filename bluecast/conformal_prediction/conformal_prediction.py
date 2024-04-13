@@ -1,4 +1,4 @@
-from typing import Any, Callable, List, Union
+from typing import Any, Callable, List
 
 import numpy as np
 import pandas as pd
@@ -22,7 +22,6 @@ class ConformalPredictionWrapper(ConformalPredictionWrapperBaseClass):
         self.model = model
         self.nonconformity_measure_scorer = nonconformity_measure_scorer
         self.nonconformity_scores: List[float] = []
-        self.classes: List[Union[int, float, str]] = []
 
     def calibrate(self, x_calibration, y_calibration):
         """
