@@ -25,7 +25,7 @@ class ConformalPredictionRegressionWrapper(ConformalPredictionWrapperBaseClass):
     ):
         self.model = model
         self.nonconformity_measure_scorer = nonconformity_measure_scorer
-        self.nonconformity_scores: List[float] = []
+        self.nonconformity_scores: np.ndarray = np.empty((0, 0))
         self.quantiles: List[float] = []
 
     def calibrate(self, x_calibration, y_calibration):

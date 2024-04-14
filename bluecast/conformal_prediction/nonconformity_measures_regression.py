@@ -1,8 +1,12 @@
+from typing import Union
+
 import numpy as np
 import pandas as pd
 
 
-def absolute_error(y_true: pd.Series, y_hat: np.ndarray) -> np.ndarray:
+def absolute_error(
+    y_true: Union[pd.Series, np.ndarray], y_hat: np.ndarray
+) -> np.ndarray:
     """
     Calculate the absolute error per row.
 
@@ -11,10 +15,15 @@ def absolute_error(y_true: pd.Series, y_hat: np.ndarray) -> np.ndarray:
     :param y_hat: Predicted values
     :return: Absolute error per row
     """
-    return np.abs(y_hat - y_true.values)
+    if isinstance(y_true, pd.Series):
+        return np.abs(y_hat - y_true.values)
+    else:
+        return np.abs(y_hat - y_true)
 
 
-def normalized_error(y_true: pd.Series, y_hat: np.ndarray, scale: float) -> np.ndarray:
+def normalized_error(
+    y_true: Union[pd.Series, np.ndarray], y_hat: np.ndarray, scale: float
+) -> np.ndarray:
     """
     Calculate the normalized error per row.
 
@@ -27,4 +36,7 @@ def normalized_error(y_true: pd.Series, y_hat: np.ndarray, scale: float) -> np.n
     :param scale: Scale to normalize the error
     :return: Absolute error per row
     """
-    return np.abs(y_hat - y_true.values) / scale
+    if isinstance(y_true, pd.Series):
+        return np.abs(y_hat - y_true.values) / scale
+    else:
+        return np.abs(y_hat - y_true) / scale
