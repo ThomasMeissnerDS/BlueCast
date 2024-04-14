@@ -22,6 +22,10 @@ as possible for the library. Despite being lightweight in its core BlueCast
 offers high customization options for advanced users. Find
 the full documentation [here](https://bluecast.readthedocs.io/en/latest/).
 
+Here you can see our test coverage in more detail:
+
+[![Codecov sunburst](https://codecov.io/gh/ThomasMeissnerDS/BlueCast/graphs/sunburst.svg?token=XRIS04O097)](https://codecov.io/gh/ThomasMeissnerDS/BlueCast/graphs/sunburst.svg?token=XRIS04O097)
+
 <!-- toc -->
 
 * [Installation](#installation)
@@ -49,6 +53,7 @@ the full documentation [here](https://bluecast.readthedocs.io/en/latest/).
     * [Hyperparameter tuning](#hyperparameter-tuning)
     * [Model performance](#model-performance)
     * [SHAP values](#shap-values)
+    * [Conformal prediction](#conformal-prediction)
   * [Plotting decision trees](#plotting-decision-trees)
     * [Accessing the trained models](#accessing-the-trained-models)
       * [BlueCast classes](#bluecast-classes)
@@ -1142,6 +1147,15 @@ shap_dependence_plots(
   conf_training.show_dependence_plots_of_top_n_features,
 )
 ```
+
+#### Conformal prediction
+
+Over the past years conformal prediction gained increasing attention. It allows to
+add uncertainty quantification around every model at the cost of just a bit of
+additional computation.
+In BlueCast we provide a model and architecture agnostic conformal prediction
+wrapper that allows the usage of any class that has a `predict` or `predict_proba`
+method.
 
 ### Plotting decision trees
 
