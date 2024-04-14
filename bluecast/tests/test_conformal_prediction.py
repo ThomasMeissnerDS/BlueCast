@@ -111,10 +111,14 @@ def test_predict_interval():
 def test_predict_sets():
     # Generate some random data
     X, y = make_classification(
-        n_samples=100, n_features=5, random_state=42, n_classes=2
+        n_samples=400, n_features=5, random_state=42, n_classes=2
     )
     X_train, X_calibrate, y_train, y_calibrate = train_test_split(
         X, y, test_size=0.2, random_state=42
+    )
+
+    X_train, X_test, y_train, y_test = train_test_split(
+        X_train, y_train, test_size=0.2, random_state=42
     )
 
     # Train a logistic regression model
@@ -128,10 +132,11 @@ def test_predict_sets():
     wrapper.calibrate(X_calibrate, y_calibrate)
 
     # Make predictions
-    y_pred_sets = wrapper.predict_sets(X_calibrate)
+    alpha = 0.05
+    y_pred_sets = wrapper.predict_sets(X_test, alpha=alpha)
 
     # Check that the predictions have the correct shape
-    assert len(y_pred_sets) == len(X_calibrate)
+    assert len(y_pred_sets) == len(X_test)
 
     # Check that each prediction set is a set
     for prediction_set in y_pred_sets:
@@ -144,3 +149,20 @@ def test_predict_sets():
 
             # Check that each element in the tuple is an integer
             assert isinstance(element, int)
+
+    # Count correct predictions
+    correct_predictions = sum(
+        1 for pred_set, true_value in zip(y_pred_sets, y_test) if true_value in pred_set
+    )
+
+    # Calculate percentage
+    assert correct_predictions / len(y_test) >= 1 - alpha
+
+    # Make predictions
+    alpha = 0.01
+    y_pred_sets = wrapper.predict_sets(X_test, alpha=alpha)
+    correct_predictions = sum(
+        1 for pred_set, true_value in zip(y_pred_sets, y_test) if true_value in pred_set
+    )
+
+    assert correct_predictions / len(y_test) >= 1 - alpha
