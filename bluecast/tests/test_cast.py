@@ -113,6 +113,10 @@ def test_blueprint_xgboost(
     assert len(y_probs) == len(df_val.index)
     assert len(y_classes) == len(df_val.index)
 
+    y_probs = automl.predict_proba(df_val.drop("target", axis=1))
+    print("Predicting class scores successful.")
+    assert len(y_probs) == len(df_val.index)
+
     custom_config = TrainingConfig()
     custom_config.precise_cv_tuning = True
     custom_config.hypertuning_cv_folds = 2

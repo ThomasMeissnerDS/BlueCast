@@ -551,3 +551,26 @@ class BlueCast:
                 )
 
         return y_probs, y_classes
+
+    def predict_proba(self, df: pd.DataFrame) -> np.ndarray:
+        """Predict class scores on unseen data.
+
+        Return the predicted probabilities and the predicted classes:
+        y_probs = predict_proba(df)
+        """
+        if not self.ml_model:
+            raise Exception("Ml model could not be found")
+
+        if not self.feat_type_detector:
+            raise Exception("Feature type converter could not be found.")
+
+        if not self.conf_training:
+            raise ValueError("conf_training is None")
+
+        check_gpu_support()
+        df = self.transform_new_data(df)
+
+        logger(f"{datetime.utcnow()}: Predicting...")
+        y_probs, _y_classes = self.ml_model.predict(df)
+
+        return y_probs

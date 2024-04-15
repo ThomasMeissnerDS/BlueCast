@@ -63,6 +63,18 @@ def test_blueprint_cv_xgboost(synthetic_train_test_data):
     print("Predicting successful.")
     assert len(y_probs) == len(df_val.index)
     assert len(y_classes) == len(df_val.index)
+
+    y_probs = automl_cv.predict_proba(df_val.drop("target", axis=1))
+    print("Predicting  class scores successful.")
+    assert len(y_probs) == len(df_val.index)
+
+    y_probs = automl_cv.predict_proba(
+        df_val.drop("target", axis=1), return_sub_models_preds=True
+    )
+    print("Predicting class scores for all classes successful.")
+    assert len(y_probs) == len(df_val.index)
+    assert y_probs.shape[1] > 1  # even in binary cases this should be 2
+
     y_probs, y_classes = automl_cv.predict(
         df_val.drop("target", axis=1), return_sub_models_preds=True
     )

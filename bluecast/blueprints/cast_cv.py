@@ -248,3 +248,34 @@ class BlueCastCV:
                     df.loc[:, prob_cols].mean(axis=1),
                     df.loc[:, prob_cols].mean(axis=1) > 0.5,
                 )
+
+    def predict_proba(
+        self, df: pd.DataFrame, return_sub_models_preds: bool = False
+    ) -> Union[pd.DataFrame, pd.Series]:
+        """Predict on unseen data using multiple trained BlueCast instances"""
+        or_cols = df.columns
+        prob_cols: list[str] = []
+        for fn, pipeline in enumerate(self.bluecast_models):
+            y_probs, _y_classes = pipeline.predict(df.loc[:, or_cols])
+            if self.class_problem == "multiclass":
+                proba_cols = [
+                    f"class_{col}_proba_model_{fn}" for col in range(y_probs.shape[1])
+                ]
+                df[proba_cols] = y_probs
+                for col in proba_cols:
+                    prob_cols.append(col)
+
+            else:
+                df[f"proba_{fn}"] = y_probs
+                prob_cols.append(f"proba_{fn}")
+
+        if self.class_problem == "multiclass":
+            if return_sub_models_preds:
+                return df.loc[:, prob_cols]
+            else:
+                return df.loc[:, prob_cols].mean(axis=1)
+        else:
+            if return_sub_models_preds:
+                return df.loc[:, prob_cols]
+            else:
+                return df.loc[:, prob_cols].mean(axis=1)

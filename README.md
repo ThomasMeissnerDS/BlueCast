@@ -106,6 +106,9 @@ automl = BlueCast(
 
 automl.fit(df_train, target_col="target")
 y_probs, y_classes = automl.predict(df_val)
+
+# from version 0.95 also predict_proba is directly available (also for BlueCastCV)
+y_probs = automl.predict_proba(df_val)
 ```
 
 BlueCast has simple utilities to save and load your pipeline:
