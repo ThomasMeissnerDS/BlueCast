@@ -50,6 +50,7 @@ jobs:
         uses: codecov/codecov-action@v4.2.0
         with:
           # token: ${{ secrets.CODECOV_TOKEN }}
+          use_oidc: true
           directory: ./coverage/reports/
           env_vars: OS,PYTHON
           fail_ci_if_error: true
