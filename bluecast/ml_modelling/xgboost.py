@@ -858,3 +858,35 @@ class XgboostModel(BaseClassMlModel):
             predicted_classes = np.asarray([np.argmax(line) for line in partial_probs])
         logger("Finished predicting")
         return predicted_probs, predicted_classes
+
+    def predict_proba(self, df: pd.DataFrame) -> np.ndarray:
+        """Predict class scores on unseen data."""
+        logger(
+            f"{datetime.utcnow()}: Start predicting on new data using Xgboost model."
+        )
+        if not self.conf_xgboost or not self.conf_training:
+            raise ValueError("conf_params_xgboost or conf_training is None")
+
+        if self.custom_in_fold_preprocessor:
+            df, _ = self.custom_in_fold_preprocessor.transform(
+                df, None, predicton_mode=True
+            )
+
+        d_test = xgb.DMatrix(
+            df,
+            enable_categorical=self.conf_training.cat_encoding_via_ml_algorithm,
+        )
+
+        if not self.model:
+            raise Exception("No trained model has been found.")
+
+        if not self.conf_params_xgboost:
+            raise Exception("No model configuration file has been found.")
+
+        partial_probs = self.model.predict(d_test)
+        if self.class_problem == "binary":
+            predicted_probs = np.asarray([line[1] for line in partial_probs])
+        else:
+            predicted_probs = partial_probs
+        logger("Finished predicting")
+        return predicted_probs

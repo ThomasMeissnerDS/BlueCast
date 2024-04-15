@@ -23,7 +23,7 @@ class ConformalPredictionWrapper(ConformalPredictionWrapperBaseClass):
         self.nonconformity_measure_scorer = nonconformity_measure_scorer
         self.nonconformity_scores: List[float] = []
 
-    def calibrate(self, x_calibration, y_calibration):
+    def calibrate(self, x_calibration: pd.DataFrame, y_calibration: pd.Series):
         """
         Calibrate a model instance given a calibration set.
 
@@ -72,7 +72,7 @@ class ConformalPredictionWrapper(ConformalPredictionWrapperBaseClass):
 
         return np.asarray(p_values)
 
-    def predict_sets(self, x: pd.DataFrame, alpha: float = 0.05):
+    def predict_sets(self, x: pd.DataFrame, alpha: float = 0.05) -> List[set[int]]:
         credible_intervals = self.predict_interval(x)
         prediction_sets = []
         for row in credible_intervals:

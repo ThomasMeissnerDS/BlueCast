@@ -19,6 +19,9 @@ from bluecast.config.training_config import (
     XgboostFinalParamConfig,
     XgboostTuneParamsConfig,
 )
+from bluecast.conformal_prediction.conformal_prediction import (
+    ConformalPredictionWrapper,
+)
 from bluecast.evaluation.eval_metrics import eval_classifier
 from bluecast.evaluation.shap_values import (
     shap_dependence_plots,
@@ -115,6 +118,7 @@ class BlueCast:
         self.custom_feature_selector = custom_feature_selector
         self.shap_values: Optional[np.ndarray] = None
         self.eval_metrics: Optional[Dict[str, Any]] = None
+        self.conformal_prediction_wrapper: Optional[ConformalPredictionWrapper] = None
 
         if experiment_tracker:
             self.experiment_tracker = experiment_tracker
@@ -574,3 +578,37 @@ class BlueCast:
         y_probs, _y_classes = self.ml_model.predict(df)
 
         return y_probs
+
+    def calibrate(
+        self, x_calibration: pd.DataFrame, y_calibration: pd.Series, **kwargs
+    ) -> None:
+        check_gpu_support()
+        x_calibration = self.transform_new_data(x_calibration)
+        self.conformal_prediction_wrapper = ConformalPredictionWrapper(
+            self.ml_model, **kwargs
+        )
+        self.conformal_prediction_wrapper.calibrate(x_calibration, y_calibration)
+
+    def predict_interval(self, df: pd.DataFrame) -> np.ndarray:
+        if self.conformal_prediction_wrapper:
+            check_gpu_support()
+            df = self.transform_new_data(df)
+            pred_interval = self.conformal_prediction_wrapper.predict_interval(df)
+            return pred_interval
+        else:
+            raise ValueError(
+                """This instance has not been calibrated yet. Make use of calibrate to fit the
+            ConformalPredictionWrapper."""
+            )
+
+    def predict_sets(self, df: pd.DataFrame, alpha: float = 0.05) -> List[set[int]]:
+        if self.conformal_prediction_wrapper:
+            check_gpu_support()
+            df = self.transform_new_data(df)
+            pred_sets = self.conformal_prediction_wrapper.predict_sets(df, alpha)
+            return pred_sets
+        else:
+            raise ValueError(
+                """This instance has not been calibrated yet. Make use of calibrate to fit the
+            ConformalPredictionWrapper."""
+            )
