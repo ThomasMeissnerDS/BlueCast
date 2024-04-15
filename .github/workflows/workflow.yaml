@@ -4,11 +4,6 @@ on:
     branches:
       - '**'
 
-permissions:
-  contents: read
-  pages: write
-  id-token: write
-
 jobs:
   run:
     runs-on: ${{ matrix.os }}
@@ -52,10 +47,9 @@ jobs:
           python -m poetry lock
           python -m poetry show --tree
       - name: Upload coverage to Codecov
-        uses: codecov/codecov-action@v4.2.0
+        uses: codecov/codecov-action@v4.6.0
         with:
           # token: ${{ secrets.CODECOV_TOKEN }}
-          use_oidc: true
           directory: ./coverage/reports/
           env_vars: OS,PYTHON
           fail_ci_if_error: true
