@@ -26,10 +26,17 @@ def synthetic_train_test_data() -> Tuple[pd.DataFrame, pd.DataFrame]:
     return df_train, df_val
 
 
-def test_blueprint_xgboost(synthetic_train_test_data):
+@pytest.fixture
+def synthetic_calibration_data() -> pd.DataFrame:
+    df_calibration = create_synthetic_dataframe_regression(2000, random_state=2000)
+    return df_calibration
+
+
+def test_blueprint_xgboost(synthetic_train_test_data, synthetic_calibration_data):
     """Test that tests the BlueCast class"""
     df_train = synthetic_train_test_data[0]
     df_val = synthetic_train_test_data[1]
+    df_calibration = synthetic_calibration_data
     xgboost_param_config = XgboostTuneParamsConfig()
     xgboost_param_config.steps_max = 100
     xgboost_param_config.max_depth_max = 3
@@ -77,6 +84,13 @@ def test_blueprint_xgboost(synthetic_train_test_data):
     y_preds = automl.predict(df_val.drop("target", axis=1))
     print("Predicting successful.")
     assert len(y_preds) == len(df_val.index)
+
+    # test conformal prediction
+    automl.calibrate(df_calibration.drop("target", axis=1), df_calibration["target"])
+    pred_intervals = automl.predict_interval(
+        df_val.drop("target", axis=1), alphas=[0.01, 0.05]
+    )
+    assert isinstance(pred_intervals, np.ndarray)
 
 
 class CustomModel(BaseClassMlRegressionModel):

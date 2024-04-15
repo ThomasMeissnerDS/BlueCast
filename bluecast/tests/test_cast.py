@@ -31,6 +31,12 @@ def synthetic_train_test_data() -> Tuple[pd.DataFrame, pd.DataFrame]:
 
 
 @pytest.fixture
+def synthetic_calibration_data() -> pd.DataFrame:
+    df_eval = create_synthetic_dataframe(2000, random_state=2000)
+    return df_eval
+
+
+@pytest.fixture
 def synthetic_multiclass_train_test_data() -> Tuple[pd.DataFrame, pd.DataFrame]:
     df_train = create_synthetic_multiclass_dataframe(2000, random_state=20)
     df_val = create_synthetic_multiclass_dataframe(2000, random_state=200)
@@ -38,11 +44,14 @@ def synthetic_multiclass_train_test_data() -> Tuple[pd.DataFrame, pd.DataFrame]:
 
 
 def test_blueprint_xgboost(
-    synthetic_train_test_data, synthetic_multiclass_train_test_data
+    synthetic_train_test_data,
+    synthetic_multiclass_train_test_data,
+    synthetic_calibration_data,
 ):
     """Test that tests the BlueCast class"""
     df_train = synthetic_train_test_data[0]
     df_val = synthetic_train_test_data[1]
+    df_calibration = synthetic_calibration_data
     xgboost_param_config = XgboostTuneParamsConfig()
     xgboost_param_config.steps_max = 100
     xgboost_param_config.max_depth_max = 3
@@ -112,6 +121,13 @@ def test_blueprint_xgboost(
     print("Predicting successful.")
     assert len(y_probs) == len(df_val.index)
     assert len(y_classes) == len(df_val.index)
+
+    # test conformal prediction
+    automl.calibrate(df_calibration.drop("target", axis=1), df_calibration["target"])
+    pred_intervals = automl.predict_interval(df_val.drop("target", axis=1))
+    pred_sets = automl.predict_sets(df_val.drop("target", axis=1))
+    assert isinstance(pred_intervals, np.ndarray)
+    assert isinstance(pred_sets, list)
 
     y_probs = automl.predict_proba(df_val.drop("target", axis=1))
     print("Predicting class scores successful.")

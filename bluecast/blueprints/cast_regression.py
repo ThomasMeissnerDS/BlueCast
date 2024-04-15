@@ -18,6 +18,9 @@ from bluecast.config.training_config import TrainingConfig, XgboostFinalParamCon
 from bluecast.config.training_config import (
     XgboostTuneParamsRegressionConfig as XgboostTuneParamsConfig,
 )
+from bluecast.conformal_prediction.conformal_prediction_regression import (
+    ConformalPredictionRegressionWrapper,
+)
 from bluecast.evaluation.eval_metrics import eval_regressor
 from bluecast.evaluation.shap_values import (
     shap_dependence_plots,
@@ -114,6 +117,9 @@ class BlueCastRegression:
         self.custom_feature_selector = custom_feature_selector
         self.shap_values: Optional[np.ndarray] = None
         self.eval_metrics: Optional[Dict[str, Any]] = None
+        self.conformal_prediction_wrapper: Optional[
+            ConformalPredictionRegressionWrapper
+        ] = None
 
         if experiment_tracker:
             self.experiment_tracker = experiment_tracker
@@ -495,3 +501,27 @@ class BlueCastRegression:
         y_preds = self.ml_model.predict(df)
 
         return y_preds
+
+    def calibrate(
+        self, x_calibration: pd.DataFrame, y_calibration: pd.Series, **kwargs
+    ) -> None:
+        check_gpu_support()
+        x_calibration = self.transform_new_data(x_calibration)
+        self.conformal_prediction_wrapper = ConformalPredictionRegressionWrapper(
+            self.ml_model, **kwargs
+        )
+        self.conformal_prediction_wrapper.calibrate(x_calibration, y_calibration)
+
+    def predict_interval(self, df: pd.DataFrame, alphas: List[float]) -> np.ndarray:
+        if self.conformal_prediction_wrapper:
+            check_gpu_support()
+            df = self.transform_new_data(df)
+            pred_interval = self.conformal_prediction_wrapper.predict_interval(
+                df, alphas=alphas
+            )
+            return pred_interval
+        else:
+            raise ValueError(
+                """This instance has not been calibrated yet. Make use of calibrate to fit the
+            ConformalPredictionWrapper."""
+            )
