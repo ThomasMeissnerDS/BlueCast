@@ -58,7 +58,7 @@ jobs:
           flags: pytest
           name: codecov-umbrella
           verbose: true
-        #env:
-        #  CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
+        env:
+          CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
       - name: Run pre-commit
         uses: pre-commit/action@v2.0.3
