@@ -47,7 +47,7 @@ jobs:
           python -m poetry lock
           python -m poetry show --tree
       - name: Upload coverage to Codecov
-        uses: codecov/codecov-action@v4.6.0
+        uses: codecov/codecov-action@v3.8.3
         with:
           # token: ${{ secrets.CODECOV_TOKEN }}
           directory: ./coverage/reports/
