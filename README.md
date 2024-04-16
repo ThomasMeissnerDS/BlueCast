@@ -53,7 +53,7 @@ Here you can see our test coverage in more detail:
     * [Hyperparameter tuning](#hyperparameter-tuning)
     * [Model performance](#model-performance)
     * [SHAP values](#shap-values)
-    * [Conformal prediction](#conformal-prediction)
+  * [Conformal prediction](#conformal-prediction)
   * [Plotting decision trees](#plotting-decision-trees)
     * [Accessing the trained models](#accessing-the-trained-models)
       * [BlueCast classes](#bluecast-classes)
@@ -1151,7 +1151,7 @@ shap_dependence_plots(
 )
 ```
 
-#### Conformal prediction
+### Conformal prediction
 
 Over the past years conformal prediction gained increasing attention. It allows to
 add uncertainty quantification around every model at the cost of just a bit of
@@ -1159,6 +1159,37 @@ additional computation.
 In BlueCast we provide a model and architecture agnostic conformal prediction
 wrapper that allows the usage of any class that has a `predict` or `predict_proba`
 method.
+For `BlueCast` and `BlueCastRegression` conformal prediction can be used after
+the instance has been trained.
+
+```sh
+from bluecast.blueprints.cast import BlueCast
+from sklearn.model_selection import train_test_split
+
+
+# we leave it up to the user to split off a calibration set
+X_train, X_calibrate, y_train, y_calibrate = train_test_split(
+     X, y, test_size=0.33, random_state=42)
+
+automl = BlueCast(
+        class_problem="binary",
+    )
+
+X_train["target"] = y
+automl.fit(X_train, target_col="target")
+
+# make use of calibration
+automl.calibrate(X_calibrate, y_calibrate)
+
+# point prediction as usual
+y_probs, y_classes = automl.predict(df_val)
+
+# prediction sets
+pred_sets = automl.predict_sets(df_val, alpha=0.05)
+
+# prediction intervals
+pred_intervals = automl.pred_interval(df_val)
+```
 
 ### Plotting decision trees
 
