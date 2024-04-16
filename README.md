@@ -1191,6 +1191,9 @@ pred_sets = automl.predict_sets(df_val, alpha=0.05)
 pred_intervals = automl.pred_interval(df_val)
 ```
 
+The same is possible for `BlueCastRegression` instances. However
+`BlueCastRegression` offers the `predict_interval` function only.
+
 ### Plotting decision trees
 
 How to plot decision trees will depend on the exact implementation. As BlueCast

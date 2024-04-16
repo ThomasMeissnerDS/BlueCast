@@ -115,16 +115,35 @@ def test_bluecast_cv_fit_eval_multiclass_without_custom_model():
     y_test = pd.Series([0, 1, 0, 1, 0, 2, 0, 2, 0, 2, 0, 1, 0, 1, 0, 2, 0, 2, 0, 2])
     y_test = y_test.replace({0: "zero", 1: "one", 2: "two"})
 
+    x_calibration = pd.DataFrame(
+        {
+            "feature1": [i for i in range(20)],
+            "feature2": [i for i in range(20)],
+            "feature3": [i for i in range(20)],
+            "feature4": [i for i in range(20)],
+            "feature5": [i for i in range(20)],
+            "feature6": [i + 4 for i in range(20)],
+        }
+    )
+    y_calibration = pd.Series(
+        [1, 1, 0, 1, 0, 2, 0, 2, 0, 2, 0, 2, 0, 1, 0, 2, 0, 2, 0, 2]
+    )
+    y_calibration = y_calibration.replace({0: "zero", 1: "one", 2: "two"})
+
     x_train["target"] = y_train
 
-    train_all = pd.concat([x_train, x_test], axis=0)
-    train_all["target"] = pd.concat([y_train, y_test], axis=0)
-
     # Fit the BlueCast model using the custom model
-    bluecast.fit_eval(train_all, "target")
+    bluecast.fit_eval(x_train, "target")
 
     # Predict on the test data using the custom model
     predicted_probas, predicted_classes = bluecast.predict(x_test)
 
     # Assert the expected results
     assert isinstance(predicted_probas, pd.Series)
+
+    # test conformal prediction
+    bluecast.calibrate(x_calibration.drop("target", axis=1), y_calibration)
+    pred_intervals = bluecast.predict_interval(x_test)
+    pred_sets = bluecast.predict_sets(x_test)
+    assert isinstance(pred_intervals, np.ndarray)
+    assert isinstance(pred_sets, list)

@@ -24,10 +24,17 @@ def synthetic_train_test_data() -> Tuple[pd.DataFrame, pd.DataFrame]:
     return df_train, df_val
 
 
-def test_blueprint_cv_xgboost(synthetic_train_test_data):
+@pytest.fixture
+def synthetic_calibration_data() -> pd.DataFrame:
+    df_calibration = create_synthetic_dataframe(2000, random_state=2000)
+    return df_calibration
+
+
+def test_blueprint_cv_xgboost(synthetic_train_test_data, synthetic_calibration_data):
     """Test that tests the BlueCast cv class"""
     df_train = synthetic_train_test_data[0]
     df_val = synthetic_train_test_data[1]
+    df_calibration = synthetic_calibration_data
     xgboost_param_config = XgboostTuneParamsConfig()
     xgboost_param_config.steps_max = 100
     xgboost_param_config.max_depth_max = 3
@@ -83,6 +90,13 @@ def test_blueprint_cv_xgboost(synthetic_train_test_data):
 
     # Assert that the bluecast_models attribute is updated
     assert len(automl_cv.bluecast_models) == nb_models
+
+    # test conformal prediction
+    automl_cv.calibrate(df_calibration.drop("target", axis=1), df_calibration["target"])
+    pred_intervals = automl_cv.predict_interval(df_val.drop("target", axis=1))
+    pred_sets = automl_cv.predict_sets(df_val.drop("target", axis=1))
+    assert isinstance(pred_intervals, np.ndarray)
+    assert isinstance(pred_sets, list)
 
     train_config = TrainingConfig()
     train_config.hyperparameter_tuning_rounds = 3

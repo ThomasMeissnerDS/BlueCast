@@ -10,6 +10,9 @@ from bluecast.config.training_config import (
     XgboostFinalParamConfig,
     XgboostTuneParamsConfig,
 )
+from bluecast.conformal_prediction.conformal_prediction import (
+    ConformalPredictionWrapper,
+)
 from bluecast.experimentation.tracking import ExperimentTracker
 from bluecast.general_utils.general_utils import logger
 from bluecast.ml_modelling.xgboost import XgboostModel
@@ -51,6 +54,7 @@ class BlueCastCV:
         self.bluecast_models: List[BlueCast] = []
         self.stratifier = stratifier
         self.ml_model = ml_model
+        self.conformal_prediction_wrapper: Optional[ConformalPredictionWrapper] = None
 
         if experiment_tracker:
             self.experiment_tracker = experiment_tracker
@@ -279,3 +283,31 @@ class BlueCastCV:
                 return df.loc[:, prob_cols]
             else:
                 return df.loc[:, prob_cols].mean(axis=1)
+
+    def calibrate(
+        self, x_calibration: pd.DataFrame, y_calibration: pd.Series, **kwargs
+    ) -> None:
+        self.conformal_prediction_wrapper = ConformalPredictionWrapper(
+            self.ml_model, **kwargs
+        )
+        self.conformal_prediction_wrapper.calibrate(x_calibration, y_calibration)
+
+    def predict_interval(self, df: pd.DataFrame) -> np.ndarray:
+        if self.conformal_prediction_wrapper:
+            pred_interval = self.conformal_prediction_wrapper.predict_interval(df)
+            return pred_interval
+        else:
+            raise ValueError(
+                """This instance has not been calibrated yet. Make use of calibrate to fit the
+            ConformalPredictionWrapper."""
+            )
+
+    def predict_sets(self, df: pd.DataFrame, alpha: float = 0.05) -> List[set[int]]:
+        if self.conformal_prediction_wrapper:
+            pred_sets = self.conformal_prediction_wrapper.predict_sets(df, alpha)
+            return pred_sets
+        else:
+            raise ValueError(
+                """This instance has not been calibrated yet. Make use of calibrate to fit the
+            ConformalPredictionWrapper."""
+            )

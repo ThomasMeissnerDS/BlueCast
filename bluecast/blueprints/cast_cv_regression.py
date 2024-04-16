@@ -9,6 +9,9 @@ from bluecast.config.training_config import TrainingConfig, XgboostFinalParamCon
 from bluecast.config.training_config import (
     XgboostTuneParamsRegressionConfig as XgboostTuneParamsConfig,
 )
+from bluecast.conformal_prediction.conformal_prediction_regression import (
+    ConformalPredictionRegressionWrapper,
+)
 from bluecast.experimentation.tracking import ExperimentTracker
 from bluecast.general_utils.general_utils import logger
 from bluecast.ml_modelling.xgboost import XgboostModel
@@ -50,6 +53,9 @@ class BlueCastCVRegression:
         self.bluecast_models: List[BlueCastRegression] = []
         self.stratifier = stratifier
         self.ml_model = ml_model
+        self.conformal_prediction_wrapper: Optional[
+            ConformalPredictionRegressionWrapper
+        ] = None
 
         if experiment_tracker:
             self.experiment_tracker = experiment_tracker
@@ -210,3 +216,23 @@ class BlueCastCVRegression:
             return df.loc[:, pred_cols]
         else:
             return df.loc[:, pred_cols].mean(axis=1)
+
+    def calibrate(
+        self, x_calibration: pd.DataFrame, y_calibration: pd.Series, **kwargs
+    ) -> None:
+        self.conformal_prediction_wrapper = ConformalPredictionRegressionWrapper(
+            self.ml_model, **kwargs
+        )
+        self.conformal_prediction_wrapper.calibrate(x_calibration, y_calibration)
+
+    def predict_interval(self, df: pd.DataFrame, alphas: List[float]) -> np.ndarray:
+        if self.conformal_prediction_wrapper:
+            pred_interval = self.conformal_prediction_wrapper.predict_interval(
+                df, alphas=alphas
+            )
+            return pred_interval
+        else:
+            raise ValueError(
+                """This instance has not been calibrated yet. Make use of calibrate to fit the
+            ConformalPredictionWrapper."""
+            )
