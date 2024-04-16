@@ -221,7 +221,7 @@ class BlueCastCVRegression:
         self, x_calibration: pd.DataFrame, y_calibration: pd.Series, **kwargs
     ) -> None:
         self.conformal_prediction_wrapper = ConformalPredictionRegressionWrapper(
-            self.ml_model, **kwargs
+            self, **kwargs
         )
         self.conformal_prediction_wrapper.calibrate(x_calibration, y_calibration)
 

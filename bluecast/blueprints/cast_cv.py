@@ -287,9 +287,7 @@ class BlueCastCV:
     def calibrate(
         self, x_calibration: pd.DataFrame, y_calibration: pd.Series, **kwargs
     ) -> None:
-        self.conformal_prediction_wrapper = ConformalPredictionWrapper(
-            self.ml_model, **kwargs
-        )
+        self.conformal_prediction_wrapper = ConformalPredictionWrapper(self, **kwargs)
         self.conformal_prediction_wrapper.calibrate(x_calibration, y_calibration)
 
     def predict_interval(self, df: pd.DataFrame) -> np.ndarray:
