@@ -227,6 +227,7 @@ class BlueCastCV:
 
         if self.class_problem == "multiclass":
             if return_sub_models_preds:
+                # TODO: Take mean by class instead of overall
                 return df.loc[:, prob_cols], df.loc[:, class_cols]
             else:
                 classes = df.loc[:, class_cols].mode(axis=1)[0].astype(int)
@@ -241,6 +242,7 @@ class BlueCastCV:
                         ].target_label_encoder.label_encoder_reverse_transform(classes)
 
                 return (
+                    # TODO: Take mean by class instead of overall
                     df.loc[:, prob_cols].mean(axis=1),
                     classes,
                 )
@@ -277,7 +279,20 @@ class BlueCastCV:
             if return_sub_models_preds:
                 return df.loc[:, prob_cols]
             else:
-                return df.loc[:, prob_cols].mean(axis=1)
+                print(prob_cols)
+                # TODO: Take mean by class instead of overall
+                mean_class_proba_cols = []
+                for col_idx in range(y_probs.shape[1]):
+                    class_proba_cols = [
+                        f"class_{col_idx}_proba_model_{fn}"
+                        for fn, pipeline in enumerate(self.bluecast_models)
+                    ]
+                    df[f"mean_proba_class_{col_idx}"] = df.loc[
+                        :, class_proba_cols
+                    ].mean(axis=1)
+                    mean_class_proba_cols.append(f"mean_proba_class_{col_idx}")
+                print(mean_class_proba_cols)
+                return df.loc[:, mean_class_proba_cols]
         else:
             if return_sub_models_preds:
                 return df.loc[:, prob_cols]
