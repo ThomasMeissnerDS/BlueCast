@@ -86,12 +86,12 @@ def brier_score(
     :param y_hat: Predicted probabilities
     :return: Brier score loss per row
     """
+    if len(y_hat.shape) == 1:  # if a binary classifier only gives proba of target class
+        y_hat = np.asarray([1 - y_hat, y_hat]).T
+
     y_true, y_hat = convert_to_numpy(y_true, y_hat)
 
     brier_losses = []
     for true_class, preds_arr in zip(y_true, y_hat):
-        if isinstance(preds_arr, float):
-            brier_losses.append((1 - preds_arr) ** 2)
-        else:
-            brier_losses.append((1 - preds_arr[true_class]) ** 2)
+        brier_losses.append((1 - preds_arr[true_class]) ** 2)
     return np.asarray(brier_losses)
