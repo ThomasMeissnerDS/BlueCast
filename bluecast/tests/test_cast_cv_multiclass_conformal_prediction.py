@@ -91,6 +91,7 @@ def test_bluecast_cv_fit_eval_multiclass_without_custom_model():
     print(f"MULTICLASS pred_intervals: {pred_intervals}")
     print(f"MULTICLASS pred_sets: {pred_sets}")
 
+    # test passing brier score
     bluecast.calibrate(
         x_calibration, y_calibration, **{"nonconformity_measure_scorer": brier_score}
     )
@@ -101,6 +102,7 @@ def test_bluecast_cv_fit_eval_multiclass_without_custom_model():
     print(f"MULTICLASS pred_intervals: {pred_intervals}")
     print(f"MULTICLASS pred_sets: {pred_sets}")
 
+    # test passing MNM score
     bluecast.calibrate(
         x_calibration,
         y_calibration,
