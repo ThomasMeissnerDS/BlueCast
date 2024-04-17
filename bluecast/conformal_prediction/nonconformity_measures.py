@@ -16,7 +16,7 @@ def hinge_loss(
     :param y_hat: Predicted probabilities
     :return: Hinge loss per row
     """
-    print(y_true)
+    print("Y_HAT probas")
     print(y_hat)
     hinge_losses = []
     if len(y_hat.shape) == 1:  # if a binary classifier only gives proba of target class
@@ -29,7 +29,12 @@ def hinge_loss(
     else:
         pass
 
+    print("Y_HAT probas AFTER cnv")
+    print(y_hat)
+
     for true_class, preds_arr in zip(y_true, y_hat):
+        print("preds_arr")
+        print(preds_arr)
         hinge_losses.append(1 - preds_arr[true_class])
     return np.asarray(hinge_losses)
 
