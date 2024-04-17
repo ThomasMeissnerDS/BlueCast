@@ -311,6 +311,15 @@ class BlueCastCV:
     def calibrate(
         self, x_calibration: pd.DataFrame, y_calibration: pd.Series, **kwargs
     ) -> None:
+        if self.bluecast_models[0].target_label_encoder:
+            x_calibration[self.bluecast_models[0].target_column] = y_calibration
+            x_calibration = self.bluecast_models[
+                0
+            ].target_label_encoder.transform_target_labels(
+                x_calibration, self.bluecast_models[0].target_column
+            )
+            y_calibration = x_calibration.pop(self.bluecast_models[0].target_column)
+
         self.conformal_prediction_wrapper = ConformalPredictionWrapper(self, **kwargs)
         self.conformal_prediction_wrapper.calibrate(x_calibration, y_calibration)
 
@@ -327,6 +336,7 @@ class BlueCastCV:
     def predict_sets(self, df: pd.DataFrame, alpha: float = 0.05) -> List[set[int]]:
         if self.conformal_prediction_wrapper:
             pred_sets = self.conformal_prediction_wrapper.predict_sets(df, alpha)
+            # TODO: Add backtranslation to string labels if needed
             return pred_sets
         else:
             raise ValueError(

@@ -59,6 +59,7 @@ def test_bluecast_cv_fit_eval_multiclass_without_custom_model():
     y_calibration = pd.Series(
         [1, 1, 0, 1, 0, 2, 0, 2, 0, 2, 0, 2, 0, 1, 0, 2, 0, 2, 0, 2]
     )
+    y_calibration = y_calibration.replace({0: "zero", 1: "one", 2: "two"})
 
     x_train["target"] = y_train
 

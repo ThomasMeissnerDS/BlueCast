@@ -584,6 +584,14 @@ class BlueCast:
     ) -> None:
         check_gpu_support()
         x_calibration = self.transform_new_data(x_calibration)
+
+        if self.target_label_encoder:
+            x_calibration[self.target_column] = y_calibration
+            x_calibration = self.target_label_encoder.transform_target_labels(
+                x_calibration, self.target_column
+            )
+            y_calibration = x_calibration.pop(self.target_column)
+
         self.conformal_prediction_wrapper = ConformalPredictionWrapper(
             self.ml_model, **kwargs
         )
@@ -606,6 +614,7 @@ class BlueCast:
             check_gpu_support()
             df = self.transform_new_data(df)
             pred_sets = self.conformal_prediction_wrapper.predict_sets(df, alpha)
+            # TODO: Add backtranslation to string labels if needed
             return pred_sets
         else:
             raise ValueError(
