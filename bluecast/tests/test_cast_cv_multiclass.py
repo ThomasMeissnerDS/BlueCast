@@ -82,6 +82,6 @@ def test_bluecast_cv_fit_eval_multiclass_with_custom_model():
     predicted_probas, predicted_classes = bluecast.predict(x_test)
 
     # Assert the expected results
-    assert isinstance(predicted_probas, type(predicted_classes))
+    assert predicted_probas.shape[1] == 3
     print(bluecast.experiment_tracker.experiment_id)
     assert len(bluecast.experiment_tracker.experiment_id) == 36  # due to custom model

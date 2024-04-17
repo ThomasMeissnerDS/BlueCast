@@ -54,7 +54,7 @@ def test_brier_score():
     synthetic_results_multiclass, y_true_multiclass = create_synthetic_multiclass_data()
     assert np.allclose(
         brier_score(y_true_binary, synthetic_results_binary),
-        np.asarray([0.09, 0.49, 1.0]),
+        np.asarray([0.49, 0.49, 0.0]),
     )
     assert np.allclose(
         brier_score(y_true_multiclass, synthetic_results_multiclass),

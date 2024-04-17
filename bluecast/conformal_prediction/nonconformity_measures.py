@@ -93,5 +93,6 @@ def brier_score(
 
     brier_losses = []
     for true_class, preds_arr in zip(y_true, y_hat):
+        print(true_class, preds_arr)
         brier_losses.append((1 - preds_arr[true_class]) ** 2)
     return np.asarray(brier_losses)
