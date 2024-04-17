@@ -333,11 +333,27 @@ class BlueCastCV:
             ConformalPredictionWrapper."""
             )
 
-    def predict_sets(self, df: pd.DataFrame, alpha: float = 0.05) -> List[set[int]]:
+    def predict_sets(
+        self, df: pd.DataFrame, alpha: float = 0.05
+    ) -> Union[List[set[int]], List[set[str]]]:
         if self.conformal_prediction_wrapper:
             pred_sets = self.conformal_prediction_wrapper.predict_sets(df, alpha)
-            # TODO: Add backtranslation to string labels if needed
-            return pred_sets
+            # transform numerical values back to original strings for the end user
+            if self.bluecast_models[0].target_label_encoder:
+                reverse_mapping = {
+                    value: key
+                    for key, value in self.bluecast_models[
+                        0
+                    ].target_label_encoder.target_label_mapping.items()
+                }
+                string_pred_sets = []
+                for numerical_set in pred_sets:
+                    # Convert numerical labels to string labels
+                    string_set = {reverse_mapping[label] for label in numerical_set}
+                    string_pred_sets.append(string_set)
+                return string_pred_sets
+            else:
+                return pred_sets
         else:
             raise ValueError(
                 """This instance has not been calibrated yet. Make use of calibrate to fit the

@@ -123,9 +123,15 @@ def plot_probability_distribution(
 
 
 def balanced_log_loss(y_true, y_pred):
+    if isinstance(y_true, pd.Series) or isinstance(y_true, pd.DataFrame):
+        y_true = y_true.values.reshape(-1)
+    if isinstance(y_pred, pd.Series) or isinstance(y_pred, pd.DataFrame):
+        y_pred = y_pred.values.reshape(-1)
+
     assert ((y_true == 0) | (y_true == 1)).all()
     assert len(y_true) == len(y_pred)
     assert y_pred.ndim == 1
+
     eps = 1e-15
     y_pred = y_pred.clip(eps, 1 - eps)
     l0 = -np.log(1 - y_pred[y_true == 0])
