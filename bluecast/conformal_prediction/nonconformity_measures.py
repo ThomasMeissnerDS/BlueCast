@@ -1,8 +1,12 @@
+from typing import Union
+
 import numpy as np
 import pandas as pd
 
 
-def hinge_loss(y_true: pd.Series, y_hat: np.ndarray) -> np.ndarray:
+def hinge_loss(
+    y_true: pd.Series, y_hat: Union[np.ndarray, pd.Series, pd.DataFrame]
+) -> np.ndarray:
     """
     Calculate Hinge loss per row.
 
@@ -16,12 +20,21 @@ def hinge_loss(y_true: pd.Series, y_hat: np.ndarray) -> np.ndarray:
     if len(y_hat.shape) == 1:  # if a binary classifier only gives proba of target class
         y_hat = np.asarray([1 - y_hat, y_hat]).T
 
+    if isinstance(y_hat, pd.Series):
+        y_hat = y_hat.values
+    elif isinstance(y_hat, pd.DataFrame):
+        y_hat = y_hat.values
+    else:
+        pass
+
     for true_class, preds_arr in zip(y_true, y_hat):
         hinge_losses.append(1 - preds_arr[true_class])
     return np.asarray(hinge_losses)
 
 
-def margin_nonconformity_measure(y_true: pd.Series, y_hat: np.ndarray) -> np.ndarray:
+def margin_nonconformity_measure(
+    y_true: pd.Series, y_hat: Union[np.ndarray, pd.Series, pd.DataFrame]
+) -> np.ndarray:
     """
     Calculate margin nonconformity score per row.
 
@@ -35,6 +48,13 @@ def margin_nonconformity_measure(y_true: pd.Series, y_hat: np.ndarray) -> np.nda
     if len(y_hat.shape) == 1:  # if a binary classifier only gives proba of target class
         y_hat = np.asarray([1 - y_hat, y_hat]).T
 
+    if isinstance(y_hat, pd.Series):
+        y_hat = y_hat.values
+    elif isinstance(y_hat, pd.DataFrame):
+        y_hat = y_hat.values
+    else:
+        pass
+
     for true_class, preds_arr in zip(y_true, y_hat):
         prob_y_true = preds_arr[true_class]
 
@@ -45,7 +65,9 @@ def margin_nonconformity_measure(y_true: pd.Series, y_hat: np.ndarray) -> np.nda
     return np.asarray(mnm_losses)
 
 
-def brier_score(y_true: pd.Series, y_hat: np.ndarray) -> np.ndarray:
+def brier_score(
+    y_true: pd.Series, y_hat: Union[np.ndarray, pd.Series, pd.DataFrame]
+) -> np.ndarray:
     """
     Calculate Brier score per row.
 
@@ -55,6 +77,13 @@ def brier_score(y_true: pd.Series, y_hat: np.ndarray) -> np.ndarray:
     :param y_hat: Predicted probabilities
     :return: Brier score loss per row
     """
+    if isinstance(y_hat, pd.Series):
+        y_hat = y_hat.values
+    elif isinstance(y_hat, pd.DataFrame):
+        y_hat = y_hat.values
+    else:
+        pass
+
     brier_losses = []
     for true_class, preds_arr in zip(y_true, y_hat):
         if isinstance(preds_arr, float):
