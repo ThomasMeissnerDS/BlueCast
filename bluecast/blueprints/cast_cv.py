@@ -204,6 +204,7 @@ class BlueCastCV:
         self, df: pd.DataFrame, return_sub_models_preds: bool = False
     ) -> Tuple[Union[pd.DataFrame, pd.Series], Union[pd.DataFrame, pd.Series]]:
         """Predict on unseen data using multiple trained BlueCast instances"""
+        result_df = pd.DataFrame()  # Create an empty DataFrame to store the results
         or_cols = df.columns
         prob_cols: list[str] = []
         class_cols: list[str] = []
@@ -213,24 +214,24 @@ class BlueCastCV:
                 proba_cols = [
                     f"class_{col}_proba_model_{fn}" for col in range(y_probs.shape[1])
                 ]
-                df[proba_cols] = y_probs
-                df[f"classes_{fn}"] = y_classes
+                result_df[proba_cols] = y_probs
+                result_df[f"classes_{fn}"] = y_classes
                 for col in proba_cols:
                     prob_cols.append(col)
                 class_cols.append(f"classes_{fn}")
 
             else:
-                df[f"proba_{fn}"] = y_probs
-                df[f"classes_{fn}"] = y_classes
+                result_df[f"proba_{fn}"] = y_probs
+                result_df[f"classes_{fn}"] = y_classes
                 prob_cols.append(f"proba_{fn}")
                 class_cols.append(f"classes_{fn}")
 
         if self.class_problem == "multiclass":
             if return_sub_models_preds:
                 # TODO: Take mean by class instead of overall
-                return df.loc[:, prob_cols], df.loc[:, class_cols]
+                return result_df.loc[:, prob_cols], result_df.loc[:, class_cols]
             else:
-                classes = df.loc[:, class_cols].mode(axis=1)[0].astype(int)
+                classes = result_df.loc[:, class_cols].mode(axis=1)[0].astype(int)
 
                 if self.bluecast_models[0].feat_type_detector:
                     if (
@@ -243,16 +244,16 @@ class BlueCastCV:
 
                 return (
                     # TODO: Take mean by class instead of overall
-                    df.loc[:, prob_cols].mean(axis=1),
+                    result_df.loc[:, prob_cols].mean(axis=1),
                     classes,
                 )
         else:
             if return_sub_models_preds:
-                return df.loc[:, prob_cols], df.loc[:, class_cols]
+                return result_df.loc[:, prob_cols], result_df.loc[:, class_cols]
             else:
                 return (
-                    df.loc[:, prob_cols].mean(axis=1),
-                    df.loc[:, prob_cols].mean(axis=1) > 0.5,
+                    result_df.loc[:, prob_cols].mean(axis=1),
+                    result_df.loc[:, prob_cols].mean(axis=1) > 0.5,
                 )
 
     def predict_proba(
