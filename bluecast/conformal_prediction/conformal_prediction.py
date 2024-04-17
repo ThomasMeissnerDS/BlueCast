@@ -49,6 +49,9 @@ class ConformalPredictionWrapper(ConformalPredictionWrapperBaseClass):
         ):  # if a binary classifier only gives proba of target class
             preds = np.asarray([1 - preds, preds]).T
 
+        if isinstance(preds, pd.DataFrame):
+            preds = preds.values
+
         # calculate p-values (credibility intervals) for each label
         p_values = []
         # loop through all rows
