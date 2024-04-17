@@ -207,15 +207,17 @@ class BlueCastCVRegression:
         """Predict on unseen data using multiple trained BlueCastRegression instances"""
         or_cols = df.columns
         pred_cols: list[str] = []
+        result_df = pd.DataFrame()  # Create an empty DataFrame to store results
+
         for fn, pipeline in enumerate(self.bluecast_models):
             y_preds = pipeline.predict(df.loc[:, or_cols])
-            df[f"preds_{fn}"] = y_preds
+            result_df[f"preds_{fn}"] = y_preds
             pred_cols.append(f"preds_{fn}")
 
         if return_sub_models_preds:
-            return df.loc[:, pred_cols]
+            return result_df
         else:
-            return df.loc[:, pred_cols].mean(axis=1)
+            return result_df.mean(axis=1)
 
     def calibrate(
         self, x_calibration: pd.DataFrame, y_calibration: pd.Series, **kwargs
