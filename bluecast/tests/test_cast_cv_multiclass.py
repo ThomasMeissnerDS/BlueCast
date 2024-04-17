@@ -139,9 +139,15 @@ def test_bluecast_cv_fit_eval_multiclass_without_custom_model():
 
     # Predict on the test data using the custom model
     predicted_probas, predicted_classes = bluecast.predict(x_test)
+    print("MULTICLASS PREDICTED PROBAS")
+    print(predicted_probas)
 
     # Assert the expected results
     assert isinstance(predicted_probas, pd.Series)
+
+    probas = bluecast.predict_proba(x_test)
+    print("MULTICLASS PREDICTED PROBAS")
+    print(probas)
 
     # test conformal prediction
     bluecast.calibrate(x_calibration, y_calibration)
