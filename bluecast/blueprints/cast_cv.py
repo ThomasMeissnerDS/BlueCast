@@ -259,6 +259,7 @@ class BlueCastCV:
         self, df: pd.DataFrame, return_sub_models_preds: bool = False
     ) -> Union[pd.DataFrame, pd.Series]:
         """Predict on unseen data using multiple trained BlueCast instances"""
+        result_df = pd.DataFrame()  # Create an empty DataFrame for storing results
         or_cols = df.columns
         prob_cols: list[str] = []
         for fn, pipeline in enumerate(self.bluecast_models):
@@ -267,19 +268,18 @@ class BlueCastCV:
                 proba_cols = [
                     f"class_{col}_proba_model_{fn}" for col in range(y_probs.shape[1])
                 ]
-                df[proba_cols] = y_probs
+                result_df[proba_cols] = y_probs
                 for col in proba_cols:
                     prob_cols.append(col)
 
             else:
-                df[f"proba_{fn}"] = y_probs
+                result_df[f"proba_{fn}"] = y_probs
                 prob_cols.append(f"proba_{fn}")
 
         if self.class_problem == "multiclass":
             if return_sub_models_preds:
-                return df.loc[:, prob_cols]
+                return result_df.loc[:, prob_cols]
             else:
-                print(prob_cols)
                 # TODO: Take mean by class instead of overall
                 mean_class_proba_cols = []
                 for col_idx in range(y_probs.shape[1]):
@@ -287,17 +287,16 @@ class BlueCastCV:
                         f"class_{col_idx}_proba_model_{fn}"
                         for fn, pipeline in enumerate(self.bluecast_models)
                     ]
-                    df[f"mean_proba_class_{col_idx}"] = df.loc[
+                    result_df[f"mean_proba_class_{col_idx}"] = result_df.loc[
                         :, class_proba_cols
                     ].mean(axis=1)
                     mean_class_proba_cols.append(f"mean_proba_class_{col_idx}")
-                print(mean_class_proba_cols)
-                return df.loc[:, mean_class_proba_cols]
+                return result_df.loc[:, mean_class_proba_cols]
         else:
             if return_sub_models_preds:
-                return df.loc[:, prob_cols]
+                return result_df.loc[:, prob_cols]
             else:
-                return df.loc[:, prob_cols].mean(axis=1)
+                return result_df.loc[:, prob_cols].mean(axis=1)
 
     def calibrate(
         self, x_calibration: pd.DataFrame, y_calibration: pd.Series, **kwargs
