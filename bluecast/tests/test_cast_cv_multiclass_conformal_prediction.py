@@ -75,7 +75,7 @@ def test_bluecast_cv_fit_eval_multiclass_without_custom_model():
     print(predicted_probas)
 
     # Assert the expected results
-    assert isinstance(predicted_probas, pd.DataFrame)
+    assert predicted_probas.shape[1] == 3
 
     probas = bluecast.predict_proba(x_test)
     print("--------")
