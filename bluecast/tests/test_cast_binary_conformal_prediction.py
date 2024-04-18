@@ -1,7 +1,7 @@
 import numpy as np
 import pandas as pd
 
-from bluecast.blueprints.cast_cv import BlueCastCV
+from bluecast.blueprints.cast import BlueCast
 from bluecast.config.training_config import TrainingConfig
 from bluecast.conformal_prediction.nonconformity_measures import (
     brier_score,
@@ -9,12 +9,12 @@ from bluecast.conformal_prediction.nonconformity_measures import (
 )
 
 
-def test_bluecast_cv_fit_eval_binary_without_custom_model():
+def test_bluecast_fit_binary_without_custom_model():
     # Create an instance of the BlueCast class with the custom model
     train_config = TrainingConfig()
     train_config.calculate_shap_values = False
 
-    bluecast = BlueCastCV(
+    bluecast = BlueCast(
         class_problem="binary",
         conf_training=train_config,
     )
@@ -67,7 +67,7 @@ def test_bluecast_cv_fit_eval_binary_without_custom_model():
     train_all["target"] = pd.concat([y_train, y_test], axis=0)
 
     # Fit the BlueCast model using the custom model
-    bluecast.fit_eval(train_all, "target")
+    bluecast.fit(train_all, "target")
 
     # Predict on the test data using the custom model
     predicted_probas, predicted_classes = bluecast.predict(x_test)

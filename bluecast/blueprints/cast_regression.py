@@ -494,7 +494,6 @@ class BlueCastRegression:
         if not self.conf_training:
             raise ValueError("conf_training is None")
 
-        check_gpu_support()
         df = self.transform_new_data(df)
 
         logger(f"{datetime.utcnow()}: Predicting...")
@@ -505,7 +504,6 @@ class BlueCastRegression:
     def calibrate(
         self, x_calibration: pd.DataFrame, y_calibration: pd.Series, **kwargs
     ) -> None:
-        check_gpu_support()
         x_calibration = self.transform_new_data(x_calibration)
         self.conformal_prediction_wrapper = ConformalPredictionRegressionWrapper(
             self.ml_model, **kwargs
@@ -514,7 +512,6 @@ class BlueCastRegression:
 
     def predict_interval(self, df: pd.DataFrame, alphas: List[float]) -> np.ndarray:
         if self.conformal_prediction_wrapper:
-            check_gpu_support()
             df = self.transform_new_data(df)
             pred_interval = self.conformal_prediction_wrapper.predict_interval(
                 df, alphas=alphas
