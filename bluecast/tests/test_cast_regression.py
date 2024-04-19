@@ -90,7 +90,7 @@ def test_blueprint_xgboost(synthetic_train_test_data, synthetic_calibration_data
     pred_intervals = automl.predict_interval(
         df_val.drop("target", axis=1), alphas=[0.01, 0.05]
     )
-    assert isinstance(pred_intervals, np.ndarray)
+    assert isinstance(pred_intervals, pd.DataFrame)
 
 
 class CustomModel(BaseClassMlRegressionModel):

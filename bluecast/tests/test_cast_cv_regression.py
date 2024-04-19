@@ -85,7 +85,7 @@ def test_blueprint_cv_xgboost(synthetic_train_test_data, synthetic_calibration_d
     pred_intervals = automl_cv.predict_interval(
         df_val.drop("target", axis=1), alphas=[0.01, 0.05]
     )
-    assert isinstance(pred_intervals, np.ndarray)
+    assert isinstance(pred_intervals, pd.DataFrame)
 
     train_config = TrainingConfig()
     train_config.hyperparameter_tuning_rounds = 3
