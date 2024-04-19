@@ -116,10 +116,10 @@ class XgboostTuneParamsConfig(BaseModel):
     eta_max: float = 0.3
     steps_min: int = 2
     steps_max: int = 1000
-    model_verbosity: int = 0
-    model_verbosity_during_final_training: int = 0
-    model_objective: str = "multi:softprob"
-    model_eval_metric: str = "mlogloss"
+    verbosity_during_hyperparameter_tuning: int = 0
+    verbosity_during_final_model_training: int = 0
+    xgboost_objective: str = "multi:softprob"
+    xgboost_eval_metric: str = "mlogloss"
     booster: str = "gbtree"
 
 
@@ -148,10 +148,10 @@ class XgboostTuneParamsRegressionConfig(BaseModel):
     eta_max: float = 0.3
     steps_min: int = 2
     steps_max: int = 1000
-    model_verbosity: int = 0
-    model_verbosity_during_final_training: int = 0
-    model_objective: str = "reg:squarederror"
-    model_eval_metric: str = "rmse"
+    verbosity_during_hyperparameter_tuning: int = 0
+    verbosity_during_final_model_training: int = 0
+    xgboost_objective: str = "reg:squarederror"
+    xgboost_eval_metric: str = "rmse"
     booster: str = "gbtree"
 
 
@@ -163,7 +163,7 @@ class XgboostFinalParamConfig:
         "objective": "multi:softprob",  # OR  'binary:logistic' #the loss function being used
         "booster": "gbtree",
         "eval_metric": "mlogloss",
-        "tree_method": "exact",  # use GPU for training
+        "tree_method": "exact",  # use CPU for training
         "max_depth": 7,  # maximum depth of the decision trees being trained
         "alpha": 0.1,
         "lambda": 0.1,
@@ -174,7 +174,6 @@ class XgboostFinalParamConfig:
         "colsample_bylevel": 0.8,
         "eta": 0.1,
         "steps": 1000,
-        "num_class": 2,
     }
     sample_weight: Optional[Dict[str, float]] = None
     classification_threshold: float = 0.5

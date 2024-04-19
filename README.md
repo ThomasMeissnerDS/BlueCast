@@ -763,7 +763,7 @@ class CustomModel(BaseClassMlModel):
                 "min_data_in_leaf": trial.suggest_int("min_data_in_leaf", 5, 100),
                 "learning_rate": trial.suggest_float("learning_rate", 1e-3, 0.3, log=True),
                 'depth': trial.suggest_int('depth', 2, 10, log=True),
-                "l2_leaf_reg": trial.suggest_loguniform("l2_leaf_reg", 1e-3, 1e6),
+                "l2_leaf_reg": trial.suggest_float("l2_leaf_reg", 1e-3, 1e6, log=True),
                 'colsample_bylevel': trial.suggest_float("colsample_bylevel", 0.1, 1),
                 'subsample': trial.suggest_float("subsample", 0.3, 1)
             }
