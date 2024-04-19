@@ -196,7 +196,6 @@ class XgboostModel(BaseClassMlModel):
                 "objective": self.conf_xgboost.model_objective,
                 "booster": self.conf_xgboost.booster,
                 "eval_metric": self.conf_xgboost.model_eval_metric,
-                "tree_method": train_on,
                 "num_class": y_train.nunique(),
                 "eta": trial.suggest_float(
                     "eta", self.conf_xgboost.eta_min, self.conf_xgboost.eta_max
@@ -239,6 +238,7 @@ class XgboostModel(BaseClassMlModel):
                     "steps", self.conf_xgboost.steps_min, self.conf_xgboost.steps_max
                 ),
             }
+            param = {**param, **train_on}
             sample_weight = trial.suggest_categorical("sample_weight", [True, False])
             if sample_weight:
                 classes_weights = self.calculate_class_weights(y_train)
@@ -358,7 +358,6 @@ class XgboostModel(BaseClassMlModel):
             "objective": self.conf_xgboost.model_objective,  # OR  'binary:logistic' #the loss function being used
             "booster": self.conf_xgboost.booster,
             "eval_metric": self.conf_xgboost.model_eval_metric,
-            "tree_method": train_on,  # use GPU for training
             "num_class": y_train.nunique(),
             "max_depth": xgboost_best_param[
                 "max_depth"
@@ -372,6 +371,10 @@ class XgboostModel(BaseClassMlModel):
             "colsample_bylevel": xgboost_best_param["colsample_bylevel"],
             "eta": xgboost_best_param["eta"],
             "steps": xgboost_best_param["steps"],
+        }
+        self.conf_params_xgboost.params = {
+            **self.conf_params_xgboost.params,
+            **train_on,
         }
         logger(f"Best params: {self.conf_params_xgboost.params}")
         self.conf_params_xgboost.sample_weight = xgboost_best_param["sample_weight"]

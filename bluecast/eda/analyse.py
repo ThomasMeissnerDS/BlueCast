@@ -143,7 +143,9 @@ def plot_count_pair(
     sns.countplot(x=feature, data=data_df, hue="set", palette=palette, order=order)
 
     # Rotate x-axis labels by 90 degrees
-    ax.set_xticklabels(ax.get_xticklabels(), rotation=90)
+    ax.set_xticklabels(
+        ax.get_xticklabels(), rotation=90
+    )  # ax.set_xticks(ax.get_xticks())
 
     # Add annotations above the bars
     for p in ax.patches:
