@@ -353,6 +353,10 @@ class XgboostModelRegression(BaseClassMlRegressionModel):
             "eta": xgboost_best_param["eta"],
             "steps": xgboost_best_param["steps"],
         }
+        self.conf_params_xgboost.params = {
+            **self.conf_params_xgboost.params,
+            **train_on,
+        }
         logger(f"Best params: {self.conf_params_xgboost.params}")
 
     def get_best_score(self):
