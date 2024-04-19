@@ -188,7 +188,6 @@ class XgboostModelRegression(BaseClassMlRegressionModel):
                 "objective": self.conf_xgboost.xgboost_objective,
                 "booster": self.conf_xgboost.booster,
                 "eval_metric": self.conf_xgboost.xgboost_eval_metric,
-                "tree_method": train_on,
                 "eta": trial.suggest_float(
                     "eta", self.conf_xgboost.eta_min, self.conf_xgboost.eta_max
                 ),
@@ -230,6 +229,7 @@ class XgboostModelRegression(BaseClassMlRegressionModel):
                     "steps", self.conf_xgboost.steps_min, self.conf_xgboost.steps_max
                 ),
             }
+            param = {**param, **train_on}
             d_train = xgb.DMatrix(
                 x_train,
                 label=y_train,
