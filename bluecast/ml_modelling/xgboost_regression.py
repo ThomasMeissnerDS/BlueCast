@@ -339,7 +339,6 @@ class XgboostModelRegression(BaseClassMlRegressionModel):
             "objective": self.conf_xgboost.xgboost_objective,  # OR  'binary:logistic' #the loss function being used
             "booster": self.conf_xgboost.booster,
             "eval_metric": self.conf_xgboost.xgboost_eval_metric,
-            "tree_method": train_on,  # use GPU for training
             "max_depth": xgboost_best_param[
                 "max_depth"
             ],  # maximum depth of the decision trees being trained
