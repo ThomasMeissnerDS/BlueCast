@@ -77,7 +77,7 @@ def test_predict_interval():
     y_pred_interval = wrapper.predict_interval(X_calibrate, alphas)
 
     # Check that the predictions have the correct shape
-    assert y_pred_interval.shape == (len(X_calibrate), 2, len(alphas))
+    assert y_pred_interval.shape == (len(X_calibrate), len(alphas) * 2)
 
 
 def test_predict_interval_with_single_data_point():
@@ -100,7 +100,7 @@ def test_predict_interval_with_single_data_point():
     y_pred_interval = wrapper.predict_interval(X_train, alphas)
 
     # Check that the predictions have the correct shape
-    assert y_pred_interval.shape == (len(X_train), 2, len(alphas))
+    assert y_pred_interval.shape == (len(X_train), len(alphas) * 2)
 
 
 def test_predict_interval_with_single_quantile():
@@ -125,5 +125,12 @@ def test_predict_interval_with_single_quantile():
     y_pred_interval = wrapper.predict_interval(X_calibrate, alphas)
 
     # Check that the predictions have the correct shape
-    assert y_pred_interval.shape == (len(X_calibrate), 2, len(alphas))
-    assert (y_pred_interval[:, 0, 0] <= y_pred_interval[:, 1, 0]).all()
+    assert y_pred_interval.shape == (len(X_calibrate), len(alphas) * 2)
+    assert np.sum(y_pred_interval.iloc[:, 0] <= y_pred_interval.iloc[:, -1]) == len(
+        X_calibrate
+    )
+
+    # Make predictions
+    alphas = [0.05, 0.1, 0.5]
+    y_pred_interval = wrapper.predict_interval(X_calibrate, alphas)
+    assert y_pred_interval.shape == (len(X_calibrate), len(alphas) * 2)
