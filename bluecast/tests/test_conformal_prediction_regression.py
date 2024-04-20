@@ -93,7 +93,7 @@ def test_predict_interval_with_single_data_point():
     wrapper = ConformalPredictionRegressionWrapper(model)
 
     # Calibrate the wrapper with a single data point calibration set
-    wrapper.calibrate(X_train[0], y_train[0])
+    wrapper.calibrate(X_train, y_train)
 
     # Make predictions
     alphas = [0.05, 0.01]
