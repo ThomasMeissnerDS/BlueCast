@@ -124,10 +124,10 @@ def test_blueprint_xgboost(
 
     # test conformal prediction
     automl.calibrate(df_calibration.drop("target", axis=1), df_calibration["target"])
-    pred_intervals = automl.predict_interval(df_val.drop("target", axis=1))
+    pred_intervals = automl.predict_p_values(df_val.drop("target", axis=1))
     pred_sets = automl.predict_sets(df_val.drop("target", axis=1))
     assert isinstance(pred_intervals, np.ndarray)
-    assert isinstance(pred_sets, list)
+    assert isinstance(pred_sets, pd.DataFrame)
 
     y_probs = automl.predict_proba(df_val.drop("target", axis=1))
     print("Predicting class scores successful.")

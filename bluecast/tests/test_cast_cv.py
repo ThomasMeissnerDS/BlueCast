@@ -93,10 +93,10 @@ def test_blueprint_cv_xgboost(synthetic_train_test_data, synthetic_calibration_d
 
     # test conformal prediction
     automl_cv.calibrate(df_calibration.drop("target", axis=1), df_calibration["target"])
-    pred_intervals = automl_cv.predict_interval(df_val.drop("target", axis=1))
+    pred_intervals = automl_cv.predict_p_values(df_val.drop("target", axis=1))
     pred_sets = automl_cv.predict_sets(df_val.drop("target", axis=1))
     assert isinstance(pred_intervals, np.ndarray)
-    assert isinstance(pred_sets, list)
+    assert isinstance(pred_sets, pd.DataFrame)
 
     train_config = TrainingConfig()
     train_config.hyperparameter_tuning_rounds = 3
