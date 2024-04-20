@@ -35,11 +35,11 @@ def hinge_loss(
     :param y_hat: Predicted probabilities
     :return: Hinge loss per row
     """
+    y_true, y_hat = convert_to_numpy(y_true, y_hat)
+
     hinge_losses = []
     if len(y_hat.shape) == 1:  # if a binary classifier only gives proba of target class
         y_hat = np.asarray([1 - y_hat, y_hat]).T
-
-    y_true, y_hat = convert_to_numpy(y_true, y_hat)
 
     for true_class, preds_arr in zip(y_true, y_hat):
         hinge_losses.append(1 - preds_arr[true_class])
@@ -58,11 +58,11 @@ def margin_nonconformity_measure(
     :param y_hat: Predicted probabilities
     :return: Margin nonconformity score loss per row
     """
+    y_true, y_hat = convert_to_numpy(y_true, y_hat)
+
     mnm_losses = []
     if len(y_hat.shape) == 1:  # if a binary classifier only gives proba of target class
         y_hat = np.asarray([1 - y_hat, y_hat]).T
-
-    y_true, y_hat = convert_to_numpy(y_true, y_hat)
 
     for true_class, preds_arr in zip(y_true, y_hat):
         prob_y_true = preds_arr[true_class]
@@ -86,10 +86,10 @@ def brier_score(
     :param y_hat: Predicted probabilities
     :return: Brier score loss per row
     """
+    y_true, y_hat = convert_to_numpy(y_true, y_hat)
+
     if len(y_hat.shape) == 1:  # if a binary classifier only gives proba of target class
         y_hat = np.asarray([1 - y_hat, y_hat]).T
-
-    y_true, y_hat = convert_to_numpy(y_true, y_hat)
 
     brier_losses = []
     for true_class, preds_arr in zip(y_true, y_hat):

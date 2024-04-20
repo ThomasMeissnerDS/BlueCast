@@ -581,9 +581,16 @@ class BlueCast:
     def calibrate(
         self, x_calibration: pd.DataFrame, y_calibration: pd.Series, **kwargs
     ) -> None:
-        print(x_calibration.info())
+        """Calibrate the model.
+
+        Via this function the nonconformity measures are taken and used to predict calibrated sets via the
+        predict_sets function, or to return p-values of a row for being the class via the predict_p_values function.
+        :param: x_calibration: Pandas DataFrame without target column, that has not been seen by the model during
+            training.
+        :param y_calibration: Pandas Series holding the target value, hat has not been seen by the model during
+            training.
+        """
         x_calibration = self.transform_new_data(x_calibration)
-        print(x_calibration.info())
 
         if self.target_label_encoder:
             x_calibration[self.target_column] = y_calibration
@@ -597,7 +604,14 @@ class BlueCast:
         )
         self.conformal_prediction_wrapper.calibrate(x_calibration, y_calibration)
 
-    def predict_interval(self, df: pd.DataFrame) -> np.ndarray:
+    def predict_p_values(self, df: pd.DataFrame) -> np.ndarray:
+        """Create p-values for each class.
+
+        The p_values indicate the probability of being the correct class.
+        :param df: Pandas DataFrame holding unseen data
+        :returns: Numpy array where each column holds p-values of a row being the class. If string labels were passed
+            each column maps the index of target_label_encoder.target_label_mapping stored in this class.
+        """
         if self.conformal_prediction_wrapper:
             df = self.transform_new_data(df)
             pred_interval = self.conformal_prediction_wrapper.predict_interval(df)
@@ -608,9 +622,15 @@ class BlueCast:
             ConformalPredictionWrapper."""
             )
 
-    def predict_sets(
-        self, df: pd.DataFrame, alpha: float = 0.05
-    ) -> Union[List[set[int]], List[set[str]]]:
+    def predict_sets(self, df: pd.DataFrame, alpha: float = 0.05) -> pd.DataFrame:
+        """Create prediction sets based on a certain confidence level.
+
+        Conformal prediction guarantees, that the correct label is present in the prediction sets with a probability of
+        1 - alpha.
+        :param df: Pandas DataFrame holding unseen data
+        :param alpha: Float indicating the desired confidence level.
+        :returns a Pandas DataFrame with a column called 'prediction_set' holding a nested set with predicted classes.
+        """
         if self.conformal_prediction_wrapper:
             check_gpu_support()
             df = self.transform_new_data(df)
@@ -627,9 +647,9 @@ class BlueCast:
                     # Convert numerical labels to string labels
                     string_set = {reverse_mapping[label] for label in numerical_set}
                     string_pred_sets.append(string_set)
-                return string_pred_sets
+                return pd.DataFrame({"prediction_set": string_pred_sets})
             else:
-                return pred_sets
+                return pd.DataFrame({"prediction_set": pred_sets})
         else:
             raise ValueError(
                 """This instance has not been calibrated yet. Make use of calibrate to fit the

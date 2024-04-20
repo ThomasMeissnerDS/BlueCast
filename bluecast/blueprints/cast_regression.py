@@ -504,13 +504,31 @@ class BlueCastRegression:
     def calibrate(
         self, x_calibration: pd.DataFrame, y_calibration: pd.Series, **kwargs
     ) -> None:
+        """Calibrate the model.
+
+        Via this function the nonconformity measures are taken and used to predict prediction intervals vis the
+        predict_interval function.
+        :param: x_calibration: Pandas DataFrame without target column, that has not been seen by the model during
+            training.
+        :param y_calibration: Pandas Series holding the target value, hat has not been seen by the model during
+            training.
+        """
         x_calibration = self.transform_new_data(x_calibration)
         self.conformal_prediction_wrapper = ConformalPredictionRegressionWrapper(
             self.ml_model, **kwargs
         )
         self.conformal_prediction_wrapper.calibrate(x_calibration, y_calibration)
 
-    def predict_interval(self, df: pd.DataFrame, alphas: List[float]) -> np.ndarray:
+    def predict_interval(self, df: pd.DataFrame, alphas: List[float]) -> pd.DataFrame:
+        """Create prediction intervals based on a certain confidence levels.
+
+        Conformal prediction guarantees, that the correct value is present in the prediction band with a probability of
+        1 - alpha.
+        :param df: Pandas DataFrame holding unseen data
+        :param alphas: List of floats indicating the desired confidence levels.
+        :returns A Pandas DataFrame with  sorted columns 'alpha_XX_low' (alpha) and 'alpha_XX_high' (1 - alpha) for each
+            alpha in the provided list of alphas. To obtain the mean prediction call the 'predict' method.
+        """
         if self.conformal_prediction_wrapper:
             df = self.transform_new_data(df)
             pred_interval = self.conformal_prediction_wrapper.predict_interval(

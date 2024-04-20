@@ -87,10 +87,10 @@ def test_bluecast_cv_fit_eval_binary_without_custom_model():
 
     # test conformal prediction
     bluecast.calibrate(x_calibration, y_calibration)
-    pred_intervals = bluecast.predict_interval(x_test)
+    pred_intervals = bluecast.predict_p_values(x_test)
     pred_sets = bluecast.predict_sets(x_test)
     assert isinstance(pred_intervals, np.ndarray)
-    assert isinstance(pred_sets, list)
+    assert isinstance(pred_sets, pd.DataFrame)
     print(f"BINARY pred_intervals: {pred_intervals}")
     print(f"BINARY pred_sets: {pred_sets}")
 
@@ -98,10 +98,10 @@ def test_bluecast_cv_fit_eval_binary_without_custom_model():
     bluecast.calibrate(
         x_calibration, y_calibration, **{"nonconformity_measure_scorer": brier_score}
     )
-    pred_intervals = bluecast.predict_interval(x_test)
+    pred_intervals = bluecast.predict_p_values(x_test)
     pred_sets = bluecast.predict_sets(x_test)
     assert isinstance(pred_intervals, np.ndarray)
-    assert isinstance(pred_sets, list)
+    assert isinstance(pred_sets, pd.DataFrame)
     print(f"BINARY pred_intervals: {pred_intervals}")
     print(f"BINARY pred_sets: {pred_sets}")
 
@@ -111,9 +111,9 @@ def test_bluecast_cv_fit_eval_binary_without_custom_model():
         y_calibration,
         **{"nonconformity_measure_scorer": margin_nonconformity_measure},
     )
-    pred_intervals = bluecast.predict_interval(x_test)
+    pred_intervals = bluecast.predict_p_values(x_test)
     pred_sets = bluecast.predict_sets(x_test)
     assert isinstance(pred_intervals, np.ndarray)
-    assert isinstance(pred_sets, list)
+    assert isinstance(pred_sets, pd.DataFrame)
     print(f"BINARY pred_intervals: {pred_intervals}")
     print(f"BINARY pred_sets: {pred_sets}")
