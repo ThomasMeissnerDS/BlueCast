@@ -44,12 +44,21 @@ Here you can see our test coverage in more detail:
 
 ## Philosophy
 
-With BlueCast we aim for the following:
+There are plenty of excellent automl solutions available.
+With BlueCast we don't follow the usual path ("Give me your data, we return the
+best model ensemble out of X algorithms"), but have the real world data
+scientist in mind. Our philosophy can be summarized as such:
 
 * automl should not be a black box
 * automl shall be a help rather than a replacement
-* easy to use, but still rich in options
+* automl shall not be a closed system
+* automl should be easy to install
+* explainability over another after comma digit in precision
 * real world value over pure performance
+
+We support our users with an end-to-end toolkit, allowing fast and rich EDA,
+modelling at highest convenience, explainability, evaluation and even
+uncertainty quantification.
 
 ## What BlueCast has to offer
 
@@ -142,15 +151,15 @@ Documentation is provided via [Read the Docs](https://bluecast.readthedocs.io/en
 On GitHub we offer multiple ReadMes to cover all aspectw of working
 with BlueCast, covering:
 
-* Installation
-* EDA
-* Basic usage
-* Advanced usage
-* Customizing configurations and objects
-* Model evaluation
-* Model explainability (XAI)
-* Uncertainty quantification
-* Monitoring
+* [Installation](Installation.md)
+* [EDA](EDA.md)
+* [Basic usage](Basic%20usage.md)
+* [Advanced usage](Advanced%20usage.md)
+* [Customizing configurations and objects](Customizing%20configurations%20and%20objects.md)
+* [Model evaluation](Model%20evaluation.md)
+* [Model explainability (XAI)](Model%20explainability%20(XAI).md)
+* [Uncertainty quantification](Uncertainty%20quantification.md)
+* [Monitoring](Monitoring.md)
 
 ### How to contribute
 
