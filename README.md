@@ -29,6 +29,7 @@ Here you can see our test coverage in more detail:
 
 <!-- toc -->
 
+* [Philosophy](#philosophy)
 * [What BlueCast has to offer](#what-bluecast-has-to-offer)
   * [Basic usage](#basic-usage)
   * [Convenience features](#convenience-features)
@@ -40,6 +41,15 @@ Here you can see our test coverage in more detail:
   * [Meta](#meta)
 
 <!-- tocstop -->
+
+## Philosophy
+
+With BlueCast we aim for the following:
+
+* automl should not be a black box
+* automl shall be a help rather than a replacement
+* easy to use, but still rich in options
+* real world value over pure performance
 
 ## What BlueCast has to offer
 
