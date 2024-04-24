@@ -28,4 +28,4 @@ print(data_drift_checker.population_stability_index_values)
 data_drift_checker.qqplot_two_samples(train["feature1"], test["feature1"], x_label="X", y_label="Y")
 ```
 
-![QQplot example](docs/source/qqplot_sample.png)
+![QQplot example](qqplot_sample.png)

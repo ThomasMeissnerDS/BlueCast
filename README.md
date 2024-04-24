@@ -29,16 +29,17 @@ Here you can see our test coverage in more detail:
 
 <!-- toc -->
 
-* [Philosophy](#philosophy)
-* [What BlueCast has to offer](#what-bluecast-has-to-offer)
-  * [Basic usage](#basic-usage)
-  * [Convenience features](#convenience-features)
-  * [Kaggle competition results and example notebooks](#kaggle-competition-results-and-example-notebooks)
-* [About the code](#about-the-code)
-  * [Code quality](#code-quality)
-  * [Documentation](#documentation)
-  * [How to contribute](#how-to-contribute)
-  * [Meta](#meta)
+* [BlueCast](#bluecast)
+  * [Philosophy](#philosophy)
+  * [What BlueCast has to offer](#what-bluecast-has-to-offer)
+    * [Basic usage](#basic-usage)
+    * [Convenience features](#convenience-features)
+    * [Kaggle competition results and example notebooks](#kaggle-competition-results-and-example-notebooks)
+  * [About the code](#about-the-code)
+    * [Code quality](#code-quality)
+    * [Documentation](#documentation)
+    * [How to contribute](#how-to-contribute)
+    * [Meta](#meta)
 
 <!-- tocstop -->
 
@@ -151,15 +152,15 @@ Documentation is provided via [Read the Docs](https://bluecast.readthedocs.io/en
 On GitHub we offer multiple ReadMes to cover all aspectw of working
 with BlueCast, covering:
 
-* [Installation](Installation.md)
-* [EDA](EDA.md)
+* [Installation](docs/source/Installation.md)
+* [EDA](docs/source/EDA.md)
 * [Basic usage](Basic%20usage.md)
 * [Advanced usage](Advanced%20usage.md)
 * [Customizing configurations and objects](Customizing%20configurations%20and%20objects.md)
 * [Model evaluation](Model%20evaluation.md)
 * [Model explainability (XAI)](Model%20explainability%20(XAI).md)
 * [Uncertainty quantification](Uncertainty%20quantification.md)
-* [Monitoring](Monitoring.md)
+* [Monitoring](docs/source/Monitoring.md)
 
 ### How to contribute
 

@@ -22,12 +22,12 @@ After hyperparameter tuning the progress of the loss metric is shown.
 This is useful to estimate if less tuning rounds would be sufficient
 in future runs or if even more tuning rounds are required.
 
-![Optuna loss progress example](docs/source/optuna_loss_progress.png)
+![Optuna loss progress example](optuna_loss_progress.png)
 
 Additionally, the most important hyperparameters are visualised. This can
 be used to decide which parameters to include in an extra GridSearch layer.
 
-![Optuna most important parameters example](docs/source/optuna_most_important_parameters.png)
+![Optuna most important parameters example](optuna_most_important_parameters.png)
 
 ## Model performance
 
@@ -36,12 +36,12 @@ and business decisions. Therefore all BlueCast classes offer a `fit_eval` functi
 that tunes and trains a model like the `fit` method, and evaluates the model
 on unseen data. At the end a confusion matrix and a list of metrics are shown:
 
-![Model performance metrics](docs/source/model_performance.png)
+![Model performance metrics](model_performance.png)
 
 For CV classes the mean performance on all unseen dataset and the standard
 deviation of those will be shown as well.
 
-![Model performance CV metrics](docs/source/model_performance_cv.png)
+![Model performance CV metrics](model_performance_cv.png)
 
 ## SHAP values
 
@@ -49,14 +49,14 @@ While understanding the tuning process is helpful, we also want to understand
 how the model behaves and which features are particularly important. Thus
 BlueCast makes use of SHAP values. First it will show the global feature importance:
 
-![SHAP global feature importance](docs/source/shap_global_importance.png)
+![SHAP global feature importance](shap_global_importance.png)
 
 Furthermore it will also show a sample on row level and plot waterfall plots of
 SHAP values for each target clas of defined sample indices. User can change the
 training config and adjust the `shap_waterfall_indices` parameter to pass a list
 of indices instead.
 
-![SHAP waterfall chart](docs/source/shap_waterfall_chart.png)
+![SHAP waterfall chart](shap_waterfall_chart.png)
 
 The third visualization is the dependence plot, which shows feature interactions
 and their impact on SHAP values on a certain feature. By default BlueCast shows
@@ -64,7 +64,7 @@ dependence plots for the top 5 features for each class. The number of features
 can adjusted via customization of the `show_dependence_plots_of_top_n_features`
 param in the training config.
 
-![SHAP dependence plot](docs/source/shap_dependence_plot.png)
+![SHAP dependence plot](shap_dependence_plot.png)
 
 The SHAP functions are part of all BlueCast classes and are called when using
 the `fit` method.
@@ -121,7 +121,7 @@ fig.set_size_inches(150, 80)
 plt.show()
 ```
 
-![Xgboost tree](docs/source/xgboost_tree.png)
+![Xgboost tree](xgboost_tree.png)
 
 #### BlueCastCV classes
 
@@ -146,4 +146,4 @@ for model in automl.bluecast_models:
 This way we loop through all stored ml models and see the decision trees for each
 of them. This can reveal significant differences in the trees.
 
-![Xgboost tree](docs/source/xgboost_multi_tree.png)
+![Xgboost tree](xgboost_multi_tree.png)

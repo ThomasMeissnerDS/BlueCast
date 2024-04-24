@@ -115,7 +115,7 @@ shap_values = explainer.shap_values(experiment_feats_df)
 shap.summary_plot(shap_values, experiment_feats_df)
 ```
 
-![SHAP experiment tracker](docs/source/shap_experiment_tracker.png)
+![SHAP experiment tracker](shap_experiment_tracker.png)
 
 Here it seems like random seeds had significant impact.
 
