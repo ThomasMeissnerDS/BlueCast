@@ -29,17 +29,16 @@ Here you can see our test coverage in more detail:
 
 <!-- toc -->
 
-* [BlueCast](#bluecast)
-  * [Philosophy](#philosophy)
-  * [What BlueCast has to offer](#what-bluecast-has-to-offer)
-    * [Basic usage](#basic-usage)
-    * [Convenience features](#convenience-features)
-    * [Kaggle competition results and example notebooks](#kaggle-competition-results-and-example-notebooks)
-  * [About the code](#about-the-code)
-    * [Code quality](#code-quality)
-    * [Documentation](#documentation)
-    * [How to contribute](#how-to-contribute)
-    * [Meta](#meta)
+* [Philosophy](#philosophy)
+* [What BlueCast has to offer](#what-bluecast-has-to-offer)
+  * [Basic usage](#basic-usage)
+  * [Convenience features](#convenience-features)
+  * [Kaggle competition results and example notebooks](#kaggle-competition-results-and-example-notebooks)
+* [About the code](#about-the-code)
+  * [Code quality](#code-quality)
+  * [Documentation](#documentation)
+  * [How to contribute](#how-to-contribute)
+  * [Meta](#meta)
 
 <!-- tocstop -->
 

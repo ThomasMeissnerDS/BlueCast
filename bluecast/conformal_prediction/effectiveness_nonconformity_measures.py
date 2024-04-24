@@ -12,6 +12,9 @@ def convert_expected_effectiveness_nonconformity_input_types(
         return y_hat
     elif isinstance(y_hat, np.ndarray):
         return y_hat
+    elif isinstance(y_hat, pd.DataFrame):
+        y_hat = y_hat.values
+        return y_hat
     else:
         raise ValueError(
             f"Please provide a numpy array or Pandas Series rather than a {type(y_hat)}."

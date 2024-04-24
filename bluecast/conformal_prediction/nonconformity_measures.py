@@ -9,7 +9,7 @@ def convert_to_numpy(
 ) -> Tuple[np.ndarray, np.ndarray]:
     if isinstance(y_hat, pd.Series):
         y_hat = y_hat.values
-    elif isinstance(y_hat, pd.DataFrame):
+    elif isinstance(y_hat, pd.DataFrame):  # pd..core.frame.DataFrame
         y_hat = y_hat.values
     else:
         pass
@@ -93,6 +93,5 @@ def brier_score(
 
     brier_losses = []
     for true_class, preds_arr in zip(y_true, y_hat):
-        print(true_class, preds_arr)
         brier_losses.append((1 - preds_arr[true_class]) ** 2)
     return np.asarray(brier_losses)
