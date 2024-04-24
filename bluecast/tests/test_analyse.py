@@ -11,6 +11,7 @@ from bluecast.eda.analyse import (
     correlation_to_target,
     mutual_info_to_target,
     plot_count_pairs,
+    plot_ecdf,
     plot_null_percentage,
     plot_pca,
     plot_pca_cumulative_variance,
@@ -261,3 +262,16 @@ def test_check_unique_values(create_data_with_many_uniques):
     assert check_unique_values(
         create_data_with_many_uniques, ["col1", "col2", "col3"], 0.5
     ) == ["col1", "col2", "col3"]
+
+
+def test_plot_ecdf(synthetic_train_test_data):
+    num_data = synthetic_train_test_data[0]
+    num_cols = [
+        "numerical_feature_1",
+        "numerical_feature_2",
+        "numerical_feature_3",
+        "target",
+    ]
+    plot_ecdf(num_data, num_cols, plot_all_at_once=False)
+    plot_ecdf(num_data, num_cols, plot_all_at_once=True)
+    assert True

@@ -9,6 +9,7 @@ from bluecast.eda.analyse import (
     plot_count_pairs,
     correlation_heatmap,
     correlation_to_target,
+    plot_ecdf,
     plot_pca,
     plot_pca_cumulative_variance,
     plot_theil_u_heatmap,
@@ -55,7 +56,7 @@ univariate_plots(
     )
 ```
 
-![QQplot example](docs/source/univariate_plots.png)
+![QQplot example](docs/source/ecdf.png)
 
 ```sh
 # show bi-variate plots
@@ -63,6 +64,13 @@ bi_variate_plots(
     train_data.loc[:, feat_type_detector.num_columns],
       "EC1"
       )
+```
+
+```sh
+# show univariate plots
+plot_ecdf(
+        train_data, feat_type_detector.num_columns,  plot_all_at_once=True
+    )
 ```
 
 ![QQplot example](docs/source/bivariate_plots.png)

@@ -621,3 +621,41 @@ def mutual_info_to_target(
     for i, v in enumerate(mi_scores_sorted):
         ax.text(v + 0.01, i, str(round(v, 2)), color="blue", fontweight="bold")
     plt.show()
+
+
+def plot_ecdf(
+    df: pd.DataFrame,
+    columns: List[Union[str, int, float]],
+    plot_all_at_once: bool = False,
+) -> None:
+    """
+    Plot the empirical cumulative density function.
+
+    Matplotlib contains a direct implementation at version 3.8 and higher, but
+    this might run into dependency issues in environments with older data.
+
+    :param df: DataFrame containing all columns including target column. Features are expected to be numerical.
+    :param columns: A list of column names to check.
+    :param plot_all_at_once: If True, plot all eCDFs in one plot. If False, plot each eCDF separately.
+    """
+    if plot_all_at_once:
+        fig, ax = plt.subplots()
+        for col in columns:
+            sorted_col = np.sort(df[col])
+            y = np.arange(1, len(sorted_col) + 1) / len(sorted_col)
+            ax.plot(sorted_col, y, label=col)
+        ax.set_xlabel("Value")
+        ax.set_ylabel("ECDF")
+        ax.legend()
+        plt.show()
+    else:
+        for col in columns:
+            plt.plot(
+                np.sort(df[col]),
+                np.linspace(0, 1, len(df[col]), endpoint=False),
+                label=col,
+            )
+            plt.xlabel("Value")
+            plt.ylabel("ECDF")
+            plt.legend()
+            plt.show()
