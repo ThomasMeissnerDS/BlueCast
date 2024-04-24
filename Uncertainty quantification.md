@@ -9,6 +9,7 @@ additional computation.
 * [Uncertainty quantification](#uncertainty-quantification)
   * [Conformal prediction for classification](#conformal-prediction-for-classification)
   * [Conformal prediction for regression](#conformal-prediction-for-regression)
+  * [Conformal prediction for non-BlueCast models](#conformal-prediction-for-non-bluecast-models)
 
 <!-- tocstop -->
 
@@ -95,3 +96,56 @@ pred_sets = automl.predict_interval(df_val, alphas=[0.01, 0.05, 0.1])
 
 All of these functions are also available via the ensemble classes
 `BlueCastCV` and `BlueCastCVRegression`.
+
+## Conformal prediction for non-BlueCast models
+
+Even though conformal prediction is available via all BlueCast
+classes, the libraray offers standalone wrappers to enjoy conformal
+prediction for any class, that has a `predict` or `predict_proba` method.
+This can be done even without sklearn models as long as the expected
+methods are available and expects one input parameter for the prediction
+functions.
+
+```python
+X, y = make_classification(
+        n_samples=100, n_features=5, random_state=42, n_classes=2
+  )
+  X_train, X_calibrate, y_train, y_calibrate = train_test_split(
+      X, y, test_size=0.2, random_state=42
+  )
+
+  # Train a logistic regression model
+  model = LogisticRegression(random_state=42)
+  model.fit(X_train, y_train)
+
+  # Create a ConformalPredictionWrapper instance
+  wrapper = ConformalPredictionWrapper(model)
+
+  # Calibrate the wrapper
+  wrapper.calibrate(X_calibrate, y_calibrate)
+
+  wrapper.predict_proba(x_test)  # or predict_sets
+```
+
+For regression there is also a wrapper available:
+
+```python
+X, y = make_regression(
+        n_samples=100, n_features=5, random_state=42, n_classes=2
+  )
+  X_train, X_calibrate, y_train, y_calibrate = train_test_split(
+      X, y, test_size=0.2, random_state=42
+  )
+
+  # Train a logistic regression model
+  model = LinearRegression(random_state=42)
+  model.fit(X_train, y_train)
+
+  # Create a ConformalPredictionWrapper instance
+  wrapper = ConformalPredictionRegressionWrapper(model)
+
+  # Calibrate the wrapper
+  wrapper.calibrate(X_calibrate, y_calibrate)
+
+  wrapper.predict_interval(x_test)
+```
