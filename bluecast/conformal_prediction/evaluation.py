@@ -30,7 +30,7 @@ def prediction_interval_coverage(
     alphas: List[float],
 ) -> Dict[float, float]:
     """
-    Calculate the percentyge of prediction intervals that cover the true vavlue.
+    Calculate the percentage of prediction intervals that cover the true value.
 
     This check can be used to validate that the model covers the true values
     according to the alpha set during the prediction process.

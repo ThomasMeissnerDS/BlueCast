@@ -5,6 +5,9 @@ from sklearn.model_selection import train_test_split
 from bluecast.blueprints.cast import BlueCast
 from bluecast.blueprints.cast_regression import BlueCastRegression
 from bluecast.config.training_config import TrainingConfig
+from bluecast.conformal_prediction.effectiveness_nonconformity_measures import (
+    prediction_interval_spans,
+)
 from bluecast.conformal_prediction.evaluation import (
     prediction_interval_coverage,
     prediction_set_coverage,
@@ -102,3 +105,6 @@ def test_prediction_interval_coverage():
         y_test, pred_intervals, alphas=[0.01, 0.05, 0.1]
     )
     assert val_results[0.01] > val_results[0.05] > val_results[0.1]
+
+    band_sizes = prediction_interval_spans(pred_intervals, alphas=[0.01, 0.05, 0.1])
+    assert band_sizes[0.01] > band_sizes[0.05] > band_sizes[0.1]

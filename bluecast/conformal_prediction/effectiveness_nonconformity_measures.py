@@ -1,4 +1,4 @@
-from typing import Union
+from typing import Dict, Union
 
 import numpy as np
 import pandas as pd
@@ -41,3 +41,25 @@ def avg_c(y_hat: Union[np.ndarray, pd.Series]):
     y_hat = convert_expected_effectiveness_nonconformity_input_types(y_hat)
     set_counts = [len(ps[0]) for ps in y_hat]
     return np.mean(np.asarray(set_counts))
+
+
+def prediction_interval_spans(
+    prediction_intervals: pd.DataFrame, alphas
+) -> Dict[float, float]:
+    """
+    Calculate the mean span or width prediction intervals.
+
+    This checks the distance between low and high band for each alpha.
+    :param prediction_intervals: Predicted bands according to provided confidence levels.
+    :param alphas: List of alphas indicating which confidence levels to check
+    """
+    interval_spans = {}
+    for alpha in alphas:
+        interval_spans[alpha] = np.mean(
+            (
+                prediction_intervals[f"{1-alpha}_high"]
+                - prediction_intervals[f"{alpha}_low"]
+            )
+        )
+
+    return interval_spans

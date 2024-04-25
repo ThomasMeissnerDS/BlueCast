@@ -114,8 +114,18 @@ from bluecast.conformal_prediction.evaluation import prediction_interval_coverag
 prediction_interval_coverage(y_val, pred_intervals, alphas=[0.01, 0.05, 0.1])
 ```
 
+Furthermore we can calculate how broad the prediction intervals are:
+
+```python
+from bluecast.conformal_prediction.effectiveness_nonconformity_measures import prediction_interval_spans
+
+prediction_interval_spans(pred_intervals, alphas=[0.01, 0.05, 0.1])
+```
+
+This returns the mean band size per alpha.
+
 The variable `pred_intervals` is expected to contain columns of format
-f"{alpha}_low" and f"{1-alpha}_high" for each format.
+f"{alpha}_low" and f"{1-alpha}_high" for each format for both functions.
 
 All of these functions are also available via the ensemble classes
 `BlueCastCV` and `BlueCastCVRegression`.
