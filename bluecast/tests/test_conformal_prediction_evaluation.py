@@ -87,19 +87,19 @@ def test_prediction_interval_coverage():
         False  # we want to run just normal training, no hyperparameter tuning
     )
 
-    automl = BlueCastRegression(
+    automl_reg = BlueCastRegression(
         class_problem="regression",
         conf_training=train_config_reg,
     )
 
     X_train["target"] = y_train
-    automl.fit(X_train, target_col="target")
+    automl_reg.fit(X_train, target_col="target")
 
     # make use of calibration
-    automl.calibrate(X_calibrate, y_calibrate)
+    automl_reg.calibrate(X_calibrate, y_calibrate)
 
     # p-values for each class being the correct one
-    pred_intervals = automl.predict_interval(X_test, alphas=[0.01, 0.05, 0.1])
+    pred_intervals = automl_reg.predict_interval(X_test, alphas=[0.01, 0.05, 0.1])
 
     val_results = prediction_interval_coverage(
         y_test, pred_intervals, alphas=[0.01, 0.05, 0.1]
