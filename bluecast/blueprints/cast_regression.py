@@ -247,6 +247,14 @@ class BlueCastRegression:
             stratify=False,
         )
 
+        if not self.conf_training.autotune_model and self.conf_params_xgboost:
+            self.conf_params_xgboost.params["objective"] = (
+                self.conf_params_xgboost.params.get("objective", "reg:squarederror")
+            )
+            self.conf_params_xgboost.params["eval_metric"] = (
+                self.conf_params_xgboost.params.get("eval_metric", "rmse")
+            )
+
         if self.custom_preprocessor:
             x_train, y_train = self.custom_preprocessor.fit_transform(
                 x_train.copy(), y_train

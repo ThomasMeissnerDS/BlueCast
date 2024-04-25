@@ -160,9 +160,7 @@ class XgboostFinalParamConfig:
     """Define final hyper parameters."""
 
     params = {
-        "objective": "multi:softprob",  # OR  'binary:logistic' #the loss function being used
         "booster": "gbtree",
-        "eval_metric": "mlogloss",
         "max_depth": 7,  # maximum depth of the decision trees being trained
         "alpha": 0.1,
         "lambda": 0.1,
