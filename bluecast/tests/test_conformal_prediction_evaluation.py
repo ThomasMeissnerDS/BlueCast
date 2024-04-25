@@ -1,0 +1,52 @@
+import pandas as pd
+from sklearn.datasets import make_classification
+from sklearn.model_selection import train_test_split
+
+from bluecast.blueprints.cast import BlueCast
+from bluecast.config.training_config import TrainingConfig
+from bluecast.conformal_prediction.evaluation import prediction_set_coverage
+
+
+def test_prediction_set_coverage():
+    X, y = make_classification(
+        n_samples=10000, n_features=5, random_state=42, n_classes=2
+    )
+    X_train, X_calibrate, y_train, y_calibrate = train_test_split(
+        X, y, test_size=0.2, random_state=42
+    )
+
+    X_test, X_calibrate, y_test, y_calibrate = train_test_split(
+        X_calibrate, y_calibrate, test_size=0.5, random_state=42
+    )
+
+    X_train = pd.DataFrame(X_train)
+    X_test = pd.DataFrame(X_test)
+    X_calibrate = pd.DataFrame(X_calibrate)
+
+    X_train.columns = X_train.columns.astype(str)
+    X_test.columns = X_test.columns.astype(str)
+    X_calibrate.columns = X_calibrate.columns.astype(str)
+
+    # Create a custom training config and adjust general training parameters
+    train_config = TrainingConfig()
+    train_config.hyperparameter_tuning_rounds = 10
+    train_config.autotune_model = (
+        True  # we want to run just normal training, no hyperparameter tuning
+    )
+
+    automl = BlueCast(
+        class_problem="binary",
+        conf_training=train_config,
+    )
+
+    X_train["target"] = y_train
+    automl.fit(X_train, target_col="target")
+
+    # make use of calibration
+    automl.calibrate(X_calibrate, y_calibrate)
+
+    # prediction sets given a certain confidence interval alpha
+    alpha = 0.05
+    pred_sets = automl.predict_sets(X_test, alpha=alpha)
+
+    assert prediction_set_coverage(y_test, pred_sets.values) > 1 - alpha

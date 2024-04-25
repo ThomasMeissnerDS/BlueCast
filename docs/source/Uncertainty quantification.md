@@ -63,6 +63,16 @@ one_c(pred_sets.values)
 avg_c(pred_sets.values)
 ```
 
+Finally we can check if the prediction sets have the credibility as expected
+from the alpha. We ask the question: In how much percent of prediction sets
+do we find the true class?
+
+```python
+from bluecast.conformal_prediction.evaluation import prediction_set_coverage
+
+prediction_set_coverage(y_val, pred_sets.values) # where y_val has not been used during training or calibration
+```
+
 ## Conformal prediction for regression
 
 The same is possible for `BlueCastRegression` instances. However
