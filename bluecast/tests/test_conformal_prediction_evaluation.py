@@ -81,15 +81,15 @@ def test_prediction_interval_coverage():
     X_calibrate.columns = X_calibrate.columns.astype(str)
 
     # Create a custom training config and adjust general training parameters
-    train_config = TrainingConfig()
-    train_config.hyperparameter_tuning_rounds = 10
-    train_config.autotune_model = (
+    train_config_reg = TrainingConfig()
+    train_config_reg.hyperparameter_tuning_rounds = 10
+    train_config_reg.autotune_model = (
         False  # we want to run just normal training, no hyperparameter tuning
     )
 
     automl = BlueCastRegression(
         class_problem="regression",
-        conf_training=train_config,
+        conf_training=train_config_reg,
     )
 
     X_train["target"] = y_train
