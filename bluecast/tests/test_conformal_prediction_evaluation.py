@@ -84,7 +84,7 @@ def test_prediction_interval_coverage():
     train_config_reg = TrainingConfig()
     train_config_reg.hyperparameter_tuning_rounds = 10
     train_config_reg.autotune_model = (
-        False  # we want to run just normal training, no hyperparameter tuning
+        True  # we want to run just normal training, no hyperparameter tuning
     )
 
     automl_reg = BlueCastRegression(
