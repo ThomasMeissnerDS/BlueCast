@@ -603,5 +603,3 @@ Classes
    .. py:attribute:: classification_threshold
       :type: float
       :value: 0.5
-
-
