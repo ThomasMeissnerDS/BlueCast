@@ -70,7 +70,7 @@ do we find the true class?
 ```python
 from bluecast.conformal_prediction.evaluation import prediction_set_coverage
 
-prediction_set_coverage(y_val, pred_sets.values) # where y_val has not been used during training or calibration
+prediction_set_coverage(y_val, pred_sets) # where y_val has not been used during training or calibration
 ```
 
 ## Conformal prediction for regression
@@ -104,13 +104,26 @@ y_hat = automl.predict(df_val)
 pred_sets = automl.predict_interval(df_val, alphas=[0.01, 0.05, 0.1])
 ```
 
+Finally we can check if the prediction intervals have the credibility as expected
+from the given alphas. We ask the question: In how much percent of prediction bands
+do we find the true value?
+
+```python
+from bluecast.conformal_prediction.evaluation import prediction_interval_coverage
+
+prediction_interval_coverage(y_val, pred_intervals, alphas=[0.01, 0.05, 0.1])
+```
+
+The variable `pred_intervals` is expected to contain columns of format
+f"{alpha}_low" and f"{1-alpha}_high" for each format.
+
 All of these functions are also available via the ensemble classes
 `BlueCastCV` and `BlueCastCVRegression`.
 
 ## Conformal prediction for non-BlueCast models
 
 Even though conformal prediction is available via all BlueCast
-classes, the libraray offers standalone wrappers to enjoy conformal
+classes, the library offers standalone wrappers to enjoy conformal
 prediction for any class, that has a `predict` or `predict_proba` method.
 This can be done even without sklearn models as long as the expected
 methods are available and expects one input parameter for the prediction
