@@ -201,15 +201,27 @@ class BlueCastCV:
         return oof_mean, oof_std
 
     def predict(
-        self, df: pd.DataFrame, return_sub_models_preds: bool = False
+        self,
+        df: pd.DataFrame,
+        return_sub_models_preds: bool = False,
+        save_shap_values: bool = False,
     ) -> Tuple[Union[pd.DataFrame, pd.Series], Union[pd.DataFrame, pd.Series]]:
-        """Predict on unseen data using multiple trained BlueCast instances"""
+        """Predict on unseen data using multiple trained BlueCast instances.
+
+        :param df: Pandas DataFrame with unseen data
+        :param return_sub_models_preds: If true will return a DataFrame with the predictions of each model for each class
+            stored in separate columns.
+        :param save_shap_values: If True, calculates and saves shap values, so they can be used to plot
+            waterfall plots for selected rows o demand.
+        """
         result_df = pd.DataFrame()  # Create an empty DataFrame to store the results
         or_cols = df.columns
         prob_cols: list[str] = []
         class_cols: list[str] = []
         for fn, pipeline in enumerate(self.bluecast_models):
-            y_probs, y_classes = pipeline.predict(df.loc[:, or_cols])
+            y_probs, y_classes = pipeline.predict(
+                df.loc[:, or_cols], save_shap_values=save_shap_values
+            )
             if self.class_problem == "multiclass":
                 proba_cols = [
                     f"class_{col}_proba_model_{fn}" for col in range(y_probs.shape[1])
@@ -266,14 +278,26 @@ class BlueCastCV:
                 )
 
     def predict_proba(
-        self, df: pd.DataFrame, return_sub_models_preds: bool = False
+        self,
+        df: pd.DataFrame,
+        return_sub_models_preds: bool = False,
+        save_shap_values: bool = False,
     ) -> Union[pd.DataFrame, pd.Series]:
-        """Predict on unseen data using multiple trained BlueCast instances"""
+        """Predict on unseen data using multiple trained BlueCast instances.
+
+        :param df: Pandas DataFrame with unseen data
+        :param return_sub_models_preds: If true will return a DataFrame with the predictions of each model for each class
+            stored in separate columns.
+        :param save_shap_values: If True, calculates and saves shap values, so they can be used to plot
+            waterfall plots for selected rows o demand.
+        """
         result_df = pd.DataFrame()  # Create an empty DataFrame for storing results
         or_cols = df.columns
         prob_cols: list[str] = []
         for fn, pipeline in enumerate(self.bluecast_models):
-            y_probs, _y_classes = pipeline.predict(df.loc[:, or_cols])
+            y_probs, _y_classes = pipeline.predict(
+                df.loc[:, or_cols], save_shap_values=save_shap_values
+            )
             if self.class_problem == "multiclass":
                 proba_cols = [
                     f"class_{col}_proba_model_{fn}" for col in range(y_probs.shape[1])

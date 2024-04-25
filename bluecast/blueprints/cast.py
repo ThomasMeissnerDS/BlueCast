@@ -117,6 +117,7 @@ class BlueCast:
         self.custom_preprocessor = custom_preprocessor
         self.custom_feature_selector = custom_feature_selector
         self.shap_values: Optional[np.ndarray] = None
+        self.explainer = None
         self.eval_metrics: Optional[Dict[str, Any]] = None
         self.conformal_prediction_wrapper: Optional[ConformalPredictionWrapper] = None
 
@@ -534,11 +535,16 @@ class BlueCast:
 
         return df
 
-    def predict(self, df: pd.DataFrame) -> Tuple[np.ndarray, np.ndarray]:
+    def predict(
+        self, df: pd.DataFrame, save_shap_values: bool = False
+    ) -> Tuple[np.ndarray, np.ndarray]:
         """Predict on unseen data.
 
         Return the predicted probabilities and the predicted classes:
         y_probs, y_classes = predict(df)
+        :param df: Pandas DataFrame with unseen data
+        :param save_shap_values: If True, calculates and saves shap values, so they can be used to plot
+            waterfall plots for selected rows o demand.
         """
         if not self.ml_model:
             raise Exception("Ml model could not be found")
@@ -554,6 +560,10 @@ class BlueCast:
 
         logger(f"{datetime.utcnow()}: Predicting...")
         y_probs, y_classes = self.ml_model.predict(df)
+        if save_shap_values:
+            self.shap_values, self.explainer = shap_explanations(
+                self.ml_model.model, df
+            )
 
         if self.feat_type_detector.cat_columns:
             if (
@@ -567,11 +577,16 @@ class BlueCast:
 
         return y_probs, y_classes
 
-    def predict_proba(self, df: pd.DataFrame) -> np.ndarray:
+    def predict_proba(
+        self, df: pd.DataFrame, save_shap_values: bool = False
+    ) -> np.ndarray:
         """Predict class scores on unseen data.
 
         Return the predicted probabilities and the predicted classes:
         y_probs = predict_proba(df)
+        :param df: Pandas DataFrame with unseen data
+        :param save_shap_values: If True, calculates and saves shap values, so they can be used to plot
+            waterfall plots for selected rows o demand.
         """
         if not self.ml_model:
             raise Exception("Ml model could not be found")
@@ -586,6 +601,10 @@ class BlueCast:
 
         logger(f"{datetime.utcnow()}: Predicting...")
         y_probs, _y_classes = self.ml_model.predict(df)
+        if save_shap_values:
+            self.shap_values, self.explainer = shap_explanations(
+                self.ml_model.model, df
+            )
 
         return y_probs
 

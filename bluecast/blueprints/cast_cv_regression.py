@@ -202,15 +202,27 @@ class BlueCastCVRegression:
         return oof_mean, oof_std
 
     def predict(
-        self, df: pd.DataFrame, return_sub_models_preds: bool = False
+        self,
+        df: pd.DataFrame,
+        return_sub_models_preds: bool = False,
+        save_shap_values: bool = False,
     ) -> Union[pd.DataFrame, pd.Series]:
-        """Predict on unseen data using multiple trained BlueCastRegression instances"""
+        """Predict on unseen data using multiple trained BlueCastRegression instances.
+
+        :param df: Pandas DataFrame with unseen data
+        :param return_sub_models_preds: If true will return a DataFrame with the predictions of each model
+            stored in separate columns.
+        :param save_shap_values: If True, calculates and saves shap values, so they can be used to plot
+            waterfall plots for selected rows o demand.
+        """
         or_cols = df.columns
         pred_cols: list[str] = []
         result_df = pd.DataFrame()  # Create an empty DataFrame to store results
 
         for fn, pipeline in enumerate(self.bluecast_models):
-            y_preds = pipeline.predict(df.loc[:, or_cols])
+            y_preds = pipeline.predict(
+                df.loc[:, or_cols], save_shap_values=save_shap_values
+            )
             result_df[f"preds_{fn}"] = y_preds
             pred_cols.append(f"preds_{fn}")
 

@@ -95,6 +95,38 @@ shap_dependence_plots(
 )
 ```
 
+Once a model is on production we might want to have access to Shapley values
+for the new data as well. For such cases the `predict` method of `BlueCast`
+and `BlueCastRegression` has the parameter `save_shap_values`. If true BlueCast
+will calculate and store the Shapley values for the unseen data, so they can be
+further used.
+
+```python
+from bluecast.evaluation.shap_values import shap_waterfall_plot,
+
+preds = automl.predict(df, save_shap_values=True)
+
+# plot the waterfall chart for row idx 5
+shap_waterfall_plot(
+    automl.explainer, [5], "binary"
+)
+```
+
+For CV classes it is required to access the stored sub models to plot the
+waterfall charts:
+
+```python
+from bluecast.evaluation.shap_values import shap_waterfall_plot,
+
+# chosing the 1st model
+preds = automlbluecast_models[0].predict(df, save_shap_values=True)
+
+# plot the waterfall chart for the rows idx 5, 8 and 123
+shap_waterfall_plot(
+    automl.explainer, [5, 8, 123], "binary"
+)
+```
+
 ## Plotting decision trees
 
 How to plot decision trees will depend on the exact implementation. As BlueCast

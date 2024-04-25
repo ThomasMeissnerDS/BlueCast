@@ -117,10 +117,17 @@ def test_blueprint_xgboost(
         target_col="target",
     )
     print("Autotuning successful.")
-    y_probs, y_classes = automl.predict(df_val.drop("target", axis=1))
+    y_probs, y_classes = automl.predict(
+        df_val.drop("target", axis=1), save_shap_values=True
+    )
     print("Predicting successful.")
     assert len(y_probs) == len(df_val.index)
     assert len(y_classes) == len(df_val.index)
+
+    predicted_probas = automl.predict_proba(
+        df_val.drop("target", axis=1), save_shap_values=True
+    )
+    assert len(predicted_probas) == len(df_val.index)
 
     # test conformal prediction
     automl.calibrate(df_calibration.drop("target", axis=1), df_calibration["target"])
