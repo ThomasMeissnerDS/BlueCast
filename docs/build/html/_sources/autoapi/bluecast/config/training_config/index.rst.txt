@@ -65,6 +65,11 @@ Classes
    :param enable_feature_selection: Whether to enable recursive feature selection.
    :param calculate_shap_values: Whether to calculate shap values. Also used when custom ML model is passed. Not
        compatible with all ML models. See the SHAP documentation for more details.
+   :param shap_waterfall_indices: List of sample indices to plot. Each index represents a sample (i.e.: [0, 1, 499]).
+   :param show_dependence_plots_of_top_n_features: Maximum number of dependence plots to show. Not used when custom ML
+       model is passed.
+   :param store_shap_values_in_instance: Whether to store the SHAP values in the BlueCast instance. Not applicable when
+       custom ML model is used.
    :param train_size: Train size to use for train-test split.
    :param train_split_stratify: Whether to stratify the train-test split. Not used when custom ML model is passed.
    :param use_full_data_for_final_model: Whether to use the full data for the final model. This might cause overfitting.
@@ -147,6 +152,24 @@ Classes
    .. py:attribute:: calculate_shap_values
       :type: bool
       :value: True
+
+
+
+   .. py:attribute:: shap_waterfall_indices
+      :type: List[int]
+      :value: [0]
+
+
+
+   .. py:attribute:: show_dependence_plots_of_top_n_features
+      :type: int
+      :value: 1
+
+
+
+   .. py:attribute:: store_shap_values_in_instance
+      :type: bool
+      :value: False
 
 
 
@@ -362,25 +385,25 @@ Classes
 
 
 
-   .. py:attribute:: model_verbosity
+   .. py:attribute:: verbosity_during_hyperparameter_tuning
       :type: int
       :value: 0
 
 
 
-   .. py:attribute:: model_verbosity_during_final_training
+   .. py:attribute:: verbosity_during_final_model_training
       :type: int
       :value: 0
 
 
 
-   .. py:attribute:: model_objective
+   .. py:attribute:: xgboost_objective
       :type: str
       :value: 'multi:softprob'
 
 
 
-   .. py:attribute:: model_eval_metric
+   .. py:attribute:: xgboost_eval_metric
       :type: str
       :value: 'mlogloss'
 
@@ -532,25 +555,25 @@ Classes
 
 
 
-   .. py:attribute:: model_verbosity
+   .. py:attribute:: verbosity_during_hyperparameter_tuning
       :type: int
       :value: 0
 
 
 
-   .. py:attribute:: model_verbosity_during_final_training
+   .. py:attribute:: verbosity_during_final_model_training
       :type: int
       :value: 0
 
 
 
-   .. py:attribute:: model_objective
+   .. py:attribute:: xgboost_objective
       :type: str
       :value: 'reg:squarederror'
 
 
 
-   .. py:attribute:: model_eval_metric
+   .. py:attribute:: xgboost_eval_metric
       :type: str
       :value: 'rmse'
 
@@ -580,3 +603,5 @@ Classes
    .. py:attribute:: classification_threshold
       :type: float
       :value: 0.5
+
+

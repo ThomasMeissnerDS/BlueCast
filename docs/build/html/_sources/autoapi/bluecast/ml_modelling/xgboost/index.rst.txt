@@ -95,3 +95,8 @@ Classes
    .. py:method:: predict(df: pandas.DataFrame) -> Tuple[numpy.ndarray, numpy.ndarray]
 
       Predict on unseen data.
+
+
+   .. py:method:: predict_proba(df: pandas.DataFrame) -> numpy.ndarray
+
+      Predict class scores on unseen data.

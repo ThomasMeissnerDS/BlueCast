@@ -33,6 +33,7 @@ Functions
    bluecast.tests.test_analyse.test_plot_count_pairs
    bluecast.tests.test_analyse.test_plot_null_percentage
    bluecast.tests.test_analyse.test_check_unique_values
+   bluecast.tests.test_analyse.test_plot_ecdf
 
 
 
@@ -94,3 +95,6 @@ Functions
 
 
 .. py:function:: test_check_unique_values(create_data_with_many_uniques)
+
+
+.. py:function:: test_plot_ecdf(synthetic_train_test_data)

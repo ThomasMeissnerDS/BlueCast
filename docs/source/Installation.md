@@ -30,4 +30,3 @@ and issues connected to it.
 * Create a new conda environment with Python 3.9 or higher
 * run `pip install poetry` to install poetry as dependency manager
 * run `poetry install` to install all dependencies
-*

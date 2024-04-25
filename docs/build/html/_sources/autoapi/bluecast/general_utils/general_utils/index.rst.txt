@@ -25,7 +25,7 @@ Functions
 
 
 
-.. py:function:: check_gpu_support() -> str
+.. py:function:: check_gpu_support() -> Dict[str, str]
 
 
 .. py:function:: logger(message: str) -> None

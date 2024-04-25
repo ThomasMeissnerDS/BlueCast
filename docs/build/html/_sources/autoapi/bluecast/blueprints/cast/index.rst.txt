@@ -87,3 +87,44 @@ Classes
 
       Return the predicted probabilities and the predicted classes:
       y_probs, y_classes = predict(df)
+
+
+   .. py:method:: predict_proba(df: pandas.DataFrame) -> numpy.ndarray
+
+      Predict class scores on unseen data.
+
+      Return the predicted probabilities and the predicted classes:
+      y_probs = predict_proba(df)
+
+
+   .. py:method:: calibrate(x_calibration: pandas.DataFrame, y_calibration: pandas.Series, **kwargs) -> None
+
+      Calibrate the model.
+
+      Via this function the nonconformity measures are taken and used to predict calibrated sets via the
+      predict_sets function, or to return p-values of a row for being the class via the predict_p_values function.
+      :param: x_calibration: Pandas DataFrame without target column, that has not been seen by the model during
+          training.
+      :param y_calibration: Pandas Series holding the target value, hat has not been seen by the model during
+          training.
+
+
+   .. py:method:: predict_p_values(df: pandas.DataFrame) -> numpy.ndarray
+
+      Create p-values for each class.
+
+      The p_values indicate the probability of being the correct class.
+      :param df: Pandas DataFrame holding unseen data
+      :returns: Numpy array where each column holds p-values of a row being the class. If string labels were passed
+          each column maps the index of target_label_encoder.target_label_mapping stored in this class.
+
+
+   .. py:method:: predict_sets(df: pandas.DataFrame, alpha: float = 0.05) -> pandas.DataFrame
+
+      Create prediction sets based on a certain confidence level.
+
+      Conformal prediction guarantees, that the correct label is present in the prediction sets with a probability of
+      1 - alpha.
+      :param df: Pandas DataFrame holding unseen data
+      :param alpha: Float indicating the desired confidence level.
+      :returns a Pandas DataFrame with a column called 'prediction_set' holding a nested set with predicted classes.

@@ -21,13 +21,41 @@ Functions
 .. autoapisummary::
 
    bluecast.evaluation.shap_values.shap_explanations
+   bluecast.evaluation.shap_values.shap_waterfall_plot
+   bluecast.evaluation.shap_values.get_most_important_features_by_shap_values
+   bluecast.evaluation.shap_values.shap_dependence_plots
 
 
 
-.. py:function:: shap_explanations(model, df: pandas.DataFrame) -> numpy.ndarray
+.. py:function:: shap_explanations(model, df: pandas.DataFrame) -> Tuple[numpy.ndarray, shap.Explainer]
 
    See explanations under:
    https://medium.com/rapids-ai/gpu-accelerated-shap-values-with-xgboost-1-3-and-rapids-587fad6822
    :param model: Trained ML model
    :param df: Test data to predict on.
    :return: Shap values
+
+
+.. py:function:: shap_waterfall_plot(explainer: shap.Explainer, indices: List[int], class_problem: Literal[binary, multiclass, regression]) -> None
+
+   Plot the SHAP waterfall plot.
+   :param explainer: SHAP Explainer instance
+   :param indices: List of sample indices to plot. Each index represents a sample.
+   :param class_problem: Class problem type (i.e.: binary, multiclass, regression)
+   :return: None
+
+
+.. py:function:: get_most_important_features_by_shap_values(shap_values: numpy.ndarray, df: pandas.DataFrame) -> pandas.DataFrame
+
+   Get the most important features by SHAP values.
+   :param shap_values: Numpy ndarray holding Shap values
+   :param df: Pandas DataFrame
+   :return: Pandas DataFrame with columns 'col_name' and 'feature_importance_vals'
+
+
+.. py:function:: shap_dependence_plots(shap_values: numpy.ndarray, df: pandas.DataFrame, show_dependence_plots_of_top_n_features: int) -> None
+
+   Plot the SHAP dependence plots for each column in the dataframe.
+   :param shap_values: Numpy ndarray holding Shap values
+   :param df: Pandas DataFrame
+   :param show_dependence_plots_of_top_n_features: Number of features to show the dependence plots for.

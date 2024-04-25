@@ -152,8 +152,8 @@ Documentation is provided via [Read the Docs](https://bluecast.readthedocs.io/en
 On GitHub we offer multiple ReadMes to cover all aspectw of working
 with BlueCast, covering:
 
-* [Installation](docs/source/Installation.md)
-* [EDA](docs/source/EDA.md)
+* [Installation](Installation.md)
+* [EDA](EDA.md)
 * [Basic usage](Basic%20usage.md)
 * [Advanced usage](Advanced%20usage.md)
 * [Customizing configurations and objects](Customizing%20configurations%20and%20objects.md)

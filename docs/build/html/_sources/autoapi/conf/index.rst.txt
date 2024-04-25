@@ -13,7 +13,7 @@ Module Contents
 
 
 .. py:data:: copyright
-   :value: '2023, Thomas Meißner'
+   :value: '2024, Thomas Meißner'
 
 
 
@@ -23,12 +23,26 @@ Module Contents
 
 
 .. py:data:: release
-   :value: '0.93'
+   :value: '1.0'
 
 
 
 .. py:data:: extensions
-   :value: ['myst_parser', 'sphinx.ext.autodoc', 'autoapi.extension', 'sphinx.ext.napoleon']
+   :value: ['myst_parser', 'sphinx.ext.autodoc', 'autoapi.extension', 'sphinx.ext.napoleon',...
+
+
+
+.. py:data:: source_suffix
+   :value: ['.rst', '.md']
+
+
+
+.. py:data:: source_parsers
+
+
+
+.. py:data:: myst_heading_anchors
+   :value: 2
 
 
 
@@ -59,3 +73,5 @@ Module Contents
 
 .. py:data:: html_static_path
    :value: ['_static']
+
+

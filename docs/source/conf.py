@@ -11,6 +11,8 @@ import sys
 from pathlib import Path
 from typing import Any
 
+from recommonmark.parser import CommonMarkParser
+
 for x in os.walk("../../src"):
     sys.path.insert(0, x[0])
 
@@ -27,7 +29,18 @@ extensions = [
     "sphinx.ext.autodoc",
     "autoapi.extension",
     "sphinx.ext.napoleon",
+    "sphinx.ext.intersphinx",
+    "sphinx.ext.viewcode",
+    "sphinx.ext.autodoc",
+    "sphinx.ext.autosummary",
 ]
+
+source_suffix = [".rst", ".md"]
+source_parsers = {
+    ".md": CommonMarkParser,
+}
+
+myst_heading_anchors = 2
 
 autoapi_type = "python"
 autoapi_dirs = [f"{Path(__file__).parents[2]}/"]

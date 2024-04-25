@@ -21,21 +21,30 @@ Submodules
 
    test_analyse/index.rst
    test_cast/index.rst
+   test_cast_binary_conformal_prediction/index.rst
    test_cast_cv/index.rst
+   test_cast_cv_binary_conformal_prediction/index.rst
    test_cast_cv_multiclass/index.rst
+   test_cast_cv_multiclass_conformal_prediction/index.rst
    test_cast_cv_regression/index.rst
    test_cast_regression/index.rst
    test_category_encoder_orchestrator/index.rst
    test_check_gpu_support/index.rst
+   test_conformal_prediction/index.rst
+   test_conformal_prediction_evaluation/index.rst
+   test_conformal_prediction_regression/index.rst
    test_custom_processing_base_class/index.rst
    test_data_leakage_checks/index.rst
    test_data_monitoring/index.rst
    test_datetime_features/index.rst
+   test_effectiveness_nonconformity_measures/index.rst
    test_encode_target_labels/index.rst
    test_experiment_tracker/index.rst
    test_feature_type_detector/index.rst
    test_fine_tune/index.rst
    test_load_for_production/index.rst
+   test_nonconformity_measures/index.rst
+   test_nonconformity_measures_regression/index.rst
    test_nulls_and_infs/index.rst
    test_onehot_encoding/index.rst
    test_save_to_production/index.rst
