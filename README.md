@@ -157,12 +157,12 @@ with BlueCast, covering:
 
 * [Installation](docs/source/Installation.md)
 * [EDA](docs/source/EDA.md)
-* [Basic usage](Basic%20usage.md)
-* [Advanced usage](Advanced%20usage.md)
-* [Customizing configurations and objects](Customizing%20configurations%20and%20objects.md)
-* [Model evaluation](Model%20evaluation.md)
-* [Model explainability (XAI)](Model%20explainability%20(XAI).md)
-* [Uncertainty quantification](Uncertainty%20quantification.md)
+* [Basic usage](docs/source/Basic%20usage.md)
+* [Advanced usage](docs/source/Advanced%20usage.md)
+* [Customizing configurations and objects](docs/source/Customizing%20configurations%20and%20objects.md)
+* [Model evaluation](docs/source/Model%20evaluation.md)
+* [Model explainability (XAI)](docs/source/Model%20explainability%20(XAI).md)
+* [Uncertainty quantification](docs/source/Uncertainty%20quantification.md)
 * [Monitoring](docs/source/Monitoring.md)
 
 ### How to contribute
