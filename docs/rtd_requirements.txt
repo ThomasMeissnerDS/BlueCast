@@ -142,6 +142,9 @@ colorama==0.4.6 ; python_version >= "3.9" and python_version < "3.13" \
 colorlog==6.8.2 ; python_version >= "3.9" and python_version < "3.13" \
     --hash=sha256:3e3e079a41feb5a1b64f978b5ea4f46040a94f11f0e8bbb8261e3dbbeca64d44 \
     --hash=sha256:4dcbb62368e2800cb3c5abd348da7e53f6c362dda502ec27c560b2e58a66bd33
+commonmark==0.9.1 ; python_version >= "3.9" and python_version < "3.13" \
+    --hash=sha256:452f9dc859be7f06631ddcb328b6919c67984aca654e5fefb3914d54691aed60 \
+    --hash=sha256:da2f38c92590f83de410ba1a3cbceafbc74fee9def35f9251ba9a971d6d66fd9
 contourpy==1.2.1 ; python_version >= "3.9" and python_version < "3.13" \
     --hash=sha256:00e5388f71c1a0610e6fe56b5c44ab7ba14165cdd6d695429c5cd94021e390b2 \
     --hash=sha256:10a37ae557aabf2509c79715cd20b62e4c7c28b8cd62dd7d99e5ed3ce28c3fd9 \
@@ -973,6 +976,9 @@ pyyaml==6.0.1 ; python_version >= "3.9" and python_version < "3.13" \
 readme-renderer==43.0 ; python_version >= "3.9" and python_version < "3.13" \
     --hash=sha256:1818dd28140813509eeed8d62687f7cd4f7bad90d4db586001c5dc09d4fde311 \
     --hash=sha256:19db308d86ecd60e5affa3b2a98f017af384678c63c88e5d4556a380e674f3f9
+recommonmark==0.7.1 ; python_version >= "3.9" and python_version < "3.13" \
+    --hash=sha256:1b1db69af0231efce3fa21b94ff627ea33dee7079a01dd0a7f8482c3da148b3f \
+    --hash=sha256:bdb4db649f2222dcd8d2d844f0006b958d627f732415d399791ee436a3686d67
 requests-toolbelt==1.0.0 ; python_version >= "3.9" and python_version < "3.13" \
     --hash=sha256:7681a0a3d047012b5bdc0ee37d7f8f07ebe76ab08caeccfc3921ce23c88d5bc6 \
     --hash=sha256:cccfdd665f0a24fcf4726e690f65639d272bb0637b9b92dfd91a5568ccf6bd06
