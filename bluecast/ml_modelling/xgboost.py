@@ -142,7 +142,7 @@ class XgboostModel(BaseClassMlModel):
                 num_boost_round=steps,
                 early_stopping_rounds=self.conf_training.early_stopping_rounds,
                 evals=eval_set,
-                verbose_eval=self.conf_xgboost.model_verbosity_during_final_training,
+                verbose_eval=self.conf_xgboost.verbosity_during_final_model_training,
             )
         elif self.conf_xgboost:
             self.model = xgb.train(
@@ -151,7 +151,7 @@ class XgboostModel(BaseClassMlModel):
                 num_boost_round=steps,
                 early_stopping_rounds=self.conf_training.early_stopping_rounds,
                 evals=eval_set,
-                verbose_eval=self.conf_xgboost.model_verbosity_during_final_training,
+                verbose_eval=self.conf_xgboost.verbosity_during_final_model_training,
             )
         logger("Finished training")
         return self.model
@@ -193,10 +193,9 @@ class XgboostModel(BaseClassMlModel):
 
         def objective(trial):
             param = {
-                "objective": self.conf_xgboost.model_objective,
+                "objective": self.conf_xgboost.xgboost_objective,
                 "booster": self.conf_xgboost.booster,
-                "eval_metric": self.conf_xgboost.model_eval_metric,
-                "tree_method": train_on,
+                "eval_metric": self.conf_xgboost.xgboost_eval_metric,
                 "num_class": y_train.nunique(),
                 "eta": trial.suggest_float(
                     "eta", self.conf_xgboost.eta_min, self.conf_xgboost.eta_max
@@ -239,6 +238,7 @@ class XgboostModel(BaseClassMlModel):
                     "steps", self.conf_xgboost.steps_min, self.conf_xgboost.steps_max
                 ),
             }
+            param = {**param, **train_on}
             sample_weight = trial.suggest_categorical("sample_weight", [True, False])
             if sample_weight:
                 classes_weights = self.calculate_class_weights(y_train)
@@ -355,10 +355,9 @@ class XgboostModel(BaseClassMlModel):
             self.conf_training.global_random_state = xgboost_best_param["random_seed"]
 
         self.conf_params_xgboost.params = {
-            "objective": self.conf_xgboost.model_objective,  # OR  'binary:logistic' #the loss function being used
+            "objective": self.conf_xgboost.xgboost_objective,  # OR  'binary:logistic' #the loss function being used
             "booster": self.conf_xgboost.booster,
-            "eval_metric": self.conf_xgboost.model_eval_metric,
-            "tree_method": train_on,  # use GPU for training
+            "eval_metric": self.conf_xgboost.xgboost_eval_metric,
             "num_class": y_train.nunique(),
             "max_depth": xgboost_best_param[
                 "max_depth"
@@ -372,6 +371,10 @@ class XgboostModel(BaseClassMlModel):
             "colsample_bylevel": xgboost_best_param["colsample_bylevel"],
             "eta": xgboost_best_param["eta"],
             "steps": xgboost_best_param["steps"],
+        }
+        self.conf_params_xgboost.params = {
+            **self.conf_params_xgboost.params,
+            **train_on,
         }
         logger(f"Best params: {self.conf_params_xgboost.params}")
         self.conf_params_xgboost.sample_weight = xgboost_best_param["sample_weight"]
@@ -428,7 +431,7 @@ class XgboostModel(BaseClassMlModel):
             early_stopping_rounds=self.conf_training.early_stopping_rounds,
             evals=eval_set,
             callbacks=[pruning_callback],
-            verbose_eval=self.conf_xgboost.model_verbosity,
+            verbose_eval=self.conf_xgboost.verbosity_during_hyperparameter_tuning,
         )
         preds = model.predict(d_test)
         pred_labels = np.asarray([np.argmax(line) for line in preds])
@@ -606,7 +609,7 @@ class XgboostModel(BaseClassMlModel):
                 num_boost_round=steps,
                 early_stopping_rounds=self.conf_training.early_stopping_rounds,
                 evals=eval_set,
-                verbose_eval=self.conf_xgboost.model_verbosity,
+                verbose_eval=self.conf_xgboost.verbosity_during_hyperparameter_tuning,
             )
             # d_eval = xgb.DMatrix(
             #    X_test_fold,
@@ -858,3 +861,35 @@ class XgboostModel(BaseClassMlModel):
             predicted_classes = np.asarray([np.argmax(line) for line in partial_probs])
         logger("Finished predicting")
         return predicted_probs, predicted_classes
+
+    def predict_proba(self, df: pd.DataFrame) -> np.ndarray:
+        """Predict class scores on unseen data."""
+        logger(
+            f"{datetime.utcnow()}: Start predicting on new data using Xgboost model."
+        )
+        if not self.conf_xgboost or not self.conf_training:
+            raise ValueError("conf_params_xgboost or conf_training is None")
+
+        if self.custom_in_fold_preprocessor:
+            df, _ = self.custom_in_fold_preprocessor.transform(
+                df, None, predicton_mode=True
+            )
+
+        d_test = xgb.DMatrix(
+            df,
+            enable_categorical=self.conf_training.cat_encoding_via_ml_algorithm,
+        )
+
+        if not self.model:
+            raise Exception("No trained model has been found.")
+
+        if not self.conf_params_xgboost:
+            raise Exception("No model configuration file has been found.")
+
+        partial_probs = self.model.predict(d_test)
+        if self.class_problem == "binary":
+            predicted_probs = np.asarray([line[1] for line in partial_probs])
+        else:
+            predicted_probs = partial_probs
+        logger("Finished predicting")
+        return predicted_probs

@@ -10,6 +10,9 @@ from bluecast.config.training_config import (
     XgboostFinalParamConfig,
     XgboostTuneParamsConfig,
 )
+from bluecast.conformal_prediction.conformal_prediction import (
+    ConformalPredictionWrapper,
+)
 from bluecast.experimentation.tracking import ExperimentTracker
 from bluecast.general_utils.general_utils import logger
 from bluecast.ml_modelling.xgboost import XgboostModel
@@ -51,6 +54,7 @@ class BlueCastCV:
         self.bluecast_models: List[BlueCast] = []
         self.stratifier = stratifier
         self.ml_model = ml_model
+        self.conformal_prediction_wrapper: Optional[ConformalPredictionWrapper] = None
 
         if experiment_tracker:
             self.experiment_tracker = experiment_tracker
@@ -197,35 +201,48 @@ class BlueCastCV:
         return oof_mean, oof_std
 
     def predict(
-        self, df: pd.DataFrame, return_sub_models_preds: bool = False
+        self,
+        df: pd.DataFrame,
+        return_sub_models_preds: bool = False,
+        save_shap_values: bool = False,
     ) -> Tuple[Union[pd.DataFrame, pd.Series], Union[pd.DataFrame, pd.Series]]:
-        """Predict on unseen data using multiple trained BlueCast instances"""
+        """Predict on unseen data using multiple trained BlueCast instances.
+
+        :param df: Pandas DataFrame with unseen data
+        :param return_sub_models_preds: If true will return a DataFrame with the predictions of each model for each class
+            stored in separate columns.
+        :param save_shap_values: If True, calculates and saves shap values, so they can be used to plot
+            waterfall plots for selected rows o demand.
+        """
+        result_df = pd.DataFrame()  # Create an empty DataFrame to store the results
         or_cols = df.columns
         prob_cols: list[str] = []
         class_cols: list[str] = []
         for fn, pipeline in enumerate(self.bluecast_models):
-            y_probs, y_classes = pipeline.predict(df.loc[:, or_cols])
+            y_probs, y_classes = pipeline.predict(
+                df.loc[:, or_cols], save_shap_values=save_shap_values
+            )
             if self.class_problem == "multiclass":
                 proba_cols = [
                     f"class_{col}_proba_model_{fn}" for col in range(y_probs.shape[1])
                 ]
-                df[proba_cols] = y_probs
-                df[f"classes_{fn}"] = y_classes
+                result_df[proba_cols] = y_probs
+                result_df[f"classes_{fn}"] = y_classes
                 for col in proba_cols:
                     prob_cols.append(col)
                 class_cols.append(f"classes_{fn}")
 
             else:
-                df[f"proba_{fn}"] = y_probs
-                df[f"classes_{fn}"] = y_classes
+                result_df[f"proba_{fn}"] = y_probs
+                result_df[f"classes_{fn}"] = y_classes
                 prob_cols.append(f"proba_{fn}")
                 class_cols.append(f"classes_{fn}")
 
         if self.class_problem == "multiclass":
             if return_sub_models_preds:
-                return df.loc[:, prob_cols], df.loc[:, class_cols]
+                return result_df.loc[:, prob_cols], result_df.loc[:, class_cols]
             else:
-                classes = df.loc[:, class_cols].mode(axis=1)[0].astype(int)
+                classes = result_df.loc[:, class_cols].mode(axis=1)[0].astype(int)
 
                 if self.bluecast_models[0].feat_type_detector:
                     if (
@@ -236,15 +253,156 @@ class BlueCastCV:
                             0
                         ].target_label_encoder.label_encoder_reverse_transform(classes)
 
+                mean_class_proba_cols = []
+                for col_idx in range(y_probs.shape[1]):
+                    class_proba_cols = [
+                        f"class_{col_idx}_proba_model_{fn}"
+                        for fn, pipeline in enumerate(self.bluecast_models)
+                    ]
+                    result_df[f"mean_proba_class_{col_idx}"] = result_df.loc[
+                        :, class_proba_cols
+                    ].mean(axis=1)
+                    mean_class_proba_cols.append(f"mean_proba_class_{col_idx}")
+
                 return (
-                    df.loc[:, prob_cols].mean(axis=1),
+                    result_df.loc[:, mean_class_proba_cols],
                     classes,
                 )
         else:
             if return_sub_models_preds:
-                return df.loc[:, prob_cols], df.loc[:, class_cols]
+                return result_df.loc[:, prob_cols], result_df.loc[:, class_cols]
             else:
                 return (
-                    df.loc[:, prob_cols].mean(axis=1),
-                    df.loc[:, prob_cols].mean(axis=1) > 0.5,
+                    result_df.loc[:, prob_cols].mean(axis=1),
+                    result_df.loc[:, prob_cols].mean(axis=1) > 0.5,
                 )
+
+    def predict_proba(
+        self,
+        df: pd.DataFrame,
+        return_sub_models_preds: bool = False,
+        save_shap_values: bool = False,
+    ) -> Union[pd.DataFrame, pd.Series]:
+        """Predict on unseen data using multiple trained BlueCast instances.
+
+        :param df: Pandas DataFrame with unseen data
+        :param return_sub_models_preds: If true will return a DataFrame with the predictions of each model for each class
+            stored in separate columns.
+        :param save_shap_values: If True, calculates and saves shap values, so they can be used to plot
+            waterfall plots for selected rows o demand.
+        """
+        result_df = pd.DataFrame()  # Create an empty DataFrame for storing results
+        or_cols = df.columns
+        prob_cols: list[str] = []
+        for fn, pipeline in enumerate(self.bluecast_models):
+            y_probs, _y_classes = pipeline.predict(
+                df.loc[:, or_cols], save_shap_values=save_shap_values
+            )
+            if self.class_problem == "multiclass":
+                proba_cols = [
+                    f"class_{col}_proba_model_{fn}" for col in range(y_probs.shape[1])
+                ]
+                result_df[proba_cols] = y_probs
+                for col in proba_cols:
+                    prob_cols.append(col)
+
+            else:
+                result_df[f"proba_{fn}"] = y_probs
+                prob_cols.append(f"proba_{fn}")
+
+        if self.class_problem == "multiclass":
+            if return_sub_models_preds:
+                return result_df.loc[:, prob_cols]
+            else:
+                # TODO: Take mean by class instead of overall
+                mean_class_proba_cols = []
+                for col_idx in range(y_probs.shape[1]):
+                    class_proba_cols = [
+                        f"class_{col_idx}_proba_model_{fn}"
+                        for fn, pipeline in enumerate(self.bluecast_models)
+                    ]
+                    result_df[f"mean_proba_class_{col_idx}"] = result_df.loc[
+                        :, class_proba_cols
+                    ].mean(axis=1)
+                    mean_class_proba_cols.append(f"mean_proba_class_{col_idx}")
+                return result_df.loc[:, mean_class_proba_cols]
+        else:
+            if return_sub_models_preds:
+                return result_df.loc[:, prob_cols]
+            else:
+                return result_df.loc[:, prob_cols].mean(axis=1)
+
+    def calibrate(
+        self, x_calibration: pd.DataFrame, y_calibration: pd.Series, **kwargs
+    ) -> None:
+        """Calibrate the model.
+
+        Via this function the nonconformity measures are taken and used to predict calibrated sets via the
+        predict_sets function, or to return p-values of a row for being the class via the predict_p_values function.
+        This calibrates the blended prediction of all sub models.
+        :param: x_calibration: Pandas DataFrame without target column, that has not been seen by the model during
+            training.
+        :param y_calibration: Pandas Series holding the target value, hat has not been seen by the model during
+            training.
+        """
+        if self.bluecast_models[0].target_label_encoder:
+            x_calibration[self.bluecast_models[0].target_column] = y_calibration
+            x_calibration = self.bluecast_models[
+                0
+            ].target_label_encoder.transform_target_labels(
+                x_calibration, self.bluecast_models[0].target_column
+            )
+            y_calibration = x_calibration.pop(self.bluecast_models[0].target_column)
+
+        self.conformal_prediction_wrapper = ConformalPredictionWrapper(self, **kwargs)
+        self.conformal_prediction_wrapper.calibrate(x_calibration, y_calibration)
+
+    def predict_p_values(self, df: pd.DataFrame) -> np.ndarray:
+        """Create p-values for each class.
+
+        The p_values indicate the probability of being the correct class.
+        :param df: Pandas DataFrame holding unseen data
+        :returns: Numpy array where each column holds p-values of a row being the class. If string labels were passed
+            each column maps the index of target_label_encoder.target_label_mapping stored in this class.
+        """
+        if self.conformal_prediction_wrapper:
+            pred_interval = self.conformal_prediction_wrapper.predict_interval(df)
+            return pred_interval
+        else:
+            raise ValueError(
+                """This instance has not been calibrated yet. Make use of calibrate to fit the
+            ConformalPredictionWrapper."""
+            )
+
+    def predict_sets(self, df: pd.DataFrame, alpha: float = 0.05) -> pd.DataFrame:
+        """Create prediction sets based on a certain confidence level.
+
+        Conformal prediction guarantees, that the correct label is present in the prediction sets with a probability of
+        1 - alpha.
+        :param df: Pandas DataFrame holding unseen data
+        :param alpha: Float indicating the desired confidence level.
+        :returns a Pandas DataFrame with a column called 'prediction_set' holding a nested set with predicted classes.
+        """
+        if self.conformal_prediction_wrapper:
+            pred_sets = self.conformal_prediction_wrapper.predict_sets(df, alpha)
+            # transform numerical values back to original strings for the end user
+            if self.bluecast_models[0].target_label_encoder:
+                reverse_mapping = {
+                    value: key
+                    for key, value in self.bluecast_models[
+                        0
+                    ].target_label_encoder.target_label_mapping.items()
+                }
+                string_pred_sets = []
+                for numerical_set in pred_sets:
+                    # Convert numerical labels to string labels
+                    string_set = {reverse_mapping[label] for label in numerical_set}
+                    string_pred_sets.append(string_set)
+                return pd.DataFrame({"prediction_set": string_pred_sets})
+            else:
+                return pd.DataFrame({"prediction_set": pred_sets})
+        else:
+            raise ValueError(
+                """This instance has not been calibrated yet. Make use of calibrate to fit the
+            ConformalPredictionWrapper."""
+            )

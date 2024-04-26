@@ -18,6 +18,9 @@ from bluecast.config.training_config import TrainingConfig, XgboostFinalParamCon
 from bluecast.config.training_config import (
     XgboostTuneParamsRegressionConfig as XgboostTuneParamsConfig,
 )
+from bluecast.conformal_prediction.conformal_prediction_regression import (
+    ConformalPredictionRegressionWrapper,
+)
 from bluecast.evaluation.eval_metrics import eval_regressor
 from bluecast.evaluation.shap_values import (
     shap_dependence_plots,
@@ -113,7 +116,11 @@ class BlueCastRegression:
         self.custom_preprocessor = custom_preprocessor
         self.custom_feature_selector = custom_feature_selector
         self.shap_values: Optional[np.ndarray] = None
+        self.explainer = None
         self.eval_metrics: Optional[Dict[str, Any]] = None
+        self.conformal_prediction_wrapper: Optional[
+            ConformalPredictionRegressionWrapper
+        ] = None
 
         if experiment_tracker:
             self.experiment_tracker = experiment_tracker
@@ -240,6 +247,14 @@ class BlueCastRegression:
             self.conf_training.global_random_state,
             stratify=False,
         )
+
+        if not self.conf_training.autotune_model and self.conf_params_xgboost:
+            self.conf_params_xgboost.params["objective"] = (
+                self.conf_params_xgboost.params.get("objective", "reg:squarederror")
+            )
+            self.conf_params_xgboost.params["eval_metric"] = (
+                self.conf_params_xgboost.params.get("eval_metric", "rmse")
+            )
 
         if self.custom_preprocessor:
             x_train, y_train = self.custom_preprocessor.fit_transform(
@@ -473,11 +488,14 @@ class BlueCastRegression:
 
         return df
 
-    def predict(self, df: pd.DataFrame) -> np.ndarray:
+    def predict(self, df: pd.DataFrame, save_shap_values: bool = False) -> np.ndarray:
         """Predict on unseen data.
 
         Return the predicted probabilities and the predicted classes:
         y_probs, y_classes = predict(df)
+        :param df: Pandas DataFrame with unseen data
+        :param save_shap_values: If True, calculates and saves shap values, so they can be used to plot
+            waterfall plots for selected rows o demand.
         """
         if not self.ml_model:
             raise Exception("Ml model could not be found")
@@ -488,10 +506,54 @@ class BlueCastRegression:
         if not self.conf_training:
             raise ValueError("conf_training is None")
 
-        check_gpu_support()
         df = self.transform_new_data(df)
 
         logger(f"{datetime.utcnow()}: Predicting...")
         y_preds = self.ml_model.predict(df)
 
+        if save_shap_values:
+            self.shap_values, self.explainer = shap_explanations(
+                self.ml_model.model, df
+            )
+
         return y_preds
+
+    def calibrate(
+        self, x_calibration: pd.DataFrame, y_calibration: pd.Series, **kwargs
+    ) -> None:
+        """Calibrate the model.
+
+        Via this function the nonconformity measures are taken and used to predict prediction intervals vis the
+        predict_interval function.
+        :param: x_calibration: Pandas DataFrame without target column, that has not been seen by the model during
+            training.
+        :param y_calibration: Pandas Series holding the target value, hat has not been seen by the model during
+            training.
+        """
+        x_calibration = self.transform_new_data(x_calibration)
+        self.conformal_prediction_wrapper = ConformalPredictionRegressionWrapper(
+            self.ml_model, **kwargs
+        )
+        self.conformal_prediction_wrapper.calibrate(x_calibration, y_calibration)
+
+    def predict_interval(self, df: pd.DataFrame, alphas: List[float]) -> pd.DataFrame:
+        """Create prediction intervals based on a certain confidence levels.
+
+        Conformal prediction guarantees, that the correct value is present in the prediction band with a probability of
+        1 - alpha.
+        :param df: Pandas DataFrame holding unseen data
+        :param alphas: List of floats indicating the desired confidence levels.
+        :returns A Pandas DataFrame with  sorted columns 'alpha_XX_low' (alpha) and 'alpha_XX_high' (1 - alpha) for each
+            alpha in the provided list of alphas. To obtain the mean prediction call the 'predict' method.
+        """
+        if self.conformal_prediction_wrapper:
+            df = self.transform_new_data(df)
+            pred_interval = self.conformal_prediction_wrapper.predict_interval(
+                df, alphas=alphas
+            )
+            return pred_interval
+        else:
+            raise ValueError(
+                """This instance has not been calibrated yet. Make use of calibrate to fit the
+            ConformalPredictionWrapper."""
+            )

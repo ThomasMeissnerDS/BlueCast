@@ -17,6 +17,8 @@ Functions
    bluecast.tests.test_shap_explanations.test_data
    bluecast.tests.test_shap_explanations.test_shap_explanations
    bluecast.tests.test_shap_explanations.test_eval_classifier_except
+   bluecast.tests.test_shap_explanations.test_shap_waterfall_plot
+   bluecast.tests.test_shap_explanations.test_shap_dependence_plots
 
 
 
@@ -32,3 +34,9 @@ Functions
 
 
 .. py:function:: test_eval_classifier_except()
+
+
+.. py:function:: test_shap_waterfall_plot()
+
+
+.. py:function:: test_shap_dependence_plots()

@@ -66,7 +66,7 @@ class FeatureTypeDetector:
         """Identify boolean columns based on data type"""
         bool_cols = list(df.select_dtypes(["bool"]))
         for col in bool_cols:
-            df.loc[:, col] = df[col].astype(bool)
+            df[col] = df[col].astype(bool)
             self.detected_col_types[col] = "bool"
 
         # detect and cast datetime columns
@@ -127,10 +127,10 @@ class FeatureTypeDetector:
         cat_columns = []
         for col in no_bool_datetime_cols:
             try:
-                df.loc[:, col] = df[col].astype(float)
+                df[col] = df[col].astype(float)
                 self.detected_col_types[col] = "float"
             except Exception:
-                df.loc[:, col] = df[col].astype(str)
+                df[col] = df[col].astype(str)
                 self.detected_col_types[col] = "object"
                 cat_columns.append(col)
         self.cat_columns = cat_columns
@@ -160,7 +160,7 @@ class FeatureTypeDetector:
         for key in self.detected_col_types:
             if ignore_cols and key not in ignore_cols and key in df.columns:
                 if self.detected_col_types[key] == "datetime[ns]":
-                    df.loc[:, key] = pd.to_datetime(df[key], yearfirst=True)
+                    df[key] = pd.to_datetime(df[key], yearfirst=True)
                 else:
-                    df.loc[:, key] = df[key].astype(self.detected_col_types[key])
+                    df[key] = df[key].astype(self.detected_col_types[key])
         return df

@@ -58,11 +58,15 @@ class TargetLabelEncoder:
         else:
             col = targets.name
 
-        targets = targets.astype("category")
+        if isinstance(targets, pd.Series):
+            targets = targets.astype("category")
+        elif isinstance(targets, pd.DataFrame):
+            targets[col] = targets[col].astype("category")
+
         if isinstance(targets, pd.Series):
             targets = targets.to_frame()
         mapping = self.target_label_mapping
-        targets.loc[:, col] = targets.loc[:, col].apply(lambda x: mapping.get(x, 999))
+        targets[col] = targets.loc[:, col].apply(lambda x: mapping.get(x, 999))
         targets[col] = targets[col].astype("int")
         return targets
 

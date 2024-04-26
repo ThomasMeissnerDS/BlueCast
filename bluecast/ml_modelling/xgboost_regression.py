@@ -134,7 +134,7 @@ class XgboostModelRegression(BaseClassMlRegressionModel):
                 num_boost_round=steps,
                 early_stopping_rounds=self.conf_training.early_stopping_rounds,
                 evals=eval_set,
-                verbose_eval=self.conf_xgboost.model_verbosity_during_final_training,
+                verbose_eval=self.conf_xgboost.verbosity_during_final_model_training,
             )
         elif self.conf_xgboost:
             self.model = xgb.train(
@@ -143,7 +143,7 @@ class XgboostModelRegression(BaseClassMlRegressionModel):
                 num_boost_round=steps,
                 early_stopping_rounds=self.conf_training.early_stopping_rounds,
                 evals=eval_set,
-                verbose_eval=self.conf_xgboost.model_verbosity_during_final_training,
+                verbose_eval=self.conf_xgboost.verbosity_during_final_model_training,
             )
         logger("Finished training")
         return self.model
@@ -185,10 +185,9 @@ class XgboostModelRegression(BaseClassMlRegressionModel):
 
         def objective(trial):
             param = {
-                "objective": self.conf_xgboost.model_objective,
+                "objective": self.conf_xgboost.xgboost_objective,
                 "booster": self.conf_xgboost.booster,
-                "eval_metric": self.conf_xgboost.model_eval_metric,
-                "tree_method": train_on,
+                "eval_metric": self.conf_xgboost.xgboost_eval_metric,
                 "eta": trial.suggest_float(
                     "eta", self.conf_xgboost.eta_min, self.conf_xgboost.eta_max
                 ),
@@ -230,6 +229,7 @@ class XgboostModelRegression(BaseClassMlRegressionModel):
                     "steps", self.conf_xgboost.steps_min, self.conf_xgboost.steps_max
                 ),
             }
+            param = {**param, **train_on}
             d_train = xgb.DMatrix(
                 x_train,
                 label=y_train,
@@ -336,10 +336,9 @@ class XgboostModelRegression(BaseClassMlRegressionModel):
             self.conf_training.global_random_state = xgboost_best_param["random_seed"]
 
         self.conf_params_xgboost.params = {
-            "objective": self.conf_xgboost.model_objective,  # OR  'binary:logistic' #the loss function being used
+            "objective": self.conf_xgboost.xgboost_objective,  # OR  'binary:logistic' #the loss function being used
             "booster": self.conf_xgboost.booster,
-            "eval_metric": self.conf_xgboost.model_eval_metric,
-            "tree_method": train_on,  # use GPU for training
+            "eval_metric": self.conf_xgboost.xgboost_eval_metric,
             "max_depth": xgboost_best_param[
                 "max_depth"
             ],  # maximum depth of the decision trees being trained
@@ -352,6 +351,10 @@ class XgboostModelRegression(BaseClassMlRegressionModel):
             "colsample_bylevel": xgboost_best_param["colsample_bylevel"],
             "eta": xgboost_best_param["eta"],
             "steps": xgboost_best_param["steps"],
+        }
+        self.conf_params_xgboost.params = {
+            **self.conf_params_xgboost.params,
+            **train_on,
         }
         logger(f"Best params: {self.conf_params_xgboost.params}")
 
@@ -398,7 +401,7 @@ class XgboostModelRegression(BaseClassMlRegressionModel):
             early_stopping_rounds=self.conf_training.early_stopping_rounds,
             evals=eval_set,
             callbacks=[pruning_callback],
-            verbose_eval=self.conf_xgboost.model_verbosity,
+            verbose_eval=self.conf_xgboost.verbosity_during_hyperparameter_tuning,
         )
         preds = model.predict(d_test)
         mse = mean_squared_error(y_test, preds, squared=False)
@@ -567,7 +570,7 @@ class XgboostModelRegression(BaseClassMlRegressionModel):
                 num_boost_round=steps,
                 early_stopping_rounds=self.conf_training.early_stopping_rounds,
                 evals=eval_set,
-                verbose_eval=self.conf_xgboost.model_verbosity,
+                verbose_eval=self.conf_xgboost.verbosity_during_hyperparameter_tuning,
             )
             d_eval = xgb.DMatrix(
                 X_test_fold,

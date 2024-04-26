@@ -22,6 +22,7 @@ Functions
 .. autoapisummary::
 
    bluecast.tests.test_cast_regression.synthetic_train_test_data
+   bluecast.tests.test_cast_regression.synthetic_calibration_data
    bluecast.tests.test_cast_regression.test_blueprint_xgboost
    bluecast.tests.test_cast_regression.test_bluecast_with_custom_model
    bluecast.tests.test_cast_regression.bluecast_instance
@@ -39,7 +40,10 @@ Functions
 .. py:function:: synthetic_train_test_data() -> Tuple[pandas.DataFrame, pandas.DataFrame]
 
 
-.. py:function:: test_blueprint_xgboost(synthetic_train_test_data)
+.. py:function:: synthetic_calibration_data() -> pandas.DataFrame
+
+
+.. py:function:: test_blueprint_xgboost(synthetic_train_test_data, synthetic_calibration_data)
 
    Test that tests the BlueCast class
 

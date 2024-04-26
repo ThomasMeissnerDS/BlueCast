@@ -11,13 +11,15 @@ import sys
 from pathlib import Path
 from typing import Any
 
+from recommonmark.parser import CommonMarkParser
+
 for x in os.walk("../../src"):
     sys.path.insert(0, x[0])
 
 project = "BlueCast"
-copyright = "2023, Thomas Meißner"
+copyright = "2024, Thomas Meißner"
 author = "Thomas Meißner"
-release = "0.94"
+release = "1.0"
 
 # -- General configuration ---------------------------------------------------
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#general-configuration
@@ -27,7 +29,18 @@ extensions = [
     "sphinx.ext.autodoc",
     "autoapi.extension",
     "sphinx.ext.napoleon",
+    "sphinx.ext.intersphinx",
+    "sphinx.ext.viewcode",
+    "sphinx.ext.autodoc",
+    "sphinx.ext.autosummary",
 ]
+
+source_suffix = [".rst", ".md"]
+source_parsers = {
+    ".md": CommonMarkParser,
+}
+
+myst_heading_anchors = 2
 
 autoapi_type = "python"
 autoapi_dirs = [f"{Path(__file__).parents[2]}/"]

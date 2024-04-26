@@ -19,6 +19,9 @@ from bluecast.config.training_config import (
     XgboostFinalParamConfig,
     XgboostTuneParamsConfig,
 )
+from bluecast.conformal_prediction.conformal_prediction import (
+    ConformalPredictionWrapper,
+)
 from bluecast.evaluation.eval_metrics import eval_classifier
 from bluecast.evaluation.shap_values import (
     shap_dependence_plots,
@@ -114,7 +117,9 @@ class BlueCast:
         self.custom_preprocessor = custom_preprocessor
         self.custom_feature_selector = custom_feature_selector
         self.shap_values: Optional[np.ndarray] = None
+        self.explainer = None
         self.eval_metrics: Optional[Dict[str, Any]] = None
+        self.conformal_prediction_wrapper: Optional[ConformalPredictionWrapper] = None
 
         if experiment_tracker:
             self.experiment_tracker = experiment_tracker
@@ -259,6 +264,17 @@ class BlueCast:
             self.conf_training.global_random_state,
             self.conf_training.train_split_stratify,
         )
+
+        if not self.conf_training.autotune_model and self.conf_params_xgboost:
+            self.conf_params_xgboost.params["objective"] = (
+                self.conf_params_xgboost.params.get("objective", "multi:softprob")
+            )
+            self.conf_params_xgboost.params["eval_metric"] = (
+                self.conf_params_xgboost.params.get("eval_metric", "mlogloss")
+            )
+            self.conf_params_xgboost.params["num_class"] = (
+                self.conf_params_xgboost.params.get("num_class", y_test.nunique())
+            )
 
         if self.custom_preprocessor:
             x_train, y_train = self.custom_preprocessor.fit_transform(x_train, y_train)
@@ -519,11 +535,16 @@ class BlueCast:
 
         return df
 
-    def predict(self, df: pd.DataFrame) -> Tuple[np.ndarray, np.ndarray]:
+    def predict(
+        self, df: pd.DataFrame, save_shap_values: bool = False
+    ) -> Tuple[np.ndarray, np.ndarray]:
         """Predict on unseen data.
 
         Return the predicted probabilities and the predicted classes:
         y_probs, y_classes = predict(df)
+        :param df: Pandas DataFrame with unseen data
+        :param save_shap_values: If True, calculates and saves shap values, so they can be used to plot
+            waterfall plots for selected rows o demand.
         """
         if not self.ml_model:
             raise Exception("Ml model could not be found")
@@ -539,6 +560,10 @@ class BlueCast:
 
         logger(f"{datetime.utcnow()}: Predicting...")
         y_probs, y_classes = self.ml_model.predict(df)
+        if save_shap_values:
+            self.shap_values, self.explainer = shap_explanations(
+                self.ml_model.model, df
+            )
 
         if self.feat_type_detector.cat_columns:
             if (
@@ -551,3 +576,112 @@ class BlueCast:
                 )
 
         return y_probs, y_classes
+
+    def predict_proba(
+        self, df: pd.DataFrame, save_shap_values: bool = False
+    ) -> np.ndarray:
+        """Predict class scores on unseen data.
+
+        Return the predicted probabilities and the predicted classes:
+        y_probs = predict_proba(df)
+        :param df: Pandas DataFrame with unseen data
+        :param save_shap_values: If True, calculates and saves shap values, so they can be used to plot
+            waterfall plots for selected rows o demand.
+        """
+        if not self.ml_model:
+            raise Exception("Ml model could not be found")
+
+        if not self.feat_type_detector:
+            raise Exception("Feature type converter could not be found.")
+
+        if not self.conf_training:
+            raise ValueError("conf_training is None")
+
+        df = self.transform_new_data(df)
+
+        logger(f"{datetime.utcnow()}: Predicting...")
+        y_probs, _y_classes = self.ml_model.predict(df)
+        if save_shap_values:
+            self.shap_values, self.explainer = shap_explanations(
+                self.ml_model.model, df
+            )
+
+        return y_probs
+
+    def calibrate(
+        self, x_calibration: pd.DataFrame, y_calibration: pd.Series, **kwargs
+    ) -> None:
+        """Calibrate the model.
+
+        Via this function the nonconformity measures are taken and used to predict calibrated sets via the
+        predict_sets function, or to return p-values of a row for being the class via the predict_p_values function.
+        :param: x_calibration: Pandas DataFrame without target column, that has not been seen by the model during
+            training.
+        :param y_calibration: Pandas Series holding the target value, hat has not been seen by the model during
+            training.
+        """
+        x_calibration = self.transform_new_data(x_calibration)
+
+        if self.target_label_encoder:
+            x_calibration[self.target_column] = y_calibration
+            x_calibration = self.target_label_encoder.transform_target_labels(
+                x_calibration, self.target_column
+            )
+            y_calibration = x_calibration.pop(self.target_column)
+
+        self.conformal_prediction_wrapper = ConformalPredictionWrapper(
+            self.ml_model, **kwargs
+        )
+        self.conformal_prediction_wrapper.calibrate(x_calibration, y_calibration)
+
+    def predict_p_values(self, df: pd.DataFrame) -> np.ndarray:
+        """Create p-values for each class.
+
+        The p_values indicate the probability of being the correct class.
+        :param df: Pandas DataFrame holding unseen data
+        :returns: Numpy array where each column holds p-values of a row being the class. If string labels were passed
+            each column maps the index of target_label_encoder.target_label_mapping stored in this class.
+        """
+        if self.conformal_prediction_wrapper:
+            df = self.transform_new_data(df)
+            pred_interval = self.conformal_prediction_wrapper.predict_interval(df)
+            return pred_interval
+        else:
+            raise ValueError(
+                """This instance has not been calibrated yet. Make use of calibrate to fit the
+            ConformalPredictionWrapper."""
+            )
+
+    def predict_sets(self, df: pd.DataFrame, alpha: float = 0.05) -> pd.DataFrame:
+        """Create prediction sets based on a certain confidence level.
+
+        Conformal prediction guarantees, that the correct label is present in the prediction sets with a probability of
+        1 - alpha.
+        :param df: Pandas DataFrame holding unseen data
+        :param alpha: Float indicating the desired confidence level.
+        :returns a Pandas DataFrame with a column called 'prediction_set' holding a nested set with predicted classes.
+        """
+        if self.conformal_prediction_wrapper:
+            check_gpu_support()
+            df = self.transform_new_data(df)
+            pred_sets = self.conformal_prediction_wrapper.predict_sets(df, alpha)
+            # transform numerical values back to original strings for the end user
+            if self.target_label_encoder:
+                reverse_mapping = {
+                    value: key
+                    for key, value in self.target_label_encoder.target_label_mapping.items()
+                }
+
+                string_pred_sets = []
+                for numerical_set in pred_sets:
+                    # Convert numerical labels to string labels
+                    string_set = {reverse_mapping[label] for label in numerical_set}
+                    string_pred_sets.append(string_set)
+                return pd.DataFrame({"prediction_set": string_pred_sets})
+            else:
+                return pd.DataFrame({"prediction_set": pred_sets})
+        else:
+            raise ValueError(
+                """This instance has not been calibrated yet. Make use of calibrate to fit the
+            ConformalPredictionWrapper."""
+            )

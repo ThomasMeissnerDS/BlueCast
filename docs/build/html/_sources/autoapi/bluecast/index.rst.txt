@@ -12,6 +12,7 @@ Subpackages
 
    blueprints/index.rst
    config/index.rst
+   conformal_prediction/index.rst
    eda/index.rst
    evaluation/index.rst
    experimentation/index.rst

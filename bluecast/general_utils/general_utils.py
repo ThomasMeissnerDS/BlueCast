@@ -2,24 +2,32 @@
 
 import logging
 from datetime import datetime
-from typing import Any, Optional
+from typing import Any, Dict, Optional
 
 import dill as pickle
 import numpy as np
 import xgboost as xgb
 
 
-def check_gpu_support() -> str:
+def check_gpu_support() -> Dict[str, str]:
     logger(f"{datetime.utcnow()}: Start checking if GPU is available for usage.")
     data = np.random.rand(50, 2)
     label = np.random.randint(2, size=50)
     d_train = xgb.DMatrix(data, label=label)
 
     try:
+        params = {"device": "cuda"}
+        xgb.train(params, d_train, num_boost_round=2)
+        print("Xgboost uses GPU.")
+        return params
+    except Exception:
+        pass
+
+    try:
         params = {"tree_method": "gpu_hist"}
         xgb.train(params, d_train, num_boost_round=2)
         print("Xgboost uses GPU.")
-        return "gpu_hist"
+        return params
     except Exception:
         pass
 
@@ -27,19 +35,12 @@ def check_gpu_support() -> str:
         params = {"tree_method": "gpu"}
         xgb.train(params, d_train, num_boost_round=2)
         print("Xgboost uses GPU.")
-        return "gpu"
-    except Exception:
-        pass
-
-    try:
-        params = {"tree_method": "cuda"}
-        xgb.train(params, d_train, num_boost_round=2)
-        print("Xgboost uses GPU.")
-        return "cuda"
+        return params
     except Exception as e:
         print(e)
+        params = {"tree_method": "exact"}
         print("Xgboost uses CPU.")
-        return "exact"
+        return params
 
 
 def logger(message: str) -> None:

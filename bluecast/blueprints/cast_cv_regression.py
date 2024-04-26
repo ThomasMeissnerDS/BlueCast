@@ -9,6 +9,9 @@ from bluecast.config.training_config import TrainingConfig, XgboostFinalParamCon
 from bluecast.config.training_config import (
     XgboostTuneParamsRegressionConfig as XgboostTuneParamsConfig,
 )
+from bluecast.conformal_prediction.conformal_prediction_regression import (
+    ConformalPredictionRegressionWrapper,
+)
 from bluecast.experimentation.tracking import ExperimentTracker
 from bluecast.general_utils.general_utils import logger
 from bluecast.ml_modelling.xgboost import XgboostModel
@@ -50,6 +53,9 @@ class BlueCastCVRegression:
         self.bluecast_models: List[BlueCastRegression] = []
         self.stratifier = stratifier
         self.ml_model = ml_model
+        self.conformal_prediction_wrapper: Optional[
+            ConformalPredictionRegressionWrapper
+        ] = None
 
         if experiment_tracker:
             self.experiment_tracker = experiment_tracker
@@ -196,17 +202,69 @@ class BlueCastCVRegression:
         return oof_mean, oof_std
 
     def predict(
-        self, df: pd.DataFrame, return_sub_models_preds: bool = False
+        self,
+        df: pd.DataFrame,
+        return_sub_models_preds: bool = False,
+        save_shap_values: bool = False,
     ) -> Union[pd.DataFrame, pd.Series]:
-        """Predict on unseen data using multiple trained BlueCastRegression instances"""
+        """Predict on unseen data using multiple trained BlueCastRegression instances.
+
+        :param df: Pandas DataFrame with unseen data
+        :param return_sub_models_preds: If true will return a DataFrame with the predictions of each model
+            stored in separate columns.
+        :param save_shap_values: If True, calculates and saves shap values, so they can be used to plot
+            waterfall plots for selected rows o demand.
+        """
         or_cols = df.columns
         pred_cols: list[str] = []
+        result_df = pd.DataFrame()  # Create an empty DataFrame to store results
+
         for fn, pipeline in enumerate(self.bluecast_models):
-            y_preds = pipeline.predict(df.loc[:, or_cols])
-            df[f"preds_{fn}"] = y_preds
+            y_preds = pipeline.predict(
+                df.loc[:, or_cols], save_shap_values=save_shap_values
+            )
+            result_df[f"preds_{fn}"] = y_preds
             pred_cols.append(f"preds_{fn}")
 
         if return_sub_models_preds:
-            return df.loc[:, pred_cols]
+            return result_df
         else:
-            return df.loc[:, pred_cols].mean(axis=1)
+            return result_df.mean(axis=1)
+
+    def calibrate(
+        self, x_calibration: pd.DataFrame, y_calibration: pd.Series, **kwargs
+    ) -> None:
+        """Calibrate the model.
+
+        Via this function the nonconformity measures are taken and used to predict prediction intervals vis the
+        predict_interval function. Used is the mean prediction of all sub models.
+        :param: x_calibration: Pandas DataFrame without target column, that has not been seen by the model during
+            training.
+        :param y_calibration: Pandas Series holding the target value, hat has not been seen by the model during
+            training.
+        """
+        self.conformal_prediction_wrapper = ConformalPredictionRegressionWrapper(
+            self, **kwargs
+        )
+        self.conformal_prediction_wrapper.calibrate(x_calibration, y_calibration)
+
+    def predict_interval(self, df: pd.DataFrame, alphas: List[float]) -> pd.DataFrame:
+        """Create prediction intervals based on a certain confidence levels.
+
+        Conformal prediction guarantees, that the correct value is present in the prediction band with a probability of
+        1 - alpha.
+        :param df: Pandas DataFrame holding unseen data
+        :param alphas: List of floats indicating the desired confidence levels.
+        :returns A Pandas DataFrame with  sorted columns 'alpha_XX_low' (alpha) and 'alpha_XX_high' (1 - alpha) for each
+            alpha in the provided list of alphas. To obtain the mean prediction call the 'predict' method.
+        """
+        if self.conformal_prediction_wrapper:
+            pred_interval = self.conformal_prediction_wrapper.predict_interval(
+                df, alphas=alphas
+            )
+            return pred_interval
+        else:
+            raise ValueError(
+                """This instance has not been calibrated yet. Make use of calibrate to fit the
+            ConformalPredictionWrapper."""
+            )
