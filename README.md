@@ -13,8 +13,11 @@
 [![python](https://img.shields.io/badge/Python-3.10-3776AB.svg?style=flat&logo=python&logoColor=white)](https://www.python.org)
 [![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg?style=flat-square)](http://makeapullrequest.com)
 
+![BlueCast](docs/source/bluecast_dragon_logo_5.jpeg)
+
 A lightweight and fast auto-ml library, that helps data scientists
-tackling real world problems from EDA to model explainability.
+tackling real world problems from EDA to model explainability
+and even uncertainty quantification.
 BlueCast focuses on a few model architectures (on default Xgboost
 only) and a few preprocessing options (only what is
 needed for Xgboost). This allows for a much faster development
@@ -38,6 +41,7 @@ Here you can see our test coverage in more detail:
   * [Code quality](#code-quality)
   * [Documentation](#documentation)
   * [How to contribute](#how-to-contribute)
+  * [Supports us](#supports-us)
   * [Meta](#meta)
 
 <!-- tocstop -->
@@ -148,7 +152,7 @@ For new features it is expected that unit tests are added.
 ### Documentation
 
 Documentation is provided via [Read the Docs](https://bluecast.readthedocs.io/en/latest/)
-On GitHub we offer multiple ReadMes to cover all aspectw of working
+On GitHub we offer multiple ReadMes to cover all aspects of working
 with BlueCast, covering:
 
 * [Installation](docs/source/Installation.md)
@@ -165,6 +169,7 @@ with BlueCast, covering:
 
 Contributions are welcome. Please follow the following steps:
 
+* Get in touch with me (i.e. via LinkedIn) if longer contribution is of interest
 * Create a new branch from develop branch
 * Add your feature or fix
 * Add unit tests for new features
@@ -189,6 +194,12 @@ poetry run sphinx-autobuild docs/source docs/build/html
 ```
 
 This will show a localhost link containing the documentation.
+
+### Supports us
+
+Being a small open source project we rely on the community. Please
+consider giving us a GitHb star and spread the word. Also your feedback
+will help the project evolving.
 
 ### Meta
 
