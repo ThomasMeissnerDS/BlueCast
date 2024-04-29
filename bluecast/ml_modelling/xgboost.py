@@ -198,21 +198,34 @@ class XgboostModel(BaseClassMlModel):
                 "eval_metric": self.conf_xgboost.xgboost_eval_metric,
                 "num_class": y_train.nunique(),
                 "eta": trial.suggest_float(
-                    "eta", self.conf_xgboost.eta_min, self.conf_xgboost.eta_max
+                    "eta",
+                    self.conf_xgboost.eta_min,
+                    self.conf_xgboost.eta_max,
+                    log=True,
                 ),
                 "max_depth": trial.suggest_int(
                     "max_depth",
                     self.conf_xgboost.max_depth_min,
                     self.conf_xgboost.max_depth_max,
+                    log=True,
                 ),
                 "alpha": trial.suggest_float(
-                    "alpha", self.conf_xgboost.alpha_min, self.conf_xgboost.alpha_max
+                    "alpha",
+                    self.conf_xgboost.alpha_min,
+                    self.conf_xgboost.alpha_max,
+                    log=True,
                 ),
                 "lambda": trial.suggest_float(
-                    "lambda", self.conf_xgboost.lambda_min, self.conf_xgboost.lambda_max
+                    "lambda",
+                    self.conf_xgboost.lambda_min,
+                    self.conf_xgboost.lambda_max,
+                    log=True,
                 ),
                 "gamma": trial.suggest_float(
-                    "gamma", self.conf_xgboost.lambda_min, self.conf_xgboost.lambda_max
+                    "gamma",
+                    self.conf_xgboost.gamma_min,
+                    self.conf_xgboost.gamma_max,
+                    log=True,
                 ),
                 "max_leaves": trial.suggest_int(
                     "max_leaves",
@@ -235,7 +248,10 @@ class XgboostModel(BaseClassMlModel):
                     self.conf_xgboost.col_sample_by_level_max,
                 ),
                 "steps": trial.suggest_int(
-                    "steps", self.conf_xgboost.steps_min, self.conf_xgboost.steps_max
+                    "steps",
+                    self.conf_xgboost.steps_min,
+                    self.conf_xgboost.steps_max,
+                    log=True,
                 ),
             }
             param = {**param, **train_on}
@@ -674,21 +690,25 @@ class XgboostModel(BaseClassMlModel):
                 "alpha",
                 self.conf_params_xgboost.params["alpha"] * 0.9,
                 self.conf_params_xgboost.params["alpha"] * 1.1,
+                log=True,
             )
             lambda_space = trial.suggest_float(
                 "lambda",
                 self.conf_params_xgboost.params["lambda"] * 0.9,
                 self.conf_params_xgboost.params["lambda"] * 1.1,
+                log=True,
             )
             gamma_space = trial.suggest_float(
                 "gamma",
                 self.conf_params_xgboost.params["gamma"] * 0.9,
                 self.conf_params_xgboost.params["gamma"] * 1.1,
+                log=True,
             )
             eta_space = trial.suggest_float(
                 "eta",
                 self.conf_params_xgboost.params["eta"] * 0.9,
                 self.conf_params_xgboost.params["eta"] * 1.1,
+                log=True,
             )
 
             tuned_params["alpha"] = alpha_space
