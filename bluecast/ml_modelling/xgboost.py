@@ -676,37 +676,57 @@ class XgboostModel(BaseClassMlModel):
             alpha_space = trial.suggest_float(
                 "alpha",
                 max(
-                    self.conf_params_xgboost.params["alpha"] * 0.9,
+                    self.conf_params_xgboost.params["alpha"],
                     self.conf_xgboost.alpha_min,
-                ),
-                self.conf_params_xgboost.params["alpha"] * 1.1,
+                )
+                * 0.9,
+                max(
+                    self.conf_params_xgboost.params["alpha"],
+                    self.conf_xgboost.alpha_min,
+                )
+                * 1.1,
                 log=True,
             )
             lambda_space = trial.suggest_float(
                 "lambda",
                 max(
-                    self.conf_params_xgboost.params["lambda"] * 0.9,
+                    self.conf_params_xgboost.params["lambda"],
                     self.conf_xgboost.lambda_min,
-                ),
-                self.conf_params_xgboost.params["lambda"] * 1.1,
+                )
+                * 0.9,
+                max(
+                    self.conf_params_xgboost.params["lambda"],
+                    self.conf_xgboost.lambda_min,
+                )
+                * 1.1,
                 log=True,
             )
             gamma_space = trial.suggest_float(
                 "gamma",
                 max(
-                    self.conf_params_xgboost.params["gamma"] * 0.9,
+                    self.conf_params_xgboost.params["gamma"],
                     self.conf_xgboost.gamma_min,
-                ),
-                self.conf_params_xgboost.params["gamma"] * 1.1,
+                )
+                * 0.9,
+                max(
+                    self.conf_params_xgboost.params["gamma"],
+                    self.conf_xgboost.gamma_min,
+                )
+                * 1.1,
                 log=True,
             )
             eta_space = trial.suggest_float(
                 "eta",
                 max(
-                    self.conf_params_xgboost.params["eta"] * 0.9,
+                    self.conf_params_xgboost.params["eta"],
                     self.conf_xgboost.eta_min,
-                ),
-                self.conf_params_xgboost.params["eta"] * 1.1,
+                )
+                * 0.9,
+                max(
+                    self.conf_params_xgboost.params["eta"],
+                    self.conf_xgboost.eta_min,
+                )
+                * 1.1,
                 log=True,
             )
 
