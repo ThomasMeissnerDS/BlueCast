@@ -198,21 +198,34 @@ class XgboostModel(BaseClassMlModel):
                 "eval_metric": self.conf_xgboost.xgboost_eval_metric,
                 "num_class": y_train.nunique(),
                 "eta": trial.suggest_float(
-                    "eta", self.conf_xgboost.eta_min, self.conf_xgboost.eta_max
+                    "eta",
+                    self.conf_xgboost.eta_min,
+                    self.conf_xgboost.eta_max,
+                    log=True,
                 ),
                 "max_depth": trial.suggest_int(
                     "max_depth",
                     self.conf_xgboost.max_depth_min,
                     self.conf_xgboost.max_depth_max,
+                    log=True,
                 ),
                 "alpha": trial.suggest_float(
-                    "alpha", self.conf_xgboost.alpha_min, self.conf_xgboost.alpha_max
+                    "alpha",
+                    self.conf_xgboost.alpha_min,
+                    self.conf_xgboost.alpha_max,
+                    log=True,
                 ),
                 "lambda": trial.suggest_float(
-                    "lambda", self.conf_xgboost.lambda_min, self.conf_xgboost.lambda_max
+                    "lambda",
+                    self.conf_xgboost.lambda_min,
+                    self.conf_xgboost.lambda_max,
+                    log=True,
                 ),
                 "gamma": trial.suggest_float(
-                    "gamma", self.conf_xgboost.lambda_min, self.conf_xgboost.lambda_max
+                    "gamma",
+                    self.conf_xgboost.gamma_min,
+                    self.conf_xgboost.gamma_max,
+                    log=True,
                 ),
                 "max_leaves": trial.suggest_int(
                     "max_leaves",
@@ -235,7 +248,10 @@ class XgboostModel(BaseClassMlModel):
                     self.conf_xgboost.col_sample_by_level_max,
                 ),
                 "steps": trial.suggest_int(
-                    "steps", self.conf_xgboost.steps_min, self.conf_xgboost.steps_max
+                    "steps",
+                    self.conf_xgboost.steps_min,
+                    self.conf_xgboost.steps_max,
+                    log=True,
                 ),
             }
             param = {**param, **train_on}
@@ -275,19 +291,9 @@ class XgboostModel(BaseClassMlModel):
                 self.conf_training.hypertuning_cv_folds > 1
                 and self.conf_training.precise_cv_tuning
             ):
-                random_seed = trial.suggest_categorical(
-                    "random_seed",
-                    [self.conf_training.global_random_state + i for i in range(100)],
-                )
 
-                return self._fine_tune_precise(
-                    param, x_train, y_train, x_test, y_test, random_seed
-                )
+                return self._fine_tune_precise(param, x_train, y_train, x_test, y_test)
             else:
-                random_seed = trial.suggest_categorical(
-                    "random_seed",
-                    [self.conf_training.global_random_state + i for i in range(100)],
-                )
                 result = xgb.cv(
                     params=param,
                     dtrain=d_train,
@@ -295,7 +301,7 @@ class XgboostModel(BaseClassMlModel):
                     early_stopping_rounds=self.conf_training.early_stopping_rounds,
                     nfold=self.conf_training.hypertuning_cv_folds,
                     as_pandas=True,
-                    seed=random_seed,
+                    seed=self.conf_training.global_random_state,
                     callbacks=[pruning_callback],
                     shuffle=self.conf_training.shuffle_during_training,
                 )
@@ -351,8 +357,6 @@ class XgboostModel(BaseClassMlModel):
             pass
 
         xgboost_best_param = study.best_trial.params
-        if self.conf_training.hypertuning_cv_folds > 1:
-            self.conf_training.global_random_state = xgboost_best_param["random_seed"]
 
         self.conf_params_xgboost.params = {
             "objective": self.conf_xgboost.xgboost_objective,  # OR  'binary:logistic' #the loss function being used
@@ -524,7 +528,6 @@ class XgboostModel(BaseClassMlModel):
         y_train: pd.Series,
         x_test: pd.DataFrame,
         y_test: pd.Series,
-        random_seed: int,
     ):
         steps = tuned_params.pop("steps", 300)
 
@@ -535,7 +538,7 @@ class XgboostModel(BaseClassMlModel):
         stratifier = StratifiedKFold(
             n_splits=self.conf_training.hypertuning_cv_folds,
             shuffle=True,
-            random_state=random_seed,
+            random_state=self.conf_training.global_random_state,
         )
 
         fold_losses = []
@@ -674,21 +677,25 @@ class XgboostModel(BaseClassMlModel):
                 "alpha",
                 self.conf_params_xgboost.params["alpha"] * 0.9,
                 self.conf_params_xgboost.params["alpha"] * 1.1,
+                log=False,
             )
             lambda_space = trial.suggest_float(
                 "lambda",
                 self.conf_params_xgboost.params["lambda"] * 0.9,
                 self.conf_params_xgboost.params["lambda"] * 1.1,
+                log=False,
             )
             gamma_space = trial.suggest_float(
                 "gamma",
                 self.conf_params_xgboost.params["gamma"] * 0.9,
                 self.conf_params_xgboost.params["gamma"] * 1.1,
+                log=False,
             )
             eta_space = trial.suggest_float(
                 "eta",
                 self.conf_params_xgboost.params["eta"] * 0.9,
                 self.conf_params_xgboost.params["eta"] * 1.1,
+                log=False,
             )
 
             tuned_params["alpha"] = alpha_space
@@ -712,7 +719,6 @@ class XgboostModel(BaseClassMlModel):
                     y_train,
                     x_test,
                     y_test,
-                    self.conf_training.global_random_state,
                 )
             else:
                 result = xgb.cv(

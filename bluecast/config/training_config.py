@@ -95,12 +95,12 @@ class XgboostTuneParamsConfig(BaseModel):
     """Define hyperparameter tuning search space."""
 
     max_depth_min: int = 2
-    max_depth_max: int = 6
-    alpha_min: float = 0.0
+    max_depth_max: int = 12
+    alpha_min: float = 1e-8
     alpha_max: float = 10.0
-    lambda_min: float = 0.0
+    lambda_min: float = 1e-8
     lambda_max: float = 10.0
-    gamma_min: float = 0.0
+    gamma_min: float = 1e-8
     gamma_max: float = 10.0
     subsample_min: float = 0.0
     subsample_max: float = 10.0
@@ -114,7 +114,7 @@ class XgboostTuneParamsConfig(BaseModel):
     col_sample_by_level_max: float = 1.0
     eta_min: float = 0.001
     eta_max: float = 0.3
-    steps_min: int = 2
+    steps_min: int = 50
     steps_max: int = 1000
     verbosity_during_hyperparameter_tuning: int = 0
     verbosity_during_final_model_training: int = 0
@@ -127,12 +127,12 @@ class XgboostTuneParamsRegressionConfig(BaseModel):
     """Define hyperparameter tuning search space."""
 
     max_depth_min: int = 2
-    max_depth_max: int = 6
-    alpha_min: float = 0.0
+    max_depth_max: int = 12
+    alpha_min: float = 1e-8
     alpha_max: float = 10.0
-    lambda_min: float = 0.0
+    lambda_min: float = 1e-8
     lambda_max: float = 10.0
-    gamma_min: float = 0.0
+    gamma_min: float = 1e-8
     gamma_max: float = 10.0
     subsample_min: float = 0.0
     subsample_max: float = 10.0
