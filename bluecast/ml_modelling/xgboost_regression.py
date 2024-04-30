@@ -686,7 +686,6 @@ class XgboostModelRegression(BaseClassMlRegressionModel):
                     y_train,
                     x_test,
                     y_test,
-                    self.conf_training.global_random_state,
                 )
             else:
                 result = xgb.cv(
