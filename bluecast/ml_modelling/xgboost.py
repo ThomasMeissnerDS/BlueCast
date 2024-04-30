@@ -291,19 +291,9 @@ class XgboostModel(BaseClassMlModel):
                 self.conf_training.hypertuning_cv_folds > 1
                 and self.conf_training.precise_cv_tuning
             ):
-                random_seed = trial.suggest_categorical(
-                    "random_seed",
-                    [self.conf_training.global_random_state + i for i in range(100)],
-                )
 
-                return self._fine_tune_precise(
-                    param, x_train, y_train, x_test, y_test, random_seed
-                )
+                return self._fine_tune_precise(param, x_train, y_train, x_test, y_test)
             else:
-                random_seed = trial.suggest_categorical(
-                    "random_seed",
-                    [self.conf_training.global_random_state + i for i in range(100)],
-                )
                 result = xgb.cv(
                     params=param,
                     dtrain=d_train,
@@ -311,7 +301,7 @@ class XgboostModel(BaseClassMlModel):
                     early_stopping_rounds=self.conf_training.early_stopping_rounds,
                     nfold=self.conf_training.hypertuning_cv_folds,
                     as_pandas=True,
-                    seed=random_seed,
+                    seed=self.conf_training.global_random_state,
                     callbacks=[pruning_callback],
                     shuffle=self.conf_training.shuffle_during_training,
                 )
@@ -540,7 +530,6 @@ class XgboostModel(BaseClassMlModel):
         y_train: pd.Series,
         x_test: pd.DataFrame,
         y_test: pd.Series,
-        random_seed: int,
     ):
         steps = tuned_params.pop("steps", 300)
 
@@ -551,7 +540,7 @@ class XgboostModel(BaseClassMlModel):
         stratifier = StratifiedKFold(
             n_splits=self.conf_training.hypertuning_cv_folds,
             shuffle=True,
-            random_state=random_seed,
+            random_state=self.conf_training.global_random_state,
         )
 
         fold_losses = []
@@ -732,7 +721,6 @@ class XgboostModel(BaseClassMlModel):
                     y_train,
                     x_test,
                     y_test,
-                    self.conf_training.global_random_state,
                 )
             else:
                 result = xgb.cv(
