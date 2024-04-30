@@ -357,8 +357,6 @@ class XgboostModel(BaseClassMlModel):
             pass
 
         xgboost_best_param = study.best_trial.params
-        if self.conf_training.hypertuning_cv_folds > 1:
-            self.conf_training.global_random_state = xgboost_best_param["random_seed"]
 
         self.conf_params_xgboost.params = {
             "objective": self.conf_xgboost.xgboost_objective,  # OR  'binary:logistic' #the loss function being used
@@ -677,25 +675,37 @@ class XgboostModel(BaseClassMlModel):
             tuned_params = deepcopy(self.conf_params_xgboost.params)
             alpha_space = trial.suggest_float(
                 "alpha",
-                self.conf_params_xgboost.params["alpha"] * 0.9,
+                max(
+                    self.conf_params_xgboost.params["alpha"] * 0.9,
+                    self.conf_xgboost.alpha_min,
+                ),
                 self.conf_params_xgboost.params["alpha"] * 1.1,
                 log=True,
             )
             lambda_space = trial.suggest_float(
                 "lambda",
-                self.conf_params_xgboost.params["lambda"] * 0.9,
+                max(
+                    self.conf_params_xgboost.params["lambda"] * 0.9,
+                    self.conf_xgboost.lambda_min,
+                ),
                 self.conf_params_xgboost.params["lambda"] * 1.1,
                 log=True,
             )
             gamma_space = trial.suggest_float(
                 "gamma",
-                self.conf_params_xgboost.params["gamma"] * 0.9,
+                max(
+                    self.conf_params_xgboost.params["gamma"] * 0.9,
+                    self.conf_xgboost.gamma_min,
+                ),
                 self.conf_params_xgboost.params["gamma"] * 1.1,
                 log=True,
             )
             eta_space = trial.suggest_float(
                 "eta",
-                self.conf_params_xgboost.params["eta"] * 0.9,
+                max(
+                    self.conf_params_xgboost.params["eta"] * 0.9,
+                    self.conf_xgboost.eta_min,
+                ),
                 self.conf_params_xgboost.params["eta"] * 1.1,
                 log=True,
             )
