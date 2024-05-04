@@ -218,10 +218,10 @@ class XgboostModelRegression(BaseClassMlRegressionModel):
                     self.conf_xgboost.lambda_max,
                     log=True,
                 ),
-                "max_leaves": trial.suggest_int(
-                    "max_leaves",
-                    self.conf_xgboost.max_leaves_min,
-                    self.conf_xgboost.max_leaves_max,
+                "min_child_weight": trial.suggest_int(
+                    "min_child_weight",
+                    self.conf_xgboost.min_child_weight_min,
+                    self.conf_xgboost.min_child_weight_max,
                 ),
                 "subsample": trial.suggest_float(
                     "subsample",
@@ -287,9 +287,7 @@ class XgboostModelRegression(BaseClassMlRegressionModel):
                     shuffle=self.conf_training.shuffle_during_training,
                 )
 
-                adjusted_score = result["test-rmse-mean"].mean() + (
-                    result["test-rmse-mean"].std() ** 0.7
-                )
+                adjusted_score = result["test-rmse-mean"].mean()
 
                 # track results
                 if len(self.experiment_tracker.experiment_id) == 0:
@@ -349,7 +347,7 @@ class XgboostModelRegression(BaseClassMlRegressionModel):
             "alpha": xgboost_best_param["alpha"],
             "lambda": xgboost_best_param["lambda"],
             "gamma": xgboost_best_param["gamma"],
-            "max_leaves": xgboost_best_param["max_leaves"],
+            "min_child_weight": xgboost_best_param["min_child_weight"],
             "subsample": xgboost_best_param["subsample"],
             "colsample_bytree": xgboost_best_param["colsample_bytree"],
             "colsample_bylevel": xgboost_best_param["colsample_bylevel"],
@@ -688,9 +686,7 @@ class XgboostModelRegression(BaseClassMlRegressionModel):
                     shuffle=self.conf_training.shuffle_during_training,
                 )
 
-                adjusted_score = result["test-rmse-mean"].mean() + (
-                    result["test-rmse-mean"].std() ** 0.7
-                )
+                adjusted_score = result["test-rmse-mean"].mean()
 
                 # track results
                 if len(self.experiment_tracker.experiment_id) == 0:

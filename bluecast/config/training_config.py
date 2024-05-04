@@ -103,14 +103,14 @@ class XgboostTuneParamsConfig(BaseModel):
     gamma_min: float = 1e-8
     gamma_max: float = 10.0
     subsample_min: float = 0.0
-    subsample_max: float = 10.0
-    max_leaves_min: int = 0
-    max_leaves_max: int = 0
+    subsample_max: float = 1.0
+    min_child_weight_min: int = 1
+    min_child_weight_max: int = 1
     sub_sample_min: float = 0.3
     sub_sample_max: float = 1.0
     col_sample_by_tree_min: float = 0.3
     col_sample_by_tree_max: float = 1.0
-    col_sample_by_level_min: float = 0.3
+    col_sample_by_level_min: float = 1.0
     col_sample_by_level_max: float = 1.0
     eta_min: float = 0.001
     eta_max: float = 0.3
@@ -135,14 +135,14 @@ class XgboostTuneParamsRegressionConfig(BaseModel):
     gamma_min: float = 1e-8
     gamma_max: float = 10.0
     subsample_min: float = 0.0
-    subsample_max: float = 10.0
-    max_leaves_min: int = 0
-    max_leaves_max: int = 0
+    subsample_max: float = 1.0
+    min_child_weight_min: int = 1
+    min_child_weight_max: int = 1
     sub_sample_min: float = 0.3
     sub_sample_max: float = 1.0
     col_sample_by_tree_min: float = 0.3
     col_sample_by_tree_max: float = 1.0
-    col_sample_by_level_min: float = 0.3
+    col_sample_by_level_min: float = 1.0
     col_sample_by_level_max: float = 1.0
     eta_min: float = 0.001
     eta_max: float = 0.3
@@ -166,7 +166,7 @@ class XgboostFinalParamConfig:
         "lambda": 0.1,
         "gamma": 0.0,
         "subsample": 1.0,
-        "max_leaves": 16,
+        "min_child_weight": 1,
         "colsample_bytree": 0.8,
         "colsample_bylevel": 0.8,
         "eta": 0.1,
