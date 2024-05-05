@@ -69,8 +69,23 @@ def test_blueprint_cv_xgboost(synthetic_train_test_data, synthetic_calibration_d
     )
     assert automl_cv.experiment_tracker.experiment_id[-1] < 50
     print("Autotuning successful.")
-    preds = automl_cv.predict(df_val.drop("target", axis=1))
+    preds = automl_cv.predict(df_val.drop("target", axis=1), mean_type="arithmetic")
     print("Predicting successful.")
+
+    preds_geom = automl_cv.predict(df_val.drop("target", axis=1), mean_type="geometric")
+    assert isinstance(preds_geom, pd.Series)
+
+    preds_harm = automl_cv.predict(df_val.drop("target", axis=1), mean_type="harmonic")
+    assert isinstance(preds_harm, pd.Series)
+
+    preds_median = automl_cv.predict(df_val.drop("target", axis=1), mean_type="median")
+    assert isinstance(preds_median, pd.Series)
+
+    preds_wrong_val = automl_cv.predict(
+        df_val.drop("target", axis=1), mean_type="wrong_value"
+    )
+    assert isinstance(preds_wrong_val, pd.Series)
+
     assert len(preds) == len(df_val.index)
     preds = automl_cv.predict(
         df_val.drop("target", axis=1), return_sub_models_preds=True

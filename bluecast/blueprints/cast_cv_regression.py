@@ -206,6 +206,9 @@ class BlueCastCVRegression:
         df: pd.DataFrame,
         return_sub_models_preds: bool = False,
         save_shap_values: bool = False,
+        mean_type: Literal[
+            "arithmetic", "median", "geometric", "harmonic"
+        ] = "arithmetic",
     ) -> Union[pd.DataFrame, pd.Series]:
         """Predict on unseen data using multiple trained BlueCastRegression instances.
 
@@ -214,6 +217,8 @@ class BlueCastCVRegression:
             stored in separate columns.
         :param save_shap_values: If True, calculates and saves shap values, so they can be used to plot
             waterfall plots for selected rows o demand.
+        :param mean_type: String indicating the type of mean to be used to blend the predictions of the sub models.
+            Possible values are 'arithmetic', 'geometric' and 'harmonic' (default='arithmetic').
         """
         or_cols = df.columns
         pred_cols: list[str] = []
@@ -229,7 +234,16 @@ class BlueCastCVRegression:
         if return_sub_models_preds:
             return result_df
         else:
-            return result_df.mean(axis=1)
+            if mean_type == "arithmetic":
+                return result_df.mean(axis=1)
+            elif mean_type == "geometric":
+                return result_df.prod(axis=1) ** (1 / len(pred_cols)) - 1
+            elif mean_type == "harmonic":
+                return len(pred_cols) / np.sum(1 / result_df, axis=1)
+            elif mean_type == "median":
+                return result_df.median(axis=1)
+            else:
+                return result_df.mean(axis=1)
 
     def calibrate(
         self, x_calibration: pd.DataFrame, y_calibration: pd.Series, **kwargs
