@@ -40,6 +40,7 @@ def test_blueprint_cv_xgboost(synthetic_train_test_data, synthetic_calibration_d
     xgboost_param_config.max_depth_max = 3
     train_config = TrainingConfig()
     train_config.hyperparameter_tuning_rounds = 10
+    train_config.sample_data_during_tuning = True
 
     nb_models = 3
 

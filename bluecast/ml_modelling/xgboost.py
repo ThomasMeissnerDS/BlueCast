@@ -23,7 +23,7 @@ from bluecast.config.training_config import (
     XgboostTuneParamsConfig,
 )
 from bluecast.experimentation.tracking import ExperimentTracker
-from bluecast.general_utils.general_utils import check_gpu_support, logger
+from bluecast.general_utils.general_utils import check_gpu_support, log_sampling, logger
 from bluecast.ml_modelling.base_classes import BaseClassMlModel
 from bluecast.preprocessing.custom import CustomPreprocessing
 
@@ -191,6 +191,25 @@ class XgboostModel(BaseClassMlModel):
                 "At least one of the configs or experiment_tracker is None, which is not allowed"
             )
 
+        if self.conf_training.sample_data_during_tuning:
+            nb_samples_train = log_sampling(
+                len(x_train.index),
+                alpha=self.conf_training.sample_data_during_tuning_alpha,
+            )
+            nb_samples_test = log_sampling(
+                len(x_test.index),
+                alpha=self.conf_training.sample_data_during_tuning_alpha,
+            )
+
+            x_train = x_train.sample(
+                nb_samples_train, random_state=self.conf_training.global_random_state
+            )
+            y_train = y_train.loc[x_train.index]
+            x_test = x_test.sample(
+                nb_samples_test, random_state=self.conf_training.global_random_state
+            )
+            y_test = y_test.loc[x_test.index]
+
         def objective(trial):
             param = {
                 "objective": self.conf_xgboost.xgboost_objective,
@@ -256,6 +275,7 @@ class XgboostModel(BaseClassMlModel):
             }
             param = {**param, **train_on}
             sample_weight = trial.suggest_categorical("sample_weight", [True, False])
+
             if sample_weight:
                 classes_weights = self.calculate_class_weights(y_train)
                 d_train = xgb.DMatrix(

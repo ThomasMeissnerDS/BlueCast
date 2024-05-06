@@ -237,7 +237,7 @@ class BlueCastCVRegression:
             if mean_type == "arithmetic":
                 return result_df.mean(axis=1)
             elif mean_type == "geometric":
-                return result_df.prod(axis=1) ** (1 / len(pred_cols)) - 1
+                return np.exp(np.log(result_df.prod(axis=1)) / result_df.notna().sum(1))
             elif mean_type == "harmonic":
                 return len(pred_cols) / np.sum(1 / result_df, axis=1)
             elif mean_type == "median":

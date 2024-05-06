@@ -28,6 +28,9 @@ class TrainingConfig(BaseModel):
         custom ML model is passed.
     :param hypertuning_cv_folds: Number of cross-validation folds to use for hyperparameter tuning. Not used when
         custom ML model is passed.
+    :param sample_data_during_tuning: Whether to sample the data during tuning. Not used when custom ML model is passed.
+    :param sample_data_during_tuning_alpha: Alpha value for sampling the data during tuning. The higher alpha the
+        fewer samples will be left. Not used when custom ML model is passed.
     :param precise_cv_tuning: If enabled will switch from using Xgboost's own cv method to a custom cross validation
         routine. This is needed when the in-fold preprocessing is necessary that would cause overfitting with usual cv.
         This has a much longer runtime as Optuna's pruning call is missing and all trials will run until the end.
@@ -69,6 +72,8 @@ class TrainingConfig(BaseModel):
     hyperparameter_tuning_rounds: int = 200
     hyperparameter_tuning_max_runtime_secs: int = 3600
     hypertuning_cv_folds: int = 1
+    sample_data_during_tuning: bool = False
+    sample_data_during_tuning_alpha: float = 0.1
     precise_cv_tuning: bool = False
     early_stopping_rounds: Optional[int] = None
     autotune_model: bool = True
@@ -79,7 +84,7 @@ class TrainingConfig(BaseModel):
     store_shap_values_in_instance: bool = False
     train_size: float = 0.8
     train_split_stratify: bool = True
-    use_full_data_for_final_model: bool = False
+    use_full_data_for_final_model: bool = True
     min_features_to_select: int = 5
     cardinality_threshold_for_onehot_encoding: int = 5
     cat_encoding_via_ml_algorithm: bool = False
