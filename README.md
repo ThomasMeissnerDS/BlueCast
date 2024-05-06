@@ -158,7 +158,7 @@ with BlueCast, covering:
 * [Installation](docs/source/Installation.md)
 * [EDA](docs/source/EDA.md)
 * [Basic usage](docs/source/Basic%20usage.md)
-* [Advanced usage](docs/source/Advanced%20usage.md)
+* [Customize training settings](docs/source/Customize%20training%20settings.md)
 * [Customizing configurations and objects](docs/source/Customizing%20configurations%20and%20objects.md)
 * [Model evaluation](docs/source/Model%20evaluation.md)
 * [Model explainability (XAI)](docs/source/Model%20explainability%20(XAI).md)
