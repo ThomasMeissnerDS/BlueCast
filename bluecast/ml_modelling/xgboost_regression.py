@@ -21,7 +21,7 @@ from bluecast.config.training_config import (
     XgboostTuneParamsRegressionConfig as XgboostTuneParamsConfig,
 )
 from bluecast.experimentation.tracking import ExperimentTracker
-from bluecast.general_utils.general_utils import check_gpu_support, logger
+from bluecast.general_utils.general_utils import check_gpu_support, log_sampling, logger
 from bluecast.ml_modelling.base_classes import BaseClassMlRegressionModel
 from bluecast.preprocessing.custom import CustomPreprocessing
 
@@ -183,6 +183,25 @@ class XgboostModelRegression(BaseClassMlRegressionModel):
                 "At least one of the configs or experiment_tracker is None, which is not allowed"
             )
 
+        if self.conf_training.sample_data_during_tuning:
+            nb_samples_train = log_sampling(
+                len(x_train.index),
+                alpha=self.conf_training.sample_data_during_tuning_alpha,
+            )
+            nb_samples_test = log_sampling(
+                len(x_test.index),
+                alpha=self.conf_training.sample_data_during_tuning_alpha,
+            )
+
+            x_train = x_train.sample(
+                nb_samples_train, random_state=self.conf_training.global_random_state
+            )
+            y_train = y_train.loc[x_train.index]
+            x_test = x_test.sample(
+                nb_samples_test, random_state=self.conf_training.global_random_state
+            )
+            y_test = y_test.loc[x_test.index]
+
         def objective(trial):
             param = {
                 "objective": self.conf_xgboost.xgboost_objective,
@@ -218,10 +237,10 @@ class XgboostModelRegression(BaseClassMlRegressionModel):
                     self.conf_xgboost.lambda_max,
                     log=True,
                 ),
-                "max_leaves": trial.suggest_int(
-                    "max_leaves",
-                    self.conf_xgboost.max_leaves_min,
-                    self.conf_xgboost.max_leaves_max,
+                "min_child_weight": trial.suggest_int(
+                    "min_child_weight",
+                    self.conf_xgboost.min_child_weight_min,
+                    self.conf_xgboost.min_child_weight_max,
                 ),
                 "subsample": trial.suggest_float(
                     "subsample",
@@ -287,9 +306,7 @@ class XgboostModelRegression(BaseClassMlRegressionModel):
                     shuffle=self.conf_training.shuffle_during_training,
                 )
 
-                adjusted_score = result["test-rmse-mean"].mean() + (
-                    result["test-rmse-mean"].std() ** 0.7
-                )
+                adjusted_score = result["test-rmse-mean"].mean()
 
                 # track results
                 if len(self.experiment_tracker.experiment_id) == 0:
@@ -349,7 +366,7 @@ class XgboostModelRegression(BaseClassMlRegressionModel):
             "alpha": xgboost_best_param["alpha"],
             "lambda": xgboost_best_param["lambda"],
             "gamma": xgboost_best_param["gamma"],
-            "max_leaves": xgboost_best_param["max_leaves"],
+            "min_child_weight": xgboost_best_param["min_child_weight"],
             "subsample": xgboost_best_param["subsample"],
             "colsample_bytree": xgboost_best_param["colsample_bytree"],
             "colsample_bylevel": xgboost_best_param["colsample_bylevel"],
@@ -688,9 +705,7 @@ class XgboostModelRegression(BaseClassMlRegressionModel):
                     shuffle=self.conf_training.shuffle_during_training,
                 )
 
-                adjusted_score = result["test-rmse-mean"].mean() + (
-                    result["test-rmse-mean"].std() ** 0.7
-                )
+                adjusted_score = result["test-rmse-mean"].mean()
 
                 # track results
                 if len(self.experiment_tracker.experiment_id) == 0:

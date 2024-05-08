@@ -102,3 +102,22 @@ def load_for_production(
         with open(full_path + file_type, "rb") as filehandler:
             automl_model = pickle.load(filehandler)
     return automl_model
+
+
+def log_sampling(nb_rows: int, alpha: float = 0.1) -> int:
+    """Return number of samples based on log sampling.
+
+    With the default value of alpha, the function will return:
+    * 96 samples for 100 rows.
+    * 960 samples for 1000 rows.
+    * 9416 samples for 10000 rows.
+    * 87262 samples for 100000 rows.
+    * 615326 samples for 1000000 rows.
+    :param nb_rows: Number of rows in the dataset.
+    :param alpha: Alpha value for log sampling. Higher alpha values will result in less samples.
+    """
+    nb_samples = int(
+        round(nb_rows - (np.log10(nb_rows) ** np.log10(nb_rows) ** (1 + alpha)), 0)
+    )
+    logger(f"Down sampling from {nb_rows} to {nb_samples} samples.")
+    return nb_samples

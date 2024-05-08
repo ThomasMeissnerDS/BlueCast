@@ -8,6 +8,7 @@
   * [Gaining extra performance](#gaining-extra-performance)
   * [Use multi-model blended pipeline](#use-multi-model-blended-pipeline)
   * [Categorical encoding](#categorical-encoding)
+  * [Training speed and performance](#training-speed-and-performance)
 
 <!-- tocstop -->
 
@@ -187,3 +188,86 @@ will receive numerical features only as target encoding will apply before. If `c
 is True (default setting) `custom_last_mile_computation` will receive categorical
 features as well, because Xgboost's or a custom model's inbuilt categorical encoding
 will be used.
+
+## Training speed and performance
+
+BlueCast offers various options to train models. The combinations of settings will
+have a significant impact on the training speed and performance. The following
+overview shall help making the right decisions:
+
+### Hardware
+
+BlueCast will automatically detect if a GPU is available and will use it for
+Xgboost training. For large datasets this can speed up training significantly.
+
+### Number of models to train
+
+Use `BlueCastCV` instead of `BlueCast` for more robust hyperparameter tuning ->
+`BlueCast` trains a single model while `BlueCastCV` trains five models. All
+the training config settings will apply to all models.
+
+### Hyperparameter tuning
+
+BlueCast offers various settings to adjust training speed and performance:
+
+* default: simple train-test split -> fast training, but might overfit
+* disable `autotune_model`: This will disable the hyperparameter tuning and
+  will use the default hyperparameters. This will speed up the training
+  significantly, but will decrease the performance. Default parameters
+  can be adjusted in the `XgboostTuneParamsConfig` class and passed to the
+   `BlueCast` class during instantiation.
+* increase `hypertuning_cv_folds`: more folds -> slower training, but less
+  overfitting (5 or 10 are good values usually)
+* decrease `hyperparameter_tuning_rounds`: fewer rounds -> faster training, but
+  less optimal hyperparameters
+* enable `enable_feature_selection`: For datasets with a big number of features
+  this can speed up training significantly, but will decrease performance.
+  Custom feature selection methods can be passed to optimize speed and performance.
+* enable `sample_data_during_tuning`: This will sample the data during the tuning
+  process. This can speed up the tuning process significantly, but might decrease
+  the performance. This is especially useful for large datasets where the tuning
+  process takes too long for each trial and thus the tuning process is not able
+  to test many hyperparameters (at least 15 rounds).
+* enable `enable_grid_search_fine_tuning`: This will enable another fine-tuning step
+  after the Bayesian optimization. This will require two or three times of the
+  original tuning time additionally. Marginal performance increase possible.
+* enable `precise_cv_tuning`: This will enable a more robust cross-validation routine
+  that will apply random noise to the eval dataset to find even more robust
+  hyperparameters. This is an experimental feature and will slow down the training
+  massively as it runs without parallelism and without trial pruning.
+* set `early_stopping_rounds` to a int value. This will enable early stopping and
+  will stop the training if the eval metric does not improve for the given number
+  of rounds. This can speed up the training significantly, but might increase or
+  decrease the performance depending on the dataset. If `early_stopping_rounds`
+  is set, `use_full_data_for_final_model` must be set to `False` to prevent
+  overfitting.
+
+### Recommended settings
+
+A summary of recommended settings for different scenarios:
+
+* Prototype training or debugging:
+  * use `BlueCast`
+  * `autotune_model = False`
+
+* Fast training, but might overfit:
+  * use `BlueCast`
+  * `hypertuning_cv_folds = 1` (default)
+  * `hyperparameter_tuning_rounds = 20`
+
+* Balanced training:
+  * use `BlueCast`
+  * `hypertuning_cv_folds = 5`
+  * `hyperparameter_tuning_rounds = 20`
+  * `enable_feature_selection = True`
+
+* Robust training:
+  * use `BlueCastCV`
+  * `hypertuning_cv_folds = 10`
+  * `hyperparameter_tuning_rounds = 100`
+
+* Robust training with fine-tuning:
+  * use `BlueCastCV`
+  * `hypertuning_cv_folds = 10`
+  * `hyperparameter_tuning_rounds = 200` (default)
+  * `enable_grid_search_fine_tuning = True`

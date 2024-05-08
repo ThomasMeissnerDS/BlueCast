@@ -12,7 +12,7 @@
 
 ## Custom training configuration
 
-Despite e2eml, BlueCast allows easy customization. Users can adjust the
+BlueCast allows easy customization. Users can adjust the
 configuration and just pass it to the `BlueCast` class. Here is an example:
 
 ```sh

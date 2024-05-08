@@ -132,6 +132,18 @@ shap_waterfall_plot(
 How to plot decision trees will depend on the exact implementation. As BlueCast
 uses Xgboost by default, we illustrate the default way.
 
+### Increase verbosity during training
+
+Bluecast wants to grant full visibility on model and training behaviour
+while being as silent as possible. By default Bluecast keeps the verbosity
+to a minimum and only shows the most important information. However, it is
+possible to adjust the training configuration to increase verbosity and
+show detailed information. Via `show_detailed_tuning_logs` BlueCast will
+print the tested tuning parameter sets and their results for each tuning trial.
+In the `XgboostTuneParamsConfig` and `XgboostTuneParamsRegressionConfig` configs
+the verbosity can be adjusted to show the train and test set loss. Please
+note that this will increase the size of notebook outputs significantly.
+
 ### Accessing the trained models
 
 Regardless of the model architecture used we need to know where BlueCast stores
