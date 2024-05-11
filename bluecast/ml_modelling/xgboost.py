@@ -325,6 +325,7 @@ class XgboostModel(BaseClassMlModel):
                     seed=self.conf_training.global_random_state,
                     callbacks=[pruning_callback],
                     shuffle=self.conf_training.shuffle_during_training,
+                    stratified=True,
                 )
 
                 adjusted_score = result["test-mlogloss-mean"].mean()
@@ -356,6 +357,9 @@ class XgboostModel(BaseClassMlModel):
             direction="minimize",
             sampler=sampler,
             study_name=f"{algorithm} tuning",
+            pruner=optuna.pruners.MedianPruner(
+                n_startup_trials=10, n_warmup_steps=50, interval_steps=10
+            ),
         )
 
         study.optimize(
@@ -750,6 +754,7 @@ class XgboostModel(BaseClassMlModel):
                     seed=self.conf_training.global_random_state,
                     callbacks=[pruning_callback],
                     shuffle=self.conf_training.shuffle_during_training,
+                    stratified=True,
                 )
 
                 adjusted_score = result["test-mlogloss-mean"].mean()
@@ -811,7 +816,11 @@ class XgboostModel(BaseClassMlModel):
         best_score_cv = self.get_best_score()
 
         study = optuna.create_study(
-            direction="minimize", sampler=optuna.samplers.GridSampler(search_space)
+            direction="minimize",
+            sampler=optuna.samplers.GridSampler(search_space),
+            pruner=optuna.pruners.MedianPruner(
+                n_startup_trials=10, n_warmup_steps=50, interval_steps=10
+            ),
         )
         study.optimize(
             objective,
