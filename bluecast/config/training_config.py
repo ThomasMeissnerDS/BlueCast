@@ -102,11 +102,11 @@ class XgboostTuneParamsConfig(BaseModel):
     max_depth_min: int = 2
     max_depth_max: int = 12
     alpha_min: float = 1e-8
-    alpha_max: float = 100.0
+    alpha_max: float = 100
     lambda_min: float = 1e-8
-    lambda_max: float = 100.0
+    lambda_max: float = 100
     gamma_min: float = 1e-8
-    gamma_max: float = 100.0
+    gamma_max: float = 100
     min_child_weight_min: int = 1
     min_child_weight_max: int = 1
     sub_sample_min: float = 0.3
@@ -115,7 +115,7 @@ class XgboostTuneParamsConfig(BaseModel):
     col_sample_by_tree_max: float = 1.0
     col_sample_by_level_min: float = 1.0
     col_sample_by_level_max: float = 1.0
-    eta_min: float = 1e-3
+    eta_min: float = 1e-2
     eta_max: float = 0.3
     steps_min: int = 1000
     steps_max: int = 1000
@@ -132,11 +132,11 @@ class XgboostTuneParamsRegressionConfig(BaseModel):
     max_depth_min: int = 2
     max_depth_max: int = 12
     alpha_min: float = 1e-8
-    alpha_max: float = 100.0
+    alpha_max: float = 100
     lambda_min: float = 1e-8
-    lambda_max: float = 100.0
+    lambda_max: float = 100
     gamma_min: float = 1e-8
-    gamma_max: float = 100.0
+    gamma_max: float = 100
     min_child_weight_min: int = 1
     min_child_weight_max: int = 1
     sub_sample_min: float = 0.3
@@ -145,7 +145,7 @@ class XgboostTuneParamsRegressionConfig(BaseModel):
     col_sample_by_tree_max: float = 1.0
     col_sample_by_level_min: float = 1.0
     col_sample_by_level_max: float = 1.0
-    eta_min: float = 1e-3
+    eta_min: float = 1e-2
     eta_max: float = 0.3
     steps_min: int = 1000
     steps_max: int = 1000
@@ -168,8 +168,8 @@ class XgboostFinalParamConfig:
         "gamma": 0.0,
         "subsample": 1.0,
         "min_child_weight": 1,
-        "colsample_bytree": 0.8,
-        "colsample_bylevel": 0.8,
+        "colsample_bytree": 1.0,
+        "colsample_bylevel": 1.0,
         "eta": 0.05,
         "steps": 1000,
     }
