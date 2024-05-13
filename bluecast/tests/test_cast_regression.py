@@ -10,9 +10,9 @@ from sklearn.metrics import make_scorer, mean_absolute_error
 from sklearn.model_selection import KFold
 
 from bluecast.blueprints.cast_regression import BlueCastRegression
-from bluecast.config.training_config import TrainingConfig
 from bluecast.config.training_config import (
-    XgboostTuneParamsRegressionConfig as XgboostTuneParamsConfig,
+    TrainingConfig,
+    XgboostTuneParamsRegressionConfig,
 )
 from bluecast.ml_modelling.base_classes import BaseClassMlRegressionModel
 from bluecast.preprocessing.custom import CustomPreprocessing
@@ -37,7 +37,7 @@ def test_blueprint_xgboost(synthetic_train_test_data, synthetic_calibration_data
     df_train = synthetic_train_test_data[0]
     df_val = synthetic_train_test_data[1]
     df_calibration = synthetic_calibration_data
-    xgboost_param_config = XgboostTuneParamsConfig()
+    xgboost_param_config = XgboostTuneParamsRegressionConfig()
     xgboost_param_config.steps_max = 100
     xgboost_param_config.max_depth_max = 3
 
@@ -123,7 +123,7 @@ def test_bluecast_with_custom_model():
     train_config.gridsearch_nb_parameters_per_grid = 2
     train_config.precise_cv_tuning = True
 
-    xgboost_param_config = XgboostTuneParamsConfig()
+    xgboost_param_config = XgboostTuneParamsRegressionConfig()
     xgboost_param_config.steps_min = 2
     xgboost_param_config.steps_max = 100
     xgboost_param_config.max_depth_max = 3

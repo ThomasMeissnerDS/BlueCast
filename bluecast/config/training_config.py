@@ -100,10 +100,10 @@ class XgboostTuneParamsConfig(BaseModel):
     """Define hyperparameter tuning search space."""
 
     max_depth_min: int = 2
-    max_depth_max: int = 10
+    max_depth_max: int = 6
     alpha_min: float = 1e-8
     alpha_max: float = 10
-    lambda_min: float = 1e-8
+    lambda_min: float = 1
     lambda_max: float = 10
     gamma_min: float = 1e-8
     gamma_max: float = 10
@@ -117,8 +117,8 @@ class XgboostTuneParamsConfig(BaseModel):
     col_sample_by_level_max: float = 1.0
     eta_min: float = 1e-3
     eta_max: float = 0.3
-    steps_min: int = 20
-    steps_max: int = 1500
+    steps_min: int = 50
+    steps_max: int = 1000
     verbosity_during_hyperparameter_tuning: int = 0
     verbosity_during_final_model_training: int = 0
     xgboost_objective: str = "multi:softprob"
@@ -130,10 +130,10 @@ class XgboostTuneParamsRegressionConfig(BaseModel):
     """Define hyperparameter tuning search space."""
 
     max_depth_min: int = 2
-    max_depth_max: int = 12
+    max_depth_max: int = 6
     alpha_min: float = 1e-8
     alpha_max: float = 10
-    lambda_min: float = 1e-8
+    lambda_min: float = 1
     lambda_max: float = 10
     gamma_min: float = 1e-8
     gamma_max: float = 10
@@ -147,8 +147,8 @@ class XgboostTuneParamsRegressionConfig(BaseModel):
     col_sample_by_level_max: float = 1.0
     eta_min: float = 1e-3
     eta_max: float = 0.3
-    steps_min: int = 20
-    steps_max: int = 1500
+    steps_min: int = 50
+    steps_max: int = 1000
     verbosity_during_hyperparameter_tuning: int = 0
     verbosity_during_final_model_training: int = 0
     xgboost_objective: str = "reg:squarederror"
@@ -162,9 +162,9 @@ class XgboostFinalParamConfig:
 
     params = {
         "booster": "gbtree",
-        "max_depth": 7,  # maximum depth of the decision trees being trained
-        "alpha": 0.1,
-        "lambda": 0.1,
+        "max_depth": 6,  # maximum depth of the decision trees being trained
+        "alpha": 0.0,
+        "lambda": 1.0,
         "gamma": 0.0,
         "subsample": 1.0,
         "min_child_weight": 1,
@@ -174,3 +174,24 @@ class XgboostFinalParamConfig:
         "steps": 1000,
     }
     classification_threshold: float = 0.5
+
+
+@dataclass
+class XgboostRegressionFinalParamConfig:
+    """Define final hyper parameters."""
+
+    params = {
+        "booster": "gbtree",
+        "max_depth": 6,  # maximum depth of the decision trees being trained
+        "alpha": 0.0,
+        "lambda": 1.0,
+        "gamma": 0.0,
+        "subsample": 1.0,
+        "min_child_weight": 1,
+        "colsample_bytree": 1.0,
+        "colsample_bylevel": 1.0,
+        "eta": 0.05,
+        "steps": 1000,
+        "objective": "reg:squarederror",
+        "eval_metric": "rmse",
+    }

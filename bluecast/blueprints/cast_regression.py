@@ -15,7 +15,10 @@ from typing import Any, Dict, List, Literal, Optional, Union
 import numpy as np
 import pandas as pd
 
-from bluecast.config.training_config import TrainingConfig, XgboostFinalParamConfig
+from bluecast.config.training_config import (
+    TrainingConfig,
+    XgboostRegressionFinalParamConfig,
+)
 from bluecast.config.training_config import (
     XgboostTuneParamsRegressionConfig as XgboostTuneParamsConfig,
 )
@@ -91,7 +94,7 @@ class BlueCastRegression:
         ] = None,
         conf_training: Optional[TrainingConfig] = None,
         conf_xgboost: Optional[XgboostTuneParamsConfig] = None,
-        conf_params_xgboost: Optional[XgboostFinalParamConfig] = None,
+        conf_params_xgboost: Optional[XgboostRegressionFinalParamConfig] = None,
         experiment_tracker: Optional[ExperimentTracker] = None,
     ):
         self.class_problem = class_problem
@@ -129,7 +132,8 @@ class BlueCastRegression:
             self.experiment_tracker = ExperimentTracker()
 
         if not self.conf_params_xgboost:
-            self.conf_params_xgboost = XgboostFinalParamConfig()
+            self.conf_params_xgboost = XgboostRegressionFinalParamConfig()
+            self.conf_params_xgboost.params.pop("num_class", None)
 
         if not self.conf_training:
             self.conf_training = TrainingConfig()

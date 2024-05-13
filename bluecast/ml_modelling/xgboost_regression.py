@@ -16,9 +16,10 @@ import xgboost as xgb
 from sklearn.metrics import mean_squared_error
 from sklearn.model_selection import KFold
 
-from bluecast.config.training_config import TrainingConfig, XgboostFinalParamConfig
 from bluecast.config.training_config import (
-    XgboostTuneParamsRegressionConfig as XgboostTuneParamsConfig,
+    TrainingConfig,
+    XgboostRegressionFinalParamConfig,
+    XgboostTuneParamsRegressionConfig,
 )
 from bluecast.experimentation.tracking import ExperimentTracker
 from bluecast.general_utils.general_utils import check_gpu_support, log_sampling, logger
@@ -33,8 +34,8 @@ class XgboostModelRegression(BaseClassMlRegressionModel):
         self,
         class_problem: Literal["regression"],
         conf_training: Optional[TrainingConfig] = None,
-        conf_xgboost: Optional[XgboostTuneParamsConfig] = None,
-        conf_params_xgboost: Optional[XgboostFinalParamConfig] = None,
+        conf_xgboost: Optional[XgboostTuneParamsRegressionConfig] = None,
+        conf_params_xgboost: Optional[XgboostRegressionFinalParamConfig] = None,
         experiment_tracker: Optional[ExperimentTracker] = None,
         custom_in_fold_preprocessor: Optional[CustomPreprocessing] = None,
     ):
@@ -63,16 +64,24 @@ class XgboostModelRegression(BaseClassMlRegressionModel):
             logger(f"{datetime.utcnow()}: Found provided TrainingConfig.")
 
         if not self.conf_xgboost:
-            self.conf_xgboost = XgboostTuneParamsConfig()
-            logger(f"{datetime.utcnow()}: Load default XgboostTuneParamsConfig.")
+            self.conf_xgboost = XgboostTuneParamsRegressionConfig()
+            logger(
+                f"{datetime.utcnow()}: Load default XgboostTuneParamsRegressionConfig."
+            )
         else:
-            logger(f"{datetime.utcnow()}: Found provided XgboostTuneParamsConfig.")
+            logger(
+                f"{datetime.utcnow()}: Found provided XgboostTuneParamsRegressionConfig."
+            )
 
         if not self.conf_params_xgboost:
-            self.conf_params_xgboost = XgboostFinalParamConfig()
-            logger(f"{datetime.utcnow()}: Load default XgboostFinalParamConfig.")
+            self.conf_params_xgboost = XgboostRegressionFinalParamConfig()
+            logger(
+                f"{datetime.utcnow()}: Load default XgboostRegressionFinalParamConfig."
+            )
         else:
-            logger(f"{datetime.utcnow()}: Found provided XgboostFinalParamConfig.")
+            logger(
+                f"{datetime.utcnow()}: Found provided XgboostRegressionFinalParamConfig."
+            )
 
     def fit(
         self,
@@ -119,11 +128,11 @@ class XgboostModelRegression(BaseClassMlRegressionModel):
                 f"""{datetime.utcnow()}: Union train and test data for final model training based on TrainingConfig
              param 'use_full_data_for_final_model'"""
             )
-            x_train = pd.concat([x_train, x_test])
-            y_train = pd.concat([y_train, y_test])
+            x_train = pd.concat([x_train, x_test]).reset_index(drop=True)
+            y_train = pd.concat([y_train, y_test]).reset_index(drop=True)
 
         d_train, d_test = self.create_d_matrices(x_train, y_train, x_test, y_test)
-        eval_set = [(d_train, "train"), (d_test, "test")]
+        eval_set = [(d_test, "test")]
 
         steps = self.conf_params_xgboost.params.pop("steps", 300)
 
@@ -233,8 +242,8 @@ class XgboostModelRegression(BaseClassMlRegressionModel):
                 ),
                 "gamma": trial.suggest_float(
                     "gamma",
-                    self.conf_xgboost.lambda_min,
-                    self.conf_xgboost.lambda_max,
+                    self.conf_xgboost.gamma_min,
+                    self.conf_xgboost.gamma_max,
                     log=True,
                 ),
                 "min_child_weight": trial.suggest_int(
@@ -419,7 +428,7 @@ class XgboostModelRegression(BaseClassMlRegressionModel):
     def train_single_fold_model(
         self, d_train, d_test, y_test, param, steps, pruning_callback
     ):
-        eval_set = [(d_train, "train"), (d_test, "test")]
+        eval_set = [(d_test, "test")]
         model = xgb.train(
             param,
             d_train,
@@ -572,9 +581,9 @@ class XgboostModelRegression(BaseClassMlRegressionModel):
             )
 
             if not self.conf_params_xgboost:
-                self.conf_params_xgboost = XgboostFinalParamConfig()
+                self.conf_params_xgboost = XgboostRegressionFinalParamConfig()
                 logger(
-                    "Could not find XgboostFinalParamConfig. Falling back to default settings."
+                    "Could not find XgboostRegressionFinalParamConfig. Falling back to default settings."
                 )
 
             d_train = xgb.DMatrix(
@@ -582,12 +591,12 @@ class XgboostModelRegression(BaseClassMlRegressionModel):
                 label=y_train_fold,
                 enable_categorical=self.conf_training.cat_encoding_via_ml_algorithm,
             )
-            eval_set = [(d_train, "train"), (d_test, "test")]
+            eval_set = [(d_test, "test")]
 
             if not self.conf_xgboost:
-                self.conf_xgboost = XgboostTuneParamsConfig()
+                self.conf_xgboost = XgboostTuneParamsRegressionConfig()
                 logger(
-                    "Could not find XgboostTuneParamsConfig. Falling back to defaults."
+                    "Could not find XgboostTuneParamsRegressionConfig. Falling back to defaults."
                 )
             model = xgb.train(
                 tuned_params,

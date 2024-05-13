@@ -127,11 +127,11 @@ class XgboostModel(BaseClassMlModel):
                 f"""{datetime.utcnow()}: Union train and test data for final model training based on TrainingConfig
              param 'use_full_data_for_final_model'"""
             )
-            x_train = pd.concat([x_train, x_test])
-            y_train = pd.concat([y_train, y_test])
+            x_train = pd.concat([x_train, x_test]).reset_index(drop=True)
+            y_train = pd.concat([y_train, y_test]).reset_index(drop=True)
 
         d_train, d_test = self.create_d_matrices(x_train, y_train, x_test, y_test)
-        eval_set = [(d_train, "train"), (d_test, "test")]
+        eval_set = [(d_test, "test")]
 
         steps = self.conf_params_xgboost.params.pop("steps", 300)
 
@@ -449,7 +449,7 @@ class XgboostModel(BaseClassMlModel):
     def train_single_fold_model(
         self, d_train, d_test, y_test, param, steps, pruning_callback
     ):
-        eval_set = [(d_train, "train"), (d_test, "test")]
+        eval_set = [(d_test, "test")]
         model = xgb.train(
             param,
             d_train,
@@ -621,7 +621,7 @@ class XgboostModel(BaseClassMlModel):
                     label=y_train_fold,
                     enable_categorical=self.conf_training.cat_encoding_via_ml_algorithm,
                 )
-            eval_set = [(d_train, "train"), (d_test, "test")]
+            eval_set = [(d_test, "test")]
 
             if not self.conf_xgboost:
                 self.conf_xgboost = XgboostTuneParamsConfig()

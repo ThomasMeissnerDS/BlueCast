@@ -5,7 +5,10 @@ import pandas as pd
 from sklearn.model_selection import KFold
 
 from bluecast.blueprints.cast_regression import BlueCastRegression
-from bluecast.config.training_config import TrainingConfig, XgboostFinalParamConfig
+from bluecast.config.training_config import (
+    TrainingConfig,
+    XgboostRegressionFinalParamConfig,
+)
 from bluecast.config.training_config import (
     XgboostTuneParamsRegressionConfig as XgboostTuneParamsConfig,
 )
@@ -32,7 +35,7 @@ class BlueCastCVRegression:
         stratifier: Optional[Any] = None,
         conf_training: Optional[TrainingConfig] = None,
         conf_xgboost: Optional[XgboostTuneParamsConfig] = None,
-        conf_params_xgboost: Optional[XgboostFinalParamConfig] = None,
+        conf_params_xgboost: Optional[XgboostRegressionFinalParamConfig] = None,
         experiment_tracker: Optional[ExperimentTracker] = None,
         custom_in_fold_preprocessor: Optional[CustomPreprocessing] = None,
         custom_last_mile_computation: Optional[CustomPreprocessing] = None,
