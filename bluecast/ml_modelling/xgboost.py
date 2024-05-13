@@ -275,9 +275,8 @@ class XgboostModel(BaseClassMlModel):
                 ),
             }
             param = {**param, **train_on}
-            sample_weight = trial.suggest_categorical("sample_weight", [True, False])
 
-            if sample_weight:
+            if self.conf_training.class_weight_during_dmatrix_creation:
                 classes_weights = self.calculate_class_weights(y_train)
                 d_train = xgb.DMatrix(
                     x_train,
@@ -328,7 +327,7 @@ class XgboostModel(BaseClassMlModel):
                     stratified=True,
                 )
 
-                adjusted_score = result["test-mlogloss-mean"].mean()
+                adjusted_score = result["test-mlogloss-mean"].values[-1]
 
                 # track results
                 if len(self.experiment_tracker.experiment_id) == 0:
@@ -358,7 +357,8 @@ class XgboostModel(BaseClassMlModel):
             sampler=sampler,
             study_name=f"{algorithm} tuning",
             pruner=optuna.pruners.MedianPruner(
-                n_startup_trials=10, n_warmup_steps=100, interval_steps=10
+                n_startup_trials=20,
+                n_warmup_steps=50,
             ),
         )
 
@@ -404,7 +404,6 @@ class XgboostModel(BaseClassMlModel):
             **train_on,
         }
         logger(f"Best params: {self.conf_params_xgboost.params}")
-        self.conf_params_xgboost.sample_weight = xgboost_best_param["sample_weight"]
 
     def get_best_score(self):
         if self.conf_training.autotune_model and (
@@ -426,7 +425,7 @@ class XgboostModel(BaseClassMlModel):
         return best_score_cv_grid
 
     def create_d_matrices(self, x_train, y_train, x_test, y_test):
-        if self.conf_params_xgboost.sample_weight:
+        if self.conf_training.class_weight_during_dmatrix_creation:
             classes_weights = self.calculate_class_weights(y_train)
             d_train = xgb.DMatrix(
                 x_train,
@@ -608,7 +607,7 @@ class XgboostModel(BaseClassMlModel):
                     "Could not find XgboostFinalParamConfig. Falling back to default settings."
                 )
 
-            if self.conf_params_xgboost.sample_weight:
+            if self.conf_training.class_weight_during_dmatrix_creation:
                 classes_weights = self.calculate_class_weights(y_train_fold)
                 d_train = xgb.DMatrix(
                     X_train_fold,
@@ -757,7 +756,7 @@ class XgboostModel(BaseClassMlModel):
                     stratified=True,
                 )
 
-                adjusted_score = result["test-mlogloss-mean"].mean()
+                adjusted_score = result["test-mlogloss-mean"].values[-1]
 
                 # track results
                 if len(self.experiment_tracker.experiment_id) == 0:
@@ -818,9 +817,7 @@ class XgboostModel(BaseClassMlModel):
         study = optuna.create_study(
             direction="minimize",
             sampler=optuna.samplers.GridSampler(search_space),
-            pruner=optuna.pruners.MedianPruner(
-                n_startup_trials=10, n_warmup_steps=50, interval_steps=10
-            ),
+            pruner=optuna.pruners.MedianPruner(n_startup_trials=20, n_warmup_steps=50),
         )
         study.optimize(
             objective,

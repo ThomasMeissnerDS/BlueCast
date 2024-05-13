@@ -7,6 +7,7 @@ Hyperparameter tuning can be switched off or even strengthened via cross-validat
 via the config class attributes from config.training_config module.
 """
 
+import logging
 import warnings
 from datetime import datetime
 from typing import Any, Dict, List, Literal, Optional, Tuple, Union
@@ -126,8 +127,14 @@ class BlueCast:
         else:
             self.experiment_tracker = ExperimentTracker()
 
-        if not self.conf_params_xgboost:
-            self.conf_params_xgboost = XgboostFinalParamConfig()
+        if not self.conf_training:
+            self.conf_training = TrainingConfig()
+
+        logging.basicConfig(
+            filename=f"bluecast_log_random_seed_{self.conf_training.global_random_state}",
+            filemode="w",
+            format="%(name)s - %(levelname)s - %(message)s",
+        )
 
     def initial_checks(self, df: pd.DataFrame) -> None:
         if not self.conf_training:

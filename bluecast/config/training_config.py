@@ -6,7 +6,7 @@ pipeline. Pydantic dataclasses are used to allow users a pythonic way to define 
 Default configurations can be loaded, adjusted and passed into the blueprints.
 """
 
-from typing import Dict, List, Optional
+from typing import List, Optional
 
 from pydantic import BaseModel
 from pydantic.dataclasses import dataclass
@@ -31,9 +31,8 @@ class TrainingConfig(BaseModel):
     :param sample_data_during_tuning: Whether to sample the data during tuning. Not used when custom ML model is passed.
     :param sample_data_during_tuning_alpha: Alpha value for sampling the data during tuning. The higher alpha the
         fewer samples will be left. Not used when custom ML model is passed.
-    :param precise_cv_tuning: If enabled will switch from using Xgboost's own cv method to a custom cross validation
-        routine. This is needed when the in-fold preprocessing is necessary that would cause overfitting with usual cv.
-        This has a much longer runtime as Optuna's pruning call is missing and all trials will run until the end.
+    :param class_weight_during_dmatrix_creation: Whether to use class weights during DMatrix creation. Not used when
+        custom ML model is passed.
     :param early_stopping_rounds: Number of early stopping rounds. Not used when custom ML model is passed. Also
         not used when hypertuning_cv_folds is greater than 1.
     :param autotune_model: Whether to autotune the model. Not used when custom ML model is passed.
@@ -74,6 +73,7 @@ class TrainingConfig(BaseModel):
     hypertuning_cv_folds: int = 1
     sample_data_during_tuning: bool = False
     sample_data_during_tuning_alpha: float = 0.1
+    class_weight_during_dmatrix_creation: bool = False
     precise_cv_tuning: bool = False
     early_stopping_rounds: Optional[int] = None
     autotune_model: bool = True
@@ -100,25 +100,25 @@ class XgboostTuneParamsConfig(BaseModel):
     """Define hyperparameter tuning search space."""
 
     max_depth_min: int = 2
-    max_depth_max: int = 12
+    max_depth_max: int = 10
     alpha_min: float = 1e-8
-    alpha_max: float = 100
+    alpha_max: float = 10
     lambda_min: float = 1e-8
-    lambda_max: float = 100
+    lambda_max: float = 10
     gamma_min: float = 1e-8
-    gamma_max: float = 100
+    gamma_max: float = 10
     min_child_weight_min: int = 1
-    min_child_weight_max: int = 1
-    sub_sample_min: float = 0.3
+    min_child_weight_max: int = 10
+    sub_sample_min: float = 0.1
     sub_sample_max: float = 1.0
     col_sample_by_tree_min: float = 0.1
     col_sample_by_tree_max: float = 1.0
     col_sample_by_level_min: float = 1.0
     col_sample_by_level_max: float = 1.0
-    eta_min: float = 1e-2
+    eta_min: float = 1e-3
     eta_max: float = 0.3
-    steps_min: int = 1000
-    steps_max: int = 1000
+    steps_min: int = 20
+    steps_max: int = 1500
     verbosity_during_hyperparameter_tuning: int = 0
     verbosity_during_final_model_training: int = 0
     xgboost_objective: str = "multi:softprob"
@@ -132,23 +132,23 @@ class XgboostTuneParamsRegressionConfig(BaseModel):
     max_depth_min: int = 2
     max_depth_max: int = 12
     alpha_min: float = 1e-8
-    alpha_max: float = 100
+    alpha_max: float = 10
     lambda_min: float = 1e-8
-    lambda_max: float = 100
+    lambda_max: float = 10
     gamma_min: float = 1e-8
-    gamma_max: float = 100
+    gamma_max: float = 10
     min_child_weight_min: int = 1
-    min_child_weight_max: int = 1
-    sub_sample_min: float = 0.3
+    min_child_weight_max: int = 10
+    sub_sample_min: float = 0.1
     sub_sample_max: float = 1.0
     col_sample_by_tree_min: float = 0.1
     col_sample_by_tree_max: float = 1.0
     col_sample_by_level_min: float = 1.0
     col_sample_by_level_max: float = 1.0
-    eta_min: float = 1e-2
+    eta_min: float = 1e-3
     eta_max: float = 0.3
-    steps_min: int = 1000
-    steps_max: int = 1000
+    steps_min: int = 20
+    steps_max: int = 1500
     verbosity_during_hyperparameter_tuning: int = 0
     verbosity_during_final_model_training: int = 0
     xgboost_objective: str = "reg:squarederror"
@@ -173,5 +173,4 @@ class XgboostFinalParamConfig:
         "eta": 0.05,
         "steps": 1000,
     }
-    sample_weight: Optional[Dict[str, float]] = None
     classification_threshold: float = 0.5

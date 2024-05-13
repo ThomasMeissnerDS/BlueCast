@@ -124,6 +124,7 @@ def test_bluecast_with_custom_model():
     train_config.precise_cv_tuning = True
 
     xgboost_param_config = XgboostTuneParamsConfig()
+    xgboost_param_config.steps_min = 2
     xgboost_param_config.steps_max = 100
     xgboost_param_config.max_depth_max = 3
 

@@ -307,7 +307,7 @@ class XgboostModelRegression(BaseClassMlRegressionModel):
                     shuffle=self.conf_training.shuffle_during_training,
                 )
 
-                adjusted_score = result["test-rmse-mean"].mean()
+                adjusted_score = result["test-rmse-mean"].values[-1]
 
                 # track results
                 if len(self.experiment_tracker.experiment_id) == 0:
@@ -337,7 +337,8 @@ class XgboostModelRegression(BaseClassMlRegressionModel):
             sampler=sampler,
             study_name=f"{algorithm} tuning",
             pruner=optuna.pruners.MedianPruner(
-                n_startup_trials=10, n_warmup_steps=50, interval_steps=10
+                n_startup_trials=20,
+                n_warmup_steps=50,
             ),
         )
 
@@ -709,7 +710,7 @@ class XgboostModelRegression(BaseClassMlRegressionModel):
                     shuffle=self.conf_training.shuffle_during_training,
                 )
 
-                adjusted_score = result["test-rmse-mean"].mean()
+                adjusted_score = result["test-rmse-mean"].values[-1]
 
                 # track results
                 if len(self.experiment_tracker.experiment_id) == 0:
@@ -770,9 +771,7 @@ class XgboostModelRegression(BaseClassMlRegressionModel):
         study = optuna.create_study(
             direction="minimize",
             sampler=optuna.samplers.GridSampler(search_space),
-            pruner=optuna.pruners.MedianPruner(
-                n_startup_trials=10, n_warmup_steps=50, interval_steps=10
-            ),
+            pruner=optuna.pruners.MedianPruner(n_startup_trials=20, n_warmup_steps=50),
         )
         study.optimize(
             objective,

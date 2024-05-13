@@ -53,6 +53,7 @@ def test_blueprint_xgboost(
     df_val = synthetic_train_test_data[1]
     df_calibration = synthetic_calibration_data
     xgboost_param_config = XgboostTuneParamsConfig()
+    xgboost_param_config.steps_min = 2
     xgboost_param_config.steps_max = 100
     xgboost_param_config.max_depth_max = 3
 
@@ -201,6 +202,7 @@ def test_bluecast_with_custom_model():
     train_config.gridsearch_nb_parameters_per_grid = 2
 
     xgboost_param_config = XgboostTuneParamsConfig()
+    xgboost_param_config.steps_min = 2
     xgboost_param_config.steps_max = 100
     xgboost_param_config.max_depth_max = 3
 
