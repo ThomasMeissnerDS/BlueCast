@@ -127,6 +127,9 @@ class BlueCast:
         else:
             self.experiment_tracker = ExperimentTracker()
 
+        if not self.conf_params_xgboost:
+            self.conf_params_xgboost = XgboostFinalParamConfig()
+
         if not self.conf_training:
             self.conf_training = TrainingConfig()
 
