@@ -65,8 +65,8 @@ class TrainingConfig(BaseModel):
     :param experiment_name: Name of the experiment. Will be logged inside the ExperimentTracker.
     """
 
-    global_random_state: int = 10
-    increase_random_state_in_bluecast_cv_by: int = 33
+    global_random_state: int = 33
+    increase_random_state_in_bluecast_cv_by: int = 200
     shuffle_during_training: bool = True
     hyperparameter_tuning_rounds: int = 200
     hyperparameter_tuning_max_runtime_secs: int = 3600
@@ -100,7 +100,7 @@ class XgboostTuneParamsConfig(BaseModel):
     """Define hyperparameter tuning search space."""
 
     max_depth_min: int = 2
-    max_depth_max: int = 6
+    max_depth_max: int = 10
     alpha_min: float = 1e-8
     alpha_max: float = 10
     lambda_min: float = 1
@@ -124,13 +124,14 @@ class XgboostTuneParamsConfig(BaseModel):
     xgboost_objective: str = "multi:softprob"
     xgboost_eval_metric: str = "mlogloss"
     booster: str = "gbtree"
+    tree_method: str = "hist"
 
 
 class XgboostTuneParamsRegressionConfig(BaseModel):
     """Define hyperparameter tuning search space."""
 
     max_depth_min: int = 2
-    max_depth_max: int = 6
+    max_depth_max: int = 10
     alpha_min: float = 1e-8
     alpha_max: float = 10
     lambda_min: float = 1
@@ -154,6 +155,7 @@ class XgboostTuneParamsRegressionConfig(BaseModel):
     xgboost_objective: str = "reg:squarederror"
     xgboost_eval_metric: str = "rmse"
     booster: str = "gbtree"
+    tree_method: str = "hist"
 
 
 @dataclass
@@ -162,7 +164,7 @@ class XgboostFinalParamConfig:
 
     params = {
         "booster": "gbtree",
-        "max_depth": 6,  # maximum depth of the decision trees being trained
+        "max_depth": 10,  # maximum depth of the decision trees being trained
         "alpha": 0.0,
         "lambda": 1.0,
         "gamma": 0.0,
@@ -172,6 +174,9 @@ class XgboostFinalParamConfig:
         "colsample_bylevel": 1.0,
         "eta": 0.05,
         "steps": 1000,
+        "objective": "multi:softprob",
+        "eval_metric": "mlogloss",
+        "tree_method": "hist",
     }
     classification_threshold: float = 0.5
 
@@ -182,7 +187,7 @@ class XgboostRegressionFinalParamConfig:
 
     params = {
         "booster": "gbtree",
-        "max_depth": 6,  # maximum depth of the decision trees being trained
+        "max_depth": 10,  # maximum depth of the decision trees being trained
         "alpha": 0.0,
         "lambda": 1.0,
         "gamma": 0.0,
@@ -194,4 +199,5 @@ class XgboostRegressionFinalParamConfig:
         "steps": 1000,
         "objective": "reg:squarederror",
         "eval_metric": "rmse",
+        "tree_method": "hist",
     }

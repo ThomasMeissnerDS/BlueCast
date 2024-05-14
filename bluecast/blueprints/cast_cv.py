@@ -30,6 +30,7 @@ class BlueCastCV:
     def __init__(
         self,
         class_problem: Literal["binary", "multiclass"] = "binary",
+        cat_columns: Optional[List[Union[str, float, int]]] = None,
         stratifier: Optional[Any] = None,
         conf_training: Optional[TrainingConfig] = None,
         conf_xgboost: Optional[XgboostTuneParamsConfig] = None,
@@ -55,6 +56,11 @@ class BlueCastCV:
         self.stratifier = stratifier
         self.ml_model = ml_model
         self.conformal_prediction_wrapper: Optional[ConformalPredictionWrapper] = None
+
+        if not cat_columns:
+            self.cat_columns = []
+        else:
+            self.cat_columns = cat_columns
 
         if experiment_tracker:
             self.experiment_tracker = experiment_tracker
@@ -129,6 +135,7 @@ class BlueCastCV:
 
             automl = BlueCast(
                 class_problem=self.class_problem,
+                cat_columns=self.cat_columns,
                 conf_training=self.conf_training,
                 conf_xgboost=self.conf_xgboost,
                 conf_params_xgboost=self.conf_params_xgboost,
@@ -181,6 +188,7 @@ class BlueCastCV:
 
             automl = BlueCast(
                 class_problem=self.class_problem,
+                cat_columns=self.cat_columns,
                 conf_training=self.conf_training,
                 conf_xgboost=self.conf_xgboost,
                 conf_params_xgboost=self.conf_params_xgboost,

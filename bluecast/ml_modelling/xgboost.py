@@ -214,6 +214,7 @@ class XgboostModel(BaseClassMlModel):
             param = {
                 "objective": self.conf_xgboost.xgboost_objective,
                 "booster": self.conf_xgboost.booster,
+                "tree_method": self.conf_xgboost.tree_method,
                 "eval_metric": self.conf_xgboost.xgboost_eval_metric,
                 "num_class": y_train.nunique(),
                 "eta": trial.suggest_float(
@@ -384,6 +385,7 @@ class XgboostModel(BaseClassMlModel):
         self.conf_params_xgboost.params = {
             "objective": self.conf_xgboost.xgboost_objective,  # OR  'binary:logistic' #the loss function being used
             "booster": self.conf_xgboost.booster,
+            "tree_method": self.conf_xgboost.tree_method,
             "eval_metric": self.conf_xgboost.xgboost_eval_metric,
             "num_class": y_train.nunique(),
             "max_depth": xgboost_best_param[

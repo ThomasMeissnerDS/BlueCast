@@ -99,7 +99,12 @@ class BlueCastRegression:
     ):
         self.class_problem = class_problem
         self.prediction_mode: bool = False
-        self.cat_columns = cat_columns
+
+        if not cat_columns:
+            self.cat_columns = []
+        else:
+            self.cat_columns = cat_columns
+
         self.date_columns = date_columns
         self.time_split_column = time_split_column
         self.target_column = "Undefined"
@@ -240,7 +245,7 @@ class BlueCastRegression:
         self.target_column = target_col
         check_gpu_support()
         feat_type_detector = FeatureTypeDetector(
-            cat_columns=[], num_columns=[], date_columns=[]
+            cat_columns=self.cat_columns, num_columns=[], date_columns=[]
         )
         df = feat_type_detector.fit_transform_feature_types(df)
         self.feat_type_detector = feat_type_detector
@@ -261,14 +266,6 @@ class BlueCastRegression:
             self.conf_training.global_random_state,
             stratify=False,
         )
-
-        if not self.conf_training.autotune_model and self.conf_params_xgboost:
-            self.conf_params_xgboost.params["objective"] = (
-                self.conf_params_xgboost.params.get("objective", "reg:squarederror")
-            )
-            self.conf_params_xgboost.params["eval_metric"] = (
-                self.conf_params_xgboost.params.get("eval_metric", "rmse")
-            )
 
         if self.custom_preprocessor:
             x_train, y_train = self.custom_preprocessor.fit_transform(

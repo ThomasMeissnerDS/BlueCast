@@ -8,6 +8,7 @@ categorical and datetime columns. It also casts columns to a specific type.
 from datetime import datetime
 from typing import Dict, List, Optional, Tuple, Union
 
+import numpy as np
 import pandas as pd
 
 from bluecast.general_utils.general_utils import logger
@@ -24,6 +25,7 @@ class FeatureTypeDetector:
         num_columns: Optional[List[Union[str, int, float]]] = None,
         cat_columns: Optional[List[Union[str, int, float]]] = None,
         date_columns: Optional[List[Union[str, int, float]]] = None,
+        all_null_cols: Optional[List[Union[str, int, float]]] = None,
     ):
         if not num_columns:
             num_columns = []
@@ -37,6 +39,8 @@ class FeatureTypeDetector:
             date_columns = []
         self.date_columns = date_columns
 
+        self.all_null_cols = all_null_cols
+
         self.detected_col_types: Dict[str, str] = {}
         self.num_dtypes = [
             "int8",
@@ -47,6 +51,14 @@ class FeatureTypeDetector:
             "float32",
             "float64",
         ]
+
+    def drop_all_null_columns(self, df: pd.DataFrame) -> pd.DataFrame:
+        """Drop all columns with only null values."""
+        if self.all_null_cols:
+            df = df.drop(self.all_null_cols, axis=1)
+        else:
+            df = df.dropna(axis=1, how="all")
+        return df
 
     def identify_num_columns(self, df: pd.DataFrame):
         """Identify numerical columns based on already existing data type."""
@@ -66,10 +78,9 @@ class FeatureTypeDetector:
         """Identify boolean columns based on data type"""
         bool_cols = list(df.select_dtypes(["bool"]))
         for col in bool_cols:
-            df[col] = df[col].astype(bool)
+            # df[col] = df[col].astype(bool)
             self.detected_col_types[col] = "bool"
 
-        # detect and cast datetime columns
         try:
             no_bool_df = df.loc[:, ~df.columns.isin(bool_cols)]
             no_bool_cols = no_bool_df.columns.to_list()
@@ -126,13 +137,18 @@ class FeatureTypeDetector:
         no_bool_datetime_cols = no_bool_datetime_df.columns.to_list()
         cat_columns = []
         for col in no_bool_datetime_cols:
-            try:
-                df[col] = df[col].astype(float)
-                self.detected_col_types[col] = "float"
-            except Exception:
+            if col in self.cat_columns:
                 df[col] = df[col].astype(str)
                 self.detected_col_types[col] = "object"
                 cat_columns.append(col)
+            else:
+                try:
+                    df[col] = df[col].astype(np.float64)
+                    self.detected_col_types[col] = np.float64
+                except Exception:
+                    df[col] = df[col].astype(str)
+                    self.detected_col_types[col] = "object"
+                    cat_columns.append(col)
         self.cat_columns = cat_columns
         return df
 
@@ -142,6 +158,7 @@ class FeatureTypeDetector:
         Wrapper function to orchester different detection methods.
         """
         logger(f"{datetime.utcnow()}: Start detecting and casting feature types.")
+        df = self.drop_all_null_columns(df)
         self.identify_num_columns(df)
         bool_cols, no_bool_cols = self.identify_bool_columns(df)
         self.identify_date_time_columns(df, no_bool_cols)
@@ -157,6 +174,7 @@ class FeatureTypeDetector:
         :return: Returns casted dataframe
         """
         logger(f"{datetime.utcnow()}: Start casting feature types.")
+        df = self.drop_all_null_columns(df)
         for key in self.detected_col_types:
             if ignore_cols and key not in ignore_cols and key in df.columns:
                 if self.detected_col_types[key] == "datetime[ns]":
