@@ -8,7 +8,6 @@ categorical and datetime columns. It also casts columns to a specific type.
 from datetime import datetime
 from typing import Dict, List, Optional, Tuple, Union
 
-import numpy as np
 import pandas as pd
 
 from bluecast.general_utils.general_utils import logger
@@ -143,8 +142,8 @@ class FeatureTypeDetector:
                 cat_columns.append(col)
             else:
                 try:
-                    df[col] = df[col].astype(np.float64)
-                    self.detected_col_types[col] = np.float64
+                    df[col] = df[col].astype(float)
+                    self.detected_col_types[col] = "float"
                 except Exception:
                     df[col] = df[col].astype(str)
                     self.detected_col_types[col] = "object"

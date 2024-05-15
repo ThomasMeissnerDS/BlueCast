@@ -251,7 +251,7 @@ class XgboostModel(BaseClassMlModel):
                     "min_child_weight",
                     self.conf_xgboost.min_child_weight_min,
                     self.conf_xgboost.min_child_weight_max,
-                    log=True,
+                    log=False,
                 ),
                 "subsample": trial.suggest_float(
                     "subsample",

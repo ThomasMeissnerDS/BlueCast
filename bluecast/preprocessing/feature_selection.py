@@ -28,6 +28,7 @@ class BoostaRootaWrapper(CustomPreprocessing):
                 n_estimators=100,
                 random_state=self.random_state,
                 importance_type="total_cover",
+                max_depth=10,
             )
         else:
             model = xgb.XGBClassifier(
@@ -36,6 +37,7 @@ class BoostaRootaWrapper(CustomPreprocessing):
                 n_estimators=100,
                 random_state=self.random_state,
                 importance_type="total_cover",
+                max_depth=10,
             )
 
         logger(
@@ -67,7 +69,7 @@ class BoostARoota(object):
         self,
         metric=None,
         clf=None,
-        cutoff=4,
+        cutoff=200,
         iters=10,
         max_rounds=100,
         delta=0.1,

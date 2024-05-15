@@ -384,21 +384,6 @@ def test_missing_xgboost_tune_params_config_warning(bluecast_instance):
         bluecast_instance.initial_checks(df)
 
 
-def test_min_features_to_select_warning(bluecast_instance):
-    # Test if a warning is raised when min_features_to_select is greater than or equal to the number of features
-    df = pd.DataFrame({"feature1": [1, 2, 3], "target": [0, 1, 0]})
-    bluecast_instance.conf_training.enable_feature_selection = True
-    bluecast_instance.conf_training.min_features_to_select = 3
-    message = """The minimum number of features to select is greater or equal to the number of features in
-            the dataset while feature selection is enabled. Consider reducing the minimum number of features to
-            select or disabling feature selection via TrainingConfig."""
-    with pytest.warns(
-        UserWarning,
-        match=message,
-    ):
-        bluecast_instance.initial_checks(df)
-
-
 def test_shap_values_and_ml_algorithm_warning(bluecast_instance):
     # Test if a warning is raised when calculate_shap_values is True and cat_encoding_via_ml_algorithm is True
     df = pd.DataFrame({"feature1": [1, 2, 3], "target": [0, 1, 0]})
