@@ -38,7 +38,7 @@ from bluecast.preprocessing.category_encoder_orchestration import (
 from bluecast.preprocessing.custom import CustomPreprocessing
 from bluecast.preprocessing.datetime_features import date_converter
 from bluecast.preprocessing.encode_target_labels import TargetLabelEncoder
-from bluecast.preprocessing.feature_selection import RFECVSelector
+from bluecast.preprocessing.feature_selection import BoostaRootaWrapper
 from bluecast.preprocessing.feature_types import FeatureTypeDetector
 from bluecast.preprocessing.nulls_and_infs import fill_infinite_values
 from bluecast.preprocessing.onehot_encoding import OneHotCategoryEncoder
@@ -88,7 +88,7 @@ class BlueCast:
         custom_last_mile_computation: Optional[CustomPreprocessing] = None,
         custom_preprocessor: Optional[CustomPreprocessing] = None,
         custom_feature_selector: Optional[
-            Union[RFECVSelector, CustomPreprocessing]
+            Union[BoostaRootaWrapper, CustomPreprocessing]
         ] = None,
         conf_training: Optional[TrainingConfig] = None,
         conf_xgboost: Optional[XgboostTuneParamsConfig] = None,
@@ -175,14 +175,6 @@ class BlueCast:
             have been chosen to speed up the prototyping. For robust hyperparameter tuning consider providing a custom
             XgboostTuneParamsConfig with a deeper hyperparameter search space and a custom TrainingConfig to enable
             cross-validation."""
-            warnings.warn(message, UserWarning, stacklevel=2)
-        if (
-            self.conf_training.min_features_to_select >= len(df.columns)
-            and self.conf_training.enable_feature_selection
-        ):
-            message = """The minimum number of features to select is greater or equal to the number of features in
-            the dataset while feature selection is enabled. Consider reducing the minimum number of features to
-            select or disabling feature selection via TrainingConfig."""
             warnings.warn(message, UserWarning, stacklevel=2)
         if (
             self.conf_training.cat_encoding_via_ml_algorithm
@@ -371,9 +363,8 @@ class BlueCast:
             )
 
         if not self.custom_feature_selector:
-            self.custom_feature_selector = RFECVSelector(
+            self.custom_feature_selector = BoostaRootaWrapper(
                 random_state=self.conf_training.global_random_state,
-                min_features_to_select=self.conf_training.min_features_to_select,
                 class_problem=self.class_problem,
             )
 

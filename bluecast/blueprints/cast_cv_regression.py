@@ -19,7 +19,7 @@ from bluecast.experimentation.tracking import ExperimentTracker
 from bluecast.general_utils.general_utils import logger
 from bluecast.ml_modelling.xgboost import XgboostModel
 from bluecast.preprocessing.custom import CustomPreprocessing
-from bluecast.preprocessing.feature_selection import RFECVSelector
+from bluecast.preprocessing.feature_selection import BoostaRootaWrapper
 
 
 class BlueCastCVRegression:
@@ -42,7 +42,7 @@ class BlueCastCVRegression:
         custom_last_mile_computation: Optional[CustomPreprocessing] = None,
         custom_preprocessor: Optional[CustomPreprocessing] = None,
         custom_feature_selector: Optional[
-            Union[RFECVSelector, CustomPreprocessing]
+            Union[BoostaRootaWrapper, CustomPreprocessing]
         ] = None,
         ml_model: Optional[Union[XgboostModel, Any]] = None,
     ):

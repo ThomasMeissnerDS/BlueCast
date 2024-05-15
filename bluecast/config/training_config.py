@@ -85,7 +85,6 @@ class TrainingConfig(BaseModel):
     train_size: float = 0.8
     train_split_stratify: bool = True
     use_full_data_for_final_model: bool = True
-    min_features_to_select: int = 5
     cardinality_threshold_for_onehot_encoding: int = 5
     cat_encoding_via_ml_algorithm: bool = False
     show_detailed_tuning_logs: bool = False
@@ -115,8 +114,8 @@ class XgboostTuneParamsConfig(BaseModel):
     col_sample_by_tree_max: float = 1.0
     col_sample_by_level_min: float = 1.0
     col_sample_by_level_max: float = 1.0
-    eta_min: float = 1e-3
-    eta_max: float = 0.3
+    eta_min: float = 1e-2
+    eta_max: float = 0.5
     steps_min: int = 50
     steps_max: int = 1000
     verbosity_during_hyperparameter_tuning: int = 0

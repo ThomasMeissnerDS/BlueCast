@@ -437,7 +437,7 @@ class XgboostModelRegression(BaseClassMlRegressionModel):
             num_boost_round=steps,
             early_stopping_rounds=self.conf_training.early_stopping_rounds,
             evals=eval_set,
-            callbacks=[pruning_callback],
+            # callbacks=[pruning_callback],
             verbose_eval=self.conf_xgboost.verbosity_during_hyperparameter_tuning,
         )
         preds = model.predict(d_test)
