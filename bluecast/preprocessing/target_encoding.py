@@ -14,6 +14,7 @@ multiclass.
 from datetime import datetime
 from typing import Dict, List, Optional, Union
 
+import numpy as np
 import pandas as pd
 from category_encoders import OneHotEncoder, TargetEncoder
 
@@ -33,7 +34,7 @@ class BinaryClassTargetEncoder:
     ) -> pd.DataFrame:
         """Fit target encoder and transform column."""
         logger(f"{datetime.utcnow()}: Start fitting binary target encoder.")
-        enc = TargetEncoder(cols=self.cat_columns)
+        enc = TargetEncoder(cols=self.cat_columns, smoothing=np.log10(len(x.index)) * 5)
         x.loc[:, self.cat_columns] = enc.fit_transform(x[self.cat_columns], y)
         x[self.cat_columns] = x[self.cat_columns].astype(float)
         self.encoders["target_encoder_all_cols"] = enc
