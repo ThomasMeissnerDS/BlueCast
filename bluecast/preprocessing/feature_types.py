@@ -142,8 +142,12 @@ class FeatureTypeDetector:
                 cat_columns.append(col)
             else:
                 try:
-                    df[col] = df[col].astype(float)
-                    self.detected_col_types[col] = "float"
+                    if (df[col] - df[col].astype(int)).sum() == 0:
+                        df[col] = df[col].astype(int)
+                        self.detected_col_types[col] = "int"
+                    else:
+                        df[col] = df[col].astype(float)
+                        self.detected_col_types[col] = "float"
                 except Exception:
                     df[col] = df[col].astype(str)
                     self.detected_col_types[col] = "object"

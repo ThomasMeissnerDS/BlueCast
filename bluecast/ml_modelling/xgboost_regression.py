@@ -348,7 +348,7 @@ class XgboostModelRegression(BaseClassMlRegressionModel):
             study_name=f"{algorithm} tuning",
             pruner=optuna.pruners.MedianPruner(
                 n_startup_trials=20,
-                n_warmup_steps=50,
+                n_warmup_steps=20,
             ),
         )
 

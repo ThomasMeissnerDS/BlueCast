@@ -323,7 +323,7 @@ class XgboostModel(BaseClassMlModel):
                     nfold=self.conf_training.hypertuning_cv_folds,
                     as_pandas=True,
                     seed=self.conf_training.global_random_state,
-                    callbacks=[pruning_callback],
+                    # callbacks=[pruning_callback],
                     shuffle=self.conf_training.shuffle_during_training,
                     stratified=True,
                 )
@@ -359,7 +359,7 @@ class XgboostModel(BaseClassMlModel):
             study_name=f"{algorithm} tuning",
             pruner=optuna.pruners.MedianPruner(
                 n_startup_trials=20,
-                n_warmup_steps=50,
+                n_warmup_steps=20,
             ),
         )
 
