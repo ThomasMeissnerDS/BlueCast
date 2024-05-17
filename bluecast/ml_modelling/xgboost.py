@@ -53,6 +53,7 @@ class XgboostModel(BaseClassMlModel):
             )
         else:
             self.random_generator = np.random.default_rng(0)
+        self.best_score = None
 
     def calculate_class_weights(self, y: pd.Series) -> Dict[str, float]:
         """Calculate class weights of target column."""
@@ -210,6 +211,8 @@ class XgboostModel(BaseClassMlModel):
             )
             y_test = y_test.loc[x_test.index]
 
+        self.best_score = None
+
         def objective(trial):
             param = {
                 "objective": self.conf_xgboost.xgboost_objective,
@@ -323,12 +326,25 @@ class XgboostModel(BaseClassMlModel):
                     nfold=self.conf_training.hypertuning_cv_folds,
                     as_pandas=True,
                     seed=self.conf_training.global_random_state,
-                    # callbacks=[pruning_callback],
+                    callbacks=[pruning_callback],
                     shuffle=self.conf_training.shuffle_during_training,
                     stratified=True,
                 )
 
                 adjusted_score = result["test-mlogloss-mean"].values[-1]
+
+                # safe best num iter after early stopping
+                if self.best_score is None:
+                    self.best_score = adjusted_score
+                else:
+                    if (
+                        adjusted_score < self.best_score
+                        and self.conf_training.early_stopping_rounds
+                    ):
+                        self.best_score = adjusted_score
+                        self.conf_params_xgboost.params["steps"] = (
+                            len(result.index) - self.conf_training.early_stopping_rounds
+                        )
 
                 # track results
                 if len(self.experiment_tracker.experiment_id) == 0:
@@ -759,6 +775,19 @@ class XgboostModel(BaseClassMlModel):
                 )
 
                 adjusted_score = result["test-mlogloss-mean"].values[-1]
+
+                # safe best num iter after early stopping
+                if self.best_score is None:
+                    self.best_score = adjusted_score
+                else:
+                    if (
+                        adjusted_score < self.best_score
+                        and self.conf_training.early_stopping_rounds
+                    ):
+                        self.best_score = adjusted_score
+                        self.conf_params_xgboost.params["steps"] = (
+                            len(result.index) - self.conf_training.early_stopping_rounds
+                        )
 
                 # track results
                 if len(self.experiment_tracker.experiment_id) == 0:

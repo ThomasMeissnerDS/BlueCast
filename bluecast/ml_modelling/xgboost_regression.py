@@ -53,6 +53,7 @@ class XgboostModelRegression(BaseClassMlRegressionModel):
             )
         else:
             self.random_generator = np.random.default_rng(0)
+        self.best_score = None
 
     def check_load_confs(self):
         """Load multiple configs or load default configs instead."""
@@ -318,6 +319,19 @@ class XgboostModelRegression(BaseClassMlRegressionModel):
                 )
 
                 adjusted_score = result["test-rmse-mean"].values[-1]
+
+                # safe best num iter after early stopping
+                if self.best_score is None:
+                    self.best_score = adjusted_score
+                else:
+                    if (
+                        adjusted_score < self.best_score
+                        and self.conf_training.early_stopping_rounds
+                    ):
+                        self.best_score = adjusted_score
+                        self.conf_params_xgboost.params["steps"] = (
+                            len(result.index) - self.conf_training.early_stopping_rounds
+                        )
 
                 # track results
                 if len(self.experiment_tracker.experiment_id) == 0:
@@ -722,6 +736,19 @@ class XgboostModelRegression(BaseClassMlRegressionModel):
                 )
 
                 adjusted_score = result["test-rmse-mean"].values[-1]
+
+                # safe best num iter after early stopping
+                if self.best_score is None:
+                    self.best_score = adjusted_score
+                else:
+                    if (
+                        adjusted_score < self.best_score
+                        and self.conf_training.early_stopping_rounds
+                    ):
+                        self.best_score = adjusted_score
+                        self.conf_params_xgboost.params["steps"] = (
+                            len(result.index) - self.conf_training.early_stopping_rounds
+                        )
 
                 # track results
                 if len(self.experiment_tracker.experiment_id) == 0:
