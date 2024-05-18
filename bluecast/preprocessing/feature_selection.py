@@ -1,7 +1,7 @@
 import operator
 import warnings
 from datetime import datetime
-from typing import List, Optional, Tuple
+from typing import List, Literal, Optional, Tuple
 
 import numpy as np
 import pandas as pd
@@ -12,7 +12,9 @@ from bluecast.preprocessing.custom import CustomPreprocessing
 
 
 class BoostaRootaWrapper(CustomPreprocessing):
-    def __init__(self, class_problem, random_state):
+    def __init__(
+        self, class_problem: Literal["binary", "multiclass", "regression"], random_state
+    ):
         super().__init__()
         self.class_problem = class_problem
         self.selected_features: List[Optional[str]] = []
@@ -21,16 +23,7 @@ class BoostaRootaWrapper(CustomPreprocessing):
     def fit_transform(
         self, df: pd.DataFrame, targets: pd.Series
     ) -> Tuple[pd.DataFrame, Optional[pd.Series]]:
-        if self.class_problem == "regression":
-            model = xgb.XGBRegressor(
-                tree_method="approx",
-                max_bin=255,
-                n_estimators=100,
-                random_state=self.random_state,
-                importance_type="total_cover",
-                max_depth=10,
-            )
-        else:
+        if self.class_problem == "binary":
             model = xgb.XGBClassifier(
                 tree_method="approx",
                 max_bin=255,
@@ -39,11 +32,31 @@ class BoostaRootaWrapper(CustomPreprocessing):
                 importance_type="total_cover",
                 max_depth=10,
             )
+            br = BoostARoota(clf=model)
+        elif self.class_problem == "multiclass":
+            model = xgb.XGBClassifier(
+                tree_method="approx",
+                max_bin=255,
+                n_estimators=100,
+                random_state=self.random_state,
+                importance_type="total_cover",
+                max_depth=10,
+            )
+            br = BoostARoota(clf=model, metric="mlogloss")
+        else:
+            model = xgb.XGBRegressor(
+                tree_method="approx",
+                max_bin=255,
+                n_estimators=100,
+                random_state=self.random_state,
+                importance_type="total_cover",
+                max_depth=10,
+            )
+            br = BoostARoota(clf=model)
 
         logger(
             f"{datetime.utcnow()}: Start feature selection as defined in FeatureSelectionConfig."
         )
-        br = BoostARoota(clf=model)
         br.fit(df, targets)
         self.selected_features = br.keep_vars_
         logger(
