@@ -363,26 +363,29 @@ def test_hypertuning_cv_folds_warning(bluecast_instance):
         bluecast_instance.initial_checks(df)
 
 
-def test_missing_feature_selector_warning(bluecast_instance):
+def test_missing_feature_selector_warning():
     # Test if a warning is raised when feature selection is enabled but no feature selector is provided
     df = pd.DataFrame({"feature1": [1, 2, 3], "target": [0, 1, 0]})
-    bluecast_instance.conf_training.enable_feature_selection = True
+    bluecast_instance_test = BlueCast(class_problem="binary")
+    bluecast_instance_test.conf_training.enable_feature_selection = True
+    bluecast_instance_test.target_column = "target"
     with pytest.warns(
         UserWarning,
         match="Feature selection is enabled but no feature selector has been provided.",
     ):
-        bluecast_instance.initial_checks(df)
+        bluecast_instance_test.initial_checks(df)
 
 
-def test_missing_xgboost_tune_params_config_warning(bluecast_instance):
+def test_missing_xgboost_tune_params_config_warning():
     # Test if a warning is raised when XgboostTuneParamsConfig is not provided
+    bluecast_instance_test = BlueCast(class_problem="binary")
     df = pd.DataFrame({"feature1": [1, 2, 3], "target": [0, 1, 0]})
-    del bluecast_instance.conf_xgboost
-    print(f"Bluecast conf Xgboost is: {bluecast_instance.conf_xgboost}")
+    bluecast_instance_test.conf_xgboost = None
+    print(f"Bluecast conf Xgboost is: {bluecast_instance_test.conf_xgboost}")
     with pytest.warns(
         UserWarning, match="No XgboostTuneParamsConfig has been provided."
     ):
-        bluecast_instance.initial_checks(df)
+        bluecast_instance_test.initial_checks(df)
 
 
 def test_shap_values_and_ml_algorithm_warning(bluecast_instance):

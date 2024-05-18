@@ -347,14 +347,15 @@ def test_missing_feature_selector_warning(bluecast_instance):
         bluecast_instance.initial_checks(df)
 
 
-def test_missing_xgboost_tune_params_config_warning(bluecast_instance):
+def test_missing_xgboost_tune_params_config_warning():
     # Test if a warning is raised when XgboostTuneParamsConfig is not provided
     df = pd.DataFrame({"feature1": [1, 2, 3], "target": [0, 1, 0]})
-    bluecast_instance.conf_xgboost = None
+    bluecast_instance_test = BlueCastRegression(class_problem="regression")
+    bluecast_instance_test.conf_xgboost = None
     with pytest.warns(
         UserWarning, match="No XgboostTuneParamsConfig has been provided."
     ):
-        bluecast_instance.initial_checks(df)
+        bluecast_instance_test.initial_checks(df)
 
 
 def test_shap_values_and_ml_algorithm_warning(bluecast_instance):
