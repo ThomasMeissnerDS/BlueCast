@@ -67,6 +67,15 @@ class BlueCastCV:
         else:
             self.experiment_tracker = ExperimentTracker()
 
+        if not self.conf_params_xgboost:
+            self.conf_params_xgboost = XgboostFinalParamConfig()
+
+        if not self.conf_training:
+            self.conf_training = TrainingConfig()
+
+        if not self.conf_xgboost:
+            self.conf_xgboost = XgboostTuneParamsConfig()
+
     def prepare_data(
         self, df: pd.DataFrame, target: str
     ) -> Tuple[pd.DataFrame, pd.Series]:

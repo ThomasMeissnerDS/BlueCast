@@ -18,9 +18,7 @@ import pandas as pd
 from bluecast.config.training_config import (
     TrainingConfig,
     XgboostRegressionFinalParamConfig,
-)
-from bluecast.config.training_config import (
-    XgboostTuneParamsRegressionConfig as XgboostTuneParamsConfig,
+    XgboostTuneParamsRegressionConfig,
 )
 from bluecast.conformal_prediction.conformal_prediction_regression import (
     ConformalPredictionRegressionWrapper,
@@ -93,7 +91,7 @@ class BlueCastRegression:
             Union[BoostaRootaWrapper, CustomPreprocessing]
         ] = None,
         conf_training: Optional[TrainingConfig] = None,
-        conf_xgboost: Optional[XgboostTuneParamsConfig] = None,
+        conf_xgboost: Optional[XgboostTuneParamsRegressionConfig] = None,
         conf_params_xgboost: Optional[XgboostRegressionFinalParamConfig] = None,
         experiment_tracker: Optional[ExperimentTracker] = None,
     ):
@@ -143,6 +141,9 @@ class BlueCastRegression:
         if not self.conf_training:
             self.conf_training = TrainingConfig()
 
+        if not self.conf_xgboost:
+            self.conf_xgboost = XgboostTuneParamsRegressionConfig()
+
         logging.basicConfig(
             filename=f"bluecast_log_random_seed_{self.conf_training.global_random_state}",
             filemode="w",
@@ -176,9 +177,9 @@ class BlueCastRegression:
             feature selector."""
             warnings.warn(message, UserWarning, stacklevel=2)
         if not self.conf_xgboost:
-            message = """No XgboostTuneParamsConfig has been provided. Falling back to default values. Default values
+            message = """No XgboostTuneParamsRegressionConfig has been provided. Falling back to default values. Default values
             have been chosen to speed up the prototyping. For robust hyperparameter tuning consider providing a custom
-            XgboostTuneParamsConfig with a deeper hyperparameter search space and a custom TrainingConfig to enable
+            XgboostTuneParamsRegressionConfig with a deeper hyperparameter search space and a custom TrainingConfig to enable
             cross-validation."""
             warnings.warn(message, UserWarning, stacklevel=2)
 

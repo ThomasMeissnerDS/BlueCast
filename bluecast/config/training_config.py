@@ -35,6 +35,8 @@ class TrainingConfig(BaseModel):
         custom ML model is passed.
     :param early_stopping_rounds: Number of early stopping rounds. Not used when custom ML model is passed. Also
         not used when hypertuning_cv_folds is greater than 1.
+    :param retrain_model_with_optimal_steps_after_early_stopping: Whether to retrain the model with the optimal steps
+        after early stopping. Not used when custom ML model is passed.
     :param autotune_model: Whether to autotune the model. Not used when custom ML model is passed.
     :param enable_feature_selection: Whether to enable recursive feature selection.
     :param calculate_shap_values: Whether to calculate shap values. Also used when custom ML model is passed. Not
@@ -76,6 +78,7 @@ class TrainingConfig(BaseModel):
     class_weight_during_dmatrix_creation: bool = False
     precise_cv_tuning: bool = False
     early_stopping_rounds: Optional[int] = None
+    retrain_model_with_optimal_steps_after_early_stopping: bool = False
     autotune_model: bool = True
     enable_feature_selection: bool = False
     calculate_shap_values: bool = True

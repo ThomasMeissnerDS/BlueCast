@@ -8,9 +8,7 @@ from bluecast.blueprints.cast_regression import BlueCastRegression
 from bluecast.config.training_config import (
     TrainingConfig,
     XgboostRegressionFinalParamConfig,
-)
-from bluecast.config.training_config import (
-    XgboostTuneParamsRegressionConfig as XgboostTuneParamsConfig,
+    XgboostTuneParamsRegressionConfig,
 )
 from bluecast.conformal_prediction.conformal_prediction_regression import (
     ConformalPredictionRegressionWrapper,
@@ -35,7 +33,7 @@ class BlueCastCVRegression:
         cat_columns: Optional[List[Union[str, float, int]]] = None,
         stratifier: Optional[Any] = None,
         conf_training: Optional[TrainingConfig] = None,
-        conf_xgboost: Optional[XgboostTuneParamsConfig] = None,
+        conf_xgboost: Optional[XgboostTuneParamsRegressionConfig] = None,
         conf_params_xgboost: Optional[XgboostRegressionFinalParamConfig] = None,
         experiment_tracker: Optional[ExperimentTracker] = None,
         custom_in_fold_preprocessor: Optional[CustomPreprocessing] = None,
@@ -70,6 +68,15 @@ class BlueCastCVRegression:
             self.experiment_tracker = experiment_tracker
         else:
             self.experiment_tracker = ExperimentTracker()
+
+        if not self.conf_params_xgboost:
+            self.conf_params_xgboost = XgboostRegressionFinalParamConfig()
+
+        if not self.conf_training:
+            self.conf_training = TrainingConfig()
+
+        if not self.conf_xgboost:
+            self.conf_xgboost = XgboostTuneParamsRegressionConfig()
 
     def prepare_data(
         self, df: pd.DataFrame, target: str

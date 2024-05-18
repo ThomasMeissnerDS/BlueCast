@@ -138,6 +138,9 @@ class BlueCast:
         if not self.conf_training:
             self.conf_training = TrainingConfig()
 
+        if not self.conf_xgboost:
+            self.conf_xgboost = XgboostTuneParamsConfig()
+
         logging.basicConfig(
             filename=f"bluecast_log_random_seed_{self.conf_training.global_random_state}",
             filemode="w",

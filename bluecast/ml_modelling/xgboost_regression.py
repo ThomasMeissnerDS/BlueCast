@@ -53,7 +53,6 @@ class XgboostModelRegression(BaseClassMlRegressionModel):
             )
         else:
             self.random_generator = np.random.default_rng(0)
-        self.best_score = None
 
     def check_load_confs(self):
         """Load multiple configs or load default configs instead."""
@@ -151,6 +150,24 @@ class XgboostModelRegression(BaseClassMlRegressionModel):
                 self.conf_params_xgboost.params,
                 d_train,
                 num_boost_round=steps,
+                early_stopping_rounds=self.conf_training.early_stopping_rounds,
+                evals=eval_set,
+                verbose_eval=self.conf_xgboost.verbosity_during_final_model_training,
+            )
+
+        if (
+            self.conf_params_xgboost.params
+            and self.model
+            and self.conf_xgboost
+            and self.conf_training.early_stopping_rounds
+            and self.conf_training.retrain_model_with_optimal_steps_after_early_stopping
+        ):
+            logger("Retrain model with optimal number of steps after early stopping.")
+            self.conf_params_xgboost.params["steps"] = self.model.best_iteration
+            self.model = xgb.train(
+                self.conf_params_xgboost.params,
+                d_train,
+                num_boost_round=self.conf_params_xgboost.params["steps"],
                 early_stopping_rounds=self.conf_training.early_stopping_rounds,
                 evals=eval_set,
                 verbose_eval=self.conf_xgboost.verbosity_during_final_model_training,
@@ -319,19 +336,6 @@ class XgboostModelRegression(BaseClassMlRegressionModel):
                 )
 
                 adjusted_score = result["test-rmse-mean"].values[-1]
-
-                # safe best num iter after early stopping
-                if self.best_score is None:
-                    self.best_score = adjusted_score
-                else:
-                    if (
-                        adjusted_score < self.best_score
-                        and self.conf_training.early_stopping_rounds
-                    ):
-                        self.best_score = adjusted_score
-                        self.conf_params_xgboost.params["steps"] = (
-                            len(result.index) - self.conf_training.early_stopping_rounds
-                        )
 
                 # track results
                 if len(self.experiment_tracker.experiment_id) == 0:
@@ -736,19 +740,6 @@ class XgboostModelRegression(BaseClassMlRegressionModel):
                 )
 
                 adjusted_score = result["test-rmse-mean"].values[-1]
-
-                # safe best num iter after early stopping
-                if self.best_score is None:
-                    self.best_score = adjusted_score
-                else:
-                    if (
-                        adjusted_score < self.best_score
-                        and self.conf_training.early_stopping_rounds
-                    ):
-                        self.best_score = adjusted_score
-                        self.conf_params_xgboost.params["steps"] = (
-                            len(result.index) - self.conf_training.early_stopping_rounds
-                        )
 
                 # track results
                 if len(self.experiment_tracker.experiment_id) == 0:
