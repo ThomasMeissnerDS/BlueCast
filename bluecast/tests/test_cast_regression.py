@@ -351,9 +351,10 @@ def test_missing_xgboost_tune_params_config_warning():
     # Test if a warning is raised when XgboostTuneParamsConfig is not provided
     df = pd.DataFrame({"feature1": [1, 2, 3], "target": [0, 1, 0]})
     bluecast_instance_test = BlueCastRegression(class_problem="regression")
+    bluecast_instance_test.target_column = "target"
     bluecast_instance_test.conf_xgboost = None
     with pytest.warns(
-        UserWarning, match="No XgboostTuneParamsConfig has been provided."
+        UserWarning, match="No XgboostTuneParamsRegressionConfig has been provided."
     ):
         bluecast_instance_test.initial_checks(df)
 

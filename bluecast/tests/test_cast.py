@@ -379,6 +379,7 @@ def test_missing_feature_selector_warning():
 def test_missing_xgboost_tune_params_config_warning():
     # Test if a warning is raised when XgboostTuneParamsConfig is not provided
     bluecast_instance_test = BlueCast(class_problem="binary")
+    bluecast_instance_test.target_column = "target"
     df = pd.DataFrame({"feature1": [1, 2, 3], "target": [0, 1, 0]})
     bluecast_instance_test.conf_xgboost = None
     print(f"Bluecast conf Xgboost is: {bluecast_instance_test.conf_xgboost}")
