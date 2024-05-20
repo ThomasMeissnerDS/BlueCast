@@ -7,14 +7,15 @@ hyperparameter tuning.
 
 from copy import deepcopy
 from datetime import datetime
-from typing import Any, Dict, List, Literal, Optional
+from typing import Any, Dict, List, Literal, Optional, Union
 
 import numpy as np
 import optuna
 import pandas as pd
 import xgboost as xgb
 from sklearn.metrics import mean_squared_error
-from sklearn.model_selection import KFold
+from sklearn.model_selection import KFold, StratifiedKFold
+from sklearn.preprocessing import LabelEncoder
 
 from bluecast.config.training_config import (
     TrainingConfig,
@@ -38,6 +39,7 @@ class XgboostModelRegression(BaseClassMlRegressionModel):
         conf_params_xgboost: Optional[XgboostRegressionFinalParamConfig] = None,
         experiment_tracker: Optional[ExperimentTracker] = None,
         custom_in_fold_preprocessor: Optional[CustomPreprocessing] = None,
+        cat_columns: Optional[List[Union[str, float, int]]] = None,
     ):
         self.model: Optional[xgb.XGBRegressor] = None
         self.class_problem = class_problem
@@ -53,6 +55,7 @@ class XgboostModelRegression(BaseClassMlRegressionModel):
             )
         else:
             self.random_generator = np.random.default_rng(0)
+        self.cat_columns = cat_columns
 
     def check_load_confs(self):
         """Load multiple configs or load default configs instead."""
@@ -130,6 +133,9 @@ class XgboostModelRegression(BaseClassMlRegressionModel):
             )
             x_train = pd.concat([x_train, x_test]).reset_index(drop=True)
             y_train = pd.concat([y_train, y_test]).reset_index(drop=True)
+
+            if self.cat_columns and self.conf_training.cat_encoding_via_ml_algorithm:
+                x_train[self.cat_columns] = x_train[self.cat_columns].astype("category")
 
         d_train, d_test = self.create_d_matrices(x_train, y_train, x_test, y_test)
         eval_set = [(d_test, "test")]
@@ -245,7 +251,7 @@ class XgboostModelRegression(BaseClassMlRegressionModel):
                     "max_depth",
                     self.conf_xgboost.max_depth_min,
                     self.conf_xgboost.max_depth_max,
-                    log=True,
+                    log=False,
                 ),
                 "alpha": trial.suggest_float(
                     "alpha",
@@ -265,11 +271,11 @@ class XgboostModelRegression(BaseClassMlRegressionModel):
                     self.conf_xgboost.gamma_max,
                     log=True,
                 ),
-                "min_child_weight": trial.suggest_int(
+                "min_child_weight": trial.suggest_float(
                     "min_child_weight",
                     self.conf_xgboost.min_child_weight_min,
                     self.conf_xgboost.min_child_weight_max,
-                    log=False,
+                    log=True,
                 ),
                 "subsample": trial.suggest_float(
                     "subsample",
@@ -323,6 +329,18 @@ class XgboostModelRegression(BaseClassMlRegressionModel):
 
                 return self._fine_tune_precise(param, x_train, y_train, x_test, y_test)
             else:
+                # make regression cv startegy stratified
+                le = LabelEncoder()
+                y_binned = le.fit_transform(pd.qcut(y_train, 10, duplicates="drop"))
+                skf = StratifiedKFold(
+                    n_splits=5,
+                    random_state=self.conf_training.global_random_state,
+                    shuffle=self.conf_training.shuffle_during_training,
+                )
+                folds = []
+                for train_index, test_index in skf.split(x_train, y_binned):
+                    folds.append((train_index.tolist(), test_index.tolist()))
+
                 result = xgb.cv(
                     params=param,
                     dtrain=d_train,
@@ -333,6 +351,7 @@ class XgboostModelRegression(BaseClassMlRegressionModel):
                     seed=self.conf_training.global_random_state,
                     callbacks=[pruning_callback],
                     shuffle=self.conf_training.shuffle_during_training,
+                    folds=folds,
                 )
 
                 adjusted_score = result["test-rmse-mean"].values[-1]
@@ -727,6 +746,18 @@ class XgboostModelRegression(BaseClassMlRegressionModel):
                     y_test,
                 )
             else:
+                # make regression cv startegy stratified
+                le = LabelEncoder()
+                y_binned = le.fit_transform(pd.qcut(y_train, 10, duplicates="drop"))
+                skf = StratifiedKFold(
+                    n_splits=5,
+                    random_state=self.conf_training.global_random_state,
+                    shuffle=self.conf_training.shuffle_during_training,
+                )
+                folds = []
+                for train_index, test_index in skf.split(x_train, y_binned):
+                    folds.append((train_index.tolist(), test_index.tolist()))
+
                 result = xgb.cv(
                     params=tuned_params,
                     dtrain=d_train,
@@ -737,6 +768,7 @@ class XgboostModelRegression(BaseClassMlRegressionModel):
                     seed=self.conf_training.global_random_state,
                     callbacks=[pruning_callback],
                     shuffle=self.conf_training.shuffle_during_training,
+                    folds=folds,
                 )
 
                 adjusted_score = result["test-rmse-mean"].values[-1]

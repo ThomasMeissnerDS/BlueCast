@@ -7,7 +7,7 @@ hyperparameter tuning.
 
 from copy import deepcopy
 from datetime import datetime
-from typing import Any, Dict, List, Literal, Optional, Tuple
+from typing import Any, Dict, List, Literal, Optional, Tuple, Union
 
 import numpy as np
 import optuna
@@ -39,6 +39,7 @@ class XgboostModel(BaseClassMlModel):
         conf_params_xgboost: Optional[XgboostFinalParamConfig] = None,
         experiment_tracker: Optional[ExperimentTracker] = None,
         custom_in_fold_preprocessor: Optional[CustomPreprocessing] = None,
+        cat_columns: Optional[List[Union[str, float, int]]] = None,
     ):
         self.model: Optional[xgb.XGBClassifier] = None
         self.class_problem = class_problem
@@ -53,6 +54,7 @@ class XgboostModel(BaseClassMlModel):
             )
         else:
             self.random_generator = np.random.default_rng(0)
+        self.cat_columns = cat_columns
 
     def calculate_class_weights(self, y: pd.Series) -> Dict[str, float]:
         """Calculate class weights of target column."""
@@ -129,6 +131,9 @@ class XgboostModel(BaseClassMlModel):
             )
             x_train = pd.concat([x_train, x_test]).reset_index(drop=True)
             y_train = pd.concat([y_train, y_test]).reset_index(drop=True)
+
+            if self.cat_columns and self.conf_training.cat_encoding_via_ml_algorithm:
+                x_train[self.cat_columns] = x_train[self.cat_columns].astype("category")
 
         d_train, d_test = self.create_d_matrices(x_train, y_train, x_test, y_test)
         eval_set = [(d_test, "test")]
@@ -244,7 +249,7 @@ class XgboostModel(BaseClassMlModel):
                     "max_depth",
                     self.conf_xgboost.max_depth_min,
                     self.conf_xgboost.max_depth_max,
-                    log=True,
+                    log=False,
                 ),
                 "alpha": trial.suggest_float(
                     "alpha",
@@ -264,11 +269,11 @@ class XgboostModel(BaseClassMlModel):
                     self.conf_xgboost.gamma_max,
                     log=True,
                 ),
-                "min_child_weight": trial.suggest_int(
+                "min_child_weight": trial.suggest_float(
                     "min_child_weight",
                     self.conf_xgboost.min_child_weight_min,
                     self.conf_xgboost.min_child_weight_max,
-                    log=False,
+                    log=True,
                 ),
                 "subsample": trial.suggest_float(
                     "subsample",

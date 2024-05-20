@@ -387,6 +387,7 @@ class BlueCast:
                 conf_params_xgboost=self.conf_params_xgboost,
                 experiment_tracker=self.experiment_tracker,
                 custom_in_fold_preprocessor=self.custom_in_fold_preprocessor,
+                cat_columns=self.cat_columns,
             )
         self.ml_model.fit(x_train, x_test, y_train, y_test)
 
