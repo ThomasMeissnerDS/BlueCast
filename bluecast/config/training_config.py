@@ -101,7 +101,7 @@ class TrainingConfig(BaseModel):
 class XgboostTuneParamsConfig(BaseModel):
     """Define hyperparameter tuning search space."""
 
-    max_depth_min: int = 5
+    max_depth_min: int = 2
     max_depth_max: int = 10
     alpha_min: float = 1e-8
     alpha_max: float = 10
@@ -132,7 +132,7 @@ class XgboostTuneParamsConfig(BaseModel):
 class XgboostTuneParamsRegressionConfig(BaseModel):
     """Define hyperparameter tuning search space."""
 
-    max_depth_min: int = 5
+    max_depth_min: int = 2
     max_depth_max: int = 10
     alpha_min: float = 1e-8
     alpha_max: float = 10
