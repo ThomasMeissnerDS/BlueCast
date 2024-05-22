@@ -345,7 +345,7 @@ class XgboostModelRegression(BaseClassMlRegressionModel):
                     params=param,
                     dtrain=d_train,
                     num_boost_round=steps,
-                    early_stopping_rounds=self.conf_training.early_stopping_rounds,
+                    # early_stopping_rounds=self.conf_training.early_stopping_rounds, # not recommended as per docs: https://xgboost.readthedocs.io/en/stable/python/sklearn_estimator.html
                     nfold=self.conf_training.hypertuning_cv_folds,
                     as_pandas=True,
                     seed=self.conf_training.global_random_state,
@@ -468,13 +468,18 @@ class XgboostModelRegression(BaseClassMlRegressionModel):
         self, d_train, d_test, y_test, param, steps, pruning_callback
     ):
         eval_set = [(d_test, "test")]
+        early_stop = xgb.callback.EarlyStopping(
+            rounds=self.conf_training.early_stopping_rounds,
+            metric_name="rmse",
+            data_name="test",
+            save_best=True,
+        )
         model = xgb.train(
             param,
             d_train,
             num_boost_round=steps,
-            early_stopping_rounds=self.conf_training.early_stopping_rounds,
             evals=eval_set,
-            # callbacks=[pruning_callback],
+            callbacks=[early_stop],
             verbose_eval=self.conf_xgboost.verbosity_during_hyperparameter_tuning,
         )
         preds = model.predict(d_test)
@@ -637,13 +642,21 @@ class XgboostModelRegression(BaseClassMlRegressionModel):
                 logger(
                     "Could not find XgboostTuneParamsRegressionConfig. Falling back to defaults."
                 )
+
+            early_stop = xgb.callback.EarlyStopping(
+                rounds=self.conf_training.early_stopping_rounds,
+                metric_name="rmse",
+                data_name="test",
+                save_best=True,
+            )
+
             model = xgb.train(
                 tuned_params,
                 d_train,
                 num_boost_round=steps,
-                early_stopping_rounds=self.conf_training.early_stopping_rounds,
                 evals=eval_set,
                 verbose_eval=self.conf_xgboost.verbosity_during_hyperparameter_tuning,
+                callbacks=[early_stop],
             )
             d_eval = xgb.DMatrix(
                 X_test_fold,
@@ -762,7 +775,7 @@ class XgboostModelRegression(BaseClassMlRegressionModel):
                     params=tuned_params,
                     dtrain=d_train,
                     num_boost_round=steps,
-                    early_stopping_rounds=self.conf_training.early_stopping_rounds,
+                    # early_stopping_rounds=self.conf_training.early_stopping_rounds,  # not recommended as per docs: https://xgboost.readthedocs.io/en/stable/python/sklearn_estimator.html
                     nfold=self.conf_training.hypertuning_cv_folds,
                     as_pandas=True,
                     seed=self.conf_training.global_random_state,

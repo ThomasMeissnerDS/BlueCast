@@ -33,8 +33,8 @@ class TrainingConfig(BaseModel):
         fewer samples will be left. Not used when custom ML model is passed.
     :param class_weight_during_dmatrix_creation: Whether to use class weights during DMatrix creation. Not used when
         custom ML model is passed.
-    :param early_stopping_rounds: Number of early stopping rounds. Not used when custom ML model is passed. Also
-        not used when hypertuning_cv_folds is greater than 1.
+    :param early_stopping_rounds: Number of early stopping rounds during final training or when hyperparameter tuning
+        follows a single train-test split. Not used when custom ML model is passed.
     :param retrain_model_with_optimal_steps_after_early_stopping: Whether to retrain the model with the optimal steps
         after early stopping. Not used when custom ML model is passed.
     :param autotune_model: Whether to autotune the model. Not used when custom ML model is passed.
@@ -74,7 +74,7 @@ class TrainingConfig(BaseModel):
     hyperparameter_tuning_max_runtime_secs: int = 3600
     hypertuning_cv_folds: int = 1
     sample_data_during_tuning: bool = False
-    sample_data_during_tuning_alpha: float = 0.1
+    sample_data_during_tuning_alpha: float = 2.0
     class_weight_during_dmatrix_creation: bool = False
     precise_cv_tuning: bool = False
     early_stopping_rounds: Optional[int] = None
@@ -108,12 +108,12 @@ class XgboostTuneParamsConfig(BaseModel):
     lambda_min: float = 1
     lambda_max: float = 100
     gamma_min: float = 1e-8
-    gamma_max: float = 100
+    gamma_max: float = 10
     min_child_weight_min: float = 0.1
     min_child_weight_max: float = 100
     sub_sample_min: float = 1.0
     sub_sample_max: float = 1.0
-    col_sample_by_tree_min: float = 0.1
+    col_sample_by_tree_min: float = 0.5
     col_sample_by_tree_max: float = 1.0
     col_sample_by_level_min: float = 1.0
     col_sample_by_level_max: float = 1.0
@@ -139,7 +139,7 @@ class XgboostTuneParamsRegressionConfig(BaseModel):
     lambda_min: float = 1e-8
     lambda_max: float = 100
     gamma_min: float = 1e-8
-    gamma_max: float = 100
+    gamma_max: float = 10
     min_child_weight_min: float = 0.1
     min_child_weight_max: float = 100
     sub_sample_min: float = 1.0
@@ -158,7 +158,6 @@ class XgboostTuneParamsRegressionConfig(BaseModel):
     xgboost_eval_metric: str = "rmse"
     booster: str = "gbtree"
     tree_method: str = "hist"
-    grow_policy: List[str] = ["depthwise", "lossguide"]
 
 
 @dataclass

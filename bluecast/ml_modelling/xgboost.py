@@ -139,15 +139,21 @@ class XgboostModel(BaseClassMlModel):
         eval_set = [(d_test, "test")]
 
         steps = self.conf_params_xgboost.params.pop("steps", 300)
+        early_stop = xgb.callback.EarlyStopping(
+            rounds=self.conf_training.early_stopping_rounds,
+            metric_name="mlogloss",
+            data_name="test",
+            save_best=True,
+        )
 
         if self.conf_training.hypertuning_cv_folds == 1 and self.conf_xgboost:
             self.model = xgb.train(
                 self.conf_params_xgboost.params,
                 d_train,
                 num_boost_round=steps,
-                early_stopping_rounds=self.conf_training.early_stopping_rounds,
                 evals=eval_set,
                 verbose_eval=self.conf_xgboost.verbosity_during_final_model_training,
+                callbacks=[early_stop],
             )
         elif self.conf_xgboost:
             self.model = xgb.train(
@@ -157,6 +163,7 @@ class XgboostModel(BaseClassMlModel):
                 early_stopping_rounds=self.conf_training.early_stopping_rounds,
                 evals=eval_set,
                 verbose_eval=self.conf_xgboost.verbosity_during_final_model_training,
+                callbacks=[early_stop],
             )
         if (
             self.conf_params_xgboost.params
@@ -171,9 +178,9 @@ class XgboostModel(BaseClassMlModel):
                 self.conf_params_xgboost.params,
                 d_train,
                 num_boost_round=self.conf_params_xgboost.params["steps"],
-                early_stopping_rounds=self.conf_training.early_stopping_rounds,
                 evals=eval_set,
                 verbose_eval=self.conf_xgboost.verbosity_during_final_model_training,
+                callbacks=[early_stop],
             )
         logger("Finished training")
         return self.model
@@ -341,7 +348,7 @@ class XgboostModel(BaseClassMlModel):
                     params=param,
                     dtrain=d_train,
                     num_boost_round=steps,
-                    early_stopping_rounds=self.conf_training.early_stopping_rounds,
+                    # early_stopping_rounds=self.conf_training.early_stopping_rounds,  # not recommended as per docs: https://xgboost.readthedocs.io/en/stable/python/sklearn_estimator.html
                     nfold=self.conf_training.hypertuning_cv_folds,
                     as_pandas=True,
                     seed=self.conf_training.global_random_state,
@@ -474,13 +481,18 @@ class XgboostModel(BaseClassMlModel):
         self, d_train, d_test, y_test, param, steps, pruning_callback
     ):
         eval_set = [(d_test, "test")]
+        early_stop = xgb.callback.EarlyStopping(
+            rounds=self.conf_training.early_stopping_rounds,
+            metric_name="mlogloss",
+            data_name="test",
+            save_best=True,
+        )
         model = xgb.train(
             param,
             d_train,
             num_boost_round=steps,
-            early_stopping_rounds=self.conf_training.early_stopping_rounds,
             evals=eval_set,
-            # callbacks=[pruning_callback],
+            callbacks=[early_stop],
             verbose_eval=self.conf_xgboost.verbosity_during_hyperparameter_tuning,
         )
         preds = model.predict(d_test)
@@ -771,7 +783,7 @@ class XgboostModel(BaseClassMlModel):
                     params=tuned_params,
                     dtrain=d_train,
                     num_boost_round=steps,
-                    early_stopping_rounds=self.conf_training.early_stopping_rounds,
+                    # early_stopping_rounds=self.conf_training.early_stopping_rounds,  # not recommended as per docs: https://xgboost.readthedocs.io/en/stable/python/sklearn_estimator.html
                     nfold=self.conf_training.hypertuning_cv_folds,
                     as_pandas=True,
                     seed=self.conf_training.global_random_state,
