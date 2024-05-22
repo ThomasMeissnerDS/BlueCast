@@ -468,18 +468,24 @@ class XgboostModelRegression(BaseClassMlRegressionModel):
         self, d_train, d_test, y_test, param, steps, pruning_callback
     ):
         eval_set = [(d_test, "test")]
-        early_stop = xgb.callback.EarlyStopping(
-            rounds=self.conf_training.early_stopping_rounds,
-            metric_name="rmse",
-            data_name="test",
-            save_best=True,
-        )
+        callbacks: Optional[list] = []
+        if self.conf_training.early_stopping_rounds:
+            early_stop = xgb.callback.EarlyStopping(
+                rounds=self.conf_training.early_stopping_rounds,
+                metric_name="rmse",
+                data_name="test",
+                save_best=True,
+            )
+            callbacks = [early_stop]
+        else:
+            callbacks = None
+
         model = xgb.train(
             param,
             d_train,
             num_boost_round=steps,
             evals=eval_set,
-            callbacks=[early_stop],
+            callbacks=callbacks,
             verbose_eval=self.conf_xgboost.verbosity_during_hyperparameter_tuning,
         )
         preds = model.predict(d_test)
@@ -643,12 +649,17 @@ class XgboostModelRegression(BaseClassMlRegressionModel):
                     "Could not find XgboostTuneParamsRegressionConfig. Falling back to defaults."
                 )
 
-            early_stop = xgb.callback.EarlyStopping(
-                rounds=self.conf_training.early_stopping_rounds,
-                metric_name="rmse",
-                data_name="test",
-                save_best=True,
-            )
+            callbacks: Optional[list] = []
+            if self.conf_training.early_stopping_rounds:
+                early_stop = xgb.callback.EarlyStopping(
+                    rounds=self.conf_training.early_stopping_rounds,
+                    metric_name="rmse",
+                    data_name="test",
+                    save_best=True,
+                )
+                callbacks = [early_stop]
+            else:
+                callbacks = None
 
             model = xgb.train(
                 tuned_params,
@@ -656,7 +667,7 @@ class XgboostModelRegression(BaseClassMlRegressionModel):
                 num_boost_round=steps,
                 evals=eval_set,
                 verbose_eval=self.conf_xgboost.verbosity_during_hyperparameter_tuning,
-                callbacks=[early_stop],
+                callbacks=callbacks,
             )
             d_eval = xgb.DMatrix(
                 X_test_fold,
