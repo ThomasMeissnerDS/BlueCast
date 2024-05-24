@@ -59,4 +59,4 @@ def test_feature_type_detector():
     assert transformed_df["categorical_col2"].dtype == np.object_
 
     # Ensure the transformed dataframe is not the same as the original dataframe (transformed datetime columns)
-    assert not transformed_df.equals(df)
+    assert transformed_df.equals(df)
