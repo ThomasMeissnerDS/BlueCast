@@ -77,7 +77,7 @@ class TrainingConfig(BaseModel):
     sample_data_during_tuning_alpha: float = 2.0
     class_weight_during_dmatrix_creation: bool = False
     precise_cv_tuning: bool = False
-    early_stopping_rounds: Optional[int] = None
+    early_stopping_rounds: Optional[int] = 20
     retrain_model_with_optimal_steps_after_early_stopping: bool = False
     autotune_model: bool = True
     enable_feature_selection: bool = False
@@ -87,7 +87,7 @@ class TrainingConfig(BaseModel):
     store_shap_values_in_instance: bool = False
     train_size: float = 0.8
     train_split_stratify: bool = True
-    use_full_data_for_final_model: bool = True
+    use_full_data_for_final_model: bool = False
     cardinality_threshold_for_onehot_encoding: int = 5
     cat_encoding_via_ml_algorithm: bool = False
     show_detailed_tuning_logs: bool = False
@@ -101,7 +101,7 @@ class TrainingConfig(BaseModel):
 class XgboostTuneParamsConfig(BaseModel):
     """Define hyperparameter tuning search space."""
 
-    max_depth_min: int = 2
+    max_depth_min: int = 3
     max_depth_max: int = 10
     alpha_min: float = 1e-8
     alpha_max: float = 10
@@ -132,7 +132,7 @@ class XgboostTuneParamsConfig(BaseModel):
 class XgboostTuneParamsRegressionConfig(BaseModel):
     """Define hyperparameter tuning search space."""
 
-    max_depth_min: int = 2
+    max_depth_min: int = 3
     max_depth_max: int = 10
     alpha_min: float = 1e-8
     alpha_max: float = 10

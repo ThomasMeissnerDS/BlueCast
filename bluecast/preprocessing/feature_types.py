@@ -25,6 +25,7 @@ class FeatureTypeDetector:
         cat_columns: Optional[List[Union[str, int, float]]] = None,
         date_columns: Optional[List[Union[str, int, float]]] = None,
         all_null_cols: Optional[List[Union[str, int, float]]] = None,
+        zero_var_cols: Optional[List[Union[str, int, float]]] = None,
     ):
         if not num_columns:
             num_columns = []
@@ -38,7 +39,13 @@ class FeatureTypeDetector:
             date_columns = []
         self.date_columns = date_columns
 
+        if not all_null_cols:
+            all_null_cols = []
         self.all_null_cols = all_null_cols
+
+        if not zero_var_cols:
+            zero_var_cols = []
+        self.zero_var_cols = zero_var_cols
 
         self.detected_col_types: Dict[str, str] = {}
         self.num_dtypes = [
@@ -53,10 +60,29 @@ class FeatureTypeDetector:
 
     def drop_all_null_columns(self, df: pd.DataFrame) -> pd.DataFrame:
         """Drop all columns with only null values."""
+        if not self.all_null_cols:
+            self.all_null_cols = df.columns[df.isnull().all()].tolist()
+
         if self.all_null_cols:
             df = df.drop(self.all_null_cols, axis=1)
-        else:
-            df = df.dropna(axis=1, how="all")
+
+        logger(
+            f"Dropped the following columns as being Nulls only: {self.all_null_cols}."
+        )
+        return df
+
+    def drop_zero_variance_columns(self, df: pd.DataFrame) -> pd.DataFrame:
+        """Drop all columns with only one unique value."""
+        if not self.zero_var_cols:
+            for col in df.columns:
+                if df[col].nunique() == 1:
+                    self.zero_var_cols.append(col)
+
+        if self.zero_var_cols:
+            df = df.drop(self.zero_var_cols, axis=1)
+        logger(
+            f"Dropped the following columns as constants only: {self.zero_var_cols}."
+        )
         return df
 
     def identify_num_columns(self, df: pd.DataFrame):
@@ -107,7 +133,11 @@ class FeatureTypeDetector:
             date_columns = []
             # convert date columns from object to datetime type
             for col in no_bool_cols:
-                if col not in self.num_columns:
+                # check if column is not numerical and has a length of 10 (YYYY-MM-DD)
+                if (
+                    col not in self.num_columns
+                    and df[col].astype(str).str.len().max() >= 10
+                ):
                     try:
                         df[col] = pd.to_datetime(df[col], yearfirst=True)
                         date_columns.append(col)
@@ -162,6 +192,7 @@ class FeatureTypeDetector:
         """
         logger(f"{datetime.utcnow()}: Start detecting and casting feature types.")
         df = self.drop_all_null_columns(df)
+        df = self.drop_zero_variance_columns(df)
         self.identify_num_columns(df)
         bool_cols, no_bool_cols = self.identify_bool_columns(df)
         self.identify_date_time_columns(df, no_bool_cols)
@@ -178,6 +209,7 @@ class FeatureTypeDetector:
         """
         logger(f"{datetime.utcnow()}: Start casting feature types.")
         df = self.drop_all_null_columns(df)
+        df = self.drop_zero_variance_columns(df)
         for key in self.detected_col_types:
             if ignore_cols and key not in ignore_cols and key in df.columns:
                 if self.detected_col_types[key] == "datetime[ns]":
