@@ -6,7 +6,7 @@ pipeline. Pydantic dataclasses are used to allow users a pythonic way to define 
 Default configurations can be loaded, adjusted and passed into the blueprints.
 """
 
-from typing import List, Optional
+from typing import Dict, List, Optional
 
 from pydantic import BaseModel
 from pydantic.dataclasses import dataclass
@@ -75,7 +75,6 @@ class TrainingConfig(BaseModel):
     hypertuning_cv_folds: int = 1
     sample_data_during_tuning: bool = False
     sample_data_during_tuning_alpha: float = 2.0
-    class_weight_during_dmatrix_creation: bool = False
     precise_cv_tuning: bool = False
     early_stopping_rounds: Optional[int] = 20
     retrain_model_with_optimal_steps_after_early_stopping: bool = False
@@ -180,6 +179,7 @@ class XgboostFinalParamConfig:
         "eval_metric": "mlogloss",
         "tree_method": "hist",
     }
+    sample_weight: Optional[Dict[str, float]] = None
     classification_threshold: float = 0.5
 
 

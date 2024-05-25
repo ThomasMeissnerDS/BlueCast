@@ -311,8 +311,9 @@ class XgboostModel(BaseClassMlModel):
                 ),
             }
             param = {**param, **train_on}
+            sample_weight = trial.suggest_categorical("sample_weight", [True, False])
 
-            if self.conf_training.class_weight_during_dmatrix_creation:
+            if sample_weight:
                 classes_weights = self.calculate_class_weights(y_train)
                 d_train = xgb.DMatrix(
                     x_train,
@@ -441,6 +442,7 @@ class XgboostModel(BaseClassMlModel):
             **train_on,
         }
         logger(f"Best params: {self.conf_params_xgboost.params}")
+        self.conf_params_xgboost.sample_weight = xgboost_best_param["sample_weight"]
 
     def get_best_score(self):
         if self.conf_training.autotune_model and (
@@ -462,7 +464,7 @@ class XgboostModel(BaseClassMlModel):
         return best_score_cv_grid
 
     def create_d_matrices(self, x_train, y_train, x_test, y_test):
-        if self.conf_training.class_weight_during_dmatrix_creation:
+        if self.conf_params_xgboost.sample_weight:
             classes_weights = self.calculate_class_weights(y_train)
             d_train = xgb.DMatrix(
                 x_train,
