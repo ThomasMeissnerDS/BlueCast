@@ -657,7 +657,7 @@ class XgboostModel(BaseClassMlModel):
                     "Could not find XgboostFinalParamConfig. Falling back to default settings."
                 )
 
-            if self.conf_training.class_weight_during_dmatrix_creation:
+            if self.conf_params_xgboost.sample_weight:
                 classes_weights = self.calculate_class_weights(y_train_fold)
                 d_train = xgb.DMatrix(
                     X_train_fold,
