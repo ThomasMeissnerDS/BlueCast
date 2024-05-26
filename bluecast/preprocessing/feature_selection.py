@@ -20,6 +20,11 @@ class BoostaRootaWrapper(CustomPreprocessing):
         self.selected_features: List[Optional[str]] = []
         self.random_state = random_state
 
+        if self.class_problem not in ["binary", "multiclass", "regression"]:
+            raise ValueError(
+                "Class_problem must be one of 'binary', 'multiclass', or 'regression'."
+            )
+
     def fit_transform(
         self, df: pd.DataFrame, targets: pd.Series
     ) -> Tuple[pd.DataFrame, Optional[pd.Series]]:
