@@ -57,10 +57,11 @@ def test_boostaroota_wrapper_regression():
 
 
 @pytest.fixture
-def create_data():
-    # Dummy data for testing
+def synthetic_data():
     np.random.seed(0)
-    df = pd.DataFrame(np.random.randn(100, 10), columns=[f"feature_{i}" for i in range(10)])
+    df = pd.DataFrame(
+        np.random.randn(100, 10), columns=[f"feature_{i}" for i in range(10)]
+    )
     targets_binary = pd.Series(np.random.randint(0, 2, size=100))
     targets_multiclass = pd.Series(np.random.randint(0, 3, size=100))
     targets_regression = pd.Series(np.random.randn(100))
@@ -72,24 +73,29 @@ def test_boostaroota_wrapper_initialization():
         _ = BoostaRootaWrapper(class_problem="unknown", random_state=42)
 
 
-def test_boostaroota_wrapper_fit_transform_binary(df, targets_binary):
+def test_boostaroota_wrapper_fit_transform_binary(synthetic_data):
+    df, targets_binary, _, _ = synthetic_data
     wrapper = BoostaRootaWrapper(class_problem="binary", random_state=42)
     df_transformed, targets_transformed = wrapper.fit_transform(df, targets_binary)
     assert not df_transformed.empty
 
-def test_boostaroota_wrapper_fit_transform_multiclass(df, targets_multiclass):
+
+def test_boostaroota_wrapper_fit_transform_multiclass(synthetic_data):
+    df, _, targets_multiclass, _ = synthetic_data
     wrapper = BoostaRootaWrapper(class_problem="multiclass", random_state=42)
     df_transformed, targets_transformed = wrapper.fit_transform(df, targets_multiclass)
     assert not df_transformed.empty
 
 
-def test_boostaroota_wrapper_fit_transform_regression(df, targets_regression):
+def test_boostaroota_wrapper_fit_transform_regression(synthetic_data):
+    df, _, _, targets_regression = synthetic_data
     wrapper = BoostaRootaWrapper(class_problem="regression", random_state=42)
     df_transformed, targets_transformed = wrapper.fit_transform(df, targets_regression)
     assert not df_transformed.empty
 
 
-def test_boostaroota_wrapper_transform(df, targets_binary):
+def test_boostaroota_wrapper_transform(synthetic_data):
+    df, targets_binary, _, _ = synthetic_data
     wrapper = BoostaRootaWrapper(class_problem="binary", random_state=42)
     wrapper.fit_transform(df, targets_binary)
     df_transformed, _ = wrapper.transform(df)
@@ -121,7 +127,8 @@ def test_boostaroota_warnings():
         _ = BoostARoota(metric="mlogloss", clf=None, max_rounds=0)
 
 
-def test_boostaroota_fit_transform(df, targets_binary):
+def test_boostaroota_fit_transform(synthetic_data):
+    df, targets_binary, _, _ = synthetic_data
     clf = XGBClassifier()
     br = BoostARoota(clf=clf)
     br.fit(df, targets_binary)
@@ -132,7 +139,8 @@ def test_boostaroota_fit_transform(df, targets_binary):
     assert not transformed_df_fit_transform.empty
 
 
-def test_boostaroota_transform_without_fit(df):
+def test_boostaroota_transform_without_fit(synthetic_data):
+    df, _, _, _ = synthetic_data
     br = BoostARoota(clf=XGBClassifier())
     with pytest.raises(ValueError):
         _ = br.transform(df)
