@@ -1,6 +1,7 @@
 import numpy as np
 import pandas as pd
 import pytest
+from unittest.mock import patch, call
 from xgboost import XGBClassifier
 
 from bluecast.preprocessing.feature_selection import BoostARoota, BoostaRootaWrapper
@@ -144,3 +145,39 @@ def test_boostaroota_transform_without_fit(synthetic_data):
     br = BoostARoota(clf=XGBClassifier())
     with pytest.raises(ValueError):
         _ = br.transform(df)
+
+
+@pytest.fixture
+def data():
+    x = pd.DataFrame({
+        'feature1': np.random.rand(100),
+        'feature2': np.random.rand(100),
+        'feature3': np.random.rand(100),
+    })
+    y = np.random.randint(0, 3, size=100)
+    return x, y
+
+
+def test_mlogloss_metric(data):
+    x, y = data
+
+    # Patch xgboost to mock the DMatrix and train methods
+    with patch('xgboost.DMatrix') as mock_dmatrix, patch('xgboost.train') as mock_train:
+        # Mock the return value of xgboost train method
+        mock_bst = mock_train.return_value
+        mock_bst.get_fscore.return_value = {f: 1 for f in x.columns}
+
+        model = BoostARoota(metric="mlogloss", silent=True)
+        model.fit(x, y)
+
+        # Check if xgboost.DMatrix was called with the correct parameters
+        mock_dmatrix.assert_called_with(pd.concat([x, x], axis=1), label=y, enable_categorical=True)
+
+        # Check if xgboost.train was called with the correct parameters
+        expected_param = {
+            "objective": "multi:softmax",
+            "eval_metric": "mlogloss",
+            "num_class": len(np.unique(y)),
+            "silent": 1,
+        }
+        mock_train.assert_called_with(expected_param, mock_dmatrix(), verbose_eval=False)
