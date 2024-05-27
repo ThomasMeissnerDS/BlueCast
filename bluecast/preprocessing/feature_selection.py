@@ -39,15 +39,7 @@ class BoostaRootaWrapper(CustomPreprocessing):
             )
             br = BoostARoota(clf=model)
         elif self.class_problem == "multiclass":
-            model = xgb.XGBClassifier(
-                tree_method="approx",
-                max_bin=255,
-                n_estimators=100,
-                random_state=self.random_state,
-                importance_type="total_cover",
-                max_depth=10,
-            )
-            br = BoostARoota(clf=model, metric="mlogloss")
+            br = BoostARoota(metric="mlogloss")
         else:
             model = xgb.XGBRegressor(
                 tree_method="approx",
