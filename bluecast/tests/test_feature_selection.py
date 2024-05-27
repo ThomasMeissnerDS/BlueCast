@@ -152,9 +152,9 @@ def test_boostaroota_transform_without_fit(synthetic_data):
 def data():
     x = pd.DataFrame(
         {
-            999: np.random.rand(100),
-            1000: np.random.rand(100),
-            1001: np.random.rand(100),
+            "feature1": np.random.rand(100),
+            "feature2": np.random.rand(100),
+            "feature3": np.random.rand(100),
         }
     )
     y = np.random.randint(0, 3, size=100)
