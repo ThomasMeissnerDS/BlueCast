@@ -104,7 +104,7 @@ class AddRowLevelAggFeatures:
         return df
 
     def add_row_level_agg_features(
-        self, df: pd.DataFrame, target_col: Optional[str]
+        self, df: pd.DataFrame, target_col: Optional[str] = None
     ) -> pd.DataFrame:
         self.get_original_features(df, target_col)
         df = self.add_row_level_mean(df, self.original_features)
