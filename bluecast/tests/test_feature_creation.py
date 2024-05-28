@@ -34,9 +34,7 @@ def test_higher_is_better(synthetic_data):
     }
 
     rfm_c = FeatureClusteringScorer(cluster_settings)
-    cluster_results = rfm_c.fit_predict_cluster_rfm(
-        test_df, keep_original_features=False
-    )
+    cluster_results = rfm_c.fit_predict_cluster(test_df, keep_original_features=False)
     assert cluster_results.head(1)["recency"].values[0] == 1
     assert cluster_results.tail(1)["recency"].values[0] == 2
 
@@ -53,9 +51,7 @@ def test_higher_is_better(synthetic_data):
     }
 
     rfm_c = FeatureClusteringScorer(cluster_settings)
-    cluster_results = rfm_c.fit_predict_cluster_rfm(
-        test_df, keep_original_features=False
-    )
+    cluster_results = rfm_c.fit_predict_cluster(test_df, keep_original_features=False)
     assert cluster_results.head(1)["recency"].values[0] == 2
     assert cluster_results.tail(1)["recency"].values[0] == 1
 
@@ -81,17 +77,32 @@ def test_keep_original_features(synthetic_data):
     }
 
     rfm_c = FeatureClusteringScorer(cluster_settings)
-    cluster_results = rfm_c.fit_predict_cluster_rfm(
-        test_df, keep_original_features=False
-    )
+    cluster_results = rfm_c.fit_predict_cluster(test_df, keep_original_features=False)
+    assert (
+        len(cluster_results.columns) == len(cluster_settings) + 1
+    )  # +1 for total score
+
+    cluster_results = rfm_c.predict_cluster(test_df, keep_original_features=False)
     assert (
         len(cluster_results.columns) == len(cluster_settings) + 1
     )  # +1 for total score
 
     rfm_c = FeatureClusteringScorer(cluster_settings)
-    cluster_results = rfm_c.fit_predict_cluster_rfm(
-        test_df, keep_original_features=True
-    )
+    cluster_results = rfm_c.fit_predict_cluster(test_df, keep_original_features=True)
+    assert (
+        len(cluster_results.columns) == len(cluster_settings) + len(test_df.columns) + 1
+    )  # +1 for total score
+
+    assert "recency" in cluster_results.columns
+    assert "frequency" in cluster_results.columns
+    assert "monetary" in cluster_results.columns
+    assert "total_score" in cluster_results.columns
+    assert "customer_id_original" in cluster_results.columns
+    assert "recency_original" in cluster_results.columns
+    assert "frequency_original" in cluster_results.columns
+    assert "monetary_original" in cluster_results.columns
+
+    cluster_results = rfm_c.predict_cluster(test_df, keep_original_features=True)
     assert (
         len(cluster_results.columns) == len(cluster_settings) + len(test_df.columns) + 1
     )  # +1 for total score
@@ -123,9 +134,15 @@ def test_changing_features(synthetic_data):
     }
 
     rfm_c = FeatureClusteringScorer(cluster_settings)
-    cluster_results = rfm_c.fit_predict_cluster_rfm(
-        test_df, keep_original_features=True
-    )
+    cluster_results = rfm_c.fit_predict_cluster(test_df, keep_original_features=True)
+
+    assert "loyalty" in cluster_results.columns
+    assert "loyalty_original" in cluster_results.columns
+    assert cluster_results.head(1)["loyalty"].values[0] == 1
+    assert cluster_results.tail(1)["loyalty"].values[0] == 4
+    assert cluster_results["total_score"].max() == 11
+
+    cluster_results = rfm_c.predict_cluster(test_df, keep_original_features=True)
 
     assert "loyalty" in cluster_results.columns
     assert "loyalty_original" in cluster_results.columns

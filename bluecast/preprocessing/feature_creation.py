@@ -131,7 +131,7 @@ class FeatureClusteringScorer:
         # move away from 0 index for scoring
         return reindexed_clusters + 1
 
-    def fit_predict_cluster_rfm(
+    def fit_predict_cluster(
         self, df: pd.DataFrame, keep_original_features: bool = True
     ):
         """
@@ -164,9 +164,7 @@ class FeatureClusteringScorer:
         ].sum(axis=1)
         return cluster_results_df
 
-    def predict_cluster_rfm(
-        self, df: pd.DataFrame, keep_original_features: bool = True
-    ):
+    def predict_cluster(self, df: pd.DataFrame, keep_original_features: bool = True):
         """
         Calculate cluster (i.e. RFM) scores based on input features.
 
