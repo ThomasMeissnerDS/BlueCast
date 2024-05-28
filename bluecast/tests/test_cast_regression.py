@@ -309,6 +309,99 @@ def test_bluecast_with_custom_model():
         len(bluecast.experiment_tracker.experiment_id) == 0
     )  # due to custom model and fit method
 
+    # test cross-validated model without custom model and with custom infold preproc
+    bluecast = BlueCastRegression(
+        class_problem="regression",
+        conf_xgboost=xgboost_param_config,
+        conf_training=train_config,
+        custom_feature_selector=custom_feature_selector,
+        custom_preprocessor=custum_preproc,
+        custom_in_fold_preprocessor=custom_infold_preproc,
+    )
+
+    # Create some sample data for testing
+    x_train = pd.DataFrame(
+        {
+            "feature1": [i for i in range(10)],
+            "feature2": [i for i in range(10)],
+            "feature3": [i for i in range(10)],
+            "feature4": [i for i in range(10)],
+            "feature5": [i for i in range(10)],
+            "feature6": [i for i in range(10)],
+        }
+    )
+    y_train = pd.Series([0, 1, 0, 1, 0, 1, 0, 1, 0, 1])
+    x_test = pd.DataFrame(
+        {
+            "feature1": [i for i in range(10)],
+            "feature2": [i for i in range(10)],
+            "feature3": [i for i in range(10)],
+            "feature4": [i for i in range(10)],
+            "feature5": [i for i in range(10)],
+            "feature6": [i for i in range(10)],
+        }
+    )
+
+    x_train["target"] = y_train
+
+    # Fit the BlueCast model using the custom model
+    bluecast.fit(x_train, "target")
+
+    # Predict on the test data using the custom model
+    preds = bluecast.predict(x_test)
+
+    # Assert the expected results
+    assert isinstance(preds, np.ndarray)
+    print(bluecast.experiment_tracker.experiment_id)
+    assert (
+        len(bluecast.experiment_tracker.experiment_id) == 0
+    )  # due to custom model and fit method
+
+    # test cross-validated model without custom model
+    bluecast = BlueCastRegression(
+        class_problem="regression",
+        conf_xgboost=xgboost_param_config,
+        conf_training=train_config,
+    )
+
+    # Create some sample data for testing
+    x_train = pd.DataFrame(
+        {
+            "feature1": [i for i in range(10)],
+            "feature2": [i for i in range(10)],
+            "feature3": [i for i in range(10)],
+            "feature4": [i for i in range(10)],
+            "feature5": [i for i in range(10)],
+            "feature6": [i for i in range(10)],
+        }
+    )
+    y_train = pd.Series([0, 1, 0, 1, 0, 1, 0, 1, 0, 1])
+    x_test = pd.DataFrame(
+        {
+            "feature1": [i for i in range(10)],
+            "feature2": [i for i in range(10)],
+            "feature3": [i for i in range(10)],
+            "feature4": [i for i in range(10)],
+            "feature5": [i for i in range(10)],
+            "feature6": [i for i in range(10)],
+        }
+    )
+
+    x_train["target"] = y_train
+
+    # Fit the BlueCast model using the custom model
+    bluecast.fit(x_train, "target")
+
+    # Predict on the test data using the custom model
+    preds = bluecast.predict(x_test)
+
+    # Assert the expected results
+    assert isinstance(preds, np.ndarray)
+    print(bluecast.experiment_tracker.experiment_id)
+    assert (
+        len(bluecast.experiment_tracker.experiment_id) == 0
+    )  # due to custom model and fit method
+
 
 @pytest.fixture
 def bluecast_instance():
