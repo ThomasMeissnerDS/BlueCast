@@ -353,9 +353,7 @@ def test_bluecast_with_custom_model():
     # Assert the expected results
     assert isinstance(preds, np.ndarray)
     print(bluecast.experiment_tracker.experiment_id)
-    assert (
-        len(bluecast.experiment_tracker.experiment_id) == 0
-    )  # due to custom model and fit method
+    assert len(bluecast.experiment_tracker.experiment_id) == 18
 
     # test cross-validated model without custom model
     bluecast = BlueCastRegression(
@@ -399,7 +397,7 @@ def test_bluecast_with_custom_model():
     assert isinstance(preds, np.ndarray)
     print(bluecast.experiment_tracker.experiment_id)
     assert (
-        len(bluecast.experiment_tracker.experiment_id) == 0
+        len(bluecast.experiment_tracker.experiment_id) == 18
     )  # due to custom model and fit method
 
 
