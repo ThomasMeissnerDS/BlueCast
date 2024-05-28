@@ -10,13 +10,20 @@ class AddRowLevelAggFeatures:
     def __init__(self):
         self.original_features: List[Union[str, int, float]] = []
 
-    def get_original_features(self, df: pd.DataFrame, target_col: Optional[str]) -> None:
+    def get_original_features(
+        self, df: pd.DataFrame, target_col: Optional[str]
+    ) -> None:
         if isinstance(target_col, str):
             self.original_features = df.drop(target_col, axis=1).columns.to_list()
         else:
             self.original_features = df.columns.to_list()
 
-    def add_row_level_mean(self, df: pd.DataFrame, feature_to_agg: List[Union[str, int, float]], agg_col_name: str = "row_mean") -> pd.DataFrame:
+    def add_row_level_mean(
+        self,
+        df: pd.DataFrame,
+        feature_to_agg: List[Union[str, int, float]],
+        agg_col_name: str = "row_mean",
+    ) -> pd.DataFrame:
         """
         Add row level mean of features to a dataframe.
 
@@ -28,7 +35,12 @@ class AddRowLevelAggFeatures:
         df[agg_col_name] = df[feature_to_agg].mean(axis=1)
         return df
 
-    def add_row_level_std(self, df: pd.DataFrame, feature_to_agg: List[Union[str, int, float]], agg_col_name: str = "row_std") -> pd.DataFrame:
+    def add_row_level_std(
+        self,
+        df: pd.DataFrame,
+        feature_to_agg: List[Union[str, int, float]],
+        agg_col_name: str = "row_std",
+    ) -> pd.DataFrame:
         """
         Add row level standard deviation of features to a dataframe.
 
@@ -40,7 +52,12 @@ class AddRowLevelAggFeatures:
         df[agg_col_name] = df[feature_to_agg].std(axis=1)
         return df
 
-    def add_row_level_min(self, df: pd.DataFrame, feature_to_agg: List[Union[str, int, float]], agg_col_name: str = "row_min") -> pd.DataFrame:
+    def add_row_level_min(
+        self,
+        df: pd.DataFrame,
+        feature_to_agg: List[Union[str, int, float]],
+        agg_col_name: str = "row_min",
+    ) -> pd.DataFrame:
         """
         Add row level min of features to a dataframe.
 
@@ -52,7 +69,12 @@ class AddRowLevelAggFeatures:
         df[agg_col_name] = df[feature_to_agg].min(axis=1)
         return df
 
-    def add_row_level_max(self, df: pd.DataFrame, feature_to_agg: List[Union[str, int, float]], agg_col_name: str = "row_max") -> pd.DataFrame:
+    def add_row_level_max(
+        self,
+        df: pd.DataFrame,
+        feature_to_agg: List[Union[str, int, float]],
+        agg_col_name: str = "row_max",
+    ) -> pd.DataFrame:
         """
         Add row level max of features to a dataframe.
 
@@ -64,7 +86,12 @@ class AddRowLevelAggFeatures:
         df[agg_col_name] = df[feature_to_agg].max(axis=1)
         return df
 
-    def add_row_level_sum(self, df: pd.DataFrame, feature_to_agg: List[Union[str, int, float]], agg_col_name: str = "row_sum") -> pd.DataFrame:
+    def add_row_level_sum(
+        self,
+        df: pd.DataFrame,
+        feature_to_agg: List[Union[str, int, float]],
+        agg_col_name: str = "row_sum",
+    ) -> pd.DataFrame:
         """
         Add row level sum of features to a dataframe.
 
@@ -76,7 +103,9 @@ class AddRowLevelAggFeatures:
         df[agg_col_name] = df[feature_to_agg].sum(axis=1)
         return df
 
-    def add_row_level_agg_features(self, df: pd.DataFrame, target_col: Optional[str]) -> pd.DataFrame:
+    def add_row_level_agg_features(
+        self, df: pd.DataFrame, target_col: Optional[str]
+    ) -> pd.DataFrame:
         self.get_original_features(df, target_col)
         df = self.add_row_level_mean(df, self.original_features)
         df = self.add_row_level_std(df, self.original_features)
