@@ -4,27 +4,25 @@ import pytest
 
 from bluecast.config.training_config import (
     TrainingConfig,
-    XgboostRegressionFinalParamConfig,
-    XgboostTuneParamsRegressionConfig,
+    XgboostFinalParamConfig,
+    XgboostTuneParamsConfig,
 )
-from bluecast.ml_modelling.xgboost_regression import XgboostModelRegression
+from bluecast.ml_modelling.xgboost import XgboostModel
 
 
 @pytest.fixture
 def default_model():
-    return XgboostModelRegression(class_problem="regression")
+    return XgboostModel(class_problem="binary")
 
 
 def test_check_load_confs_defaults(default_model):
-    with patch("bluecast.ml_modelling.xgboost_regression.logger") as mock_logger:
+    with patch("bluecast.ml_modelling.xgboost.logger") as mock_logger:
         default_model.check_load_confs()
 
         # Check if the defaults are loaded
         assert isinstance(default_model.conf_training, TrainingConfig)
-        assert isinstance(default_model.conf_xgboost, XgboostTuneParamsRegressionConfig)
-        assert isinstance(
-            default_model.conf_params_xgboost, XgboostRegressionFinalParamConfig
-        )
+        assert isinstance(default_model.conf_xgboost, XgboostTuneParamsConfig)
+        assert isinstance(default_model.conf_params_xgboost, XgboostFinalParamConfig)
 
         # Ensure logger was called with default config loading messages
         assert mock_logger.call_count == 4
@@ -32,17 +30,15 @@ def test_check_load_confs_defaults(default_model):
 
 def test_check_load_confs_partial():
     conf_training = TrainingConfig()
-    model = XgboostModelRegression(
-        class_problem="regression", conf_training=conf_training
-    )
+    model = XgboostModel(class_problem="binary", conf_training=conf_training)
 
-    with patch("bluecast.ml_modelling.xgboost_regression.logger") as mock_logger:
+    with patch("bluecast.ml_modelling.xgboost.logger") as mock_logger:
         model.check_load_confs()
 
         # Check if the provided config is used and defaults are loaded for the rest
         assert model.conf_training is conf_training
-        assert isinstance(model.conf_xgboost, XgboostTuneParamsRegressionConfig)
-        assert isinstance(model.conf_params_xgboost, XgboostRegressionFinalParamConfig)
+        assert isinstance(model.conf_xgboost, XgboostTuneParamsConfig)
+        assert isinstance(model.conf_params_xgboost, XgboostFinalParamConfig)
 
         # Ensure logger was called with appropriate messages
         assert mock_logger.call_count == 4
@@ -50,17 +46,17 @@ def test_check_load_confs_partial():
 
 def test_check_load_confs_all_provided():
     conf_training = TrainingConfig()
-    conf_xgboost = XgboostTuneParamsRegressionConfig()
-    conf_params_xgboost = XgboostRegressionFinalParamConfig()
+    conf_xgboost = XgboostTuneParamsConfig()
+    conf_params_xgboost = XgboostFinalParamConfig()
 
-    model = XgboostModelRegression(
-        class_problem="regression",
+    model = XgboostModel(
+        class_problem="binary",
         conf_training=conf_training,
         conf_xgboost=conf_xgboost,
         conf_params_xgboost=conf_params_xgboost,
     )
 
-    with patch("bluecast.ml_modelling.xgboost_regression.logger") as mock_logger:
+    with patch("bluecast.ml_modelling.xgboost.logger") as mock_logger:
         model.check_load_confs()
 
         # Check if all provided configs are used
