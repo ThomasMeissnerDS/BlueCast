@@ -3,7 +3,82 @@ from collections import namedtuple
 import pandas as pd
 import pytest
 
-from bluecast.preprocessing.feature_creation import FeatureClusteringScorer
+from bluecast.preprocessing.feature_creation import AddRowLevelAggFeatures, FeatureClusteringScorer
+
+
+@pytest.fixture
+def sample_dataframe():
+    data = {
+        'A': [1, 2, 3, 4],
+        'B': [5, 6, 7, 8],
+        'C': [9, 10, 11, 12],
+        'target': [0, 1, 0, 1]
+    }
+    return pd.DataFrame(data)
+
+
+def test_initialization():
+    aggregator = AddRowLevelAggFeatures()
+    assert aggregator.original_features == []
+
+
+def test_get_original_features(sample_dataframe):
+    aggregator = AddRowLevelAggFeatures()
+    aggregator.get_original_features(sample_dataframe, 'target')
+    assert aggregator.original_features == ['A', 'B', 'C']
+
+
+def test_add_row_level_mean(sample_dataframe):
+    aggregator = AddRowLevelAggFeatures()
+    df = aggregator.add_row_level_mean(sample_dataframe, ['A', 'B', 'C'], 'row_mean')
+    expected_mean = sample_dataframe[['A', 'B', 'C']].mean(axis=1)
+    pd.testing.assert_series_equal(df['row_mean'], expected_mean, check_names=False, check_like=True)
+
+
+def test_add_row_level_std(sample_dataframe):
+    aggregator = AddRowLevelAggFeatures()
+    df = aggregator.add_row_level_std(sample_dataframe, ['A', 'B', 'C'], 'row_std')
+    expected_std = sample_dataframe[['A', 'B', 'C']].std(axis=1)
+    pd.testing.assert_series_equal(df['row_std'], expected_std, check_names=False)
+
+
+def test_add_row_level_min(sample_dataframe):
+    aggregator = AddRowLevelAggFeatures()
+    df = aggregator.add_row_level_min(sample_dataframe, ['A', 'B', 'C'], 'row_min')
+    expected_min = sample_dataframe[['A', 'B', 'C']].min(axis=1)
+    pd.testing.assert_series_equal(df['row_min'], expected_min, check_names=False)
+
+
+def test_add_row_level_max(sample_dataframe):
+    aggregator = AddRowLevelAggFeatures()
+    df = aggregator.add_row_level_max(sample_dataframe, ['A', 'B', 'C'], 'row_max')
+    expected_max = sample_dataframe[['A', 'B', 'C']].max(axis=1)
+    pd.testing.assert_series_equal(df['row_max'], expected_max, check_names=False)
+
+
+def test_add_row_level_sum(sample_dataframe):
+    aggregator = AddRowLevelAggFeatures()
+    df = aggregator.add_row_level_sum(sample_dataframe, ['A', 'B', 'C'], 'row_sum')
+    expected_sum = sample_dataframe[['A', 'B', 'C']].sum(axis=1)
+    pd.testing.assert_series_equal(df['row_sum'], expected_sum, check_names=False)
+
+
+def test_add_row_level_agg_features(sample_dataframe):
+    aggregator = AddRowLevelAggFeatures()
+    df = aggregator.add_row_level_agg_features(sample_dataframe, 'target')
+
+    # Verify if the correct columns are added
+    expected_mean = sample_dataframe[['A', 'B', 'C']].mean(axis=1)
+    expected_std = sample_dataframe[['A', 'B', 'C']].std(axis=1)
+    expected_min = sample_dataframe[['A', 'B', 'C']].min(axis=1)
+    expected_max = sample_dataframe[['A', 'B', 'C']].max(axis=1)
+    expected_sum = sample_dataframe[['A', 'B', 'C']].sum(axis=1)
+
+    pd.testing.assert_series_equal(df['row_mean'], expected_mean, check_names=False)
+    pd.testing.assert_series_equal(df['row_std'], expected_std, check_names=False)
+    pd.testing.assert_series_equal(df['row_min'], expected_min, check_names=False)
+    pd.testing.assert_series_equal(df['row_max'], expected_max, check_names=False)
+    pd.testing.assert_series_equal(df['row_sum'], expected_sum, check_names=False)
 
 
 @pytest.fixture
