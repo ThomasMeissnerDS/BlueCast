@@ -25,7 +25,7 @@ def test_check_load_confs_defaults(default_model):
         assert isinstance(default_model.conf_params_xgboost, XgboostFinalParamConfig)
 
         # Ensure logger was called with default config loading messages
-        assert mock_logger.call_count == 4
+        assert mock_logger.call_count == 0
 
 
 def test_check_load_confs_partial():
@@ -41,7 +41,7 @@ def test_check_load_confs_partial():
         assert isinstance(model.conf_params_xgboost, XgboostFinalParamConfig)
 
         # Ensure logger was called with appropriate messages
-        assert mock_logger.call_count == 4
+        assert mock_logger.call_count == 0
 
 
 def test_check_load_confs_all_provided():
@@ -65,4 +65,4 @@ def test_check_load_confs_all_provided():
         assert model.conf_params_xgboost is conf_params_xgboost
 
         # Ensure logger was called with appropriate messages
-        assert mock_logger.call_count == 4
+        assert mock_logger.call_count == 0

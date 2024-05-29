@@ -98,7 +98,7 @@ class TrainingConfig(BaseModel):
     gridsearch_tuning_max_runtime_secs: int = 3600
     gridsearch_nb_parameters_per_grid: int = 5
     bluecast_cv_train_n_model: Tuple[int, int] = (5, 1)
-    logging_file_path: str | None = None
+    logging_file_path: Optional[str] = None
     experiment_name: str = "new experiment"
 
 
