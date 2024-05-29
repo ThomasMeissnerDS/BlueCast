@@ -745,6 +745,12 @@ class XgboostModel(BaseClassMlModel):
             )
             # copy best params to not overwrite them
             tuned_params = deepcopy(self.conf_params_xgboost.params)
+            min_child_weight_space = trial.suggest_float(
+                "min_child_weight",
+                self.conf_params_xgboost.params["min_child_weight"] * 0.9,
+                self.conf_params_xgboost.params["min_child_weight"] * 1.1,
+                log=False,
+            )
             lambda_space = trial.suggest_float(
                 "lambda",
                 self.conf_params_xgboost.params["lambda"] * 0.9,
@@ -765,6 +771,7 @@ class XgboostModel(BaseClassMlModel):
             )
 
             tuned_params["lambda"] = lambda_space
+            tuned_params["min_child_weight"] = min_child_weight_space
             tuned_params["gamma"] = gamma_space
             tuned_params["eta"] = eta_space
 
@@ -820,11 +827,18 @@ class XgboostModel(BaseClassMlModel):
 
         self.check_load_confs()
         if (
-            isinstance(self.conf_params_xgboost.params["lambda"], float)
+            isinstance(self.conf_params_xgboost.params["min_child_weight"], float)
+            and isinstance(self.conf_params_xgboost.params["lambda"], float)
             and isinstance(self.conf_params_xgboost.params["gamma"], float)
             and isinstance(self.conf_params_xgboost.params["eta"], float)
         ):
             search_space = {
+                "min_child_weight": np.linspace(
+                    self.conf_params_xgboost.params["min_child_weight"] * 0.9,
+                    self.conf_params_xgboost.params["min_child_weight"] * 1.1,
+                    self.conf_training.gridsearch_nb_parameters_per_grid,
+                    dtype=float,
+                ),
                 "lambda": np.linspace(
                     self.conf_params_xgboost.params["lambda"] * 0.9,
                     self.conf_params_xgboost.params["lambda"] * 1.1,
@@ -875,6 +889,9 @@ class XgboostModel(BaseClassMlModel):
 
         if best_score_cv_grid < best_score_cv or not self.conf_training.autotune_model:
             xgboost_grid_best_param = study.best_trial.params
+            self.conf_params_xgboost.params["min_child_weight"] = (
+                xgboost_grid_best_param["min_child_weight"]
+            )
             self.conf_params_xgboost.params["lambda"] = xgboost_grid_best_param[
                 "lambda"
             ]
