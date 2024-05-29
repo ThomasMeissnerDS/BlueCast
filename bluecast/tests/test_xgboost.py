@@ -16,7 +16,7 @@ def default_model():
 
 
 def test_check_load_confs_defaults(default_model):
-    with patch("bluecast.ml_modelling.xgboost.logger") as mock_logger:
+    with patch("bluecast.ml_modelling.xgboost.logging") as mock_logger:
         default_model.check_load_confs()
 
         # Check if the defaults are loaded
@@ -32,7 +32,7 @@ def test_check_load_confs_partial():
     conf_training = TrainingConfig()
     model = XgboostModel(class_problem="binary", conf_training=conf_training)
 
-    with patch("bluecast.ml_modelling.xgboost.logger") as mock_logger:
+    with patch("bluecast.ml_modelling.xgboost.logging") as mock_logger:
         model.check_load_confs()
 
         # Check if the provided config is used and defaults are loaded for the rest
@@ -56,7 +56,7 @@ def test_check_load_confs_all_provided():
         conf_params_xgboost=conf_params_xgboost,
     )
 
-    with patch("bluecast.ml_modelling.xgboost.logger") as mock_logger:
+    with patch("bluecast.ml_modelling.xgboost.logging") as mock_logger:
         model.check_load_confs()
 
         # Check if all provided configs are used

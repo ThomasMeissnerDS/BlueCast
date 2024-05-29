@@ -9,7 +9,7 @@ from bluecast.monitoring.data_monitoring import DataDrift
 
 @pytest.fixture
 def mock_logger():
-    with patch("bluecast.general_utils.general_utils.logger") as mock:
+    with patch("bluecast.general_utils.general_utils.logging") as mock:
         yield mock
 
 
