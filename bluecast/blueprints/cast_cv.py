@@ -1,8 +1,9 @@
+import logging
 from typing import Any, List, Literal, Optional, Tuple, Union
 
 import numpy as np
 import pandas as pd
-from sklearn.model_selection import StratifiedKFold
+from sklearn.model_selection import RepeatedStratifiedKFold
 
 from bluecast.blueprints.cast import BlueCast
 from bluecast.config.training_config import (
@@ -14,7 +15,6 @@ from bluecast.conformal_prediction.conformal_prediction import (
     ConformalPredictionWrapper,
 )
 from bluecast.experimentation.tracking import ExperimentTracker
-from bluecast.general_utils.general_utils import logger
 from bluecast.ml_modelling.xgboost import XgboostModel
 from bluecast.preprocessing.custom import CustomPreprocessing
 from bluecast.preprocessing.feature_selection import BoostaRootaWrapper
@@ -104,8 +104,9 @@ class BlueCastCV:
 
         score_mean = np.asarray(all_metrics).mean()
         score_std = np.asarray(all_metrics).std()
-        message = f"The mean out of fold {metric} score is {score_mean} with an std of {score_std}"
-        logger(message)
+        logging.info(
+            f"The mean out of fold {metric} score is {score_mean} with an std of {score_std}"
+        )
 
         return score_mean, score_std
 
@@ -119,9 +120,9 @@ class BlueCastCV:
             self.conf_training = TrainingConfig()
 
         if not self.stratifier:
-            self.stratifier = StratifiedKFold(
-                n_splits=5,
-                shuffle=True,
+            self.stratifier = RepeatedStratifiedKFold(
+                n_splits=self.conf_training.bluecast_cv_train_n_model[0],
+                n_repeats=self.conf_training.bluecast_cv_train_n_model[1],
                 random_state=self.conf_training.global_random_state,
             )
 
@@ -138,7 +139,7 @@ class BlueCastCV:
             self.conf_training.global_random_state += (
                 self.conf_training.increase_random_state_in_bluecast_cv_by
             )
-            logger(
+            logging.info(
                 f"Start fitting model number {fn} with random seed {self.conf_training.global_random_state}"
             )
 
@@ -176,9 +177,9 @@ class BlueCastCV:
             self.conf_training = TrainingConfig()
 
         if not self.stratifier:
-            self.stratifier = StratifiedKFold(
-                n_splits=5,
-                shuffle=True,
+            self.stratifier = RepeatedStratifiedKFold(
+                n_splits=self.conf_training.bluecast_cv_train_n_model[0],
+                n_repeats=self.conf_training.bluecast_cv_train_n_model[1],
                 random_state=self.conf_training.global_random_state,
             )
 
@@ -191,7 +192,7 @@ class BlueCastCV:
             self.conf_training.global_random_state += (
                 self.conf_training.increase_random_state_in_bluecast_cv_by
             )
-            logger(
+            logging.info(
                 f"Start fitting model number {fn} with random seed {self.conf_training.global_random_state}"
             )
 

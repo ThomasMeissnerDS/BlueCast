@@ -5,12 +5,10 @@ This is a convenience class to detect and cast feature types in a DataFrame. It 
 categorical and datetime columns. It also casts columns to a specific type.
 """
 
-from datetime import datetime
+import logging
 from typing import Dict, List, Optional, Tuple, Union
 
 import pandas as pd
-
-from bluecast.general_utils.general_utils import logger
 
 
 class FeatureTypeDetector:
@@ -66,7 +64,7 @@ class FeatureTypeDetector:
         if self.all_null_cols:
             df = df.drop(self.all_null_cols, axis=1)
 
-        logger(
+        logging.info(
             f"Dropped the following columns as being Nulls only: {self.all_null_cols}."
         )
         return df
@@ -80,7 +78,7 @@ class FeatureTypeDetector:
 
         if self.zero_var_cols:
             df = df.drop(self.zero_var_cols, axis=1)
-        logger(
+        logging.info(
             f"Dropped the following columns as constants only: {self.zero_var_cols}."
         )
         return df
@@ -190,7 +188,7 @@ class FeatureTypeDetector:
 
         Wrapper function to orchester different detection methods.
         """
-        logger(f"{datetime.utcnow()}: Start detecting and casting feature types.")
+        logging.info("Start detecting and casting feature types.")
         df = self.drop_all_null_columns(df)
         df = self.drop_zero_variance_columns(df)
         self.identify_num_columns(df)
@@ -207,7 +205,7 @@ class FeatureTypeDetector:
         Loops through the dataframe and detects column types and type casts them accordingly.
         :return: Returns casted dataframe
         """
-        logger(f"{datetime.utcnow()}: Start casting feature types.")
+        logging.info("Start casting feature types.")
         df = self.drop_all_null_columns(df)
         df = self.drop_zero_variance_columns(df)
         for key in self.detected_col_types:

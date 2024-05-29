@@ -1,7 +1,6 @@
 """General utilities."""
 
 import logging
-from datetime import datetime
 from typing import Any, Dict, Optional
 
 import dill as pickle
@@ -10,7 +9,7 @@ import xgboost as xgb
 
 
 def check_gpu_support() -> Dict[str, str]:
-    logger(f"{datetime.utcnow()}: Start checking if GPU is available for usage.")
+    logging.info("Start checking if GPU is available for usage.")
     data = np.random.rand(50, 2)
     label = np.random.randint(2, size=50)
     d_train = xgb.DMatrix(data, label=label)
@@ -18,7 +17,7 @@ def check_gpu_support() -> Dict[str, str]:
     try:
         params = {"device": "cuda"}
         xgb.train(params, d_train, num_boost_round=2)
-        print("Xgboost uses GPU.")
+        logging.info("Xgboost uses GPU.")
         return params
     except Exception:
         pass
@@ -26,7 +25,7 @@ def check_gpu_support() -> Dict[str, str]:
     try:
         params = {"tree_method": "gpu_hist"}
         xgb.train(params, d_train, num_boost_round=2)
-        print("Xgboost uses GPU.")
+        logging.info("Xgboost uses GPU.")
         return params
     except Exception:
         pass
@@ -34,18 +33,13 @@ def check_gpu_support() -> Dict[str, str]:
     try:
         params = {"tree_method": "gpu"}
         xgb.train(params, d_train, num_boost_round=2)
-        print("Xgboost uses GPU.")
+        logging.info("Xgboost uses GPU.")
         return params
     except Exception as e:
         print(e)
         params = {"tree_method": "exact"}
-        print("Xgboost uses CPU.")
+        logging.info("Xgboost uses CPU.")
         return params
-
-
-def logger(message: str) -> None:
-    logging.info(message)
-    print(message)
 
 
 def save_to_production(
@@ -62,7 +56,7 @@ def save_to_production(
     :param file_type: Takes the expected type of file to export.
     :return:
     """
-    logger(f"{datetime.utcnow()}: Start saving class instance.")
+    logging.info("Start saving class instance.")
     if file_path:
         full_path = file_path + file_name + file_type
     else:
@@ -85,7 +79,7 @@ def load_for_production(
     :param file_type: Takes the expected type of file to import.
     :return: The loaded model object
     """
-    logger(f"{datetime.utcnow()}: Start loading class instance.")
+    logging.info("Start loading class instance.")
     if file_path:
         full_path = file_path + file_name
     else:
@@ -108,5 +102,5 @@ def log_sampling(nb_rows: int, alpha: float = 2.0) -> int:
     perc_reduction = np.log10(nb_rows) ** alpha / 100
 
     nb_samples = int(round(nb_rows * (1 - perc_reduction), 0))
-    logger(f"Down sampling from {nb_rows} to {nb_samples} samples.")
+    logging.info(f"Down sampling from {nb_rows} to {nb_samples} samples.")
     return nb_samples

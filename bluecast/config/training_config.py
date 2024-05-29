@@ -6,7 +6,7 @@ pipeline. Pydantic dataclasses are used to allow users a pythonic way to define 
 Default configurations can be loaded, adjusted and passed into the blueprints.
 """
 
-from typing import Dict, List, Optional
+from typing import Dict, List, Optional, Tuple
 
 from pydantic import BaseModel
 from pydantic.dataclasses import dataclass
@@ -65,6 +65,8 @@ class TrainingConfig(BaseModel):
     :param gridsearch_tuning_max_runtime_secs: Sets the maximum time in seconds the tuning shall run. This will finish
         the latest trial nd will exceed this limit though.
     :param experiment_name: Name of the experiment. Will be logged inside the ExperimentTracker.
+    :param logging_file_path: Path to the logging file. If None, the logging will be printed to the Jupyter notebook
+        instead.
     """
 
     global_random_state: int = 33
@@ -79,6 +81,7 @@ class TrainingConfig(BaseModel):
     early_stopping_rounds: Optional[int] = 20
     retrain_model_with_optimal_steps_after_early_stopping: bool = False
     autotune_model: bool = True
+    autotune_n_random_seeds: int = 1
     enable_feature_selection: bool = False
     calculate_shap_values: bool = True
     shap_waterfall_indices: List[int] = [0]
@@ -94,6 +97,8 @@ class TrainingConfig(BaseModel):
     enable_grid_search_fine_tuning: bool = False
     gridsearch_tuning_max_runtime_secs: int = 3600
     gridsearch_nb_parameters_per_grid: int = 5
+    bluecast_cv_train_n_model: Tuple[int, int] = (5, 1)
+    logging_file_path: str | None = None
     experiment_name: str = "new experiment"
 
 

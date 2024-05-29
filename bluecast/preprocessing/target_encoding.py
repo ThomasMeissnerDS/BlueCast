@@ -11,14 +11,12 @@ uses cases a special implementation is available as the category-encoders implem
 multiclass.
 """
 
-from datetime import datetime
+import logging
 from typing import Dict, List, Optional, Union
 
 import numpy as np
 import pandas as pd
 from category_encoders import OneHotEncoder, TargetEncoder
-
-from bluecast.general_utils.general_utils import logger
 
 
 class BinaryClassTargetEncoder:
@@ -33,7 +31,7 @@ class BinaryClassTargetEncoder:
         self, x: pd.DataFrame, y: pd.Series
     ) -> pd.DataFrame:
         """Fit target encoder and transform column."""
-        logger(f"{datetime.utcnow()}: Start fitting binary target encoder.")
+        logging.info("Start fitting binary target encoder.")
         enc = TargetEncoder(cols=self.cat_columns, smoothing=np.log10(len(x.index)) * 5)
         x.loc[:, self.cat_columns] = enc.fit_transform(x[self.cat_columns], y)
         x[self.cat_columns] = x[self.cat_columns].astype(float)
@@ -42,9 +40,7 @@ class BinaryClassTargetEncoder:
 
     def transform_target_encode_binary_class(self, x: pd.DataFrame) -> pd.DataFrame:
         """Transform categories based on already trained encoder."""
-        logger(
-            f"{datetime.utcnow()}: Start transforming categories with binary target encoder."
-        )
+        logging.info("Start transforming categories with binary target encoder.")
         enc = self.encoders["target_encoder_all_cols"]
         x.loc[:, self.cat_columns] = enc.transform(x[self.cat_columns])
         x[self.cat_columns] = x[self.cat_columns].astype(float)
@@ -69,7 +65,7 @@ class MultiClassTargetEncoder:
         self, x: pd.DataFrame, y: pd.Series
     ) -> pd.DataFrame:
         """Fit target encoder and transform column."""
-        logger(f"{datetime.utcnow()}: Start fitting multiclass target encoder.")
+        logging.info("Start fitting multiclass target encoder.")
         algorithm = "multiclass_target_encoding_onehotter"
         enc = OneHotEncoder()
         enc.fit(y)
@@ -92,9 +88,7 @@ class MultiClassTargetEncoder:
 
     def transform_target_encode_multiclass(self, x: pd.DataFrame) -> pd.DataFrame:
         """Transform categories based on already trained encoder."""
-        logger(
-            f"{datetime.utcnow()}: Start transforming categories with multiclass target encoder."
-        )
+        logging.info("Start transforming categories with multiclass target encoder.")
         algorithm = "multiclass_target_encoding_onehotter"
         enc = self.encoders[f"{algorithm}_all_cols"]
 

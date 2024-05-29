@@ -3,6 +3,7 @@
 This is called as part of the fit_eval function.
 """
 
+import logging
 import warnings
 from typing import Any, Dict
 
@@ -24,8 +25,6 @@ from sklearn.metrics import (
     roc_auc_score,
     roc_curve,
 )
-
-from bluecast.general_utils.general_utils import logger
 
 
 def plot_lift_chart(y_probs: np.array, y_true: np.array, num_bins: int = 20) -> None:
@@ -147,35 +146,35 @@ def eval_classifier(
     except Exception:
         matthews = 0
 
-    logger(f"The Matthew correlation is {matthews}")
+    logging.info(f"The Matthew correlation is {matthews}")
     accuracy = accuracy_score(y_true, y_classes)
-    logger(f"The accuracy is {accuracy}")
+    logging.info(f"The accuracy is {accuracy}")
     recall = recall_score(y_true, y_classes, average="weighted")
-    logger(f"The recall is {recall}")
+    logging.info(f"The recall is {recall}")
     f1_score_macro = f1_score(y_true, y_classes, average="macro", zero_division=0)
-    logger(f"The macro F1 score is {f1_score_macro}")
+    logging.info(f"The macro F1 score is {f1_score_macro}")
     f1_score_micro = f1_score(y_true, y_classes, average="micro", zero_division=0)
-    logger(f"The micro F1 score is {f1_score_micro}")
+    logging.info(f"The micro F1 score is {f1_score_micro}")
     f1_score_weighted = f1_score(y_true, y_classes, average="weighted", zero_division=0)
-    logger(f"The weighted F1 score is {f1_score_weighted}")
+    logging.info(f"The weighted F1 score is {f1_score_weighted}")
 
     if len(y_probs.shape) == 1:
         bll = balanced_log_loss(y_true, y_probs)
-        logger(f"The balanced logloss is {bll}")
+        logging.info(f"The balanced logloss is {bll}")
     else:
         bll = 99
-        logger("Skip balanced logloss as number of classes is less than 2.")
+        logging.info("Skip balanced logloss as number of classes is less than 2.")
 
     if len(y_probs.shape) == 1:
         roc_auc = roc_auc_score(y_true, y_probs)
     else:
         roc_auc = roc_auc_score(y_true, y_probs, multi_class="ovr")
-    logger(f"The ROC auc score is {roc_auc}")
+    logging.info(f"The ROC auc score is {roc_auc}")
     logloss = log_loss(y_true, y_probs)
-    logger(f"The log loss score is {logloss}")
+    logging.info(f"The log loss score is {logloss}")
 
     full_classification_report = classification_report(y_true, y_classes)
-    logger(full_classification_report)
+    logging.info(full_classification_report)
 
     if len(y_probs.shape) == 1:
         plot_roc_auc(y_true, y_probs)
@@ -189,7 +188,7 @@ def eval_classifier(
             )
         plot_probability_distribution(y_probs)
     else:
-        logger(f"Skip ROC AUC curve as number of classes is {y_probs.shape[1]}.")
+        logging.info(f"Skip ROC AUC curve as number of classes is {y_probs.shape[1]}.")
 
     evaluation_scores = {
         "matthews": matthews,

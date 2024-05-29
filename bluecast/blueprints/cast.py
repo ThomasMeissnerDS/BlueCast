@@ -9,7 +9,6 @@ via the config class attributes from config.training_config module.
 
 import logging
 import warnings
-from datetime import datetime
 from typing import Any, Dict, List, Literal, Optional, Tuple, Union
 
 import numpy as np
@@ -30,7 +29,7 @@ from bluecast.evaluation.shap_values import (
     shap_waterfall_plot,
 )
 from bluecast.experimentation.tracking import ExperimentTracker
-from bluecast.general_utils.general_utils import check_gpu_support, logger
+from bluecast.general_utils.general_utils import check_gpu_support
 from bluecast.ml_modelling.xgboost import XgboostModel
 from bluecast.preprocessing.category_encoder_orchestration import (
     CategoryEncoderOrchestrator,
@@ -142,10 +141,15 @@ class BlueCast:
             self.conf_xgboost = XgboostTuneParamsConfig()
 
         logging.basicConfig(
-            filename=f"bluecast_log_random_seed_{self.conf_training.global_random_state}",
+            filename=self.conf_training.logging_file_path,
             filemode="w",
-            format="%(name)s - %(levelname)s - %(message)s",
+            format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
+            level=logging.INFO,
+            # stream=sys.stdout,
+            force=True,
         )
+
+        logging.info("BlueCast blueprint initialized.")
 
     def initial_checks(self, df: pd.DataFrame) -> None:
         if not self.conf_training:
@@ -562,7 +566,7 @@ class BlueCast:
         check_gpu_support()
         df = self.transform_new_data(df)
 
-        logger(f"{datetime.utcnow()}: Predicting...")
+        logging.info("Predicting...")
         y_probs, y_classes = self.ml_model.predict(df)
         if save_shap_values:
             self.shap_values, self.explainer = shap_explanations(
@@ -603,7 +607,7 @@ class BlueCast:
 
         df = self.transform_new_data(df)
 
-        logger(f"{datetime.utcnow()}: Predicting...")
+        logging.info("Predicting...")
         y_probs, _y_classes = self.ml_model.predict(df)
         if save_shap_values:
             self.shap_values, self.explainer = shap_explanations(

@@ -5,6 +5,7 @@ It also calculates class weights for imbalanced datasets. The weights may or may
 hyperparameter tuning.
 """
 
+import logging
 from copy import deepcopy
 from datetime import datetime
 from typing import Any, Dict, List, Literal, Optional, Union
@@ -23,7 +24,7 @@ from bluecast.config.training_config import (
     XgboostTuneParamsRegressionConfig,
 )
 from bluecast.experimentation.tracking import ExperimentTracker
-from bluecast.general_utils.general_utils import check_gpu_support, log_sampling, logger
+from bluecast.general_utils.general_utils import check_gpu_support, log_sampling
 from bluecast.ml_modelling.base_classes import BaseClassMlRegressionModel
 from bluecast.preprocessing.custom import CustomPreprocessing
 
@@ -56,35 +57,28 @@ class XgboostModelRegression(BaseClassMlRegressionModel):
         else:
             self.random_generator = np.random.default_rng(0)
         self.cat_columns = cat_columns
+        self.best_score: float = np.inf
 
     def check_load_confs(self):
         """Load multiple configs or load default configs instead."""
-        logger(f"{datetime.utcnow()}: Start loading existing or default config files..")
+        logging.info("Start loading existing or default config files..")
         if not self.conf_training:
             self.conf_training = TrainingConfig()
-            logger(f"{datetime.utcnow()}: Load default TrainingConfig.")
+            logging.info("Load default TrainingConfig.")
         else:
-            logger(f"{datetime.utcnow()}: Found provided TrainingConfig.")
+            logging.info("Found provided TrainingConfig.")
 
         if not self.conf_xgboost:
             self.conf_xgboost = XgboostTuneParamsRegressionConfig()
-            logger(
-                f"{datetime.utcnow()}: Load default XgboostTuneParamsRegressionConfig."
-            )
+            logging.info("Load default XgboostTuneParamsRegressionConfig.")
         else:
-            logger(
-                f"{datetime.utcnow()}: Found provided XgboostTuneParamsRegressionConfig."
-            )
+            logging.info("Found provided XgboostTuneParamsRegressionConfig.")
 
         if not self.conf_params_xgboost:
             self.conf_params_xgboost = XgboostRegressionFinalParamConfig()
-            logger(
-                f"{datetime.utcnow()}: Load default XgboostRegressionFinalParamConfig."
-            )
+            logging.info("Load default XgboostRegressionFinalParamConfig.")
         else:
-            logger(
-                f"{datetime.utcnow()}: Found provided XgboostRegressionFinalParamConfig."
-            )
+            logging.info("Found provided XgboostRegressionFinalParamConfig.")
 
     def fit(
         self,
@@ -94,7 +88,7 @@ class XgboostModelRegression(BaseClassMlRegressionModel):
         y_test: pd.Series,
     ) -> xgb.Booster:
         """Train Xgboost model. Includes hyperparameter tuning on default."""
-        logger(f"{datetime.utcnow()}: Start fitting Xgboost model.")
+        logging.info("Start fitting Xgboost model.")
         self.check_load_confs()
 
         if (
@@ -117,7 +111,7 @@ class XgboostModelRegression(BaseClassMlRegressionModel):
             self.fine_tune(x_train, x_test, y_train, y_test)
             print("Finished Grid search fine tuning")
 
-        logger("Start final model training")
+        logging.info("Start final model training")
         if self.custom_in_fold_preprocessor:
             x_train, y_train = self.custom_in_fold_preprocessor.fit_transform(
                 x_train, y_train
@@ -127,7 +121,7 @@ class XgboostModelRegression(BaseClassMlRegressionModel):
             )
 
         if self.conf_training.use_full_data_for_final_model:
-            logger(
+            logging.info(
                 f"""{datetime.utcnow()}: Union train and test data for final model training based on TrainingConfig
              param 'use_full_data_for_final_model'"""
             )
@@ -168,7 +162,9 @@ class XgboostModelRegression(BaseClassMlRegressionModel):
             and self.conf_training.early_stopping_rounds
             and self.conf_training.retrain_model_with_optimal_steps_after_early_stopping
         ):
-            logger("Retrain model with optimal number of steps after early stopping.")
+            logging.info(
+                "Retrain model with optimal number of steps after early stopping."
+            )
             self.conf_params_xgboost.params["steps"] = self.model.best_iteration
             self.model = xgb.train(
                 self.conf_params_xgboost.params,
@@ -178,7 +174,7 @@ class XgboostModelRegression(BaseClassMlRegressionModel):
                 evals=eval_set,
                 verbose_eval=self.conf_xgboost.verbosity_during_final_model_training,
             )
-        logger("Finished training")
+        logging.info("Finished training")
         return self.model
 
     def autotune(
@@ -192,7 +188,7 @@ class XgboostModelRegression(BaseClassMlRegressionModel):
 
         An alternative config can be provided to overwrite the hyperparameter search space.
         """
-        logger(f"{datetime.utcnow()}: Start hyperparameter tuning of Xgboost model.")
+        logging.info("Start hyperparameter tuning of Xgboost model.")
         if (
             not self.conf_params_xgboost
             or not self.conf_training
@@ -373,64 +369,71 @@ class XgboostModelRegression(BaseClassMlRegressionModel):
 
                 return adjusted_score
 
-        algorithm = "xgboost"
-        sampler = optuna.samplers.TPESampler(
-            multivariate=True,
-            seed=self.conf_training.global_random_state,
-            n_startup_trials=self.conf_training.optuna_sampler_n_startup_trials,
-        )
-        study = optuna.create_study(
-            direction="minimize",
-            sampler=sampler,
-            study_name=f"{algorithm} tuning",
-            pruner=optuna.pruners.MedianPruner(
-                n_startup_trials=20,
-                n_warmup_steps=20,
-            ),
-        )
+        for rst in range(self.conf_training.autotune_n_random_seeds):
+            logging.info(f"Hyperparameter tuning using random seed {rst}")
 
-        study.optimize(
-            objective,
-            n_trials=self.conf_training.hyperparameter_tuning_rounds,
-            timeout=self.conf_training.hyperparameter_tuning_max_runtime_secs,
-            gc_after_trial=True,
-            show_progress_bar=True,
-        )
-        try:
-            fig = optuna.visualization.plot_optimization_history(study)
-            fig.show()
-            fig = optuna.visualization.plot_param_importances(
-                study  # , evaluator=FanovaImportanceEvaluator()
+            sampler = optuna.samplers.TPESampler(
+                multivariate=True,
+                seed=self.conf_training.global_random_state,
+                n_startup_trials=self.conf_training.optuna_sampler_n_startup_trials,
             )
-            fig.show()
-        except (ZeroDivisionError, RuntimeError, ValueError):
-            pass
+            study = optuna.create_study(
+                direction="minimize",
+                sampler=sampler,
+                study_name="xgboost regression tuning",
+                pruner=optuna.pruners.MedianPruner(
+                    n_startup_trials=20,
+                    n_warmup_steps=20,
+                ),
+            )
 
-        xgboost_best_param = study.best_trial.params
+            study.optimize(
+                objective,
+                n_trials=self.conf_training.hyperparameter_tuning_rounds,
+                timeout=self.conf_training.hyperparameter_tuning_max_runtime_secs,
+                gc_after_trial=True,
+                show_progress_bar=True,
+            )
+            try:
+                fig = optuna.visualization.plot_optimization_history(study)
+                fig.show()
+                fig = optuna.visualization.plot_param_importances(
+                    study  # , evaluator=FanovaImportanceEvaluator()
+                )
+                fig.show()
+            except (ZeroDivisionError, RuntimeError, ValueError):
+                pass
 
-        self.conf_params_xgboost.params = {
-            "objective": self.conf_xgboost.xgboost_objective,  # OR  'binary:logistic' #the loss function being used
-            "booster": self.conf_xgboost.booster,
-            "tree_method": self.conf_xgboost.tree_method,
-            "eval_metric": self.conf_xgboost.xgboost_eval_metric,
-            "max_depth": xgboost_best_param[
-                "max_depth"
-            ],  # maximum depth of the decision trees being trained
-            "alpha": xgboost_best_param["alpha"],
-            "lambda": xgboost_best_param["lambda"],
-            "gamma": xgboost_best_param["gamma"],
-            "min_child_weight": xgboost_best_param["min_child_weight"],
-            "subsample": xgboost_best_param["subsample"],
-            "colsample_bytree": xgboost_best_param["colsample_bytree"],
-            "colsample_bylevel": xgboost_best_param["colsample_bylevel"],
-            "eta": xgboost_best_param["eta"],
-            "steps": xgboost_best_param["steps"],
-        }
-        self.conf_params_xgboost.params = {
-            **self.conf_params_xgboost.params,
-            **train_on,
-        }
-        logger(f"Best params: {self.conf_params_xgboost.params}")
+            if study.best_value < self.best_score:
+                self.best_score = study.best_value
+                logging.info(
+                    f"New best score: {study.best_value} from random seed {rst}"
+                )
+                xgboost_best_param = study.best_trial.params
+
+                self.conf_params_xgboost.params = {
+                    "objective": self.conf_xgboost.xgboost_objective,  # OR  'binary:logistic' #the loss function being used
+                    "booster": self.conf_xgboost.booster,
+                    "tree_method": self.conf_xgboost.tree_method,
+                    "eval_metric": self.conf_xgboost.xgboost_eval_metric,
+                    "max_depth": xgboost_best_param[
+                        "max_depth"
+                    ],  # maximum depth of the decision trees being trained
+                    "alpha": xgboost_best_param["alpha"],
+                    "lambda": xgboost_best_param["lambda"],
+                    "gamma": xgboost_best_param["gamma"],
+                    "min_child_weight": xgboost_best_param["min_child_weight"],
+                    "subsample": xgboost_best_param["subsample"],
+                    "colsample_bytree": xgboost_best_param["colsample_bytree"],
+                    "colsample_bylevel": xgboost_best_param["colsample_bylevel"],
+                    "eta": xgboost_best_param["eta"],
+                    "steps": xgboost_best_param["steps"],
+                }
+                self.conf_params_xgboost.params = {
+                    **self.conf_params_xgboost.params,
+                    **train_on,
+                }
+                logging.info(f"Best params: {self.conf_params_xgboost.params}")
 
     def get_best_score(self):
         if self.conf_training.autotune_model and (
@@ -584,7 +587,9 @@ class XgboostModelRegression(BaseClassMlRegressionModel):
 
         if not self.conf_training:
             self.conf_training = TrainingConfig()
-            logger("Could not find Training config. Falling back to default values")
+            logging.info(
+                "Could not find Training config. Falling back to default values"
+            )
 
         stratifier = KFold(
             n_splits=self.conf_training.hypertuning_cv_folds,
@@ -632,7 +637,7 @@ class XgboostModelRegression(BaseClassMlRegressionModel):
 
             if not self.conf_params_xgboost:
                 self.conf_params_xgboost = XgboostRegressionFinalParamConfig()
-                logger(
+                logging.info(
                     "Could not find XgboostRegressionFinalParamConfig. Falling back to default settings."
                 )
 
@@ -645,7 +650,7 @@ class XgboostModelRegression(BaseClassMlRegressionModel):
 
             if not self.conf_xgboost:
                 self.conf_xgboost = XgboostTuneParamsRegressionConfig()
-                logger(
+                logging.info(
                     "Could not find XgboostTuneParamsRegressionConfig. Falling back to defaults."
                 )
 
@@ -703,7 +708,7 @@ class XgboostModelRegression(BaseClassMlRegressionModel):
         y_train: pd.Series,
         y_test: pd.Series,
     ) -> None:
-        logger(f"{datetime.utcnow()}: Start grid search fine tuning of Xgboost model.")
+        logging.info("Start grid search fine tuning of Xgboost model.")
         if (
             not self.conf_params_xgboost
             or not self.conf_training
@@ -886,20 +891,18 @@ class XgboostModelRegression(BaseClassMlRegressionModel):
             ]
             self.conf_params_xgboost.params["gamma"] = xgboost_grid_best_param["gamma"]
             self.conf_params_xgboost.params["eta"] = xgboost_grid_best_param["eta"]
-            logger(
-                f"Grid search improved eval metric from {best_score_cv} to {best_score_cv_grid}."
+            logging.info(
+                "Grid search improved eval metric from {best_score_cv} to {best_score_cv_grid}."
             )
-            logger(f"Best params: {self.conf_params_xgboost.params}")
+            logging.info("Best params: {self.conf_params_xgboost.params}")
         else:
-            logger(
-                f"Grid search could not improve eval metric of {best_score_cv}. Best score reached was {best_score_cv_grid}"
+            logging.info(
+                "Grid search could not improve eval metric of {best_score_cv}. Best score reached was {best_score_cv_grid}"
             )
 
     def predict(self, df: pd.DataFrame) -> np.ndarray:
         """Predict on unseen data."""
-        logger(
-            f"{datetime.utcnow()}: Start predicting on new data using Xgboost model."
-        )
+        logging.info("Start predicting on new data using Xgboost model.")
         if not self.conf_xgboost or not self.conf_training:
             raise ValueError("conf_params_xgboost or conf_training is None")
 
@@ -920,5 +923,5 @@ class XgboostModelRegression(BaseClassMlRegressionModel):
             raise Exception("No model configuration file has been found.")
 
         preds = self.model.predict(d_test)
-        logger("Finished predicting")
+        logging.info("Finished predicting")
         return preds

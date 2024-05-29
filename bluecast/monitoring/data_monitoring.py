@@ -4,8 +4,8 @@ Module containing classes and function to monitor data drifts.
 This is meant for pipelines on production.
 """
 
+import logging
 import numbers
-from datetime import datetime
 from typing import Any, Dict
 
 import matplotlib.pyplot as plt
@@ -13,8 +13,6 @@ import numpy as np
 import pandas as pd
 import xgboost as xgb
 from scipy.stats import ks_2samp
-
-from bluecast.general_utils.general_utils import logger
 
 
 class DataDrift:
@@ -48,9 +46,7 @@ class DataDrift:
         :param threshold: Threshold for the Kolmogorov-Smirnov test (default is 0.05)
         :return drift_flags: Dictionary containing flags indicating data drift for each column
         """
-        logger(
-            f"{datetime.utcnow()}: Start checking for data drift via Kolmogorov-Smirnov test."
-        )
+        logging.info("Start checking for data drift via Kolmogorov-Smirnov test.")
 
         for column in new_data.columns:
             # Check for numerical columns
@@ -118,9 +114,7 @@ class DataDrift:
         :param new_data: Pandas DataFrame containing new data to compare against
         :return drift_flags: Dictionary containing flags indicating data drift for each column
         """
-        logger(
-            f"{datetime.utcnow()}: Start checking for data drift via population stability index."
-        )
+        logging.info("Start checking for data drift via population stability index.")
         top_feature_list = data.columns
         for column in top_feature_list:
             if pd.api.types.is_numeric_dtype(new_data[column]):

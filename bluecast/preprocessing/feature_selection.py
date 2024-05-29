@@ -1,13 +1,12 @@
+import logging
 import operator
 import warnings
-from datetime import datetime
 from typing import List, Literal, Optional, Tuple
 
 import numpy as np
 import pandas as pd
 import xgboost as xgb
 
-from bluecast.general_utils.general_utils import logger
 from bluecast.preprocessing.custom import CustomPreprocessing
 
 
@@ -51,15 +50,13 @@ class BoostaRootaWrapper(CustomPreprocessing):
             )
             br = BoostARoota(clf=model)
 
-        logger(
-            f"{datetime.utcnow()}: Start feature selection as defined in FeatureSelectionConfig."
-        )
+        logging.info("Start feature selection as defined in FeatureSelectionConfig.")
         br.fit(df, targets)
         self.selected_features = br.keep_vars_
-        logger(
+        logging.info(
             f"{len(self.selected_features)} from {len(df.columns)} features selected."
         )
-        logger(f"{datetime.utcnow()}: Selected features are {self.selected_features}).")
+        logging.info("Selected features are {self.selected_features}).")
         return df.loc[:, self.selected_features], targets
 
     def transform(
@@ -68,7 +65,7 @@ class BoostaRootaWrapper(CustomPreprocessing):
         target: Optional[pd.Series] = None,
         predicton_mode: bool = False,
     ) -> Tuple[pd.DataFrame, Optional[pd.Series]]:
-        logger(f"{datetime.utcnow()}: Apply feature selection.")
+        logging.info("Apply feature selection.")
         df = df.loc[:, self.selected_features]
         return df, target
 
