@@ -39,6 +39,8 @@ y_probs, y_classes = automl.predict(df_val)
 This will use Xgboost's inbuilt cross validation routine which allows BlueCast
 to execute early pruning on not promising hyperparameter sets. This way BlueCast
 can test many more hyperparameters than usual cross validation.
+For regression problems Xgboost's inbuilt cross validation routine is also used,
+however BlueCast uses stratification to ensure that the folds are balanced.
 
 ## Enable even more overfitting-robust cross-validation
 
@@ -77,7 +79,7 @@ it applied increasingly random noise to the eval dataset to find an even
 more robust hyperparameter set.
 
 This is much more robust, but does not offer
-early pruning and is much slower. BlueCastCV supports this as well.
+early pruning and is much (!) slower. BlueCastCV supports this as well.
 
 Please note that this is an experimental feature.
 
@@ -122,6 +124,32 @@ controlled with two parameters:
   the tuning shall run. This will finish the latest trial nd will exceed
   this limit though.
 
+## Optimizing the random seed
+
+As Optuna uses sampling to find the best hyperparameters, the random seed
+might have a significant impact on the results. BlueCast offers a way to
+optimize the random seed by running the tuning process multiple times
+with different seeds and then selecting the best hyperparameters.
+
+```sh
+from bluecast.blueprints.cast import BlueCast
+from bluecast.config.training_config import TrainingConfig
+
+
+# Create a custom training config and adjust general training parameters
+train_config = TrainingConfig()
+train_config.autotune_n_random_seeds = 5 # default is 1 (train_config.autotune_model must be True)
+
+# Pass the custom configs to the BlueCast class
+automl = BlueCast(
+        class_problem="binary",
+        conf_training=train_config,
+    )
+
+automl.fit(df_train, target_col="target")
+y_probs, y_classes = automl.predict(df_val)
+```
+
 ## Use multi-model blended pipeline
 
 By default, BlueCast trains a single model. However, it is possible to
@@ -150,6 +178,9 @@ automl = BlueCastCV(
 automl.fit_eval(df_train, target_col="target")
 y_probs, y_classes = automl.predict(df_val)
 ```
+
+By default `BlueCastCV` trains five models. This can be adjusted in the
+training config via `bluecast_cv_train_n_model`.
 
 Also here a variant for regression is available:
 
@@ -212,10 +243,11 @@ BlueCast offers various settings to adjust training speed and performance:
 
 * default: simple train-test split -> fast training, but might overfit
 * disable `autotune_model`: This will disable the hyperparameter tuning and
-  will use the default hyperparameters. This will speed up the training
+  will use the default hyperparameters as defined in `XgboostFinalParamConfig`
+  and `XgboostRegressionFinalParamConfig`. This will speed up the training
   significantly, but will decrease the performance. Default parameters
-  can be adjusted in the `XgboostTuneParamsConfig` class and passed to the
-   `BlueCast` class during instantiation.
+  can be adjusted and passed to the `BlueCast` class during instantiation or
+  afterwards.
 * increase `hypertuning_cv_folds`: more folds -> slower training, but less
   overfitting (5 or 10 are good values usually)
 * decrease `hyperparameter_tuning_rounds`: fewer rounds -> faster training, but
@@ -235,10 +267,10 @@ BlueCast offers various settings to adjust training speed and performance:
   that will apply random noise to the eval dataset to find even more robust
   hyperparameters. This is an experimental feature and will slow down the training
   massively as it runs without parallelism and without trial pruning.
-* set `early_stopping_rounds` to a int value. This will enable early stopping and
-  will stop the training if the eval metric does not improve for the given number
-  of rounds. This can speed up the training significantly, but might increase or
-  decrease the performance depending on the dataset. If `early_stopping_rounds`
+* Adjust `early_stopping_rounds` (if None, no early stopping happens). By default,
+  early stopping is enabled and will stop the final training if the eval metric does
+  not improve for the given number of rounds. Early stopping returns the best
+  model, not the one after stopping. If `early_stopping_rounds`
   is set, `use_full_data_for_final_model` must be set to `False` to prevent
   overfitting.
 
@@ -254,20 +286,24 @@ A summary of recommended settings for different scenarios:
   * use `BlueCast`
   * `hypertuning_cv_folds = 1` (default)
   * `hyperparameter_tuning_rounds = 20`
+  * `early_stopping_rounds = 20` (default)
 
 * Balanced training:
   * use `BlueCast`
   * `hypertuning_cv_folds = 5`
   * `hyperparameter_tuning_rounds = 20`
   * `enable_feature_selection = True`
+  * `early_stopping_rounds = 20` (default)
 
 * Robust training:
   * use `BlueCastCV`
   * `hypertuning_cv_folds = 10`
   * `hyperparameter_tuning_rounds = 100`
+  * `early_stopping_rounds = 20` (default)
 
 * Robust training with fine-tuning:
   * use `BlueCastCV`
   * `hypertuning_cv_folds = 10`
   * `hyperparameter_tuning_rounds = 200` (default)
   * `enable_grid_search_fine_tuning = True`
+  * `early_stopping_rounds = 20` (default)

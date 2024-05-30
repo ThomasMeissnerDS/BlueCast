@@ -154,26 +154,6 @@ class XgboostModelRegression(BaseClassMlRegressionModel):
                 evals=eval_set,
                 verbose_eval=self.conf_xgboost.verbosity_during_final_model_training,
             )
-
-        if (
-            self.conf_params_xgboost.params
-            and self.model
-            and self.conf_xgboost
-            and self.conf_training.early_stopping_rounds
-            and self.conf_training.retrain_model_with_optimal_steps_after_early_stopping
-        ):
-            logging.info(
-                "Retrain model with optimal number of steps after early stopping."
-            )
-            self.conf_params_xgboost.params["steps"] = self.model.best_iteration
-            self.model = xgb.train(
-                self.conf_params_xgboost.params,
-                d_train,
-                num_boost_round=self.conf_params_xgboost.params["steps"],
-                early_stopping_rounds=self.conf_training.early_stopping_rounds,
-                evals=eval_set,
-                verbose_eval=self.conf_xgboost.verbosity_during_final_model_training,
-            )
         logging.info("Finished training")
         return self.model
 

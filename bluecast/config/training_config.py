@@ -35,8 +35,6 @@ class TrainingConfig(BaseModel):
         custom ML model is passed.
     :param early_stopping_rounds: Number of early stopping rounds during final training or when hyperparameter tuning
         follows a single train-test split. Not used when custom ML model is passed.
-    :param retrain_model_with_optimal_steps_after_early_stopping: Whether to retrain the model with the optimal steps
-        after early stopping. Not used when custom ML model is passed.
     :param autotune_model: Whether to autotune the model. Not used when custom ML model is passed.
     :param enable_feature_selection: Whether to enable recursive feature selection.
     :param calculate_shap_values: Whether to calculate shap values. Also used when custom ML model is passed. Not
@@ -79,7 +77,6 @@ class TrainingConfig(BaseModel):
     sample_data_during_tuning_alpha: float = 2.0
     precise_cv_tuning: bool = False
     early_stopping_rounds: Optional[int] = 20
-    retrain_model_with_optimal_steps_after_early_stopping: bool = False
     autotune_model: bool = True
     autotune_n_random_seeds: int = 1
     enable_feature_selection: bool = False
