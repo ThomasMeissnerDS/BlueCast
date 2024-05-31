@@ -1,8 +1,9 @@
+import logging
 from typing import Any, List, Literal, Optional, Tuple, Union
 
 import numpy as np
 import pandas as pd
-from sklearn.model_selection import StratifiedKFold
+from sklearn.model_selection import RepeatedStratifiedKFold
 
 from bluecast.blueprints.cast import BlueCast
 from bluecast.config.training_config import (
@@ -14,10 +15,9 @@ from bluecast.conformal_prediction.conformal_prediction import (
     ConformalPredictionWrapper,
 )
 from bluecast.experimentation.tracking import ExperimentTracker
-from bluecast.general_utils.general_utils import logger
 from bluecast.ml_modelling.xgboost import XgboostModel
 from bluecast.preprocessing.custom import CustomPreprocessing
-from bluecast.preprocessing.feature_selection import RFECVSelector
+from bluecast.preprocessing.feature_selection import BoostaRootaWrapper
 
 
 class BlueCastCV:
@@ -30,6 +30,7 @@ class BlueCastCV:
     def __init__(
         self,
         class_problem: Literal["binary", "multiclass"] = "binary",
+        cat_columns: Optional[List[Union[str, float, int]]] = None,
         stratifier: Optional[Any] = None,
         conf_training: Optional[TrainingConfig] = None,
         conf_xgboost: Optional[XgboostTuneParamsConfig] = None,
@@ -39,7 +40,7 @@ class BlueCastCV:
         custom_last_mile_computation: Optional[CustomPreprocessing] = None,
         custom_preprocessor: Optional[CustomPreprocessing] = None,
         custom_feature_selector: Optional[
-            Union[RFECVSelector, CustomPreprocessing]
+            Union[BoostaRootaWrapper, CustomPreprocessing]
         ] = None,
         ml_model: Optional[Union[XgboostModel, Any]] = None,
     ):
@@ -56,10 +57,24 @@ class BlueCastCV:
         self.ml_model = ml_model
         self.conformal_prediction_wrapper: Optional[ConformalPredictionWrapper] = None
 
+        if not cat_columns:
+            self.cat_columns = []
+        else:
+            self.cat_columns = cat_columns
+
         if experiment_tracker:
             self.experiment_tracker = experiment_tracker
         else:
             self.experiment_tracker = ExperimentTracker()
+
+        if not self.conf_params_xgboost:
+            self.conf_params_xgboost = XgboostFinalParamConfig()
+
+        if not self.conf_training:
+            self.conf_training = TrainingConfig()
+
+        if not self.conf_xgboost:
+            self.conf_xgboost = XgboostTuneParamsConfig()
 
     def prepare_data(
         self, df: pd.DataFrame, target: str
@@ -89,8 +104,9 @@ class BlueCastCV:
 
         score_mean = np.asarray(all_metrics).mean()
         score_std = np.asarray(all_metrics).std()
-        message = f"The mean out of fold {metric} score is {score_mean} with an std of {score_std}"
-        logger(message)
+        logging.info(
+            f"The mean out of fold {metric} score is {score_mean} with an std of {score_std}"
+        )
 
         return score_mean, score_std
 
@@ -104,9 +120,9 @@ class BlueCastCV:
             self.conf_training = TrainingConfig()
 
         if not self.stratifier:
-            self.stratifier = StratifiedKFold(
-                n_splits=5,
-                shuffle=True,
+            self.stratifier = RepeatedStratifiedKFold(
+                n_splits=self.conf_training.bluecast_cv_train_n_model[0],
+                n_repeats=self.conf_training.bluecast_cv_train_n_model[1],
                 random_state=self.conf_training.global_random_state,
             )
 
@@ -123,12 +139,13 @@ class BlueCastCV:
             self.conf_training.global_random_state += (
                 self.conf_training.increase_random_state_in_bluecast_cv_by
             )
-            logger(
+            logging.info(
                 f"Start fitting model number {fn} with random seed {self.conf_training.global_random_state}"
             )
 
             automl = BlueCast(
                 class_problem=self.class_problem,
+                cat_columns=self.cat_columns,
                 conf_training=self.conf_training,
                 conf_xgboost=self.conf_xgboost,
                 conf_params_xgboost=self.conf_params_xgboost,
@@ -160,9 +177,9 @@ class BlueCastCV:
             self.conf_training = TrainingConfig()
 
         if not self.stratifier:
-            self.stratifier = StratifiedKFold(
-                n_splits=5,
-                shuffle=True,
+            self.stratifier = RepeatedStratifiedKFold(
+                n_splits=self.conf_training.bluecast_cv_train_n_model[0],
+                n_repeats=self.conf_training.bluecast_cv_train_n_model[1],
                 random_state=self.conf_training.global_random_state,
             )
 
@@ -175,12 +192,13 @@ class BlueCastCV:
             self.conf_training.global_random_state += (
                 self.conf_training.increase_random_state_in_bluecast_cv_by
             )
-            logger(
+            logging.info(
                 f"Start fitting model number {fn} with random seed {self.conf_training.global_random_state}"
             )
 
             automl = BlueCast(
                 class_problem=self.class_problem,
+                cat_columns=self.cat_columns,
                 conf_training=self.conf_training,
                 conf_xgboost=self.conf_xgboost,
                 conf_params_xgboost=self.conf_params_xgboost,

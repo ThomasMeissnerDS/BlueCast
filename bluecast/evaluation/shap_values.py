@@ -3,13 +3,12 @@
 The implementation is flexible and can be used for almost any ML model. The implementation is based on the SHAP library.
 """
 
+import logging
 from typing import List, Literal, Tuple
 
 import numpy as np
 import pandas as pd
 import shap
-
-from bluecast.general_utils.general_utils import logger
 
 
 def shap_explanations(model, df: pd.DataFrame) -> Tuple[np.ndarray, shap.Explainer]:
@@ -71,7 +70,7 @@ def shap_waterfall_plot(
 
     for idx in indices:
         if class_problem == "regression":
-            logger(f"Show SHAP waterfall plot for idx {idx}.")
+            logging.info(f"Show SHAP waterfall plot for idx {idx}.")
             explainer_values = explainer[idx, :]
             shap.waterfall_plot(
                 explainer_values,
@@ -79,7 +78,7 @@ def shap_waterfall_plot(
             )
 
         elif class_problem == "binary":
-            logger(f"Show SHAP waterfall plot for idx {idx} and target class.")
+            logging.info(f"Show SHAP waterfall plot for idx {idx} and target class.")
             # try/except catches differences between base estimators like Xgboost and RandomForestClassifier
             try:
                 explainer_values = explainer[idx, :, 1]
@@ -96,7 +95,9 @@ def shap_waterfall_plot(
 
         elif class_problem == "multiclass":
             for class_idx in range(unique_classes):
-                logger(f"Show SHAP waterfall plot for idx {idx} and class {class_idx}.")
+                logging.info(
+                    f"Show SHAP waterfall plot for idx {idx} and class {class_idx}."
+                )
                 explainer_values = explainer[idx, :, class_idx]
                 shap.waterfall_plot(
                     explainer_values,
@@ -156,7 +157,9 @@ def shap_dependence_plots(
     :param show_dependence_plots_of_top_n_features: Number of features to show the dependence plots for.
     """
 
-    logger("Plotting interactions of most important features by global SHAP values...")
+    logging.info(
+        "Plotting interactions of most important features by global SHAP values..."
+    )
     if show_dependence_plots_of_top_n_features > len(df.columns):
         show_dependence_plots_of_top_n_features = len(df.columns)
 
@@ -174,7 +177,7 @@ def shap_dependence_plots(
         else:
             try:
                 for idx, class_shap_values in enumerate(shap_values):
-                    logger(
+                    logging.info(
                         f"Showing dependence plots f top features for class {idx}..."
                     )
                     shap.dependence_plot(

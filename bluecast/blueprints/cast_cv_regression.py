@@ -1,22 +1,23 @@
+import logging
 from typing import Any, List, Literal, Optional, Tuple, Union
 
 import numpy as np
 import pandas as pd
-from sklearn.model_selection import KFold
+from sklearn.model_selection import RepeatedKFold
 
 from bluecast.blueprints.cast_regression import BlueCastRegression
-from bluecast.config.training_config import TrainingConfig, XgboostFinalParamConfig
 from bluecast.config.training_config import (
-    XgboostTuneParamsRegressionConfig as XgboostTuneParamsConfig,
+    TrainingConfig,
+    XgboostRegressionFinalParamConfig,
+    XgboostTuneParamsRegressionConfig,
 )
 from bluecast.conformal_prediction.conformal_prediction_regression import (
     ConformalPredictionRegressionWrapper,
 )
 from bluecast.experimentation.tracking import ExperimentTracker
-from bluecast.general_utils.general_utils import logger
 from bluecast.ml_modelling.xgboost import XgboostModel
 from bluecast.preprocessing.custom import CustomPreprocessing
-from bluecast.preprocessing.feature_selection import RFECVSelector
+from bluecast.preprocessing.feature_selection import BoostaRootaWrapper
 
 
 class BlueCastCVRegression:
@@ -29,16 +30,17 @@ class BlueCastCVRegression:
     def __init__(
         self,
         class_problem: Literal["regression"] = "regression",
+        cat_columns: Optional[List[Union[str, float, int]]] = None,
         stratifier: Optional[Any] = None,
         conf_training: Optional[TrainingConfig] = None,
-        conf_xgboost: Optional[XgboostTuneParamsConfig] = None,
-        conf_params_xgboost: Optional[XgboostFinalParamConfig] = None,
+        conf_xgboost: Optional[XgboostTuneParamsRegressionConfig] = None,
+        conf_params_xgboost: Optional[XgboostRegressionFinalParamConfig] = None,
         experiment_tracker: Optional[ExperimentTracker] = None,
         custom_in_fold_preprocessor: Optional[CustomPreprocessing] = None,
         custom_last_mile_computation: Optional[CustomPreprocessing] = None,
         custom_preprocessor: Optional[CustomPreprocessing] = None,
         custom_feature_selector: Optional[
-            Union[RFECVSelector, CustomPreprocessing]
+            Union[BoostaRootaWrapper, CustomPreprocessing]
         ] = None,
         ml_model: Optional[Union[XgboostModel, Any]] = None,
     ):
@@ -57,10 +59,24 @@ class BlueCastCVRegression:
             ConformalPredictionRegressionWrapper
         ] = None
 
+        if not cat_columns:
+            self.cat_columns = []
+        else:
+            self.cat_columns = cat_columns
+
         if experiment_tracker:
             self.experiment_tracker = experiment_tracker
         else:
             self.experiment_tracker = ExperimentTracker()
+
+        if not self.conf_params_xgboost:
+            self.conf_params_xgboost = XgboostRegressionFinalParamConfig()
+
+        if not self.conf_training:
+            self.conf_training = TrainingConfig()
+
+        if not self.conf_xgboost:
+            self.conf_xgboost = XgboostTuneParamsRegressionConfig()
 
     def prepare_data(
         self, df: pd.DataFrame, target: str
@@ -90,9 +106,9 @@ class BlueCastCVRegression:
 
         score_mean = np.asarray(all_metrics).mean()
         score_std = np.asarray(all_metrics).std()
-        message = f"The mean out of fold {metric} score is {score_mean} with an std of {score_std}"
-        logger(message)
-
+        logging.info(
+            f"The mean out of fold {metric} score is {score_mean} with an std of {score_std}"
+        )
         return score_mean, score_std
 
     def fit(self, df: pd.DataFrame, target_col: str) -> None:
@@ -105,9 +121,9 @@ class BlueCastCVRegression:
             self.conf_training = TrainingConfig()
 
         if not self.stratifier:
-            self.stratifier = KFold(
-                n_splits=5,
-                shuffle=True,
+            self.stratifier = RepeatedKFold(
+                n_splits=self.conf_training.bluecast_cv_train_n_model[0],
+                n_repeats=self.conf_training.bluecast_cv_train_n_model[1],
                 random_state=self.conf_training.global_random_state,
             )
 
@@ -124,12 +140,13 @@ class BlueCastCVRegression:
             self.conf_training.global_random_state += (
                 self.conf_training.increase_random_state_in_bluecast_cv_by
             )
-            logger(
+            logging.info(
                 f"Start fitting model number {fn} with random seed {self.conf_training.global_random_state}"
             )
 
             automl = BlueCastRegression(
                 class_problem=self.class_problem,
+                cat_columns=self.cat_columns,
                 conf_training=self.conf_training,
                 conf_xgboost=self.conf_xgboost,
                 conf_params_xgboost=self.conf_params_xgboost,
@@ -161,9 +178,9 @@ class BlueCastCVRegression:
             self.conf_training = TrainingConfig()
 
         if not self.stratifier:
-            self.stratifier = KFold(
-                n_splits=5,
-                shuffle=True,
+            self.stratifier = RepeatedKFold(
+                n_splits=self.conf_training.bluecast_cv_train_n_model[0],
+                n_repeats=self.conf_training.bluecast_cv_train_n_model[1],
                 random_state=self.conf_training.global_random_state,
             )
 
@@ -176,12 +193,13 @@ class BlueCastCVRegression:
             self.conf_training.global_random_state += (
                 self.conf_training.increase_random_state_in_bluecast_cv_by
             )
-            logger(
+            logging.info(
                 f"Start fitting model number {fn} with random seed {self.conf_training.global_random_state}"
             )
 
             automl = BlueCastRegression(
                 class_problem=self.class_problem,
+                cat_columns=self.cat_columns,
                 conf_training=self.conf_training,
                 conf_xgboost=self.conf_xgboost,
                 conf_params_xgboost=self.conf_params_xgboost,

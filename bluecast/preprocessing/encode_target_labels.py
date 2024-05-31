@@ -6,12 +6,10 @@ In such cases they will be converted to numerical values, but reverse-transforme
 pipeline.
 """
 
-from datetime import datetime
+import logging
 from typing import Dict, Optional, Union
 
 import pandas as pd
-
-from bluecast.general_utils.general_utils import logger
 
 
 class TargetLabelEncoder:
@@ -27,7 +25,7 @@ class TargetLabelEncoder:
 
     def fit_label_encoder(self, targets: pd.DataFrame) -> Dict[str, int]:
         """Iterate through target values and map them to numerics."""
-        logger(f"{datetime.utcnow()}: Start fitting target label encoder.")
+        logging.info("Start fitting target label encoder.")
         targets = targets.astype("category")
         col = targets.name
 
@@ -48,7 +46,7 @@ class TargetLabelEncoder:
         target_col: Optional[Union[str, int, float]] = None,
     ) -> pd.DataFrame:
         """Transform target column from categorical to numerical representation."""
-        logger(f"{datetime.utcnow()}: Start encoding target labels.")
+        logging.info("Start encoding target labels.")
         if (
             isinstance(target_col, str)
             or isinstance(target_col, int)
@@ -88,7 +86,7 @@ class TargetLabelEncoder:
 
     def label_encoder_reverse_transform(self, targets: pd.Series) -> pd.DataFrame:
         """Reverse numerical encodings back to original categories."""
-        logger(f"{datetime.utcnow()}: Start reverse-encoding target labels.")
+        logging.info("Start reverse-encoding target labels.")
         col = targets.name
 
         if isinstance(targets, pd.Series):

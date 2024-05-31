@@ -4,16 +4,15 @@ Module containing classes and function to monitor data drifts.
 This is meant for pipelines on production.
 """
 
+import logging
 import numbers
-from datetime import datetime
 from typing import Any, Dict
 
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
+import xgboost as xgb
 from scipy.stats import ks_2samp
-
-from bluecast.general_utils.general_utils import logger
 
 
 class DataDrift:
@@ -28,6 +27,7 @@ class DataDrift:
         self.kolmogorov_smirnov_flags: Dict[str, bool] = {}
         self.population_stability_index_values: Dict[str, float] = {}
         self.population_stability_index_flags: Dict[str, Any] = {}
+        self.adversarial_auc_score: float = 0.0
 
     def kolmogorov_smirnov_test(
         self,
@@ -46,9 +46,7 @@ class DataDrift:
         :param threshold: Threshold for the Kolmogorov-Smirnov test (default is 0.05)
         :return drift_flags: Dictionary containing flags indicating data drift for each column
         """
-        logger(
-            f"{datetime.utcnow()}: Start checking for data drift via Kolmogorov-Smirnov test."
-        )
+        logging.info("Start checking for data drift via Kolmogorov-Smirnov test.")
 
         for column in new_data.columns:
             # Check for numerical columns
@@ -116,9 +114,7 @@ class DataDrift:
         :param new_data: Pandas DataFrame containing new data to compare against
         :return drift_flags: Dictionary containing flags indicating data drift for each column
         """
-        logger(
-            f"{datetime.utcnow()}: Start checking for data drift via population stability index."
-        )
+        logging.info("Start checking for data drift via population stability index.")
         top_feature_list = data.columns
         for column in top_feature_list:
             if pd.api.types.is_numeric_dtype(new_data[column]):
@@ -221,3 +217,51 @@ class DataDrift:
         plt.title(f"QQplot of {x_label} & {y_label}")
         plt.show()
         plt.close()
+
+    def adversarial_validation(self, df: pd.DataFrame, df_new: pd.DataFrame) -> float:
+        """
+        Perform adversarial validation to check if the new data is similar to the training data.
+        If the AUC score is close to 0.5, then the new data is similar to the training data. The further the AUC score is
+        from 0.5, the more different the new data is from the training data and multivariate data drift can be assumed.
+
+        :param df: Baseline DataFrame that is the point of comparison.
+        :param df_new: New DataFrame to compare against the baseline.
+        :return: Auc score that indicates similarity.
+        """
+        # add the train/test labels
+        df["AV_label"] = 0
+        df_new["AV_label"] = 1
+
+        all_data = pd.concat([df, df_new], axis=0, ignore_index=True)
+
+        # shuffle
+        all_data_shuffled = all_data.sample(frac=1, random_state=60)
+
+        # create our DMatrix (the XGBoost data structure)
+        X = all_data_shuffled.drop(["AV_label"], axis=1)
+        y = all_data_shuffled["AV_label"]
+
+        xgb_data = xgb.DMatrix(data=X, label=y)
+
+        # our XGBoost parameters
+        params = {
+            "objective": "binary:logistic",
+            "eval_metric": "logloss",
+            "learning_rate": 0.05,
+            "max_depth": 5,
+        }
+
+        # perform cross validation with XGBoost
+        cross_val_results = xgb.cv(
+            dtrain=xgb_data,
+            params=params,
+            nfold=5,
+            metrics="auc",
+            num_boost_round=200,
+            early_stopping_rounds=20,
+            as_pandas=True,
+        )
+        self.adversarial_auc_score = (
+            cross_val_results[["test-auc-mean"]].tail(1).values[0]
+        )
+        return self.adversarial_auc_score

@@ -4,12 +4,10 @@ Module for extracting date parts from datetime columns.
 Cyclic transformations are not implemented as they aren't a good match for tree models.
 """
 
-from datetime import datetime
+import logging
 from typing import List, Optional, Union
 
 import pandas as pd
-
-from bluecast.general_utils.general_utils import logger
 
 
 def date_converter(
@@ -25,7 +23,7 @@ def date_converter(
     :param date_parts: List of date parts to be extracted.
     :return: Returns modified df.
     """
-    logger(f"{datetime.utcnow()}: Start date column conversion.")
+    logging.info("Start date column conversion.")
     if not date_columns:
         return df
 

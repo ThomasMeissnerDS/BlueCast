@@ -9,7 +9,7 @@ from bluecast.monitoring.data_monitoring import DataDrift
 
 @pytest.fixture
 def mock_logger():
-    with patch("bluecast.general_utils.general_utils.logger") as mock:
+    with patch("bluecast.general_utils.general_utils.logging") as mock:
         yield mock
 
 
@@ -49,3 +49,19 @@ def test_qqplot_two_samples():
     # Call the function with sample data
     data_drift.qqplot_two_samples(x, y)
     assert True
+
+
+def test_adversarial_validation():
+    data_drift = DataDrift()
+
+    # Generate sample data for testing
+    data = pd.DataFrame(
+        {"col1": [i for i in range(100)], "col2": [i for i in range(100, 200)]}
+    )
+    new_data = pd.DataFrame(
+        {"col1": [i for i in range(100)], "col2": [i for i in range(150, 250)]}
+    )
+
+    # Test Population Stability Index with no data drift
+    data_drift.adversarial_validation(data, new_data)
+    assert data_drift.adversarial_auc_score > 0.5

@@ -10,9 +10,9 @@ from sklearn.metrics import make_scorer, mean_absolute_error
 from sklearn.model_selection import KFold
 
 from bluecast.blueprints.cast_regression import BlueCastRegression
-from bluecast.config.training_config import TrainingConfig
 from bluecast.config.training_config import (
-    XgboostTuneParamsRegressionConfig as XgboostTuneParamsConfig,
+    TrainingConfig,
+    XgboostTuneParamsRegressionConfig,
 )
 from bluecast.ml_modelling.base_classes import BaseClassMlRegressionModel
 from bluecast.preprocessing.custom import CustomPreprocessing
@@ -37,7 +37,7 @@ def test_blueprint_xgboost(synthetic_train_test_data, synthetic_calibration_data
     df_train = synthetic_train_test_data[0]
     df_val = synthetic_train_test_data[1]
     df_calibration = synthetic_calibration_data
-    xgboost_param_config = XgboostTuneParamsConfig()
+    xgboost_param_config = XgboostTuneParamsRegressionConfig()
     xgboost_param_config.steps_max = 100
     xgboost_param_config.max_depth_max = 3
 
@@ -123,7 +123,8 @@ def test_bluecast_with_custom_model():
     train_config.gridsearch_nb_parameters_per_grid = 2
     train_config.precise_cv_tuning = True
 
-    xgboost_param_config = XgboostTuneParamsConfig()
+    xgboost_param_config = XgboostTuneParamsRegressionConfig()
+    xgboost_param_config.steps_min = 2
     xgboost_param_config.steps_max = 100
     xgboost_param_config.max_depth_max = 3
 
@@ -273,23 +274,23 @@ def test_bluecast_with_custom_model():
     # Create some sample data for testing
     x_train = pd.DataFrame(
         {
-            "feature1": [i for i in range(10)],
-            "feature2": [i for i in range(10)],
-            "feature3": [i for i in range(10)],
-            "feature4": [i for i in range(10)],
-            "feature5": [i for i in range(10)],
-            "feature6": [i for i in range(10)],
+            "feature1": [i for i in range(20)],
+            "feature2": [i for i in range(20)],
+            "feature3": [i for i in range(20)],
+            "feature4": [i for i in range(20)],
+            "feature5": [i for i in range(20)],
+            "feature6": [i for i in range(20)],
         }
     )
-    y_train = pd.Series([0, 1, 0, 1, 0, 1, 0, 1, 0, 1])
+    y_train = pd.Series([0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1])
     x_test = pd.DataFrame(
         {
-            "feature1": [i for i in range(10)],
-            "feature2": [i for i in range(10)],
-            "feature3": [i for i in range(10)],
-            "feature4": [i for i in range(10)],
-            "feature5": [i for i in range(10)],
-            "feature6": [i for i in range(10)],
+            "feature1": [i for i in range(20)],
+            "feature2": [i for i in range(20)],
+            "feature3": [i for i in range(20)],
+            "feature4": [i for i in range(20)],
+            "feature5": [i for i in range(20)],
+            "feature6": [i for i in range(20)],
         }
     )
 
@@ -306,6 +307,97 @@ def test_bluecast_with_custom_model():
     print(bluecast.experiment_tracker.experiment_id)
     assert (
         len(bluecast.experiment_tracker.experiment_id) == 0
+    )  # due to custom model and fit method
+
+    # test cross-validated model without custom model and with custom infold preproc
+    bluecast = BlueCastRegression(
+        class_problem="regression",
+        conf_xgboost=xgboost_param_config,
+        conf_training=train_config,
+        custom_feature_selector=custom_feature_selector,
+        custom_preprocessor=custum_preproc,
+        custom_in_fold_preprocessor=custom_infold_preproc,
+    )
+
+    # Create some sample data for testing
+    x_train = pd.DataFrame(
+        {
+            "feature1": [i for i in range(20)],
+            "feature2": [i for i in range(20)],
+            "feature3": [i for i in range(20)],
+            "feature4": [i for i in range(20)],
+            "feature5": [i for i in range(20)],
+            "feature6": [i for i in range(20)],
+        }
+    )
+    y_train = pd.Series([0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1])
+    x_test = pd.DataFrame(
+        {
+            "feature1": [i for i in range(20)],
+            "feature2": [i for i in range(20)],
+            "feature3": [i for i in range(20)],
+            "feature4": [i for i in range(20)],
+            "feature5": [i for i in range(20)],
+            "feature6": [i for i in range(20)],
+        }
+    )
+
+    x_train["target"] = y_train
+
+    # Fit the BlueCast model using the custom model
+    bluecast.fit(x_train, "target")
+
+    # Predict on the test data using the custom model
+    preds = bluecast.predict(x_test)
+
+    # Assert the expected results
+    assert isinstance(preds, np.ndarray)
+    print(bluecast.experiment_tracker.experiment_id)
+    assert len(bluecast.experiment_tracker.experiment_id) == 26
+
+    # test cross-validated model without custom model
+    bluecast = BlueCastRegression(
+        class_problem="regression",
+        conf_xgboost=xgboost_param_config,
+        conf_training=train_config,
+    )
+
+    # Create some sample data for testing
+    x_train = pd.DataFrame(
+        {
+            "feature1": [i for i in range(20)],
+            "feature2": [i for i in range(20)],
+            "feature3": [i for i in range(20)],
+            "feature4": [i for i in range(20)],
+            "feature5": [i for i in range(20)],
+            "feature6": [i for i in range(20)],
+        }
+    )
+    y_train = pd.Series([0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1])
+    x_test = pd.DataFrame(
+        {
+            "feature1": [i for i in range(20)],
+            "feature2": [i for i in range(20)],
+            "feature3": [i for i in range(20)],
+            "feature4": [i for i in range(20)],
+            "feature5": [i for i in range(20)],
+            "feature6": [i for i in range(20)],
+        }
+    )
+
+    x_train["target"] = y_train
+
+    # Fit the BlueCast model using the custom model
+    bluecast.fit(x_train, "target")
+
+    # Predict on the test data using the custom model
+    preds = bluecast.predict(x_test)
+
+    # Assert the expected results
+    assert isinstance(preds, np.ndarray)
+    print(bluecast.experiment_tracker.experiment_id)
+    assert (
+        len(bluecast.experiment_tracker.experiment_id) == 26
     )  # due to custom model and fit method
 
 
@@ -346,29 +438,16 @@ def test_missing_feature_selector_warning(bluecast_instance):
         bluecast_instance.initial_checks(df)
 
 
-def test_missing_xgboost_tune_params_config_warning(bluecast_instance):
+def test_missing_xgboost_tune_params_config_warning():
     # Test if a warning is raised when XgboostTuneParamsConfig is not provided
     df = pd.DataFrame({"feature1": [1, 2, 3], "target": [0, 1, 0]})
-    bluecast_instance.conf_xgboost = None
+    bluecast_instance_test = BlueCastRegression(class_problem="regression")
+    bluecast_instance_test.target_column = "target"
+    bluecast_instance_test.conf_xgboost = None
     with pytest.warns(
-        UserWarning, match="No XgboostTuneParamsConfig has been provided."
+        UserWarning, match="No XgboostTuneParamsRegressionConfig has been provided."
     ):
-        bluecast_instance.initial_checks(df)
-
-
-def test_min_features_to_select_warning(bluecast_instance):
-    # Test if a warning is raised when min_features_to_select is greater than or equal to the number of features
-    df = pd.DataFrame({"feature1": [1, 2, 3], "target": [0, 1, 0]})
-    bluecast_instance.conf_training.enable_feature_selection = True
-    bluecast_instance.conf_training.min_features_to_select = 3
-    message = """The minimum number of features to select is greater or equal to the number of features in
-            the dataset while feature selection is enabled. Consider reducing the minimum number of features to
-            select or disabling feature selection via TrainingConfig."""
-    with pytest.warns(
-        UserWarning,
-        match=message,
-    ):
-        bluecast_instance.initial_checks(df)
+        bluecast_instance_test.initial_checks(df)
 
 
 def test_shap_values_and_ml_algorithm_warning(bluecast_instance):

@@ -53,6 +53,7 @@ def test_blueprint_xgboost(
     df_val = synthetic_train_test_data[1]
     df_calibration = synthetic_calibration_data
     xgboost_param_config = XgboostTuneParamsConfig()
+    xgboost_param_config.steps_min = 2
     xgboost_param_config.steps_max = 100
     xgboost_param_config.max_depth_max = 3
 
@@ -201,6 +202,7 @@ def test_bluecast_with_custom_model():
     train_config.gridsearch_nb_parameters_per_grid = 2
 
     xgboost_param_config = XgboostTuneParamsConfig()
+    xgboost_param_config.steps_min = 2
     xgboost_param_config.steps_max = 100
     xgboost_param_config.max_depth_max = 3
 
@@ -361,40 +363,30 @@ def test_hypertuning_cv_folds_warning(bluecast_instance):
         bluecast_instance.initial_checks(df)
 
 
-def test_missing_feature_selector_warning(bluecast_instance):
+def test_missing_feature_selector_warning():
     # Test if a warning is raised when feature selection is enabled but no feature selector is provided
     df = pd.DataFrame({"feature1": [1, 2, 3], "target": [0, 1, 0]})
-    bluecast_instance.conf_training.enable_feature_selection = True
+    bluecast_instance_test = BlueCast(class_problem="binary")
+    bluecast_instance_test.conf_training.enable_feature_selection = True
+    bluecast_instance_test.target_column = "target"
     with pytest.warns(
         UserWarning,
         match="Feature selection is enabled but no feature selector has been provided.",
     ):
-        bluecast_instance.initial_checks(df)
+        bluecast_instance_test.initial_checks(df)
 
 
-def test_missing_xgboost_tune_params_config_warning(bluecast_instance):
+def test_missing_xgboost_tune_params_config_warning():
     # Test if a warning is raised when XgboostTuneParamsConfig is not provided
+    bluecast_instance_test = BlueCast(class_problem="binary")
+    bluecast_instance_test.target_column = "target"
     df = pd.DataFrame({"feature1": [1, 2, 3], "target": [0, 1, 0]})
-    bluecast_instance.conf_xgboost = None
+    bluecast_instance_test.conf_xgboost = None
+    print(f"Bluecast conf Xgboost is: {bluecast_instance_test.conf_xgboost}")
     with pytest.warns(
         UserWarning, match="No XgboostTuneParamsConfig has been provided."
     ):
-        bluecast_instance.initial_checks(df)
-
-
-def test_min_features_to_select_warning(bluecast_instance):
-    # Test if a warning is raised when min_features_to_select is greater than or equal to the number of features
-    df = pd.DataFrame({"feature1": [1, 2, 3], "target": [0, 1, 0]})
-    bluecast_instance.conf_training.enable_feature_selection = True
-    bluecast_instance.conf_training.min_features_to_select = 3
-    message = """The minimum number of features to select is greater or equal to the number of features in
-            the dataset while feature selection is enabled. Consider reducing the minimum number of features to
-            select or disabling feature selection via TrainingConfig."""
-    with pytest.warns(
-        UserWarning,
-        match=message,
-    ):
-        bluecast_instance.initial_checks(df)
+        bluecast_instance_test.initial_checks(df)
 
 
 def test_shap_values_and_ml_algorithm_warning(bluecast_instance):

@@ -6,7 +6,7 @@ pipeline. Pydantic dataclasses are used to allow users a pythonic way to define 
 Default configurations can be loaded, adjusted and passed into the blueprints.
 """
 
-from typing import Dict, List, Optional
+from typing import Dict, List, Optional, Tuple
 
 from pydantic import BaseModel
 from pydantic.dataclasses import dataclass
@@ -31,11 +31,10 @@ class TrainingConfig(BaseModel):
     :param sample_data_during_tuning: Whether to sample the data during tuning. Not used when custom ML model is passed.
     :param sample_data_during_tuning_alpha: Alpha value for sampling the data during tuning. The higher alpha the
         fewer samples will be left. Not used when custom ML model is passed.
-    :param precise_cv_tuning: If enabled will switch from using Xgboost's own cv method to a custom cross validation
-        routine. This is needed when the in-fold preprocessing is necessary that would cause overfitting with usual cv.
-        This has a much longer runtime as Optuna's pruning call is missing and all trials will run until the end.
-    :param early_stopping_rounds: Number of early stopping rounds. Not used when custom ML model is passed. Also
-        not used when hypertuning_cv_folds is greater than 1.
+    :param class_weight_during_dmatrix_creation: Whether to use class weights during DMatrix creation. Not used when
+        custom ML model is passed.
+    :param early_stopping_rounds: Number of early stopping rounds during final training or when hyperparameter tuning
+        follows a single train-test split. Not used when custom ML model is passed.
     :param autotune_model: Whether to autotune the model. Not used when custom ML model is passed.
     :param enable_feature_selection: Whether to enable recursive feature selection.
     :param calculate_shap_values: Whether to calculate shap values. Also used when custom ML model is passed. Not
@@ -64,19 +63,22 @@ class TrainingConfig(BaseModel):
     :param gridsearch_tuning_max_runtime_secs: Sets the maximum time in seconds the tuning shall run. This will finish
         the latest trial nd will exceed this limit though.
     :param experiment_name: Name of the experiment. Will be logged inside the ExperimentTracker.
+    :param logging_file_path: Path to the logging file. If None, the logging will be printed to the Jupyter notebook
+        instead.
     """
 
-    global_random_state: int = 10
-    increase_random_state_in_bluecast_cv_by: int = 33
+    global_random_state: int = 33
+    increase_random_state_in_bluecast_cv_by: int = 200
     shuffle_during_training: bool = True
     hyperparameter_tuning_rounds: int = 200
     hyperparameter_tuning_max_runtime_secs: int = 3600
     hypertuning_cv_folds: int = 1
     sample_data_during_tuning: bool = False
-    sample_data_during_tuning_alpha: float = 0.1
+    sample_data_during_tuning_alpha: float = 2.0
     precise_cv_tuning: bool = False
-    early_stopping_rounds: Optional[int] = None
+    early_stopping_rounds: Optional[int] = 20
     autotune_model: bool = True
+    autotune_n_random_seeds: int = 1
     enable_feature_selection: bool = False
     calculate_shap_values: bool = True
     shap_waterfall_indices: List[int] = [0]
@@ -84,8 +86,7 @@ class TrainingConfig(BaseModel):
     store_shap_values_in_instance: bool = False
     train_size: float = 0.8
     train_split_stratify: bool = True
-    use_full_data_for_final_model: bool = True
-    min_features_to_select: int = 5
+    use_full_data_for_final_model: bool = False
     cardinality_threshold_for_onehot_encoding: int = 5
     cat_encoding_via_ml_algorithm: bool = False
     show_detailed_tuning_logs: bool = False
@@ -93,31 +94,31 @@ class TrainingConfig(BaseModel):
     enable_grid_search_fine_tuning: bool = False
     gridsearch_tuning_max_runtime_secs: int = 3600
     gridsearch_nb_parameters_per_grid: int = 5
+    bluecast_cv_train_n_model: Tuple[int, int] = (5, 1)
+    logging_file_path: Optional[str] = None
     experiment_name: str = "new experiment"
 
 
 class XgboostTuneParamsConfig(BaseModel):
     """Define hyperparameter tuning search space."""
 
-    max_depth_min: int = 2
-    max_depth_max: int = 12
+    max_depth_min: int = 3
+    max_depth_max: int = 10
     alpha_min: float = 1e-8
-    alpha_max: float = 10.0
-    lambda_min: float = 1e-8
-    lambda_max: float = 10.0
+    alpha_max: float = 10
+    lambda_min: float = 1
+    lambda_max: float = 100
     gamma_min: float = 1e-8
-    gamma_max: float = 10.0
-    subsample_min: float = 0.0
-    subsample_max: float = 1.0
-    min_child_weight_min: int = 1
-    min_child_weight_max: int = 1
-    sub_sample_min: float = 0.3
+    gamma_max: float = 10
+    min_child_weight_min: float = 0.1
+    min_child_weight_max: float = 100
+    sub_sample_min: float = 1.0
     sub_sample_max: float = 1.0
-    col_sample_by_tree_min: float = 0.3
+    col_sample_by_tree_min: float = 0.5
     col_sample_by_tree_max: float = 1.0
     col_sample_by_level_min: float = 1.0
     col_sample_by_level_max: float = 1.0
-    eta_min: float = 0.001
+    eta_min: float = 1e-3
     eta_max: float = 0.3
     steps_min: int = 50
     steps_max: int = 1000
@@ -126,38 +127,38 @@ class XgboostTuneParamsConfig(BaseModel):
     xgboost_objective: str = "multi:softprob"
     xgboost_eval_metric: str = "mlogloss"
     booster: str = "gbtree"
+    tree_method: str = "hist"
 
 
 class XgboostTuneParamsRegressionConfig(BaseModel):
     """Define hyperparameter tuning search space."""
 
-    max_depth_min: int = 2
-    max_depth_max: int = 12
+    max_depth_min: int = 3
+    max_depth_max: int = 10
     alpha_min: float = 1e-8
-    alpha_max: float = 10.0
+    alpha_max: float = 10
     lambda_min: float = 1e-8
-    lambda_max: float = 10.0
+    lambda_max: float = 100
     gamma_min: float = 1e-8
-    gamma_max: float = 10.0
-    subsample_min: float = 0.0
-    subsample_max: float = 1.0
-    min_child_weight_min: int = 1
-    min_child_weight_max: int = 1
-    sub_sample_min: float = 0.3
+    gamma_max: float = 10
+    min_child_weight_min: float = 0.1
+    min_child_weight_max: float = 100
+    sub_sample_min: float = 1.0
     sub_sample_max: float = 1.0
-    col_sample_by_tree_min: float = 0.3
+    col_sample_by_tree_min: float = 0.5
     col_sample_by_tree_max: float = 1.0
     col_sample_by_level_min: float = 1.0
     col_sample_by_level_max: float = 1.0
-    eta_min: float = 0.001
+    eta_min: float = 1e-3
     eta_max: float = 0.3
-    steps_min: int = 2
+    steps_min: int = 50
     steps_max: int = 1000
     verbosity_during_hyperparameter_tuning: int = 0
     verbosity_during_final_model_training: int = 0
     xgboost_objective: str = "reg:squarederror"
     xgboost_eval_metric: str = "rmse"
     booster: str = "gbtree"
+    tree_method: str = "hist"
 
 
 @dataclass
@@ -166,16 +167,41 @@ class XgboostFinalParamConfig:
 
     params = {
         "booster": "gbtree",
-        "max_depth": 7,  # maximum depth of the decision trees being trained
-        "alpha": 0.1,
-        "lambda": 0.1,
+        "max_depth": 10,  # maximum depth of the decision trees being trained
+        "alpha": 0.0,
+        "lambda": 1.0,
         "gamma": 0.0,
         "subsample": 1.0,
-        "min_child_weight": 1,
-        "colsample_bytree": 0.8,
-        "colsample_bylevel": 0.8,
-        "eta": 0.1,
+        "min_child_weight": 1.0,
+        "colsample_bytree": 1.0,
+        "colsample_bylevel": 1.0,
+        "eta": 0.05,
         "steps": 1000,
+        "objective": "multi:softprob",
+        "eval_metric": "mlogloss",
+        "tree_method": "hist",
     }
     sample_weight: Optional[Dict[str, float]] = None
     classification_threshold: float = 0.5
+
+
+@dataclass
+class XgboostRegressionFinalParamConfig:
+    """Define final hyper parameters."""
+
+    params = {
+        "booster": "gbtree",
+        "max_depth": 10,  # maximum depth of the decision trees being trained
+        "alpha": 0.0,
+        "lambda": 1.0,
+        "gamma": 0.0,
+        "subsample": 1.0,
+        "min_child_weight": 1.0,
+        "colsample_bytree": 1.0,
+        "colsample_bylevel": 1.0,
+        "eta": 0.05,
+        "steps": 1000,
+        "objective": "reg:squarederror",
+        "eval_metric": "rmse",
+        "tree_method": "hist",
+    }

@@ -6,13 +6,11 @@ The onehot encoding technique is implemented in the category_encoders library. T
 different encoding techniques. The onehot encoding technique is implemented in the OneHotEncoder class.
 """
 
-from datetime import datetime
+import logging
 from typing import Dict, List, Union
 
 import pandas as pd
 from category_encoders import OneHotEncoder
-
-from bluecast.general_utils.general_utils import logger
 
 
 class OneHotCategoryEncoder:
@@ -30,7 +28,7 @@ class OneHotCategoryEncoder:
 
     def fit_transform(self, x: pd.DataFrame, y: pd.Series) -> pd.DataFrame:
         """Fit onehot encoder and transform column."""
-        logger(f"{datetime.utcnow()}: Start fitting binary target encoder.")
+        logging.info("Start fitting binary target encoder.")
         if self.target_col in self.cat_columns:
             self.cat_columns.remove(self.target_col)
 
@@ -48,9 +46,7 @@ class OneHotCategoryEncoder:
 
     def transform(self, x: pd.DataFrame) -> pd.DataFrame:
         """Transform categories based on already trained encoder."""
-        logger(
-            f"{datetime.utcnow()}: Start transforming categories with binary target encoder."
-        )
+        logging.info("Start transforming categories with binary target encoder.")
         enc = self.encoders["onehot_encoder_all_cols"]
         encoded_cats = enc.transform(x[self.cat_columns])
         x = x.drop(self.cat_columns, axis=1)

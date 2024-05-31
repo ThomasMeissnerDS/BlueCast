@@ -1,4 +1,3 @@
-import logging
 from datetime import datetime
 from typing import Any, Dict, List, Literal, Union
 
@@ -53,7 +52,6 @@ class ExperimentTracker(BaseClassExperimentTracker):
         :param metric_used: The name of the eval metric.
         :param metric_higher_is_better: True or False.
         """
-        logging.info(f"{datetime.utcnow()}: Start adding results to ExperimentTracker.")
         self.experiment_id.append(experiment_id)
         self.score_category.append(score_category)
         try:

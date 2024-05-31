@@ -7,16 +7,17 @@ Hyperparameter tuning can be switched off or even strengthened via cross-validat
 via the config class attributes from config.training_config module.
 """
 
+import logging
 import warnings
-from datetime import datetime
 from typing import Any, Dict, List, Literal, Optional, Union
 
 import numpy as np
 import pandas as pd
 
-from bluecast.config.training_config import TrainingConfig, XgboostFinalParamConfig
 from bluecast.config.training_config import (
-    XgboostTuneParamsRegressionConfig as XgboostTuneParamsConfig,
+    TrainingConfig,
+    XgboostRegressionFinalParamConfig,
+    XgboostTuneParamsRegressionConfig,
 )
 from bluecast.conformal_prediction.conformal_prediction_regression import (
     ConformalPredictionRegressionWrapper,
@@ -28,7 +29,7 @@ from bluecast.evaluation.shap_values import (
     shap_waterfall_plot,
 )
 from bluecast.experimentation.tracking import ExperimentTracker
-from bluecast.general_utils.general_utils import check_gpu_support, logger
+from bluecast.general_utils.general_utils import check_gpu_support
 from bluecast.ml_modelling.xgboost_regression import XgboostModelRegression
 from bluecast.preprocessing.category_encoder_orchestration import (
     CategoryEncoderOrchestrator,
@@ -36,7 +37,7 @@ from bluecast.preprocessing.category_encoder_orchestration import (
 from bluecast.preprocessing.custom import CustomPreprocessing
 from bluecast.preprocessing.datetime_features import date_converter
 from bluecast.preprocessing.encode_target_labels import TargetLabelEncoder
-from bluecast.preprocessing.feature_selection import RFECVSelector
+from bluecast.preprocessing.feature_selection import BoostaRootaWrapper
 from bluecast.preprocessing.feature_types import FeatureTypeDetector
 from bluecast.preprocessing.nulls_and_infs import fill_infinite_values
 from bluecast.preprocessing.onehot_encoding import OneHotCategoryEncoder
@@ -86,16 +87,21 @@ class BlueCastRegression:
         custom_last_mile_computation: Optional[CustomPreprocessing] = None,
         custom_preprocessor: Optional[CustomPreprocessing] = None,
         custom_feature_selector: Optional[
-            Union[RFECVSelector, CustomPreprocessing]
+            Union[BoostaRootaWrapper, CustomPreprocessing]
         ] = None,
         conf_training: Optional[TrainingConfig] = None,
-        conf_xgboost: Optional[XgboostTuneParamsConfig] = None,
-        conf_params_xgboost: Optional[XgboostFinalParamConfig] = None,
+        conf_xgboost: Optional[XgboostTuneParamsRegressionConfig] = None,
+        conf_params_xgboost: Optional[XgboostRegressionFinalParamConfig] = None,
         experiment_tracker: Optional[ExperimentTracker] = None,
     ):
         self.class_problem = class_problem
         self.prediction_mode: bool = False
-        self.cat_columns = cat_columns
+
+        if not cat_columns:
+            self.cat_columns = []
+        else:
+            self.cat_columns = cat_columns
+
         self.date_columns = date_columns
         self.time_split_column = time_split_column
         self.target_column = "Undefined"
@@ -128,7 +134,22 @@ class BlueCastRegression:
             self.experiment_tracker = ExperimentTracker()
 
         if not self.conf_params_xgboost:
-            self.conf_params_xgboost = XgboostFinalParamConfig()
+            self.conf_params_xgboost = XgboostRegressionFinalParamConfig()
+            self.conf_params_xgboost.params.pop("num_class", None)
+
+        if not self.conf_training:
+            self.conf_training = TrainingConfig()
+
+        if not self.conf_xgboost:
+            self.conf_xgboost = XgboostTuneParamsRegressionConfig()
+
+        logging.basicConfig(
+            filename=self.conf_training.logging_file_path,
+            filemode="w",
+            format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
+            level=logging.INFO,
+        )
+        logging.info("BlueCastRegression blueprint initialized.")
 
     def initial_checks(self, df: pd.DataFrame) -> None:
         if not self.conf_training:
@@ -157,19 +178,12 @@ class BlueCastRegression:
             feature selector."""
             warnings.warn(message, UserWarning, stacklevel=2)
         if not self.conf_xgboost:
-            message = """No XgboostTuneParamsConfig has been provided. Falling back to default values. Default values
+            message = """No XgboostTuneParamsRegressionConfig has been provided. Falling back to default values. Default values
             have been chosen to speed up the prototyping. For robust hyperparameter tuning consider providing a custom
-            XgboostTuneParamsConfig with a deeper hyperparameter search space and a custom TrainingConfig to enable
+            XgboostTuneParamsRegressionConfig with a deeper hyperparameter search space and a custom TrainingConfig to enable
             cross-validation."""
             warnings.warn(message, UserWarning, stacklevel=2)
-        if (
-            self.conf_training.min_features_to_select >= len(df.columns)
-            and self.conf_training.enable_feature_selection
-        ):
-            message = """The minimum number of features to select is greater or equal to the number of features in
-            the dataset while feature selection is enabled. Consider reducing the minimum number of features to
-            select or disabling feature selection via TrainingConfig."""
-            warnings.warn(message, UserWarning, stacklevel=2)
+
         if (
             self.conf_training.cat_encoding_via_ml_algorithm
             and self.conf_training.calculate_shap_values
@@ -226,7 +240,7 @@ class BlueCastRegression:
         self.target_column = target_col
         check_gpu_support()
         feat_type_detector = FeatureTypeDetector(
-            cat_columns=[], num_columns=[], date_columns=[]
+            cat_columns=self.cat_columns, num_columns=[], date_columns=[]
         )
         df = feat_type_detector.fit_transform_feature_types(df)
         self.feat_type_detector = feat_type_detector
@@ -247,14 +261,6 @@ class BlueCastRegression:
             self.conf_training.global_random_state,
             stratify=False,
         )
-
-        if not self.conf_training.autotune_model and self.conf_params_xgboost:
-            self.conf_params_xgboost.params["objective"] = (
-                self.conf_params_xgboost.params.get("objective", "reg:squarederror")
-            )
-            self.conf_params_xgboost.params["eval_metric"] = (
-                self.conf_params_xgboost.params.get("eval_metric", "rmse")
-            )
 
         if self.custom_preprocessor:
             x_train, y_train = self.custom_preprocessor.fit_transform(
@@ -335,9 +341,8 @@ class BlueCastRegression:
             )
 
         if not self.custom_feature_selector:
-            self.custom_feature_selector = RFECVSelector(
+            self.custom_feature_selector = BoostaRootaWrapper(
                 random_state=self.conf_training.global_random_state,
-                min_features_to_select=self.conf_training.min_features_to_select,
                 class_problem=self.class_problem,
             )
 
@@ -357,6 +362,7 @@ class BlueCastRegression:
                 conf_params_xgboost=self.conf_params_xgboost,
                 experiment_tracker=self.experiment_tracker,
                 custom_in_fold_preprocessor=self.custom_in_fold_preprocessor,
+                cat_columns=self.cat_columns,
             )
         self.ml_model.fit(x_train, x_test, y_train, y_test)
 
@@ -508,7 +514,7 @@ class BlueCastRegression:
 
         df = self.transform_new_data(df)
 
-        logger(f"{datetime.utcnow()}: Predicting...")
+        logging.info("Predicting...")
         y_preds = self.ml_model.predict(df)
 
         if save_shap_values:
