@@ -436,25 +436,6 @@ class XgboostModel(BaseClassMlModel):
                     "sample_weight"
                 ]
 
-    def get_best_score(self):
-        if self.conf_training.autotune_model and (
-            self.conf_training.hypertuning_cv_folds == 1
-            or self.conf_training.precise_cv_tuning
-        ):
-            best_score_cv_grid = self.experiment_tracker.get_best_score(
-                target_metric="matthew_inverse"
-            )
-        elif (
-            self.conf_training.autotune_model
-            and self.conf_training.hypertuning_cv_folds > 1
-        ):
-            best_score_cv_grid = self.experiment_tracker.get_best_score(
-                target_metric="adjusted ml logloss"
-            )
-        else:
-            best_score_cv_grid = np.inf
-        return best_score_cv_grid
-
     def create_d_matrices(self, x_train, y_train, x_test, y_test):
         if self.conf_params_xgboost.sample_weight:
             classes_weights = self.calculate_class_weights(y_train)
@@ -855,8 +836,6 @@ class XgboostModel(BaseClassMlModel):
         else:
             ValueError("Some parameters are not floats or strings")
 
-        best_score_cv = self.get_best_score()
-
         study = optuna.create_study(
             direction="minimize",
             sampler=optuna.samplers.GridSampler(search_space),
@@ -879,9 +858,10 @@ class XgboostModel(BaseClassMlModel):
         except (ZeroDivisionError, RuntimeError, ValueError):
             pass
 
-        best_score_cv_grid = self.get_best_score()
+        best_score_cv = self.best_score
 
-        if best_score_cv_grid < best_score_cv or not self.conf_training.autotune_model:
+        if study.best_value < self.best_score or not self.conf_training.autotune_model:
+            self.best_score = study.best_value
             xgboost_grid_best_param = study.best_trial.params
             self.conf_params_xgboost.params["min_child_weight"] = (
                 xgboost_grid_best_param["min_child_weight"]
@@ -892,12 +872,12 @@ class XgboostModel(BaseClassMlModel):
             self.conf_params_xgboost.params["gamma"] = xgboost_grid_best_param["gamma"]
             self.conf_params_xgboost.params["eta"] = xgboost_grid_best_param["eta"]
             logging.info(
-                f"Grid search improved eval metric from {best_score_cv} to {best_score_cv_grid}."
+                f"Grid search improved eval metric from {best_score_cv} to {self.best_score}."
             )
             logging.info(f"Best params: {self.conf_params_xgboost.params}")
         else:
             logging.info(
-                f"Grid search could not improve eval metric of {best_score_cv}. Best score reached was {best_score_cv_grid}"
+                f"Grid search could not improve eval metric of {best_score_cv}. Best score reached was {study.best_value}"
             )
 
     def predict(self, df: pd.DataFrame) -> Tuple[np.ndarray, np.ndarray]:
