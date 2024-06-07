@@ -13,6 +13,7 @@ from typing import Any, Dict, List, Literal, Optional, Tuple, Union
 
 import numpy as np
 import pandas as pd
+from sklearn.metrics import matthews_corrcoef
 
 from bluecast.config.training_config import (
     TrainingConfig,
@@ -74,6 +75,9 @@ class BlueCast:
         preprocessing steps which take place right before the model training.
     :param experiment_tracker: Takes an instance of an ExperimentTracker class. If not provided this will be initialized
         automatically.
+    :param single_fold_eval_metric_func: Takes a function which calculates the evaluation metric for a single fold.
+           Default is matthews_corrcoef. This function is used to calculate the evaluation metric for each fold during
+           hyperparameter tuning when hyperparameter_tuning_rounds = 1 (default). Lower must be better.
     """
 
     def __init__(
@@ -93,6 +97,7 @@ class BlueCast:
         conf_xgboost: Optional[XgboostTuneParamsConfig] = None,
         conf_params_xgboost: Optional[XgboostFinalParamConfig] = None,
         experiment_tracker: Optional[ExperimentTracker] = None,
+        single_fold_eval_metric_func=matthews_corrcoef,
     ):
         self.class_problem = class_problem
         self.prediction_mode: bool = False
@@ -125,6 +130,7 @@ class BlueCast:
         self.explainer = None
         self.eval_metrics: Optional[Dict[str, Any]] = None
         self.conformal_prediction_wrapper: Optional[ConformalPredictionWrapper] = None
+        self.single_fold_eval_metric_func = single_fold_eval_metric_func
 
         if experiment_tracker:
             self.experiment_tracker = experiment_tracker
@@ -392,6 +398,7 @@ class BlueCast:
                 experiment_tracker=self.experiment_tracker,
                 custom_in_fold_preprocessor=self.custom_in_fold_preprocessor,
                 cat_columns=self.cat_columns,
+                single_fold_eval_metric_func=self.single_fold_eval_metric_func,
             )
         self.ml_model.fit(x_train, x_test, y_train, y_test)
 

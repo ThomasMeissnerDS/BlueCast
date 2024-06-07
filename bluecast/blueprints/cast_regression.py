@@ -13,6 +13,7 @@ from typing import Any, Dict, List, Literal, Optional, Union
 
 import numpy as np
 import pandas as pd
+from sklearn.metrics import mean_squared_error
 
 from bluecast.config.training_config import (
     TrainingConfig,
@@ -54,6 +55,7 @@ class BlueCastRegression:
 
     Customization via class attributes is possible. Configs can be instantiated and provided to change Xgboost training.
     Default hyperparameter search space is relatively light-weight to speed up the prototyping.
+
     :param :class_problem: Takes a string containing the class problem type. At the moment "regression" only.
     :param :target_column: Takes a string containing the name of the target column.
     :param :cat_columns: Takes a list of strings containing the names of the categorical columns. If not provided,
@@ -74,6 +76,9 @@ class BlueCastRegression:
         preprocessing steps which take place right before the model training.
     :param experiment_tracker: Takes an instance of an ExperimentTracker class. If not provided this will be initialized
         automatically.
+    :param single_fold_eval_metric_func: Takes a function which calculates the evaluation metric for a single fold.
+       Default is mean_squared_error. This function is used to calculate the evaluation metric for each fold during
+       hyperparameter tuning when hyperparameter_tuning_rounds = 1 (default). Lower must be better.
     """
 
     def __init__(
@@ -93,6 +98,7 @@ class BlueCastRegression:
         conf_xgboost: Optional[XgboostTuneParamsRegressionConfig] = None,
         conf_params_xgboost: Optional[XgboostRegressionFinalParamConfig] = None,
         experiment_tracker: Optional[ExperimentTracker] = None,
+        single_fold_eval_metric_func=mean_squared_error,
     ):
         self.class_problem = class_problem
         self.prediction_mode: bool = False
@@ -124,6 +130,7 @@ class BlueCastRegression:
         self.shap_values: Optional[np.ndarray] = None
         self.explainer = None
         self.eval_metrics: Optional[Dict[str, Any]] = None
+        self.single_fold_eval_metric_func = single_fold_eval_metric_func
         self.conformal_prediction_wrapper: Optional[
             ConformalPredictionRegressionWrapper
         ] = None
@@ -363,6 +370,7 @@ class BlueCastRegression:
                 experiment_tracker=self.experiment_tracker,
                 custom_in_fold_preprocessor=self.custom_in_fold_preprocessor,
                 cat_columns=self.cat_columns,
+                single_fold_eval_metric_func=self.single_fold_eval_metric_func,
             )
         self.ml_model.fit(x_train, x_test, y_train, y_test)
 

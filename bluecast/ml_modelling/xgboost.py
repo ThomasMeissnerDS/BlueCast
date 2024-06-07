@@ -40,6 +40,7 @@ class XgboostModel(BaseClassMlModel):
         experiment_tracker: Optional[ExperimentTracker] = None,
         custom_in_fold_preprocessor: Optional[CustomPreprocessing] = None,
         cat_columns: Optional[List[Union[str, float, int]]] = None,
+        single_fold_eval_metric_func=matthews_corrcoef,
     ):
         self.model: Optional[xgb.XGBClassifier] = None
         self.class_problem = class_problem
@@ -48,6 +49,7 @@ class XgboostModel(BaseClassMlModel):
         self.conf_params_xgboost = conf_params_xgboost
         self.experiment_tracker = experiment_tracker
         self.custom_in_fold_preprocessor = custom_in_fold_preprocessor
+        self.single_fold_eval_metric_func = single_fold_eval_metric_func
         if self.conf_training:
             self.random_generator = np.random.default_rng(
                 self.conf_training.global_random_state
@@ -484,7 +486,10 @@ class XgboostModel(BaseClassMlModel):
         )
         preds = model.predict(d_test)
         pred_labels = np.asarray([np.argmax(line) for line in preds])
-        matthew = matthews_corrcoef(y_test.tolist(), pred_labels.tolist()) * -1
+        matthew = (
+            self.single_fold_eval_metric_func(y_test.tolist(), pred_labels.tolist())
+            * -1
+        )
 
         # track results
         if len(self.experiment_tracker.experiment_id) == 0:
@@ -532,7 +537,12 @@ class XgboostModel(BaseClassMlModel):
             y_hat = ml_model.predict(d_eval)
             y_classes = np.asarray([np.argmax(line) for line in y_hat])
 
-            loss = matthews_corrcoef(y_true.values.tolist(), y_classes.tolist()) * -1
+            loss = (
+                self.single_fold_eval_metric_func(
+                    y_true.values.tolist(), y_classes.tolist()
+                )
+                * -1
+            )
             losses.append(loss)
 
         return losses

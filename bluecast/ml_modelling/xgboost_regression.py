@@ -41,6 +41,7 @@ class XgboostModelRegression(BaseClassMlRegressionModel):
         experiment_tracker: Optional[ExperimentTracker] = None,
         custom_in_fold_preprocessor: Optional[CustomPreprocessing] = None,
         cat_columns: Optional[List[Union[str, float, int]]] = None,
+        single_fold_eval_metric_func=mean_squared_error,
     ):
         self.model: Optional[xgb.XGBRegressor] = None
         self.class_problem = class_problem
@@ -57,6 +58,7 @@ class XgboostModelRegression(BaseClassMlRegressionModel):
         else:
             self.random_generator = np.random.default_rng(0)
         self.cat_columns = cat_columns
+        self.single_fold_eval_metric_func = single_fold_eval_metric_func
         self.best_score: float = np.inf
 
     def check_load_confs(self):
@@ -453,7 +455,7 @@ class XgboostModelRegression(BaseClassMlRegressionModel):
             verbose_eval=self.conf_xgboost.verbosity_during_hyperparameter_tuning,
         )
         preds = model.predict(d_test)
-        mse = mean_squared_error(y_test, preds, squared=False)
+        mse = self.single_fold_eval_metric_func(y_test, preds, squared=False)
 
         # track results
         if len(self.experiment_tracker.experiment_id) == 0:
@@ -500,7 +502,7 @@ class XgboostModelRegression(BaseClassMlRegressionModel):
                 raise ValueError("No training_config could be found")
             preds = ml_model.predict(d_eval)
 
-            loss = mean_squared_error(
+            loss = self.single_fold_eval_metric_func(
                 y_true.values.tolist(), preds.tolist(), squared=False
             )
             losses.append(loss)
@@ -641,7 +643,9 @@ class XgboostModelRegression(BaseClassMlRegressionModel):
                 enable_categorical=self.conf_training.cat_encoding_via_ml_algorithm,
             )
             preds = model.predict(d_eval)
-            fold_losses.append(mean_squared_error(y_test_fold, preds, squared=False))
+            fold_losses.append(
+                self.single_fold_eval_metric_func(y_test_fold, preds, squared=False)
+            )
 
         mse_mean = np.mean(np.asarray(fold_losses))
 

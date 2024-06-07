@@ -3,6 +3,7 @@ from typing import Any, List, Literal, Optional, Tuple, Union
 
 import numpy as np
 import pandas as pd
+from sklearn.metrics import matthews_corrcoef
 from sklearn.model_selection import RepeatedStratifiedKFold
 
 from bluecast.blueprints.cast import BlueCast
@@ -21,10 +22,33 @@ from bluecast.preprocessing.feature_selection import BoostaRootaWrapper
 
 
 class BlueCastCV:
-    """Wrapper to train and predict multiple blueCast intstances.
+    """Wrapper to train and predict multiple BlueCast instances.
 
-    Check the BlueCast class documentation for additional parameter details.
     A custom splitter can be provided.
+
+    :param :class_problem: Takes a string containing the class problem type. Either "binary" or "multiclass".
+    :param :target_column: Takes a string containing the name of the target column.
+    :param :cat_columns: Takes a list of strings containing the names of the categorical columns. If not provided,
+        BlueCast will infer these automatically.
+    :param :date_columns: Takes a list of strings containing the names of the date columns. If not provided,
+        BlueCast will infer these automatically.
+    :param :time_split_column: Takes a string containing the name of the time split column. If not provided,
+        BlueCast will not split the data by time or order, but do a random split instead.
+    :param :ml_model: Takes an instance of a XgboostModel class. If not provided, BlueCast will instantiate one.
+        This is an API to pass any model class. Inherit the baseclass from ml_modelling.base_model.BaseModel.
+    :param custom_in_fold_preprocessor: Takes an instance of a CustomPreprocessing class. Allows users to eeecute
+        preprocessing after the train test split within cv folds. This will be executed only if precise_cv_tuning in
+        the conf_Training is True. Custom ML models need to implement this themselves. This step is only useful when
+        the proprocessing step has a high chance of overfitting otherwise (i.e: oversampling techniques).
+    :param custom_preprocessor: Takes an instance of a CustomPreprocessing class. Allows users to inject custom
+        preprocessing steps which take place right after the train test spit.
+    :param custom_last_mile_computation: Takes an instance of a CustomPreprocessing class. Allows users to inject custom
+        preprocessing steps which take place right before the model training.
+    :param experiment_tracker: Takes an instance of an ExperimentTracker class. If not provided this will be initialized
+        automatically.
+    :param single_fold_eval_metric_func: Takes a function which calculates the evaluation metric for a single fold.
+           Default is matthews_corrcoef. This function is used to calculate the evaluation metric for each fold during
+           hyperparameter tuning when hyperparameter_tuning_rounds = 1 (default). Lower must be better.
     """
 
     def __init__(
@@ -43,6 +67,7 @@ class BlueCastCV:
             Union[BoostaRootaWrapper, CustomPreprocessing]
         ] = None,
         ml_model: Optional[Union[XgboostModel, Any]] = None,
+        single_fold_eval_metric_func=matthews_corrcoef,
     ):
         self.class_problem = class_problem
         self.conf_xgboost = conf_xgboost
@@ -55,6 +80,7 @@ class BlueCastCV:
         self.bluecast_models: List[BlueCast] = []
         self.stratifier = stratifier
         self.ml_model = ml_model
+        self.single_fold_eval_metric_func = single_fold_eval_metric_func
         self.conformal_prediction_wrapper: Optional[ConformalPredictionWrapper] = None
 
         if not cat_columns:
@@ -155,6 +181,7 @@ class BlueCastCV:
                 custom_feature_selector=self.custom_feature_selector,
                 custom_last_mile_computation=self.custom_last_mile_computation,
                 ml_model=self.ml_model,
+                single_fold_eval_metric_func=self.single_fold_eval_metric_func,
             )
             automl.fit(X_train, target_col=target_col)
             self.bluecast_models.append(automl)
@@ -208,6 +235,7 @@ class BlueCastCV:
                 custom_feature_selector=self.custom_feature_selector,
                 custom_last_mile_computation=self.custom_last_mile_computation,
                 ml_model=self.ml_model,
+                single_fold_eval_metric_func=self.single_fold_eval_metric_func,
             )
             automl.fit_eval(X_train, X_val, y_val, target_col=target_col)
             self.bluecast_models.append(automl)
