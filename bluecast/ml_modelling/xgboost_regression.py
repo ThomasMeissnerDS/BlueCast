@@ -455,7 +455,7 @@ class XgboostModelRegression(BaseClassMlRegressionModel):
             verbose_eval=self.conf_xgboost.verbosity_during_hyperparameter_tuning,
         )
         preds = model.predict(d_test)
-        mse = self.single_fold_eval_metric_func(y_test, preds, squared=False)
+        mse = self.single_fold_eval_metric_func(y_test, preds)
 
         # track results
         if len(self.experiment_tracker.experiment_id) == 0:
@@ -503,7 +503,7 @@ class XgboostModelRegression(BaseClassMlRegressionModel):
             preds = ml_model.predict(d_eval)
 
             loss = self.single_fold_eval_metric_func(
-                y_true.values.tolist(), preds.tolist(), squared=False
+                y_true.values.tolist(), preds.tolist()
             )
             losses.append(loss)
 

@@ -29,7 +29,7 @@ pandas = ">=1.1.5"
 plotly = "^5"
 pydantic = ">=1.1.0"
 seaborn = ">=0.10.0"
-scikit-learn = "^1.0.1"
+scikit-learn = ">=1.0.1"
 shap = ">0.43" # versions of 0.39 and less require numpy 1.23 and less
 xgboost = "<2.2.0" # from here saving as binary is not default anymore
 
