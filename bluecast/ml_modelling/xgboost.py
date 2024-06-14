@@ -687,25 +687,12 @@ class XgboostModel(BaseClassMlModel):
                     "Could not find XgboostTuneParamsConfig. Falling back to defaults."
                 )
 
-            if self.conf_training.early_stopping_rounds:
-                early_stop = xgb.callback.EarlyStopping(
-                    rounds=self.conf_training.early_stopping_rounds,
-                    metric_name="rmse",
-                    data_name="test",
-                    save_best=tuned_params["booster"] != "gblinear",
-                )
-                callbacks = [early_stop]
-            else:
-                callbacks = None
-
             model = xgb.train(
                 tuned_params,
                 d_train,
                 num_boost_round=steps,
-                # early_stopping_rounds=self.conf_training.early_stopping_rounds,
                 evals=eval_set,
                 verbose_eval=self.conf_xgboost.verbosity_during_hyperparameter_tuning,
-                callbacks=callbacks,
             )
             d_eval = xgb.DMatrix(
                 X_test_fold,

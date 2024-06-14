@@ -125,7 +125,7 @@ class XgboostTuneParamsConfig(BaseModel):
     col_sample_by_level_min: float = 1.0
     col_sample_by_level_max: float = 1.0
     eta_min: float = 1e-2
-    eta_max: float = 0.3
+    eta_max: float = 0.25
     steps_min: int = 50
     steps_max: int = 500
     verbosity_during_hyperparameter_tuning: int = 0
@@ -156,9 +156,9 @@ class XgboostTuneParamsRegressionConfig(BaseModel):
     col_sample_by_level_min: float = 1.0
     col_sample_by_level_max: float = 1.0
     eta_min: float = 1e-2
-    eta_max: float = 0.3
+    eta_max: float = 0.25
     steps_min: int = 50
-    steps_max: int = 500
+    steps_max: int = 1000
     verbosity_during_hyperparameter_tuning: int = 0
     verbosity_during_final_model_training: int = 0
     xgboost_objective: str = "reg:squarederror"
