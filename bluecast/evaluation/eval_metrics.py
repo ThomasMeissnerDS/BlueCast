@@ -256,8 +256,8 @@ class ClassificationEvalWrapper:
 
     def classification_eval_func_wrapper(
         self,
-        y_true: Union[np.ndarray, pd.Series],
-        y_probs: Union[np.ndarray, pd.Series],
+        y_true: Union[np.ndarray, pd.Series, list],
+        y_probs: Union[np.ndarray, pd.Series, list],
     ) -> Union[float, int]:
         """
         Wrapper function to evaluate classification metrics.
@@ -266,8 +266,14 @@ class ClassificationEvalWrapper:
         :param y_probs: NumPy array of predicted probabilities.
         :return: Float value of the metric score.
         """
+        if not isinstance(y_true, list):
+            y_true = y_true.tolist()
+
+        if not isinstance(y_probs, list):
+            y_probs = y_probs.tolist()
+
         if self.eval_against == "probas_all_classes":
-            metric_score = self.metric_func(y_true.tolist(), y_probs.tolist())
+            metric_score = self.metric_func(y_true, y_probs)
         elif self.eval_against == "probas_best_class":
             y__probs_best_class = np.max(y_probs, axis=1)
             metric_score = self.metric_func(
@@ -275,7 +281,7 @@ class ClassificationEvalWrapper:
             )
         elif self.eval_against == "classes":
             y_classes = np.asarray([np.argmax(line) for line in y_probs])
-            metric_score = self.metric_func(y_true.tolist(), y_classes.tolist())
+            metric_score = self.metric_func(y_true, y_classes)
         else:
             raise ValueError(
                 f"Unknown value for eval_against: {self.eval_against}. Possible values are 'probas' or 'classes'"
