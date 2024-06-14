@@ -5,7 +5,7 @@ This is called as part of the fit_eval function.
 
 import logging
 import warnings
-from typing import Any, Dict
+from typing import Any, Dict, Literal, Union
 
 import matplotlib.pyplot as plt
 import numpy as np
@@ -226,3 +226,62 @@ def eval_regressor(y_true: np.ndarray, y_preds: np.ndarray) -> Dict[str, Any]:
         "median_absolute_error": median_absolute_error_score,
     }
     return evaluation_scores
+
+
+class ClassificationEvalWrapper:
+    """
+    Wrapper to evaluate classification metrics.
+
+    :param metric_func: Function object to calculate the metric.
+    :param higher_is_better: Boolean indicating if higher metric values are better.
+    :param eval_against: String indicating if the metric should be evaluated against probabilities or classes. Can be
+        'probas_all_classes', 'probas_best_class' or 'classes'. For 'probas_all_classes', the metric is calculated
+        against the predicted probabilities for all classes. For 'probas_best_class', the metric is calculated against
+        the predicted probabilities for the best class. For 'classes', the metric is calculated against the predicted
+        classes. This parameter decides how the predictions arrive in the metric function.
+    :return: Float value of the metric score.
+    """
+
+    def __init__(
+        self,
+        higher_is_better: bool = True,
+        eval_against: Literal[
+            "probas_all_classes", "probas_best_class", "classes"
+        ] = "classes",
+        metric_func=matthews_corrcoef,
+    ):
+        self.higher_is_better = higher_is_better
+        self.eval_against = eval_against
+        self.metric_func = metric_func
+
+    def classification_eval_func_wrapper(
+        self,
+        y_true: Union[np.ndarray, pd.Series],
+        y_probs: Union[np.ndarray, pd.Series],
+    ) -> Union[float, int]:
+        """
+        Wrapper function to evaluate classification metrics.
+
+        :param y_true: Numpy array of true labels.
+        :param y_probs: NumPy array of predicted probabilities.
+        :return: Float value of the metric score.
+        """
+        if self.eval_against == "probas_all_classes":
+            metric_score = self.metric_func(y_true.tolist(), y_probs.tolist())
+        elif self.eval_against == "probas_best_class":
+            y__probs_best_class = np.max(y_probs, axis=1)
+            metric_score = self.metric_func(
+                y_true.tolist(), y__probs_best_class.tolist()
+            )
+        elif self.eval_against == "classes":
+            y_classes = np.asarray([np.argmax(line) for line in y_probs])
+            metric_score = self.metric_func(y_true.tolist(), y_classes.tolist())
+        else:
+            raise ValueError(
+                f"Unknown value for eval_against: {self.eval_against}. Possible values are 'probas' or 'classes'"
+            )
+
+        if self.higher_is_better:
+            return metric_score
+        else:
+            return -metric_score

@@ -3,7 +3,6 @@ from typing import Any, List, Literal, Optional, Tuple, Union
 
 import numpy as np
 import pandas as pd
-from sklearn.metrics import matthews_corrcoef
 from sklearn.model_selection import RepeatedStratifiedKFold
 
 from bluecast.blueprints.cast import BlueCast
@@ -15,6 +14,7 @@ from bluecast.config.training_config import (
 from bluecast.conformal_prediction.conformal_prediction import (
     ConformalPredictionWrapper,
 )
+from bluecast.evaluation.eval_metrics import ClassificationEvalWrapper
 from bluecast.experimentation.tracking import ExperimentTracker
 from bluecast.ml_modelling.xgboost import XgboostModel
 from bluecast.preprocessing.custom import CustomPreprocessing
@@ -67,7 +67,7 @@ class BlueCastCV:
             Union[BoostaRootaWrapper, CustomPreprocessing]
         ] = None,
         ml_model: Optional[Union[XgboostModel, Any]] = None,
-        single_fold_eval_metric_func=matthews_corrcoef,
+        single_fold_eval_metric_func: Optional[ClassificationEvalWrapper] = None,
     ):
         self.class_problem = class_problem
         self.conf_xgboost = conf_xgboost
@@ -101,6 +101,9 @@ class BlueCastCV:
 
         if not self.conf_xgboost:
             self.conf_xgboost = XgboostTuneParamsConfig()
+
+        if not self.single_fold_eval_metric_func:
+            self.single_fold_eval_metric_func = ClassificationEvalWrapper()
 
     def prepare_data(
         self, df: pd.DataFrame, target: str

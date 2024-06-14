@@ -16,9 +16,11 @@ def prediction_set_coverage(
 
     This check can be used to validate that the model covers the true labels
     according to the alpha set during the prediction process.
-    :param y_true: Ground truth labels..
+    :param y_true: Ground truth labels.
     :param prediction_sets: Predicted probabilities of shape (n_samples, 1) where each row is a set of classes.
     """
+    if isinstance(prediction_sets, np.ndarray):
+        prediction_sets = pd.DataFrame({"prediction_set": prediction_sets})
     y_hat = convert_expected_effectiveness_nonconformity_input_types(prediction_sets)
     set_with_corr_label = [str(label) in str(ps) for label, ps in zip(y_true, y_hat)]
     return np.mean(np.asarray(set_with_corr_label))
@@ -39,6 +41,9 @@ def prediction_interval_coverage(
         contain columns of format f"{alpha}_low" and f"{1-alpha}_high" for each format.
     :param alphas: List of alphas indicating which confidence levels to check
     """
+    if isinstance(y_true, pd.Series):
+        y_true = y_true.values
+
     coverages = {}
     for alpha in alphas:
         coverages[alpha] = np.mean(

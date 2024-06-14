@@ -26,8 +26,9 @@ def one_c(y_hat: Union[np.ndarray, pd.Series]):
     Calculate proportion of singleton sets among all prediction sets.
     :param y_hat: Predicted probabilities of shape (n_samples, 1) where each row is a set of classes.
     """
+    if isinstance(y_hat, np.ndarray):
+        y_hat = pd.DataFrame({"prediction_set": y_hat})
     y_hat = convert_expected_effectiveness_nonconformity_input_types(y_hat)
-
     singleton_counts = [len(ps[0]) == 1 for ps in y_hat]
     num_singletons = sum(singleton_counts)
     return num_singletons / y_hat.shape[0]
@@ -38,6 +39,8 @@ def avg_c(y_hat: Union[np.ndarray, pd.Series]):
     Calculate the average number of labels in all prediction sets.
     :param y_hat: Predicted probabilities of shape (n_samples, 1) where each row is a set of classes.
     """
+    if isinstance(y_hat, np.ndarray):
+        y_hat = pd.DataFrame({"prediction_set": y_hat})
     y_hat = convert_expected_effectiveness_nonconformity_input_types(y_hat)
     set_counts = [len(ps[0]) for ps in y_hat]
     return np.mean(np.asarray(set_counts))

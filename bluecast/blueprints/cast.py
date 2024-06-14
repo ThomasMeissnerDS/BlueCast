@@ -13,7 +13,6 @@ from typing import Any, Dict, List, Literal, Optional, Tuple, Union
 
 import numpy as np
 import pandas as pd
-from sklearn.metrics import matthews_corrcoef
 
 from bluecast.config.training_config import (
     TrainingConfig,
@@ -23,7 +22,7 @@ from bluecast.config.training_config import (
 from bluecast.conformal_prediction.conformal_prediction import (
     ConformalPredictionWrapper,
 )
-from bluecast.evaluation.eval_metrics import eval_classifier
+from bluecast.evaluation.eval_metrics import ClassificationEvalWrapper, eval_classifier
 from bluecast.evaluation.shap_values import (
     shap_dependence_plots,
     shap_explanations,
@@ -97,7 +96,7 @@ class BlueCast:
         conf_xgboost: Optional[XgboostTuneParamsConfig] = None,
         conf_params_xgboost: Optional[XgboostFinalParamConfig] = None,
         experiment_tracker: Optional[ExperimentTracker] = None,
-        single_fold_eval_metric_func=matthews_corrcoef,
+        single_fold_eval_metric_func: Optional[ClassificationEvalWrapper] = None,
     ):
         self.class_problem = class_problem
         self.prediction_mode: bool = False
@@ -145,6 +144,9 @@ class BlueCast:
 
         if not self.conf_xgboost:
             self.conf_xgboost = XgboostTuneParamsConfig()
+
+        if not self.single_fold_eval_metric_func:
+            self.single_fold_eval_metric_func = ClassificationEvalWrapper()
 
         logging.basicConfig(
             filename=self.conf_training.logging_file_path,

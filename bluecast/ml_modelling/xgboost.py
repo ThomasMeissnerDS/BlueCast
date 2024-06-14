@@ -13,7 +13,6 @@ import numpy as np
 import optuna
 import pandas as pd
 import xgboost as xgb
-from sklearn.metrics import matthews_corrcoef
 from sklearn.model_selection import StratifiedKFold
 from sklearn.utils import class_weight
 
@@ -22,6 +21,7 @@ from bluecast.config.training_config import (
     XgboostFinalParamConfig,
     XgboostTuneParamsConfig,
 )
+from bluecast.evaluation.eval_metrics import ClassificationEvalWrapper
 from bluecast.experimentation.tracking import ExperimentTracker
 from bluecast.general_utils.general_utils import check_gpu_support, log_sampling
 from bluecast.ml_modelling.base_classes import BaseClassMlModel
@@ -40,7 +40,7 @@ class XgboostModel(BaseClassMlModel):
         experiment_tracker: Optional[ExperimentTracker] = None,
         custom_in_fold_preprocessor: Optional[CustomPreprocessing] = None,
         cat_columns: Optional[List[Union[str, float, int]]] = None,
-        single_fold_eval_metric_func=matthews_corrcoef,
+        single_fold_eval_metric_func: Optional[ClassificationEvalWrapper] = None,
     ):
         self.model: Optional[xgb.XGBClassifier] = None
         self.class_problem = class_problem
@@ -58,6 +58,9 @@ class XgboostModel(BaseClassMlModel):
             self.random_generator = np.random.default_rng(0)
         self.cat_columns = cat_columns
         self.best_score: float = np.inf
+
+        if not self.single_fold_eval_metric_func:
+            self.single_fold_eval_metric_func = ClassificationEvalWrapper()
 
     def calculate_class_weights(self, y: pd.Series) -> Dict[str, float]:
         """Calculate class weights of target column."""
@@ -143,7 +146,6 @@ class XgboostModel(BaseClassMlModel):
 
         steps = self.conf_params_xgboost.params.pop("steps", 300)
 
-        callbacks: Optional[list] = []
         if self.conf_training.early_stopping_rounds:
             early_stop = xgb.callback.EarlyStopping(
                 rounds=self.conf_training.early_stopping_rounds,
@@ -337,6 +339,15 @@ class XgboostModel(BaseClassMlModel):
 
                 return self._fine_tune_precise(param, x_train, y_train, x_test, y_test)
             else:
+                skf = StratifiedKFold(
+                    n_splits=5,
+                    random_state=self.conf_training.global_random_state,
+                    shuffle=self.conf_training.shuffle_during_training,
+                )
+                folds = []
+                for train_index, test_index in skf.split(x_train, y_train):
+                    folds.append((train_index.tolist(), test_index.tolist()))
+
                 result = xgb.cv(
                     params=param,
                     dtrain=d_train,
@@ -347,7 +358,8 @@ class XgboostModel(BaseClassMlModel):
                     seed=self.conf_training.global_random_state,
                     callbacks=[pruning_callback],
                     shuffle=self.conf_training.shuffle_during_training,
-                    stratified=True,
+                    # stratified=True,
+                    folds=folds,
                 )
 
                 adjusted_score = result["test-mlogloss-mean"].values[-1]
@@ -464,7 +476,6 @@ class XgboostModel(BaseClassMlModel):
         self, d_train, d_test, y_test, param, steps, pruning_callback
     ):
         eval_set = [(d_test, "test")]
-        callbacks: Optional[list] = []
         if self.conf_training.early_stopping_rounds:
             early_stop = xgb.callback.EarlyStopping(
                 rounds=self.conf_training.early_stopping_rounds,
@@ -485,9 +496,10 @@ class XgboostModel(BaseClassMlModel):
             verbose_eval=self.conf_xgboost.verbosity_during_hyperparameter_tuning,
         )
         preds = model.predict(d_test)
-        pred_labels = np.asarray([np.argmax(line) for line in preds])
         matthew = (
-            self.single_fold_eval_metric_func(y_test.tolist(), pred_labels.tolist())
+            self.single_fold_eval_metric_func.classification_eval_func_wrapper(
+                y_test.tolist(), preds.tolist()
+            )
             * -1
         )
 
@@ -535,14 +547,15 @@ class XgboostModel(BaseClassMlModel):
             else:
                 raise ValueError("No training_config could be found")
             y_hat = ml_model.predict(d_eval)
-            y_classes = np.asarray([np.argmax(line) for line in y_hat])
 
-            loss = (
-                self.single_fold_eval_metric_func(
-                    y_true.values.tolist(), y_classes.tolist()
+            if self.single_fold_eval_metric_func:
+                loss = (
+                    self.single_fold_eval_metric_func.classification_eval_func_wrapper(
+                        y_true.values, y_hat
+                    )
                 )
-                * -1
-            )
+            else:
+                raise ValueError("No single_fold_eval_metric_func could be found")
             losses.append(loss)
 
         return losses
@@ -594,7 +607,7 @@ class XgboostModel(BaseClassMlModel):
 
         stratifier = StratifiedKFold(
             n_splits=self.conf_training.hypertuning_cv_folds,
-            shuffle=True,
+            shuffle=self.conf_training.shuffle_during_training,
             random_state=self.conf_training.global_random_state,
         )
 
@@ -663,6 +676,7 @@ class XgboostModel(BaseClassMlModel):
                 logging.info(
                     "Could not find XgboostTuneParamsConfig. Falling back to defaults."
                 )
+
             model = xgb.train(
                 tuned_params,
                 d_train,
@@ -671,19 +685,22 @@ class XgboostModel(BaseClassMlModel):
                 evals=eval_set,
                 verbose_eval=self.conf_xgboost.verbosity_during_hyperparameter_tuning,
             )
-            # d_eval = xgb.DMatrix(
-            #    X_test_fold,
-            #    label=y_test_fold,
-            #    enable_categorical=self.conf_training.cat_encoding_via_ml_algorithm,
-            # )
-            # preds = model.predict(d_eval)
-            losses = self.increasing_noise_evaluator(
-                model, X_test_fold, y_test_fold, 100
+            d_eval = xgb.DMatrix(
+                X_test_fold,
+                label=y_test_fold,
+                enable_categorical=self.conf_training.cat_encoding_via_ml_algorithm,
             )
-            constant_loss_degregation = self.constant_loss_degregation_factor(losses)
-            fold_losses.append(constant_loss_degregation)
-            # pred_labels = np.asarray([np.argmax(line) for line in preds])
-            # fold_losses.append(matthews_corrcoef(y_test_fold, pred_labels) * -1)
+            preds = model.predict(d_eval)
+
+            if self.single_fold_eval_metric_func:
+                loss = (
+                    self.single_fold_eval_metric_func.classification_eval_func_wrapper(
+                        y_test_fold, preds
+                    )
+                )
+            else:
+                raise ValueError("No single_fold_eval_metric_func could be found")
+            fold_losses.append(loss)
 
         matthews_mean = np.mean(np.asarray(fold_losses))
 
@@ -778,6 +795,15 @@ class XgboostModel(BaseClassMlModel):
                     y_test,
                 )
             else:
+                skf = StratifiedKFold(
+                    n_splits=5,
+                    random_state=self.conf_training.global_random_state,
+                    shuffle=self.conf_training.shuffle_during_training,
+                )
+                folds = []
+                for train_index, test_index in skf.split(x_train, y_train):
+                    folds.append((train_index.tolist(), test_index.tolist()))
+
                 result = xgb.cv(
                     params=tuned_params,
                     dtrain=d_train,
@@ -788,7 +814,8 @@ class XgboostModel(BaseClassMlModel):
                     seed=self.conf_training.global_random_state,
                     callbacks=[pruning_callback],
                     shuffle=self.conf_training.shuffle_during_training,
-                    stratified=True,
+                    # stratified=True,
+                    folds=folds,
                 )
 
                 adjusted_score = result["test-mlogloss-mean"].values[-1]

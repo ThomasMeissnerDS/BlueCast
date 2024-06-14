@@ -434,7 +434,6 @@ class XgboostModelRegression(BaseClassMlRegressionModel):
         self, d_train, d_test, y_test, param, steps, pruning_callback
     ):
         eval_set = [(d_test, "test")]
-        callbacks: Optional[list] = []
         if self.conf_training.early_stopping_rounds:
             early_stop = xgb.callback.EarlyStopping(
                 rounds=self.conf_training.early_stopping_rounds,
@@ -617,7 +616,6 @@ class XgboostModelRegression(BaseClassMlRegressionModel):
                     "Could not find XgboostTuneParamsRegressionConfig. Falling back to defaults."
                 )
 
-            callbacks: Optional[list] = []
             if self.conf_training.early_stopping_rounds:
                 early_stop = xgb.callback.EarlyStopping(
                     rounds=self.conf_training.early_stopping_rounds,
