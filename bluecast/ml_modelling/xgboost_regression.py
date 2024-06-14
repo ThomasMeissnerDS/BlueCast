@@ -632,7 +632,7 @@ class XgboostModelRegression(BaseClassMlRegressionModel):
                     rounds=self.conf_training.early_stopping_rounds,
                     metric_name="rmse",
                     data_name="test",
-                    save_best=self.conf_params_xgboost.params["booster"] != "gblinear",
+                    save_best=tuned_params["booster"] != "gblinear",
                 )
                 callbacks = [early_stop]
             else:
