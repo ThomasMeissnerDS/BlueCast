@@ -25,7 +25,7 @@ def create_synthetic_prediction_set() -> np.ndarray:
             ]
         }
     )
-    return synthetic_results_sets.values
+    return synthetic_results_sets
 
 
 def test_one_c():

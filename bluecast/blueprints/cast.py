@@ -254,7 +254,7 @@ class BlueCast:
         """Train a full ML pipeline."""
 
         self.target_column = target_col
-        check_gpu_support()
+
         feat_type_detector = FeatureTypeDetector(
             cat_columns=self.cat_columns, num_columns=[], date_columns=[]
         )
@@ -275,6 +275,8 @@ class BlueCast:
 
         if not self.conf_training:
             self.conf_training = TrainingConfig()
+
+        check_gpu_support()
 
         self.initial_checks(df)
 
@@ -312,9 +314,13 @@ class BlueCast:
 
         x_train, x_test = fill_infinite_values(x_train), fill_infinite_values(x_test)
         x_train, x_test = date_converter(
-            x_train, self.date_columns, date_parts=["month", "day", "dayofweek", "hour"]
+            x_train,
+            self.date_columns,
+            date_parts=["year", "month", "day", "dayofweek", "hour"],
         ), date_converter(
-            x_test, self.date_columns, date_parts=["month", "day", "dayofweek", "hour"]
+            x_test,
+            self.date_columns,
+            date_parts=["year", "month", "day", "dayofweek", "hour"],
         )
 
         self.schema_detector = SchemaDetector()

@@ -6,7 +6,7 @@ pipeline. Pydantic dataclasses are used to allow users a pythonic way to define 
 Default configurations can be loaded, adjusted and passed into the blueprints.
 """
 
-from typing import Dict, List, Optional, Tuple
+from typing import Dict, List, Literal, Optional, Tuple
 
 from pydantic import BaseModel
 from pydantic.dataclasses import dataclass
@@ -36,6 +36,12 @@ class TrainingConfig(BaseModel):
     :param early_stopping_rounds: Number of early stopping rounds during final training or when hyperparameter tuning
         follows a single train-test split. Not used when custom ML model is passed.
     :param autotune_model: Whether to autotune the model. Not used when custom ML model is passed.
+    :param autotune_on_device: Whether to autotune on CPU or GPU. Chose any of ["auto", "gpu", "cpu"].
+        Not used when custom ML model is passed.
+    :param autotune_n_random_seeds: Number of random seeds to use for autotuning. This changes Optuna's random seed only.
+        Not used when custom ML model is passed.
+    :param plot_hyperparameter_tuning_overview: Whether to plot the hyperparameter tuning overview. Not used when custom
+        ML model is passed.
     :param enable_feature_selection: Whether to enable recursive feature selection.
     :param calculate_shap_values: Whether to calculate shap values. Also used when custom ML model is passed. Not
         compatible with all ML models. See the SHAP documentation for more details.
@@ -48,8 +54,6 @@ class TrainingConfig(BaseModel):
     :param train_split_stratify: Whether to stratify the train-test split. Not used when custom ML model is passed.
     :param use_full_data_for_final_model: Whether to use the full data for the final model. This might cause overfitting.
         Not used when custom ML model is passed.
-    :param min_features_to_select: Minimum number of features to select. Only used when enable_feature_selection is
-        True.
     :param cardinality_threshold_for_onehot_encoding: Categorical features with a cardinality of less or equal
         this threshold will be onehot encoded. The rest will be target encoded. Will be ignored if
         cat_encoding_via_ml_algorithm is set to true.
@@ -78,7 +82,9 @@ class TrainingConfig(BaseModel):
     precise_cv_tuning: bool = False
     early_stopping_rounds: Optional[int] = 20
     autotune_model: bool = True
+    autotune_on_device: Literal["auto", "gpu", "cpu"] = "auto"
     autotune_n_random_seeds: int = 1
+    plot_hyperparameter_tuning_overview: bool = True
     enable_feature_selection: bool = False
     calculate_shap_values: bool = True
     shap_waterfall_indices: List[int] = [0]
@@ -102,7 +108,7 @@ class TrainingConfig(BaseModel):
 class XgboostTuneParamsConfig(BaseModel):
     """Define hyperparameter tuning search space."""
 
-    max_depth_min: int = 3
+    max_depth_min: int = 1
     max_depth_max: int = 10
     alpha_min: float = 1e-8
     alpha_max: float = 10
@@ -118,10 +124,10 @@ class XgboostTuneParamsConfig(BaseModel):
     col_sample_by_tree_max: float = 1.0
     col_sample_by_level_min: float = 1.0
     col_sample_by_level_max: float = 1.0
-    eta_min: float = 1e-3
+    eta_min: float = 1e-2
     eta_max: float = 0.3
     steps_min: int = 50
-    steps_max: int = 1000
+    steps_max: int = 500
     verbosity_during_hyperparameter_tuning: int = 0
     verbosity_during_final_model_training: int = 0
     xgboost_objective: str = "multi:softprob"
@@ -133,7 +139,7 @@ class XgboostTuneParamsConfig(BaseModel):
 class XgboostTuneParamsRegressionConfig(BaseModel):
     """Define hyperparameter tuning search space."""
 
-    max_depth_min: int = 3
+    max_depth_min: int = 1
     max_depth_max: int = 10
     alpha_min: float = 1e-8
     alpha_max: float = 10
@@ -149,10 +155,10 @@ class XgboostTuneParamsRegressionConfig(BaseModel):
     col_sample_by_tree_max: float = 1.0
     col_sample_by_level_min: float = 1.0
     col_sample_by_level_max: float = 1.0
-    eta_min: float = 1e-3
+    eta_min: float = 1e-2
     eta_max: float = 0.3
     steps_min: int = 50
-    steps_max: int = 1000
+    steps_max: int = 500
     verbosity_during_hyperparameter_tuning: int = 0
     verbosity_during_final_model_training: int = 0
     xgboost_objective: str = "reg:squarederror"

@@ -25,6 +25,9 @@ from bluecast.evaluation.eval_metrics import ClassificationEvalWrapper
 from bluecast.experimentation.tracking import ExperimentTracker
 from bluecast.general_utils.general_utils import check_gpu_support, log_sampling
 from bluecast.ml_modelling.base_classes import BaseClassMlModel
+from bluecast.ml_modelling.parameter_tuning_utils import (
+    update_params_based_on_tree_method,
+)
 from bluecast.preprocessing.custom import CustomPreprocessing
 
 
@@ -151,7 +154,7 @@ class XgboostModel(BaseClassMlModel):
                 rounds=self.conf_training.early_stopping_rounds,
                 metric_name="mlogloss",
                 data_name="test",
-                save_best=True,
+                save_best=self.conf_params_xgboost.params["booster"] != "gblinear",
             )
             callbacks = [early_stop]
         else:
@@ -200,7 +203,10 @@ class XgboostModel(BaseClassMlModel):
                 "conf_params_xgboost, conf_training or experiment_tracker is None"
             )
 
-        train_on = check_gpu_support()
+        if self.conf_training.autotune_on_device in ["auto", "gpu"]:
+            train_on = check_gpu_support()
+        else:
+            train_on = {"tree_method": "exact"}
 
         self.check_load_confs()
 
@@ -235,9 +241,9 @@ class XgboostModel(BaseClassMlModel):
 
         def objective(trial):
             param = {
+                "validate_parameters": False,
                 "objective": self.conf_xgboost.xgboost_objective,
                 "booster": self.conf_xgboost.booster,
-                "tree_method": self.conf_xgboost.tree_method,
                 "eval_metric": self.conf_xgboost.xgboost_eval_metric,
                 "num_class": y_train.nunique(),
                 "eta": trial.suggest_float(
@@ -300,6 +306,7 @@ class XgboostModel(BaseClassMlModel):
             }
             param = {**param, **train_on}
             sample_weight = trial.suggest_categorical("sample_weight", [True, False])
+            param = update_params_based_on_tree_method(param, trial)
 
             if sample_weight:
                 classes_weights = self.calculate_class_weights(y_train)
@@ -387,6 +394,7 @@ class XgboostModel(BaseClassMlModel):
                 multivariate=True,
                 seed=self.conf_training.global_random_state + rst,
                 n_startup_trials=self.conf_training.optuna_sampler_n_startup_trials,
+                warn_independent_sampling=False,
             )
             study = optuna.create_study(
                 direction="minimize",
@@ -405,15 +413,17 @@ class XgboostModel(BaseClassMlModel):
                 gc_after_trial=True,
                 show_progress_bar=True,
             )
-            try:
-                fig = optuna.visualization.plot_optimization_history(study)
-                fig.show()
-                fig = optuna.visualization.plot_param_importances(
-                    study  # , evaluator=FanovaImportanceEvaluator()
-                )
-                fig.show()
-            except (ZeroDivisionError, RuntimeError, ValueError):
-                pass
+
+            if self.conf_training.plot_hyperparameter_tuning_overview:
+                try:
+                    fig = optuna.visualization.plot_optimization_history(study)
+                    fig.show()
+                    fig = optuna.visualization.plot_param_importances(
+                        study  # , evaluator=FanovaImportanceEvaluator()
+                    )
+                    fig.show()
+                except (ZeroDivisionError, RuntimeError, ValueError):
+                    pass
 
             if study.best_value < self.best_score:
                 self.best_score = study.best_value
@@ -423,9 +433,9 @@ class XgboostModel(BaseClassMlModel):
                 xgboost_best_param = study.best_trial.params
 
                 self.conf_params_xgboost.params = {
+                    "validate_parameters": False,
                     "objective": self.conf_xgboost.xgboost_objective,  # OR  'binary:logistic' #the loss function being used
                     "booster": self.conf_xgboost.booster,
-                    "tree_method": self.conf_xgboost.tree_method,
                     "eval_metric": self.conf_xgboost.xgboost_eval_metric,
                     "num_class": y_train.nunique(),
                     "max_depth": xgboost_best_param[
@@ -481,7 +491,7 @@ class XgboostModel(BaseClassMlModel):
                 rounds=self.conf_training.early_stopping_rounds,
                 metric_name="mlogloss",
                 data_name="test",
-                save_best=True,
+                save_best=param["booster"] != "gblinear",
             )
             callbacks = [early_stop]
         else:
@@ -887,13 +897,16 @@ class XgboostModel(BaseClassMlModel):
             show_progress_bar=True,
         )
 
-        try:
-            fig = optuna.visualization.plot_optimization_history(study)
-            fig.show()
-            fig = optuna.visualization.plot_param_importances(study)
-            fig.show()
-        except (ZeroDivisionError, RuntimeError, ValueError):
-            pass
+        if self.conf_training.plot_hyperparameter_tuning_overview:
+            try:
+                fig = optuna.visualization.plot_optimization_history(study)
+                fig.show()
+                fig = optuna.visualization.plot_param_importances(
+                    study  # , evaluator=FanovaImportanceEvaluator()
+                )
+                fig.show()
+            except (ZeroDivisionError, RuntimeError, ValueError):
+                pass
 
         best_score_cv = self.best_score
 
