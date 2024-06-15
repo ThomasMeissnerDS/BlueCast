@@ -254,6 +254,11 @@ class ClassificationEvalWrapper:
         self.eval_against = eval_against
         self.metric_func = metric_func
 
+        if eval_against not in ["probas_all_classes", "probas_best_class", "classes"]:
+            raise ValueError(
+                f"Argument eval_against must be one of ['probas_all_classes', 'probas_best_class', 'classes']. However {self.eval_against} has been provided."
+            )
+
     def classification_eval_func_wrapper(
         self,
         y_true: Union[np.ndarray, pd.Series, list],
@@ -275,10 +280,8 @@ class ClassificationEvalWrapper:
         if self.eval_against == "probas_all_classes":
             metric_score = self.metric_func(y_true, y_probs)
         elif self.eval_against == "probas_best_class":
-            y__probs_best_class = np.max(y_probs, axis=1)
-            metric_score = self.metric_func(
-                y_true.tolist(), y__probs_best_class.tolist()
-            )
+            y_probs_best_class = np.max(y_probs, axis=1)
+            metric_score = self.metric_func(y_true, y_probs_best_class)
         elif self.eval_against == "classes":
             y_classes = np.asarray([np.argmax(line) for line in y_probs])
             metric_score = self.metric_func(y_true, y_classes)
