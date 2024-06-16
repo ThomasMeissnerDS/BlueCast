@@ -199,7 +199,7 @@ class XgboostModelRegression(BaseClassMlRegressionModel):
         if self.conf_training.autotune_on_device in ["auto", "gpu"]:
             train_on = check_gpu_support()
         else:
-            train_on = {"tree_method": "exact"}
+            train_on = {"tree_method": "exact", "device": "cpu"}
 
         self.check_load_confs()
 

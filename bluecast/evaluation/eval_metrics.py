@@ -249,10 +249,12 @@ class ClassificationEvalWrapper:
             "probas_all_classes", "probas_target_class", "classes"
         ] = "classes",
         metric_func=matthews_corrcoef,
+        metric_name: str = "Matthews Correlation Coefficient",
     ):
         self.higher_is_better = higher_is_better
         self.eval_against = eval_against
         self.metric_func = metric_func
+        self.metric_name = metric_name
 
         if eval_against not in ["probas_all_classes", "probas_target_class", "classes"]:
             raise ValueError(

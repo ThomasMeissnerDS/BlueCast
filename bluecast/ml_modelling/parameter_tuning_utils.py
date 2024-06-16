@@ -8,7 +8,7 @@ def update_params_based_on_tree_method(
 ) -> Dict[str, Any]:
     """Update parameters based on tree method."""
 
-    if param["device"] not in ["cuda"]:
+    if param.get("device", "cpu") not in ["cuda"]:
         param["tree_method"] = trial.suggest_categorical(
             "tree_method", ["exact", "approx", "hist"]
         )

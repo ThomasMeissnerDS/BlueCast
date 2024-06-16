@@ -57,7 +57,7 @@ def check_gpu_support() -> Dict[str, str]:
         return params
     except Exception as e:
         print(e)
-        params = {"tree_method": "exact"}
+        params = {"tree_method": "exact", "device": "cpu"}
         logging.info("Xgboost uses CPU.")
         logging.info(
             f"""Can use {params} for Xgboost (Will only be used when conf_training.autotune_on_device either
