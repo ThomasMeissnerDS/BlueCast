@@ -141,6 +141,17 @@ class XgboostModelRegression(BaseClassMlRegressionModel):
 
         steps = self.conf_params_xgboost.params.pop("steps", 300)
 
+        if self.conf_training.early_stopping_rounds and self.conf_xgboost:
+            early_stop = xgb.callback.EarlyStopping(
+                rounds=self.conf_training.early_stopping_rounds,
+                metric_name=self.conf_xgboost.xgboost_eval_metric,
+                data_name="test",
+                save_best=self.conf_params_xgboost.params["booster"] != "gblinear",
+            )
+            callbacks = [early_stop]
+        else:
+            callbacks = None
+
         if self.conf_training.hypertuning_cv_folds == 1 and self.conf_xgboost:
             self.model = xgb.train(
                 self.conf_params_xgboost.params,
@@ -149,6 +160,7 @@ class XgboostModelRegression(BaseClassMlRegressionModel):
                 early_stopping_rounds=self.conf_training.early_stopping_rounds,
                 evals=eval_set,
                 verbose_eval=self.conf_xgboost.verbosity_during_final_model_training,
+                callbacks=callbacks,
             )
         elif self.conf_xgboost:
             self.model = xgb.train(
@@ -158,6 +170,7 @@ class XgboostModelRegression(BaseClassMlRegressionModel):
                 early_stopping_rounds=self.conf_training.early_stopping_rounds,
                 evals=eval_set,
                 verbose_eval=self.conf_xgboost.verbosity_during_final_model_training,
+                callbacks=callbacks,
             )
         logging.info("Finished training")
         return self.model
@@ -299,7 +312,7 @@ class XgboostModelRegression(BaseClassMlRegressionModel):
             )
 
             pruning_callback = optuna.integration.XGBoostPruningCallback(
-                trial, "test-rmse"
+                trial, f"test-{self.conf_xgboost.xgboost_eval_metric}"
             )
 
             steps = param.pop("steps", 300)
@@ -340,7 +353,9 @@ class XgboostModelRegression(BaseClassMlRegressionModel):
                     folds=folds,
                 )
 
-                adjusted_score = result["test-rmse-mean"].values[-1]
+                adjusted_score = result[
+                    f"test-{self.conf_xgboost.xgboost_eval_metric}-mean"
+                ].values[-1]
 
                 # track results
                 if len(self.experiment_tracker.experiment_id) == 0:
@@ -445,10 +460,10 @@ class XgboostModelRegression(BaseClassMlRegressionModel):
         self, d_train, d_test, y_test, param, steps, pruning_callback
     ):
         eval_set = [(d_test, "test")]
-        if self.conf_training.early_stopping_rounds:
+        if self.conf_training.early_stopping_rounds and self.conf_xgboost:
             early_stop = xgb.callback.EarlyStopping(
                 rounds=self.conf_training.early_stopping_rounds,
-                metric_name="rmse",
+                metric_name=self.conf_xgboost.xgboost_eval_metric,
                 data_name="test",
                 save_best=param["booster"] != "gblinear",
             )
@@ -620,7 +635,7 @@ class XgboostModelRegression(BaseClassMlRegressionModel):
             d_train, d_test = self.create_d_matrices(x_train, y_train, x_test, y_test)
 
             pruning_callback = optuna.integration.XGBoostPruningCallback(
-                trial, "test-rmse"
+                trial, f"test-{self.conf_xgboost.xgboost_eval_metric}"
             )
             # copy best params to not overwrite them
             tuned_params = deepcopy(self.conf_params_xgboost.params)
@@ -697,7 +712,9 @@ class XgboostModelRegression(BaseClassMlRegressionModel):
                     folds=folds,
                 )
 
-                adjusted_score = result["test-rmse-mean"].values[-1]
+                adjusted_score = result[
+                    f"test-{self.conf_xgboost.xgboost_eval_metric}-mean"
+                ].values[-1]
 
                 # track results
                 if len(self.experiment_tracker.experiment_id) == 0:

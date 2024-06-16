@@ -115,7 +115,7 @@ class XgboostTuneParamsConfig(BaseModel):
     lambda_min: float = 1
     lambda_max: float = 100
     gamma_min: float = 1e-8
-    gamma_max: float = 5
+    gamma_max: float = 100
     min_child_weight_min: float = 1
     min_child_weight_max: float = 20
     sub_sample_min: float = 1.0
@@ -146,7 +146,7 @@ class XgboostTuneParamsRegressionConfig(BaseModel):
     lambda_min: float = 1e-8
     lambda_max: float = 100
     gamma_min: float = 1e-8
-    gamma_max: float = 5
+    gamma_max: float = 100
     min_child_weight_min: float = 0.1
     min_child_weight_max: float = 20
     sub_sample_min: float = 1.0
