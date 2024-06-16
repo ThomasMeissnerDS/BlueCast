@@ -32,7 +32,7 @@ def test_probas_all_classes(sample_data):
 def test_probas_best_class(sample_data):
     y_true, y_probs = sample_data
     wrapper = ClassificationEvalWrapper(
-        eval_against="probas_best_class", metric_func=log_loss, higher_is_better=False
+        eval_against="probas_target_class", metric_func=log_loss, higher_is_better=False
     )
     score = wrapper.classification_eval_func_wrapper(y_true, y_probs)
     y_probs_best_class = np.max(y_probs, axis=1)

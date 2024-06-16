@@ -235,8 +235,8 @@ class ClassificationEvalWrapper:
     :param metric_func: Function object to calculate the metric.
     :param higher_is_better: Boolean indicating if higher metric values are better.
     :param eval_against: String indicating if the metric should be evaluated against probabilities or classes. Can be
-        'probas_all_classes', 'probas_best_class' or 'classes'. For 'probas_all_classes', the metric is calculated
-        against the predicted probabilities for all classes. For 'probas_best_class', the metric is calculated against
+        'probas_all_classes', 'probas_target_class' or 'classes'. For 'probas_all_classes', the metric is calculated
+        against the predicted probabilities for all classes. For 'probas_target_class', the metric is calculated against
         the predicted probabilities for the best class. For 'classes', the metric is calculated against the predicted
         classes. This parameter decides how the predictions arrive in the metric function.
     :return: Float value of the metric score.
@@ -246,7 +246,7 @@ class ClassificationEvalWrapper:
         self,
         higher_is_better: bool = True,
         eval_against: Literal[
-            "probas_all_classes", "probas_best_class", "classes"
+            "probas_all_classes", "probas_target_class", "classes"
         ] = "classes",
         metric_func=matthews_corrcoef,
     ):
@@ -254,7 +254,7 @@ class ClassificationEvalWrapper:
         self.eval_against = eval_against
         self.metric_func = metric_func
 
-        if eval_against not in ["probas_all_classes", "probas_best_class", "classes"]:
+        if eval_against not in ["probas_all_classes", "probas_target_class", "classes"]:
             raise ValueError(
                 f"Argument eval_against must be one of ['probas_all_classes', 'probas_best_class', 'classes']. However {self.eval_against} has been provided."
             )
@@ -279,8 +279,8 @@ class ClassificationEvalWrapper:
 
         if self.eval_against == "probas_all_classes":
             metric_score = self.metric_func(y_true, y_probs)
-        elif self.eval_against == "probas_best_class":
-            y_probs_best_class = np.max(y_probs, axis=1)
+        elif self.eval_against == "probas_target_class":
+            y_probs_best_class = np.asarray([line[1] for line in y_probs])
             metric_score = self.metric_func(y_true, y_probs_best_class)
         elif self.eval_against == "classes":
             y_classes = np.asarray([np.argmax(line) for line in y_probs])

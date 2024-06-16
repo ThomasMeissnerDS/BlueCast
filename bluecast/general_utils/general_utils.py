@@ -17,7 +17,7 @@ def check_gpu_support() -> Dict[str, str]:
     try:
         params = {
             "device": "cuda",
-            "tree_method": "gpu_hist",
+            "tree_method": "gpu",
             "predictor": "gpu_predictor",
         }
         xgb.train(params, d_train, num_boost_round=2)
@@ -32,8 +32,9 @@ def check_gpu_support() -> Dict[str, str]:
 
     try:
         params = {
-            "tree_method": "gpu_hist",
-            "predictor": "gpu_predictor",
+            "device": "cuda",
+            "tree_method": "hist",
+            # "predictor": "gpu_predictor",
         }
         xgb.train(params, d_train, num_boost_round=2)
         logging.info("Xgboost uses GPU.")
@@ -48,7 +49,7 @@ def check_gpu_support() -> Dict[str, str]:
     try:
         params = {
             "tree_method": "gpu",
-            "predictor": "gpu_predictor",
+            # "predictor": "gpu_predictor",
         }
         xgb.train(params, d_train, num_boost_round=2)
         logging.info("Xgboost uses GPU.")
