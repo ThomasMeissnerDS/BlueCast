@@ -508,11 +508,8 @@ class XgboostModel(BaseClassMlModel):
             verbose_eval=self.conf_xgboost.verbosity_during_hyperparameter_tuning,
         )
         preds = model.predict(d_test)
-        matthew = (
-            self.single_fold_eval_metric_func.classification_eval_func_wrapper(
-                y_test.tolist(), preds.tolist()
-            )
-            * -1
+        matthew = self.single_fold_eval_metric_func.classification_eval_func_wrapper(
+            y_test, preds
         )
 
         # track results

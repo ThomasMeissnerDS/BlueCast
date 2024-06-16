@@ -274,7 +274,7 @@ class ClassificationEvalWrapper:
         if not isinstance(y_true, list):
             y_true = y_true.tolist()
 
-        if not isinstance(y_probs, list):
+        if not isinstance(y_probs, list) and self.eval_against != "probas_target_class":
             y_probs = y_probs.tolist()
 
         if self.eval_against == "probas_all_classes":
@@ -291,6 +291,6 @@ class ClassificationEvalWrapper:
             )
 
         if self.higher_is_better:
-            return metric_score
-        else:
             return -metric_score
+        else:
+            return metric_score
