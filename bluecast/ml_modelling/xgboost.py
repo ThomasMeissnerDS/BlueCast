@@ -336,9 +336,13 @@ class XgboostModel(BaseClassMlModel):
             steps = param.pop("steps", 300)
 
             if self.conf_training.hypertuning_cv_folds == 1:
-                return self.train_single_fold_model(
-                    d_train, d_test, y_test, param, steps, pruning_callback
-                )
+                try:
+                    return self.train_single_fold_model(
+                        d_train, d_test, y_test, param, steps, pruning_callback
+                    )
+                except Exception as e:
+                    logging.error(f"Error during training: {e}. Pruning trial")
+                    trial.should_prune()
             elif (
                 self.conf_training.hypertuning_cv_folds > 1
                 and self.conf_training.precise_cv_tuning
@@ -718,9 +722,13 @@ class XgboostModel(BaseClassMlModel):
             steps = tuned_params.pop("steps", 300)
 
             if self.conf_training.hypertuning_cv_folds == 1:
-                return self.train_single_fold_model(
-                    d_train, d_test, y_test, tuned_params, steps, pruning_callback
-                )
+                try:
+                    return self.train_single_fold_model(
+                        d_train, d_test, y_test, tuned_params, steps, pruning_callback
+                    )
+                except Exception as e:
+                    logging.error(f"Error during training: {e}. Pruning trial")
+                    trial.should_prune()
             elif (
                 self.conf_training.hypertuning_cv_folds > 1
                 and self.conf_training.precise_cv_tuning

@@ -36,13 +36,15 @@ class OneHotCategoryEncoder:
             cols=self.cat_columns, drop_invariant=True, use_cat_names=True
         )
         encoded_cats = enc.fit_transform(x[self.cat_columns], y)
-        x = x.drop(self.cat_columns, axis=1)
-        x[encoded_cats.columns.to_list()] = encoded_cats
-        x[encoded_cats.columns.to_list()] = x[encoded_cats.columns.to_list()].astype(
-            int
-        )
+        x_new = x.drop(
+            self.cat_columns, axis=1
+        ).copy()  # copy against high fragmentation
+        x_new[encoded_cats.columns.to_list()] = encoded_cats
+        x_new[encoded_cats.columns.to_list()] = x_new[
+            encoded_cats.columns.to_list()
+        ].astype(int)
         self.encoders["onehot_encoder_all_cols"] = enc
-        return x
+        return x_new.copy()  # copy against high fragmentation
 
     def transform(self, x: pd.DataFrame) -> pd.DataFrame:
         """Transform categories based on already trained encoder."""
