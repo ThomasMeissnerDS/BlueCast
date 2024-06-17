@@ -274,19 +274,26 @@ y_probs, y_classes = automl.predict(df_val)
 
 ### Passing eval metrics for regression
 
-This feature is available since version 1.4.0. For regression tasks the user must
-make sure that the eval metric returns an output where lower is better. A wrapper
-class might be provided in the future.
+This feature is available since version 1.4.0. For regression a similar
+API is available.
 
 ```sh
 from sklearn.metrics import mean_absolute_percentage_error
+from bluecast.evaluation.eval_metrics import RegressionEvalWrapper
 from bluecast.blueprints.cast_cv_regression import BlueCastCVRegression
 from bluecast.config.training_config import TrainingConfig, XgboostTuneParamsConfig
+
+wrapper = RegressionEvalWrapper(
+                higher_is_better=False,
+                metric_func=mean_squared_error,
+                metric_name="Mean squared error",
+                **{"squared": False}, # here args to the eval metric can be passed
+            )
 
 # Pass the custom configs to the BlueCast class
 automl = BlueCastCVRegression(
         class_problem="regression",
-        single_fold_eval_metric_func=mean_absolute_percentage_error.
+        single_fold_eval_metric_func=wrapper.
     )
 
 # this class has a train method:

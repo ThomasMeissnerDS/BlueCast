@@ -250,11 +250,13 @@ class ClassificationEvalWrapper:
         ] = "classes",
         metric_func=matthews_corrcoef,
         metric_name: str = "Matthews Correlation Coefficient",
+        **metric_func_args,
     ):
         self.higher_is_better = higher_is_better
         self.eval_against = eval_against
         self.metric_func = metric_func
         self.metric_name = metric_name
+        self.metric_func_args = metric_func_args
 
         if eval_against not in ["probas_all_classes", "probas_target_class", "classes"]:
             raise ValueError(
@@ -280,17 +282,66 @@ class ClassificationEvalWrapper:
             y_probs = y_probs.tolist()
 
         if self.eval_against == "probas_all_classes":
-            metric_score = self.metric_func(y_true, y_probs)
+            metric_score = self.metric_func(y_true, y_probs, **self.metric_func_args)
         elif self.eval_against == "probas_target_class":
             y_probs_best_class = np.asarray([line[1] for line in y_probs])
-            metric_score = self.metric_func(y_true, y_probs_best_class)
+            metric_score = self.metric_func(
+                y_true, y_probs_best_class, **self.metric_func_args
+            )
         elif self.eval_against == "classes":
             y_classes = np.asarray([np.argmax(line) for line in y_probs])
-            metric_score = self.metric_func(y_true, y_classes)
+            metric_score = self.metric_func(y_true, y_classes, **self.metric_func_args)
         else:
             raise ValueError(
                 f"Unknown value for eval_against: {self.eval_against}. Possible values are 'probas' or 'classes'"
             )
+
+        if self.higher_is_better:
+            return -metric_score
+        else:
+            return metric_score
+
+
+class RegressionEvalWrapper:
+    """
+    Wrapper to evaluate regression metrics.
+
+    :param metric_func: Function object to calculate the metric.
+    :param higher_is_better: Boolean indicating if higher metric values are better.
+    :return: Float value of the metric score.
+    """
+
+    def __init__(
+        self,
+        higher_is_better: bool = False,
+        metric_func=mean_squared_error,
+        metric_name: str = "Mean squared error",
+        **metric_func_args,
+    ):
+        self.higher_is_better = higher_is_better
+        self.metric_func = metric_func
+        self.metric_name = metric_name
+        self.metric_func_args = metric_func_args
+
+    def regression_eval_func_wrapper(
+        self,
+        y_true: Union[np.ndarray, pd.Series, list],
+        y_hat: Union[np.ndarray, pd.Series, list],
+    ) -> Union[float, int]:
+        """
+        Wrapper function to evaluate classification metrics.
+
+        :param y_true: Numpy array of true targets.
+        :param y_hat: NumPy array of predicted targets.
+        :return: Float value of the metric score.
+        """
+        if not isinstance(y_true, list):
+            y_true = y_true.tolist()
+
+        if not isinstance(y_hat, list):
+            y_hat = y_hat.tolist()
+
+        metric_score = self.metric_func(y_true, y_hat, **self.metric_func_args)
 
         if self.higher_is_better:
             return -metric_score

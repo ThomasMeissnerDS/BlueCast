@@ -23,7 +23,7 @@ from bluecast.config.training_config import (
 from bluecast.conformal_prediction.conformal_prediction_regression import (
     ConformalPredictionRegressionWrapper,
 )
-from bluecast.evaluation.eval_metrics import eval_regressor
+from bluecast.evaluation.eval_metrics import RegressionEvalWrapper, eval_regressor
 from bluecast.evaluation.shap_values import (
     shap_dependence_plots,
     shap_explanations,
@@ -98,7 +98,7 @@ class BlueCastRegression:
         conf_xgboost: Optional[XgboostTuneParamsRegressionConfig] = None,
         conf_params_xgboost: Optional[XgboostRegressionFinalParamConfig] = None,
         experiment_tracker: Optional[ExperimentTracker] = None,
-        single_fold_eval_metric_func=mean_squared_error,
+        single_fold_eval_metric_func: Optional[RegressionEvalWrapper] = None,
     ):
         self.class_problem = class_problem
         self.prediction_mode: bool = False
@@ -149,6 +149,14 @@ class BlueCastRegression:
 
         if not self.conf_xgboost:
             self.conf_xgboost = XgboostTuneParamsRegressionConfig()
+
+        if not self.single_fold_eval_metric_func:
+            self.single_fold_eval_metric_func = RegressionEvalWrapper(
+                higher_is_better=False,
+                metric_func=mean_squared_error,
+                metric_name="Mean squared error",
+                **{"squared": False}
+            )
 
         logging.basicConfig(
             filename=self.conf_training.logging_file_path,

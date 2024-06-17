@@ -23,6 +23,7 @@ from bluecast.config.training_config import (
     XgboostRegressionFinalParamConfig,
     XgboostTuneParamsRegressionConfig,
 )
+from bluecast.evaluation.eval_metrics import RegressionEvalWrapper
 from bluecast.experimentation.tracking import ExperimentTracker
 from bluecast.general_utils.general_utils import check_gpu_support, log_sampling
 from bluecast.ml_modelling.base_classes import BaseClassMlRegressionModel
@@ -44,7 +45,7 @@ class XgboostModelRegression(BaseClassMlRegressionModel):
         experiment_tracker: Optional[ExperimentTracker] = None,
         custom_in_fold_preprocessor: Optional[CustomPreprocessing] = None,
         cat_columns: Optional[List[Union[str, float, int]]] = None,
-        single_fold_eval_metric_func=mean_squared_error,
+        single_fold_eval_metric_func: Optional[RegressionEvalWrapper] = None,
     ):
         self.model: Optional[xgb.XGBRegressor] = None
         self.class_problem = class_problem
@@ -60,9 +61,18 @@ class XgboostModelRegression(BaseClassMlRegressionModel):
             )
         else:
             self.random_generator = np.random.default_rng(0)
+
         self.cat_columns = cat_columns
         self.single_fold_eval_metric_func = single_fold_eval_metric_func
         self.best_score: float = np.inf
+
+        if not self.single_fold_eval_metric_func:
+            self.single_fold_eval_metric_func = RegressionEvalWrapper(
+                higher_is_better=False,
+                metric_func=mean_squared_error,
+                metric_name="Mean squared error",
+                **{"squared": False},
+            )
 
     def check_load_confs(self):
         """Load multiple configs or load default configs instead."""
@@ -485,7 +495,9 @@ class XgboostModelRegression(BaseClassMlRegressionModel):
             verbose_eval=self.conf_xgboost.verbosity_during_hyperparameter_tuning,
         )
         preds = model.predict(d_test)
-        mse = self.single_fold_eval_metric_func(y_test, preds)
+        mse = self.single_fold_eval_metric_func.regression_eval_func_wrapper(
+            y_test, preds
+        )
 
         # track results
         if len(self.experiment_tracker.experiment_id) == 0:
@@ -595,9 +607,15 @@ class XgboostModelRegression(BaseClassMlRegressionModel):
                 enable_categorical=self.conf_training.cat_encoding_via_ml_algorithm,
             )
             preds = model.predict(d_eval)
-            fold_losses.append(
-                self.single_fold_eval_metric_func(y_test_fold, preds, squared=False)
-            )
+
+            if self.single_fold_eval_metric_func:
+                loss = self.single_fold_eval_metric_func.regression_eval_func_wrapper(
+                    y_test_fold, preds
+                )
+            else:
+                raise ValueError("No single_fold_eval_metric_func could be found")
+
+            fold_losses.append(loss)
 
         mse_mean = np.mean(np.asarray(fold_losses))
 
