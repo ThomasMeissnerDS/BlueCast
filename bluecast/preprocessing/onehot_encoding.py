@@ -33,7 +33,7 @@ class OneHotCategoryEncoder:
             self.cat_columns.remove(self.target_col)
 
         enc = OneHotEncoder(
-            cols=self.cat_columns, drop_invariant=True, use_cat_names=True
+            # drop_invariant=True, use_cat_names=True
         )
         encoded_cats = enc.fit_transform(x[self.cat_columns], y)
         x_new = x.drop(

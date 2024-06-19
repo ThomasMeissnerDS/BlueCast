@@ -36,8 +36,8 @@ class BinaryClassTargetEncoder:
         enc = TargetEncoder(
             cols=self.cat_columns,
             smoothing=smoothing,
-            drop_invariant=True,
-            handle_unknown="ignore",
+            # drop_invariant=True,
+            # handle_unknown="ignore",
         )
         x.loc[:, self.cat_columns] = enc.fit_transform(x[self.cat_columns], y)
         x[self.cat_columns] = x[self.cat_columns].astype(float)
@@ -74,7 +74,7 @@ class MultiClassTargetEncoder:
         logging.info("Start fitting multiclass target encoder.")
         algorithm = "multiclass_target_encoding_onehotter"
         enc = OneHotEncoder(
-            cols=self.cat_columns, drop_invariant=True, handle_unknown="ignore"
+            # drop_invariant=True, handle_unknown="ignore"
         )
         enc.fit(y)
         y_onehot = enc.transform(y)
@@ -89,8 +89,8 @@ class MultiClassTargetEncoder:
             target_enc = TargetEncoder(
                 cols=self.cat_columns,
                 smoothing=smoothing,
-                drop_invariant=True,
-                handle_unknown="ignore",
+                # drop_invariant=True,
+                # handle_unknown="ignore",
             )
             target_enc.fit(x_obj, y_onehot[class_])
             self.encoders[f"multiclass_target_encoder_all_cols_{class_}"] = target_enc
