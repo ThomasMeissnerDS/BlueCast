@@ -29,6 +29,7 @@ from bluecast.general_utils.general_utils import check_gpu_support, log_sampling
 from bluecast.ml_modelling.base_classes import BaseClassMlRegressionModel
 from bluecast.ml_modelling.parameter_tuning_utils import (
     update_params_based_on_tree_method,
+    update_params_with_best_params,
 )
 from bluecast.preprocessing.custom import CustomPreprocessing
 
@@ -456,6 +457,9 @@ class XgboostModelRegression(BaseClassMlRegressionModel):
                     **self.conf_params_xgboost.params,
                     **train_on,
                 }
+                self.conf_params_xgboost.params = update_params_with_best_params(
+                    self.conf_params_xgboost.params, xgboost_best_param
+                )
                 logging.info(f"Best params: {self.conf_params_xgboost.params}")
 
     def create_d_matrices(self, x_train, y_train, x_test, y_test):

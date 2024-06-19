@@ -28,7 +28,7 @@ def date_converter(
         return df
 
     if not date_parts:
-        date_parts = ["month", "day", "dayofweek", "hour"]
+        date_parts = ["year", "_week_of_year", "month", "day", "dayofweek", "hour"]
 
     for c in date_columns:
         if "year" in date_parts:

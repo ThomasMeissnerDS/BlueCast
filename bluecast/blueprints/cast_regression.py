@@ -479,7 +479,9 @@ class BlueCastRegression:
 
         df = fill_infinite_values(df)
         df = date_converter(
-            df, self.date_columns, date_parts=["month", "day", "dayofweek", "hour"]
+            df,
+            self.date_columns,
+            date_parts=["year", "week_of_year", "month", "day", "dayofweek", "hour"],
         )
 
         if self.schema_detector:
