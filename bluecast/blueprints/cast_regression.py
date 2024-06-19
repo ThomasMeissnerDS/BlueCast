@@ -303,11 +303,11 @@ class BlueCastRegression:
         x_train, x_test = date_converter(
             x_train,
             self.date_columns,
-            date_parts=["year", "month", "day", "dayofweek", "hour"],
+            date_parts=["year", "week_of_year", "month", "day", "dayofweek", "hour"],
         ), date_converter(
             x_test,
             self.date_columns,
-            date_parts=["year", "month", "day", "dayofweek", "hour"],
+            date_parts=["year", "week_of_year", "month", "day", "dayofweek", "hour"],
         )
 
         self.schema_detector = SchemaDetector()

@@ -31,8 +31,12 @@ def date_converter(
         date_parts = ["month", "day", "dayofweek", "hour"]
 
     for c in date_columns:
+        if "year" in date_parts:
+            df[str(c) + "_year"] = df[c].dt.year
         if "month" in date_parts:
             df[str(c) + "_month"] = df[c].dt.month
+        if "week_of_year" in date_parts:
+            df[str(c) + "_week_of_year"] = df[c].dt.isocalendar().week
         if "day" in date_parts:
             df[str(c) + "_day"] = df[c].dt.day
         if "dayofweek" in date_parts:
