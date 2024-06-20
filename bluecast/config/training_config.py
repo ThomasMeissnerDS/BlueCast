@@ -130,10 +130,11 @@ class XgboostTuneParamsConfig(BaseModel):
     steps_max: int = 1000
     verbosity_during_hyperparameter_tuning: int = 0
     verbosity_during_final_model_training: int = 0
+    booster: List[str] = ["gbtree", "gblinear"]
+    grow_policy: List[str] = ["depthwise", "lossguide"]
+    tree_method: List[str] = ["exact", "approx", "hist"]
     xgboost_objective: str = "multi:softprob"
     xgboost_eval_metric: str = "mlogloss"
-    booster: str = "gbtree"
-    tree_method: str = "hist"
 
 
 class XgboostTuneParamsRegressionConfig(BaseModel):
@@ -161,10 +162,11 @@ class XgboostTuneParamsRegressionConfig(BaseModel):
     steps_max: int = 1000
     verbosity_during_hyperparameter_tuning: int = 0
     verbosity_during_final_model_training: int = 0
+    booster: List[str] = ["gbtree", "gblinear"]
+    grow_policy: List[str] = ["depthwise", "lossguide"]
+    tree_method: List[str] = ["exact", "approx", "hist"]
     xgboost_objective: str = "reg:squarederror"
     xgboost_eval_metric: str = "rmse"
-    booster: str = "gbtree"
-    tree_method: str = "hist"
 
 
 @dataclass
@@ -186,6 +188,7 @@ class XgboostFinalParamConfig:
         "objective": "multi:softprob",
         "eval_metric": "mlogloss",
         "tree_method": "hist",
+        "grow_policy": "depthwise",
         "device": "cpu",
     }
     sample_weight: Optional[Dict[str, float]] = None
@@ -211,5 +214,6 @@ class XgboostRegressionFinalParamConfig:
         "objective": "reg:squarederror",
         "eval_metric": "rmse",
         "tree_method": "hist",
+        "grow_policy": "depthwise",
         "device": "cpu",
     }

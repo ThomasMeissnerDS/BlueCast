@@ -9,23 +9,20 @@ from bluecast.config.training_config import (
 
 
 def update_params_based_on_tree_method(
-    param: Dict[str, Any], trial: optuna.Trial
+    param: Dict[str, Any],
+    trial: optuna.Trial,
+    xgboost_params: Union[XgboostTuneParamsConfig, XgboostTuneParamsRegressionConfig],
 ) -> Dict[str, Any]:
     """Update parameters based on tree method."""
 
-    if param.get("device", "cpu") not in ["cuda"]:
-        param["tree_method"] = trial.suggest_categorical(
-            "tree_method", ["exact", "approx", "hist"]
-        )
-    else:
-        param["tree_method"] = trial.suggest_categorical(
-            "tree_method", ["hist", "approx"]
-        )
+    param["tree_method"] = trial.suggest_categorical(
+        "tree_method", xgboost_params.tree_method
+    )
 
-    param["booster"] = trial.suggest_categorical("booster", ["gbtree", "gblinear"])
+    param["booster"] = trial.suggest_categorical("booster", xgboost_params.booster)
     if param["booster"] == "gbtree":
         param["grow_policy"] = trial.suggest_categorical(
-            "grow_policy", ["depthwise", "lossguide"]
+            "grow_policy", xgboost_params.grow_policy
         )
     elif param["booster"] == "gblinear":
         del param["max_depth"]

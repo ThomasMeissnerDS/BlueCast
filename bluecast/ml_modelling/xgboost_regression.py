@@ -207,11 +207,6 @@ class XgboostModelRegression(BaseClassMlRegressionModel):
                 "conf_params_xgboost, conf_training or experiment_tracker is None"
             )
 
-        if self.conf_training.autotune_on_device in ["auto", "gpu"]:
-            train_on = check_gpu_support()
-        else:
-            train_on = {"tree_method": "exact", "device": "cpu"}
-
         self.check_load_confs()
 
         if (
@@ -223,6 +218,12 @@ class XgboostModelRegression(BaseClassMlRegressionModel):
             raise ValueError(
                 "At least one of the configs or experiment_tracker is None, which is not allowed"
             )
+
+        if self.conf_training.autotune_on_device in ["auto", "gpu"]:
+            train_on = check_gpu_support()
+        else:
+            train_on = {"tree_method": "exact", "device": "cpu"}
+            self.conf_xgboost["tree_method"].remove("exact")
 
         if self.conf_training.sample_data_during_tuning:
             nb_samples_train = log_sampling(
@@ -307,8 +308,14 @@ class XgboostModelRegression(BaseClassMlRegressionModel):
                     log=True,
                 ),
             }
-            param = {**param, **train_on}
-            param = update_params_based_on_tree_method(param, trial)
+            params = {**param, **train_on}
+
+            params = update_params_based_on_tree_method(
+                params, trial, self.conf_xgboost
+            )
+            print(params)
+            print("######")
+            print(train_on)
 
             d_train = xgb.DMatrix(
                 x_train,
@@ -326,13 +333,13 @@ class XgboostModelRegression(BaseClassMlRegressionModel):
                 trial, f"test-{self.conf_xgboost.xgboost_eval_metric}"
             )
 
-            steps = param.pop("steps", 300)
+            steps = params.pop("steps", 300)
 
             if self.conf_training.hypertuning_cv_folds == 1:
                 if self.conf_training.hypertuning_cv_folds == 1:
                     try:
                         return self.train_single_fold_model(
-                            d_train, d_test, y_test, param, steps, pruning_callback
+                            d_train, d_test, y_test, params, steps, pruning_callback
                         )
                     except Exception as e:
                         logging.error(f"Error during training: {e}. Pruning trial")
@@ -342,7 +349,7 @@ class XgboostModelRegression(BaseClassMlRegressionModel):
                 and self.conf_training.precise_cv_tuning
             ):
 
-                return self._fine_tune_precise(param, x_train, y_train, x_test, y_test)
+                return self._fine_tune_precise(params, x_train, y_train, x_test, y_test)
             else:
                 # make regression cv startegy stratified
                 le = LabelEncoder()
@@ -357,7 +364,7 @@ class XgboostModelRegression(BaseClassMlRegressionModel):
                     folds.append((train_index.tolist(), test_index.tolist()))
 
                 result = xgb.cv(
-                    params=param,
+                    params=params,
                     dtrain=d_train,
                     num_boost_round=steps,
                     # early_stopping_rounds=self.conf_training.early_stopping_rounds, # not recommended as per docs: https://xgboost.readthedocs.io/en/stable/python/sklearn_estimator.html
@@ -382,7 +389,7 @@ class XgboostModelRegression(BaseClassMlRegressionModel):
                     experiment_id=new_id,
                     score_category="cv_score",
                     training_config=self.conf_training,
-                    model_parameters=param,
+                    model_parameters=params,
                     eval_scores=adjusted_score,
                     metric_used="adjusted rmse",
                     metric_higher_is_better=False,
