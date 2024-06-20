@@ -313,9 +313,6 @@ class XgboostModelRegression(BaseClassMlRegressionModel):
             params = update_params_based_on_tree_method(
                 params, trial, self.conf_xgboost
             )
-            print(params)
-            print("######")
-            print(train_on)
 
             d_train = xgb.DMatrix(
                 x_train,
