@@ -130,7 +130,7 @@ class XgboostTuneParamsConfig(BaseModel):
     steps_max: int = 1000
     verbosity_during_hyperparameter_tuning: int = 0
     verbosity_during_final_model_training: int = 0
-    booster: List[str] = ["gbtree", "gblinear"]
+    booster: List[str] = ["gbtree"]  # "gblinear"
     grow_policy: List[str] = ["depthwise", "lossguide"]
     tree_method: List[str] = ["exact", "approx", "hist"]
     xgboost_objective: str = "multi:softprob"
@@ -162,7 +162,7 @@ class XgboostTuneParamsRegressionConfig(BaseModel):
     steps_max: int = 1000
     verbosity_during_hyperparameter_tuning: int = 0
     verbosity_during_final_model_training: int = 0
-    booster: List[str] = ["gbtree", "gblinear"]
+    booster: List[str] = ["gbtree"]  # "gblinear"
     grow_policy: List[str] = ["depthwise", "lossguide"]
     tree_method: List[str] = ["exact", "approx", "hist"]
     xgboost_objective: str = "reg:squarederror"
