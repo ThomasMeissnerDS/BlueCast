@@ -155,7 +155,7 @@ class BlueCastRegression:
                 higher_is_better=False,
                 metric_func=mean_squared_error,
                 metric_name="Mean squared error",
-                **{"squared": False}
+                **{"squared": False},
             )
 
         logging.basicConfig(
@@ -542,9 +542,16 @@ class BlueCastRegression:
         y_preds = self.ml_model.predict(df)
 
         if save_shap_values:
-            self.shap_values, self.explainer = shap_explanations(
-                self.ml_model.model, df
-            )
+            try:
+                self.shap_values, self.explainer = shap_explanations(
+                    self.ml_model.model, df
+                )
+            except Exception as e:
+                logging.error(
+                    f"Could not calculate shap values. Deactivating SHAP. Error: {e}"
+                )
+                self.conf_training.store_shap_values_in_instance = False
+                self.conf_training.calculate_shap_values = False
 
         return y_preds
 
