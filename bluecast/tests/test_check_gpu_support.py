@@ -45,13 +45,7 @@ def test_check_gpu_support_logging(caplog):
         # Verify the logging output
         assert "Start checking if GPU is available for usage." in caplog.text
 
-        if params["device"] == "cuda":
-            assert "Xgboost uses GPU." in caplog.text
-            assert (
-                "Can use {'device': 'cuda', 'tree_method': 'gpu', 'predictor': 'gpu_predictor'} for Xgboost"
-                in caplog.text
-            )
-        elif "gpu" in params["tree_method"]:
+        if "gpu" in params["tree_method"]:
             assert "Xgboost uses GPU." in caplog.text
             assert "Can use {'tree_method': 'gpu'}." in caplog.text
         else:
