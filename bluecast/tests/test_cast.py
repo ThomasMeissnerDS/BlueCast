@@ -346,6 +346,7 @@ def test_bluecast_with_custom_model():
         custom_preprocessor=custum_preproc,
         custom_in_fold_preprocessor=custom_infold_preproc,
     )
+    bluecast_no_cust_model.conf_training.hypertuning_cv_folds = 2
     bluecast_no_cust_model.conf_training.hyperparameter_tuning_rounds = 2
     bluecast_no_cust_model.conf_training.use_full_data_for_final_model = True
 
