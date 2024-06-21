@@ -338,6 +338,27 @@ def test_bluecast_with_custom_model():
         len(bluecast.experiment_tracker.experiment_id) == 0
     )  # due to custom model and fit method
 
+    bluecast_no_cust_model = BlueCast(
+        class_problem="binary",
+        conf_xgboost=xgboost_param_config,
+        conf_training=train_config,
+        custom_feature_selector=custom_feature_selector,
+        custom_preprocessor=custum_preproc,
+        custom_in_fold_preprocessor=custom_infold_preproc,
+    )
+    bluecast_no_cust_model.conf_training.hyperparameter_tuning_rounds = 2
+    bluecast_no_cust_model.conf_training.use_full_data_for_final_model = True
+
+    # Fit the BlueCast model using the custom model
+    bluecast.fit(x_train, "target")
+
+    # Predict on the test data using the custom model
+    predicted_probas, predicted_classes = bluecast.predict(x_test)
+
+    # Assert the expected results
+    assert isinstance(predicted_probas, np.ndarray)
+    assert isinstance(predicted_classes, np.ndarray)
+
 
 @pytest.fixture
 def bluecast_instance():

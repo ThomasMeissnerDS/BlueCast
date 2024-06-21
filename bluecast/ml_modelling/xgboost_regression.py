@@ -25,9 +25,10 @@ from bluecast.config.training_config import (
 )
 from bluecast.evaluation.eval_metrics import RegressionEvalWrapper
 from bluecast.experimentation.tracking import ExperimentTracker
-from bluecast.general_utils.general_utils import check_gpu_support, log_sampling
+from bluecast.general_utils.general_utils import check_gpu_support
 from bluecast.ml_modelling.base_classes import BaseClassMlRegressionModel
 from bluecast.ml_modelling.parameter_tuning_utils import (
+    sample_data,
     update_params_based_on_tree_method,
     update_params_with_best_params,
 )
@@ -221,28 +222,15 @@ class XgboostModelRegression(BaseClassMlRegressionModel):
 
         if self.conf_training.autotune_on_device in ["auto", "gpu"]:
             train_on = check_gpu_support()
+            self.conf_params_xgboost.params["device"] = train_on["device"]
         else:
             train_on = {"tree_method": "exact", "device": "cpu"}
-            self.conf_xgboost["tree_method"].remove("exact")
+            if "exact" in self.conf_xgboost.tree_method:
+                self.conf_xgboost.tree_method.remove("exact")
 
-        if self.conf_training.sample_data_during_tuning:
-            nb_samples_train = log_sampling(
-                len(x_train.index),
-                alpha=self.conf_training.sample_data_during_tuning_alpha,
-            )
-            nb_samples_test = log_sampling(
-                len(x_test.index),
-                alpha=self.conf_training.sample_data_during_tuning_alpha,
-            )
-
-            x_train = x_train.sample(
-                nb_samples_train, random_state=self.conf_training.global_random_state
-            )
-            y_train = y_train.loc[x_train.index]
-            x_test = x_test.sample(
-                nb_samples_test, random_state=self.conf_training.global_random_state
-            )
-            y_test = y_test.loc[x_test.index]
+        x_train, x_test, y_train, y_test = sample_data(
+            x_train, x_test, y_train, y_test, self.conf_training
+        )
 
         def objective(trial):
             param = {
@@ -395,7 +383,9 @@ class XgboostModelRegression(BaseClassMlRegressionModel):
                 return adjusted_score
 
         for rst in range(self.conf_training.autotune_n_random_seeds):
-            logging.info(f"Hyperparameter tuning using random seed {rst}")
+            logging.info(
+                f"Hyperparameter tuning using random seed {self.conf_training.global_random_state + rst}"
+            )
 
             sampler = optuna.samplers.TPESampler(
                 multivariate=True,
