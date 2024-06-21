@@ -57,6 +57,8 @@ def test_prediction_set_coverage():
     pred_sets = automl.predict_sets(X_test, alpha=alpha)
 
     assert prediction_set_coverage(y_test, pred_sets) > 1 - alpha
+    assert prediction_set_coverage(y_test, pred_sets.values) > 1 - alpha
+    assert prediction_set_coverage(pd.Series(y_test), pred_sets.values) > 1 - alpha
 
 
 def test_prediction_interval_coverage():

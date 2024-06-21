@@ -9,7 +9,8 @@ from bluecast.conformal_prediction.effectiveness_nonconformity_measures import (
 
 
 def prediction_set_coverage(
-    y_true: Union[np.ndarray, pd.Series], prediction_sets: Union[np.ndarray, pd.Series]
+    y_true: Union[np.ndarray, pd.Series],
+    prediction_sets: Union[np.ndarray, pd.Series, pd.DataFrame],
 ) -> float:
     """
     Calculate the percentyge of prediction sets that include the true label.
