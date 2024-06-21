@@ -586,16 +586,9 @@ class BlueCast:
         logging.info("Predicting...")
         y_probs, y_classes = self.ml_model.predict(df)
         if save_shap_values:
-            try:
-                self.shap_values, self.explainer = shap_explanations(
-                    self.ml_model.model, df
-                )
-            except Exception as e:
-                logging.error(
-                    f"Could not calculate shap values. Deactivating SHAP. Error: {e}"
-                )
-                self.conf_training.store_shap_values_in_instance = False
-                self.conf_training.calculate_shap_values = False
+            self.shap_values, self.explainer = shap_explanations(
+                self.ml_model.model, df
+            )
 
         if self.feat_type_detector.cat_columns:
             if (
@@ -634,16 +627,9 @@ class BlueCast:
         logging.info("Predicting...")
         y_probs, _y_classes = self.ml_model.predict(df)
         if save_shap_values:
-            try:
-                self.shap_values, self.explainer = shap_explanations(
-                    self.ml_model.model, df
-                )
-            except Exception as e:
-                logging.error(
-                    f"Could not calculate shap values. Deactivating SHAP. Error: {e}"
-                )
-                self.conf_training.store_shap_values_in_instance = False
-                self.conf_training.calculate_shap_values = False
+            self.shap_values, self.explainer = shap_explanations(
+                self.ml_model.model, df
+            )
 
         return y_probs
 

@@ -1,3 +1,5 @@
+import logging
+
 import numpy as np
 import xgboost as xgb
 
@@ -34,3 +36,39 @@ def test_check_gpu_support(monkeypatch):
     )
 
     assert check_gpu_support() == {"tree_method": "hist", "device": "cpu"}
+
+
+def test_check_gpu_support_logging(caplog):
+    with caplog.at_level(logging.INFO):
+        params = check_gpu_support()
+
+        # Verify the logging output
+        assert "Start checking if GPU is available for usage." in caplog.text
+
+        if params["device"] == "cuda":
+            assert "Xgboost uses GPU." in caplog.text
+            assert (
+                "Can use {'device': 'cuda', 'tree_method': 'gpu', 'predictor': 'gpu_predictor'} for Xgboost"
+                in caplog.text
+            )
+        elif "gpu" in params["tree_method"]:
+            assert "Xgboost uses GPU." in caplog.text
+            assert "Can use {'tree_method': 'gpu'}." in caplog.text
+        else:
+            assert "Xgboost uses CPU." in caplog.text
+            assert (
+                "Can use {'tree_method': 'hist', 'device': 'cpu'} for Xgboost"
+                in caplog.text
+            )
+
+        # Check the returned params are correctly logged
+        if params["device"] == "cuda":
+            assert params == {
+                "device": "cuda",
+                "tree_method": "gpu",
+                "predictor": "gpu_predictor",
+            }
+        elif "gpu" in params["tree_method"]:
+            assert params == {"tree_method": "gpu"}
+        else:
+            assert params == {"tree_method": "hist", "device": "cpu"}
