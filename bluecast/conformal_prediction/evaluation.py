@@ -10,7 +10,7 @@ from bluecast.conformal_prediction.effectiveness_nonconformity_measures import (
 
 def prediction_set_coverage(
     y_true: Union[np.ndarray, pd.Series],
-    prediction_sets: Union[np.ndarray, pd.Series, pd.DataFrame],
+    prediction_sets: Union[pd.Series, pd.DataFrame],
 ) -> float:
     """
     Calculate the percentyge of prediction sets that include the true label.
@@ -20,8 +20,6 @@ def prediction_set_coverage(
     :param y_true: Ground truth labels.
     :param prediction_sets: Predicted probabilities of shape (n_samples, 1) where each row is a set of classes.
     """
-    if isinstance(prediction_sets, np.ndarray):
-        prediction_sets = pd.DataFrame({"prediction_set": prediction_sets})
     y_hat = convert_expected_effectiveness_nonconformity_input_types(prediction_sets)
     set_with_corr_label = [str(label) in str(ps) for label, ps in zip(y_true, y_hat)]
     return np.mean(np.asarray(set_with_corr_label))
