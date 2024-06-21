@@ -349,6 +349,7 @@ def test_bluecast_with_custom_model():
     bluecast_no_cust_model.conf_training.hypertuning_cv_folds = 2
     bluecast_no_cust_model.conf_training.hyperparameter_tuning_rounds = 2
     bluecast_no_cust_model.conf_training.use_full_data_for_final_model = True
+    bluecast_no_cust_model.conf_training.precise_cv_tuning = True
 
     # Fit the BlueCast model using the custom model
     bluecast_no_cust_model.fit(x_train, "target")
