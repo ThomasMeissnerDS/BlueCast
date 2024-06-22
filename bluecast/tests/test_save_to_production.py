@@ -31,3 +31,19 @@ def test_save_to_production():
         loaded_instance = pickle.load(file)
     # Check if the loaded instance is equal to the original instance
     assert loaded_instance.data == dummy_instance.data
+
+    # Call the function to save the instance
+    save_to_production(
+        dummy_instance,
+        file_path=file_name + file_type,
+    )
+    # Construct the expected file path
+    expected_file_path = os.path.join(file_name + file_type)
+
+    # Check if the file was created
+    assert os.path.exists(expected_file_path)
+    # Load the saved instance
+    with open(expected_file_path, "rb") as file:
+        loaded_instance = pickle.load(file)
+    # Check if the loaded instance is equal to the original instance
+    assert loaded_instance.data == dummy_instance.data
