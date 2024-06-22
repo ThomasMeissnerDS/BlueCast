@@ -320,6 +320,7 @@ def test_bluecast_with_custom_model():
         custom_in_fold_preprocessor=custom_infold_preproc,
     )
     bluecast.conf_training.use_full_data_for_final_model = True
+    bluecast.conf_training.precise_cv_tuning = True
 
     # Create some sample data for testing
     x_train = pd.DataFrame(
