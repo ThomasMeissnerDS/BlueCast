@@ -50,5 +50,13 @@ def test_convert_expected_effectiveness_nonconformity_input_types():
         )
     )
     assert isinstance(trans_synthetic_results_sets, np.ndarray)
+
+    trans_synthetic_results_sets = (
+        convert_expected_effectiveness_nonconformity_input_types(
+            synthetic_results_sets["prediction_set"].values
+        )
+    )
+    assert isinstance(trans_synthetic_results_sets, np.ndarray)
+
     with pytest.raises(ValueError):
         convert_expected_effectiveness_nonconformity_input_types(["a", "b", "c"])
