@@ -1,4 +1,5 @@
 import logging
+from unittest.mock import ANY, MagicMock, patch
 
 import numpy as np
 import xgboost as xgb
@@ -66,3 +67,56 @@ def test_check_gpu_support_logging(caplog):
             assert params == {"tree_method": "gpu"}
         else:
             assert params == {"tree_method": "hist", "device": "cpu"}
+
+
+def test_check_gpu_support_gpu_enabled_with_predictor():
+    with patch("numpy.random.rand", return_value=np.array([[0.5, 0.5]])), patch(
+        "numpy.random.randint", return_value=np.array([1])
+    ), patch("xgboost.DMatrix", return_value=MagicMock()), patch(
+        "xgboost.train"
+    ) as mock_train:
+
+        mock_train.side_effect = None  # No exception
+        params = check_gpu_support()
+
+        expected_params = {
+            "device": "cuda",
+            "tree_method": "gpu",
+            "predictor": "gpu_predictor",
+        }
+        assert params == expected_params
+        mock_train.assert_called_with(expected_params, ANY, num_boost_round=2)
+
+
+def test_check_gpu_support_gpu_enabled_without_predictor():
+    with patch("numpy.random.rand", return_value=np.array([[0.5, 0.5]])), patch(
+        "numpy.random.randint", return_value=np.array([1])
+    ), patch("xgboost.DMatrix", return_value=MagicMock()), patch(
+        "xgboost.train"
+    ) as mock_train:
+
+        mock_train.side_effect = [
+            Exception("Fail first attempt"),
+            None,
+        ]  # Fail first, succeed second
+        params = check_gpu_support()
+
+        expected_params = {
+            "tree_method": "gpu",
+        }
+        assert params == expected_params
+        mock_train.assert_called_with(expected_params, ANY, num_boost_round=2)
+
+
+# def test_check_gpu_support_fallback_to_cpu():
+#     with patch('numpy.random.rand', return_value=np.array([[0.5, 0.5]])), \
+#             patch('numpy.random.randint', return_value=np.array([1])), \
+#             patch('xgboost.DMatrix', return_value=MagicMock()), \
+#             patch('xgboost.train') as mock_train:
+#
+#         mock_train.side_effect = Exception('Fail both attempts')  # Fail both attempts
+#         params = check_gpu_support()
+#
+#         expected_params = {"tree_method": "hist", "device": "cpu"}
+#         assert params == expected_params
+#         mock_train.assert_called_with(expected_params, ANY, num_boost_round=2)
