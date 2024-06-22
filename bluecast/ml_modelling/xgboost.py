@@ -428,7 +428,7 @@ class XgboostModel(BaseClassMlModel):
             if study.best_value < self.best_score:
                 self.best_score = study.best_value
                 logging.info(
-                    f"New best score: {study.best_value} from random seed {rst}"
+                    f"New best score: {study.best_value} from random seed  {self.conf_training.global_random_state + rst}"
                 )
                 xgboost_best_param = study.best_trial.params
 
