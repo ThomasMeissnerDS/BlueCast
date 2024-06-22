@@ -74,6 +74,7 @@ def test_blueprint_xgboost(synthetic_train_test_data, synthetic_calibration_data
         conf_xgboost=xgboost_param_config,
         custom_last_mile_computation=custom_last_mile_computation,
     )
+    automl.conf_training.autotune_on_device = "cpu"
     automl.fit_eval(
         df_train,
         df_train.drop("target", axis=1),
