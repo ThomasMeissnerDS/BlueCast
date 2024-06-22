@@ -44,3 +44,19 @@ def test_date_converter(sample_dataframe):
         check_column_type=False,
         check_dtype=False,
     )
+
+    # Call the date_converter function with the sample dataframe
+    result = date_converter(
+        sample_dataframe,
+        ["datetime_col"],
+        date_parts=None,
+    )
+
+    # Assert that the result matches the expected result
+    pd.testing.assert_frame_equal(
+        result,
+        expected_result,
+        check_like=True,
+        check_column_type=False,
+        check_dtype=False,
+    )
