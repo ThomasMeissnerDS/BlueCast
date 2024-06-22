@@ -320,6 +320,54 @@ def test_bluecast_with_custom_model():
         custom_in_fold_preprocessor=custom_infold_preproc,
     )
     bluecast.conf_training.use_full_data_for_final_model = True
+    bluecast.conf_training.precise_cv_tuning = False
+
+    # Create some sample data for testing
+    x_train = pd.DataFrame(
+        {
+            "feature1": [i for i in range(20)],
+            "feature2": [i for i in range(20)],
+            "feature3": [i for i in range(20)],
+            "feature4": [i for i in range(20)],
+            "feature5": [i for i in range(20)],
+            "feature6": [i for i in range(20)],
+        }
+    )
+    y_train = pd.Series([0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1])
+    x_test = pd.DataFrame(
+        {
+            "feature1": [i for i in range(20)],
+            "feature2": [i for i in range(20)],
+            "feature3": [i for i in range(20)],
+            "feature4": [i for i in range(20)],
+            "feature5": [i for i in range(20)],
+            "feature6": [i for i in range(20)],
+        }
+    )
+
+    x_train["target"] = y_train
+
+    # Fit the BlueCast model using the custom model
+    bluecast.fit(x_train, "target")
+
+    # Predict on the test data using the custom model
+    preds = bluecast.predict(x_test)
+
+    # Assert the expected results
+    assert isinstance(preds, np.ndarray)
+    print(bluecast.experiment_tracker.experiment_id)
+    assert len(bluecast.experiment_tracker.experiment_id) == 26
+
+    # test cross-validated model without custom model and with custom infold preproc
+    bluecast = BlueCastRegression(
+        class_problem="regression",
+        conf_xgboost=xgboost_param_config,
+        conf_training=train_config,
+        custom_feature_selector=custom_feature_selector,
+        custom_preprocessor=custum_preproc,
+        custom_in_fold_preprocessor=custom_infold_preproc,
+    )
+    bluecast.conf_training.use_full_data_for_final_model = True
     bluecast.conf_training.precise_cv_tuning = True
 
     # Create some sample data for testing
