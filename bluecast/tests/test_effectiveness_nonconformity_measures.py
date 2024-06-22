@@ -2,9 +2,11 @@ from typing import Tuple
 
 import numpy as np
 import pandas as pd
+import pytest
 
 from bluecast.conformal_prediction.effectiveness_nonconformity_measures import (
     avg_c,
+    convert_expected_effectiveness_nonconformity_input_types,
     one_c,
 )
 
@@ -38,3 +40,15 @@ def test_avg_c():
     synthetic_results_sets = create_synthetic_prediction_set()
     assert avg_c(synthetic_results_sets) == 5 / 3
     assert avg_c(pd.DataFrame(synthetic_results_sets)) == 5 / 3
+
+
+def test_convert_expected_effectiveness_nonconformity_input_types():
+    synthetic_results_sets = create_synthetic_prediction_set()
+    trans_synthetic_results_sets = (
+        convert_expected_effectiveness_nonconformity_input_types(
+            synthetic_results_sets["prediction_set"]
+        )
+    )
+    assert isinstance(trans_synthetic_results_sets, np.ndarray)
+    with pytest.raises(ValueError):
+        convert_expected_effectiveness_nonconformity_input_types(["a", "b", "c"])
