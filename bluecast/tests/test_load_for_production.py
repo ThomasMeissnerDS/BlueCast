@@ -25,6 +25,19 @@ def test_load_for_production():
     # Delete the test file
     os.remove(file_name + file_type)
 
+    # Save the dummy instance to the file
+    with open(file_name + file_type, "wb") as file:
+        pickle.dump(dummy_instance, file)
+
+    # Call the function to load the saved instance
+    loaded_instance = load_for_production(file_path=file_name + file_type)
+
+    # Check if the loaded instance is loaded
+    assert loaded_instance
+
+    # Delete the test file
+    os.remove(file_name + file_type)
+
 
 def test_load_for_production_with_default_file_type():
     # Define the file path and name for the test file
