@@ -5,7 +5,7 @@ import pandas as pd
 
 
 def convert_expected_effectiveness_nonconformity_input_types(
-    y_hat: Union[np.ndarray, pd.Series]
+    y_hat: Union[np.ndarray, pd.Series, pd.DataFrame]
 ) -> np.ndarray:
     if isinstance(y_hat, pd.Series):
         y_hat = y_hat.values
@@ -21,7 +21,7 @@ def convert_expected_effectiveness_nonconformity_input_types(
         )
 
 
-def one_c(y_hat: Union[np.ndarray, pd.Series]):
+def one_c(y_hat: Union[np.ndarray, pd.DataFrame]):
     """
     Calculate proportion of singleton sets among all prediction sets.
     :param y_hat: Predicted probabilities of shape (n_samples, 1) where each row is a set of classes.
@@ -34,7 +34,7 @@ def one_c(y_hat: Union[np.ndarray, pd.Series]):
     return num_singletons / y_hat.shape[0]
 
 
-def avg_c(y_hat: Union[np.ndarray, pd.Series]):
+def avg_c(y_hat: Union[np.ndarray, pd.DataFrame]):
     """
     Calculate the average number of labels in all prediction sets.
     :param y_hat: Predicted probabilities of shape (n_samples, 1) where each row is a set of classes.

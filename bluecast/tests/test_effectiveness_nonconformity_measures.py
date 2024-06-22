@@ -15,7 +15,7 @@ def create_synthetic_binary_data() -> Tuple[np.ndarray, pd.Series]:
     return synthetic_results_binary, y_true_binary
 
 
-def create_synthetic_prediction_set() -> np.ndarray:
+def create_synthetic_prediction_set() -> pd.DataFrame:
     synthetic_results_sets = pd.DataFrame(
         {
             "prediction_set": [
@@ -31,8 +31,10 @@ def create_synthetic_prediction_set() -> np.ndarray:
 def test_one_c():
     synthetic_results_sets = create_synthetic_prediction_set()
     assert one_c(synthetic_results_sets) == 2 / 3
+    assert one_c(pd.DataFrame(synthetic_results_sets)) == 2 / 3
 
 
 def test_avg_c():
     synthetic_results_sets = create_synthetic_prediction_set()
     assert avg_c(synthetic_results_sets) == 5 / 3
+    assert avg_c(pd.DataFrame(synthetic_results_sets)) == 5 / 3
