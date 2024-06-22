@@ -30,7 +30,7 @@ def test_load_for_production():
         pickle.dump(dummy_instance, file)
 
     # Call the function to load the saved instance
-    loaded_instance = load_for_production(file_path=file_name + file_type)
+    loaded_instance = load_for_production(file_path=file_name + file_type, file_name="")
 
     # Check if the loaded instance is loaded
     assert loaded_instance
