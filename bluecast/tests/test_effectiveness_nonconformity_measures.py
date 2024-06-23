@@ -34,12 +34,14 @@ def test_one_c():
     synthetic_results_sets = create_synthetic_prediction_set()
     assert one_c(synthetic_results_sets) == 2 / 3
     assert one_c(pd.DataFrame(synthetic_results_sets)) == 2 / 3
+    assert one_c(pd.Series(synthetic_results_sets.values.tolist())) == 2 / 3
 
 
 def test_avg_c():
     synthetic_results_sets = create_synthetic_prediction_set()
     assert avg_c(synthetic_results_sets) == 5 / 3
     assert avg_c(pd.DataFrame(synthetic_results_sets)) == 5 / 3
+    assert avg_c(pd.Series(synthetic_results_sets.values.tolist())) == 5 / 3
 
 
 def test_convert_expected_effectiveness_nonconformity_input_types():
