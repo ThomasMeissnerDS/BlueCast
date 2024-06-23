@@ -118,7 +118,7 @@ class XgboostTuneParamsConfig(BaseModel):
     gamma_max: float = 5
     min_child_weight_min: float = 1
     min_child_weight_max: float = 10
-    sub_sample_min: float = 1.0
+    sub_sample_min: float = 0.5
     sub_sample_max: float = 1.0
     col_sample_by_tree_min: float = 0.5
     col_sample_by_tree_max: float = 1.0

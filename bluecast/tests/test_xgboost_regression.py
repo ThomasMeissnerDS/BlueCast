@@ -70,3 +70,11 @@ def test_check_load_confs_all_provided():
 
         # Ensure logger was called with appropriate messages
         assert mock_logger.call_count == 0
+
+
+def test_xgboost_regression_fit_errors():
+    model = XgboostModelRegression(
+        class_problem="regression",
+    )
+    with pytest.raises(ValueError):
+        model.fit()
