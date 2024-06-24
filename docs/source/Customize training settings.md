@@ -36,6 +36,23 @@ automl.fit(df_train, target_col="target")
 y_probs, y_classes = automl.predict(df_val)
 ```
 
+The same can also be achieved without the need of a custom training config.
+In any way BlueCast will initialize a config during class instantiation.
+These settings can be adjusted afterwards as well.
+
+```sh
+from bluecast.blueprints.cast import BlueCast
+# Pass the custom configs to the BlueCast class
+automl = BlueCast(
+        class_problem="binary",
+        conf_training=train_config,
+    )
+automl.train_config.hypertuning_cv_folds = 5
+
+automl.fit(df_train, target_col="target")
+y_probs, y_classes = automl.predict(df_val)
+```
+
 This will use Xgboost's inbuilt cross validation routine which allows BlueCast
 to execute early pruning on not promising hyperparameter sets. This way BlueCast
 can test many more hyperparameters than usual cross validation.
@@ -73,12 +90,9 @@ y_probs, y_classes = automl.predict(df_val)
 ```
 
 The custom in fold preprocessing takes place within the cross validation and
-executes the step on each fold. The evaluation metric is special here:
-Instead of calculating matthews correlation coefficient reversed only,
-it applied increasingly random noise to the eval dataset to find an even
-more robust hyperparameter set.
+executes the step on each fold.
 
-This is much more robust, but does not offer
+This is more robust, but does not offer
 early pruning and is much (!) slower. BlueCastCV supports this as well.
 
 Please note that this is an experimental feature.
@@ -180,7 +194,8 @@ y_probs, y_classes = automl.predict(df_val)
 ```
 
 By default `BlueCastCV` trains five models. This can be adjusted in the
-training config via `bluecast_cv_train_n_model`.
+training config via `bluecast_cv_train_n_model`, which expects a tuple like (5, 3)
+to train 5 models via 3 repeats (so 15 models in total).
 
 Also here a variant for regression is available:
 
@@ -202,7 +217,7 @@ automl = BlueCastCVRegression(
 # automl.fit(df_train, target_col="target")
 
 automl.fit_eval(df_train, target_col="target")
-y_probs, y_classes = automl.predict(df_val)
+y_hat = automl.predict(df_val)
 ```
 
 ## Categorical encoding
@@ -220,6 +235,74 @@ is True (default setting) `custom_last_mile_computation` will receive categorica
 features as well, because Xgboost's or a custom model's inbuilt categorical encoding
 will be used.
 
+## Passing custom eval metrics
+
+BlueCast allows to pass eval metrics for single fold training and for the final
+model training. The eval metrics can be passed to the `BlueCast` class during
+instantiation or afterwards.
+Classification and regression classes have different requirements for the eval
+metrics.
+
+### Passing eval metrics for classification
+
+This feature is available since version 1.4.0. For classification tasks
+the eval metrics must be passed as a `ClassificationEvalWrapper` object.
+This is required as classification prediction outputs can arrive in different shapes.
+
+```sh
+from sklearn.metrics import accuracy_score, log_loss, matthews_corrcoef
+from bluecast.evaluation.eval_metrics import ClassificationEvalWrapper
+from bluecast.blueprints.cast_cv import BlueCastCV
+from bluecast.config.training_config import TrainingConfig, XgboostTuneParamsConfig
+
+wrapper = ClassificationEvalWrapper(
+        eval_against="probas_target_class", metric_func=log_loss, higher_is_better=False
+    )
+
+# Pass the custom configs to the BlueCast class
+automl = BlueCastCV(
+        class_problem="binary",
+        single_fold_eval_metric_func=wrapper.
+    )
+
+# this class has a train method:
+# automl.fit(df_train, target_col="target")
+
+automl.fit_eval(df_train, target_col="target")
+y_probs, y_classes = automl.predict(df_val)
+```
+
+### Passing eval metrics for regression
+
+This feature is available since version 1.4.0. For regression a similar
+API is available.
+
+```sh
+from sklearn.metrics import mean_absolute_percentage_error
+from bluecast.evaluation.eval_metrics import RegressionEvalWrapper
+from bluecast.blueprints.cast_cv_regression import BlueCastCVRegression
+from bluecast.config.training_config import TrainingConfig, XgboostTuneParamsConfig
+
+wrapper = RegressionEvalWrapper(
+                higher_is_better=False,
+                metric_func=mean_squared_error,
+                metric_name="Mean squared error",
+                **{"squared": False}, # here args to the eval metric can be passed
+            )
+
+# Pass the custom configs to the BlueCast class
+automl = BlueCastCVRegression(
+        class_problem="regression",
+        single_fold_eval_metric_func=wrapper.
+    )
+
+# this class has a train method:
+# automl.fit(df_train, target_col="target")
+
+automl.fit_eval(df_train, target_col="target")
+y_hat = automl.predict(df_val)
+```
+
 ## Training speed and performance
 
 BlueCast offers various options to train models. The combinations of settings will
@@ -230,12 +313,15 @@ overview shall help making the right decisions:
 
 BlueCast will automatically detect if a GPU is available and will use it for
 Xgboost training. For large datasets this can speed up training significantly.
+Since version 1.4.0 the training config has a parameter `autotune_on_device`,
+which allows to specify the hardware to use for the hyperparameter tuning
+manually. Available options are `cpu`, `gpu` and `auto` (default).
 
 ### Number of models to train
 
 Use `BlueCastCV` instead of `BlueCast` for more robust hyperparameter tuning ->
 `BlueCast` trains a single model while `BlueCastCV` trains five models. All
-the training config settings will apply to all models.
+the training config settings will apply to all models (more info see above).
 
 ### Hyperparameter tuning
 
@@ -273,6 +359,10 @@ BlueCast offers various settings to adjust training speed and performance:
   model, not the one after stopping. If `early_stopping_rounds`
   is set, `use_full_data_for_final_model` must be set to `False` to prevent
   overfitting.
+* Adjust `autotune_n_random_seeds` to optimize the random seed. This will run the
+  tuning process multiple times with different seeds (for Optuna only) and then
+  select the best hyperparameters. This can be useful if the random seed has a
+  significant impact on the results.
 
 ### Recommended settings
 

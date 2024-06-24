@@ -19,6 +19,8 @@ def test_date_converter(sample_dataframe):
     # Define the expected result after applying date_converter
     expected_result = pd.DataFrame(
         {
+            "datetime_col_year": [2021, 2021],
+            "datetime_col_week_of_year": [53, 7],  # "isocalendar" week starts from 1
             "datetime_col_month": [1, 2],
             "datetime_col_day": [1, 15],
             "datetime_col_dayofweek": [4, 0],
@@ -31,7 +33,23 @@ def test_date_converter(sample_dataframe):
     result = date_converter(
         sample_dataframe,
         ["datetime_col"],
-        date_parts=["month", "day", "dayofweek", "hour"],
+        date_parts=["year", "week_of_year", "month", "day", "dayofweek", "hour"],
+    )
+
+    # Assert that the result matches the expected result
+    pd.testing.assert_frame_equal(
+        result,
+        expected_result,
+        check_like=True,
+        check_column_type=False,
+        check_dtype=False,
+    )
+
+    # Call the date_converter function with the sample dataframe
+    result = date_converter(
+        sample_dataframe,
+        ["datetime_col"],
+        date_parts=None,
     )
 
     # Assert that the result matches the expected result

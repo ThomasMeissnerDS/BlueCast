@@ -1,5 +1,7 @@
+from typing import Tuple
 from unittest.mock import patch
 
+import pandas as pd
 import pytest
 
 from bluecast.config.training_config import (
@@ -8,11 +10,23 @@ from bluecast.config.training_config import (
     XgboostTuneParamsRegressionConfig,
 )
 from bluecast.ml_modelling.xgboost_regression import XgboostModelRegression
+from bluecast.tests.make_data.create_data import create_synthetic_dataframe_regression
 
 
 @pytest.fixture
 def default_model():
     return XgboostModelRegression(class_problem="regression")
+
+
+@pytest.fixture
+def synthetic_train_test_data_xgboost() -> (
+    Tuple[pd.DataFrame, pd.Series, pd.DataFrame, pd.Series]
+):
+    df_train = create_synthetic_dataframe_regression(2000, random_state=20)
+    df_val = create_synthetic_dataframe_regression(2000, random_state=200)
+    y_train = df_train.pop("target")
+    y_test = df_val.pop("target")
+    return df_train, y_train, df_val, y_test
 
 
 def test_check_load_confs_defaults(default_model):
@@ -70,3 +84,12 @@ def test_check_load_confs_all_provided():
 
         # Ensure logger was called with appropriate messages
         assert mock_logger.call_count == 0
+
+
+def test_xgboost_regression_fit_errors(synthetic_train_test_data_xgboost):
+    model = XgboostModelRegression(
+        class_problem="regression",
+    )
+    df_train, y_train, df_val, y_test = synthetic_train_test_data_xgboost
+    with pytest.raises(ValueError):
+        model.fit(df_train, df_val, y_train, y_test)

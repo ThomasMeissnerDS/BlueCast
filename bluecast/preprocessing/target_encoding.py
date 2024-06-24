@@ -32,7 +32,13 @@ class BinaryClassTargetEncoder:
     ) -> pd.DataFrame:
         """Fit target encoder and transform column."""
         logging.info("Start fitting binary target encoder.")
-        enc = TargetEncoder(cols=self.cat_columns, smoothing=np.log10(len(x.index)) * 5)
+        smoothing = np.max([np.log10(len(x.index)) * 5, 10])
+        enc = TargetEncoder(
+            cols=self.cat_columns,
+            smoothing=smoothing,
+            # drop_invariant=True,
+            # handle_unknown="ignore",
+        )
         x.loc[:, self.cat_columns] = enc.fit_transform(x[self.cat_columns], y)
         x[self.cat_columns] = x[self.cat_columns].astype(float)
         self.encoders["target_encoder_all_cols"] = enc
@@ -67,7 +73,9 @@ class MultiClassTargetEncoder:
         """Fit target encoder and transform column."""
         logging.info("Start fitting multiclass target encoder.")
         algorithm = "multiclass_target_encoding_onehotter"
-        enc = OneHotEncoder()
+        enc = OneHotEncoder(
+            # drop_invariant=True, handle_unknown="ignore"
+        )
         enc.fit(y)
         y_onehot = enc.transform(y)
         self.class_names = y_onehot.columns.to_list()
@@ -77,7 +85,13 @@ class MultiClassTargetEncoder:
         x_obj = x.loc[:, self.cat_columns].copy()
         x = x.loc[:, ~x.columns.isin(self.cat_columns)]
         for class_ in self.class_names:
-            target_enc = TargetEncoder()
+            smoothing = np.max([np.log10(len(x.index)) * 5, 10])
+            target_enc = TargetEncoder(
+                cols=self.cat_columns,
+                smoothing=smoothing,
+                # drop_invariant=True,
+                # handle_unknown="ignore",
+            )
             target_enc.fit(x_obj, y_onehot[class_])
             self.encoders[f"multiclass_target_encoder_all_cols_{class_}"] = target_enc
             temp = target_enc.transform(x_obj)

@@ -13,6 +13,7 @@ from typing import Any, Dict, List, Literal, Optional, Union
 
 import numpy as np
 import pandas as pd
+from sklearn.metrics import mean_squared_error
 
 from bluecast.config.training_config import (
     TrainingConfig,
@@ -22,7 +23,7 @@ from bluecast.config.training_config import (
 from bluecast.conformal_prediction.conformal_prediction_regression import (
     ConformalPredictionRegressionWrapper,
 )
-from bluecast.evaluation.eval_metrics import eval_regressor
+from bluecast.evaluation.eval_metrics import RegressionEvalWrapper, eval_regressor
 from bluecast.evaluation.shap_values import (
     shap_dependence_plots,
     shap_explanations,
@@ -54,6 +55,7 @@ class BlueCastRegression:
 
     Customization via class attributes is possible. Configs can be instantiated and provided to change Xgboost training.
     Default hyperparameter search space is relatively light-weight to speed up the prototyping.
+
     :param :class_problem: Takes a string containing the class problem type. At the moment "regression" only.
     :param :target_column: Takes a string containing the name of the target column.
     :param :cat_columns: Takes a list of strings containing the names of the categorical columns. If not provided,
@@ -74,6 +76,9 @@ class BlueCastRegression:
         preprocessing steps which take place right before the model training.
     :param experiment_tracker: Takes an instance of an ExperimentTracker class. If not provided this will be initialized
         automatically.
+    :param single_fold_eval_metric_func: Takes a function which calculates the evaluation metric for a single fold.
+       Default is mean_squared_error. This function is used to calculate the evaluation metric for each fold during
+       hyperparameter tuning when hyperparameter_tuning_rounds = 1 (default). Lower must be better.
     """
 
     def __init__(
@@ -93,6 +98,7 @@ class BlueCastRegression:
         conf_xgboost: Optional[XgboostTuneParamsRegressionConfig] = None,
         conf_params_xgboost: Optional[XgboostRegressionFinalParamConfig] = None,
         experiment_tracker: Optional[ExperimentTracker] = None,
+        single_fold_eval_metric_func: Optional[RegressionEvalWrapper] = None,
     ):
         self.class_problem = class_problem
         self.prediction_mode: bool = False
@@ -124,6 +130,7 @@ class BlueCastRegression:
         self.shap_values: Optional[np.ndarray] = None
         self.explainer = None
         self.eval_metrics: Optional[Dict[str, Any]] = None
+        self.single_fold_eval_metric_func = single_fold_eval_metric_func
         self.conformal_prediction_wrapper: Optional[
             ConformalPredictionRegressionWrapper
         ] = None
@@ -142,6 +149,14 @@ class BlueCastRegression:
 
         if not self.conf_xgboost:
             self.conf_xgboost = XgboostTuneParamsRegressionConfig()
+
+        if not self.single_fold_eval_metric_func:
+            self.single_fold_eval_metric_func = RegressionEvalWrapper(
+                higher_is_better=False,
+                metric_func=mean_squared_error,
+                metric_name="Mean squared error",
+                **{"squared": False},
+            )
 
         logging.basicConfig(
             filename=self.conf_training.logging_file_path,
@@ -238,7 +253,7 @@ class BlueCastRegression:
     def fit(self, df: pd.DataFrame, target_col: str) -> None:
         """Train a full ML pipeline."""
         self.target_column = target_col
-        check_gpu_support()
+
         feat_type_detector = FeatureTypeDetector(
             cat_columns=self.cat_columns, num_columns=[], date_columns=[]
         )
@@ -250,6 +265,8 @@ class BlueCastRegression:
 
         if not self.conf_training:
             self.conf_training = TrainingConfig()
+
+        check_gpu_support()
 
         self.initial_checks(df)
 
@@ -284,9 +301,13 @@ class BlueCastRegression:
 
         x_train, x_test = fill_infinite_values(x_train), fill_infinite_values(x_test)
         x_train, x_test = date_converter(
-            x_train, self.date_columns, date_parts=["month", "day", "dayofweek", "hour"]
+            x_train,
+            self.date_columns,
+            date_parts=["year", "week_of_year", "month", "day", "dayofweek", "hour"],
         ), date_converter(
-            x_test, self.date_columns, date_parts=["month", "day", "dayofweek", "hour"]
+            x_test,
+            self.date_columns,
+            date_parts=["year", "week_of_year", "month", "day", "dayofweek", "hour"],
         )
 
         self.schema_detector = SchemaDetector()
@@ -363,6 +384,7 @@ class BlueCastRegression:
                 experiment_tracker=self.experiment_tracker,
                 custom_in_fold_preprocessor=self.custom_in_fold_preprocessor,
                 cat_columns=self.cat_columns,
+                single_fold_eval_metric_func=self.single_fold_eval_metric_func,
             )
         self.ml_model.fit(x_train, x_test, y_train, y_test)
 
@@ -457,7 +479,9 @@ class BlueCastRegression:
 
         df = fill_infinite_values(df)
         df = date_converter(
-            df, self.date_columns, date_parts=["month", "day", "dayofweek", "hour"]
+            df,
+            self.date_columns,
+            date_parts=["year", "week_of_year", "month", "day", "dayofweek", "hour"],
         )
 
         if self.schema_detector:

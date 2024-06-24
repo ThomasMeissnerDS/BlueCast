@@ -56,7 +56,8 @@ def test_prediction_set_coverage():
     alpha = 0.05
     pred_sets = automl.predict_sets(X_test, alpha=alpha)
 
-    assert prediction_set_coverage(y_test, pred_sets.values) > 1 - alpha
+    assert prediction_set_coverage(y_test, pred_sets) > 1 - alpha
+    assert prediction_set_coverage(pd.Series(y_test), pred_sets) > 1 - alpha
 
 
 def test_prediction_interval_coverage():
@@ -108,3 +109,8 @@ def test_prediction_interval_coverage():
 
     band_sizes = prediction_interval_spans(pred_intervals, alphas=[0.01, 0.05, 0.1])
     assert band_sizes[0.01] > band_sizes[0.05] > band_sizes[0.1]
+
+    val_results = prediction_interval_coverage(
+        pd.Series(y_test), pred_intervals, alphas=[0.01, 0.05, 0.1]
+    )
+    assert val_results[0.01] > val_results[0.05] > val_results[0.1]

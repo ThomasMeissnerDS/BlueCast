@@ -90,6 +90,8 @@ def test_blueprint_xgboost(
         conf_xgboost=xgboost_param_config,
         custom_last_mile_computation=custom_last_mile_computation,
     )
+    automl.conf_training.autotune_on_device = "cpu"
+
     automl.fit_eval(
         df_train,
         df_train.drop("target", axis=1),
@@ -302,15 +304,15 @@ def test_bluecast_with_custom_model():
     # Create some sample data for testing
     x_train = pd.DataFrame(
         {
-            "feature1": [i for i in range(10)],
-            "feature2": [i for i in range(10)],
-            "feature3": [i for i in range(10)],
-            "feature4": [i for i in range(10)],
-            "feature5": [i for i in range(10)],
-            "feature6": [i for i in range(10)],
+            "feature1": [i for i in range(20)],
+            "feature2": [i for i in range(20)],
+            "feature3": [i for i in range(20)],
+            "feature4": [i for i in range(20)],
+            "feature5": [i for i in range(20)],
+            "feature6": [i for i in range(20)],
         }
     )
-    y_train = pd.Series([0, 1, 0, 1, 0, 1, 0, 1, 0, 1])
+    y_train = pd.Series([0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1])
     x_test = pd.DataFrame(
         {
             "feature1": [i for i in range(10)],
@@ -337,6 +339,29 @@ def test_bluecast_with_custom_model():
     assert (
         len(bluecast.experiment_tracker.experiment_id) == 0
     )  # due to custom model and fit method
+
+    bluecast_no_cust_model = BlueCast(
+        class_problem="binary",
+        conf_xgboost=xgboost_param_config,
+        conf_training=train_config,
+        custom_feature_selector=custom_feature_selector,
+        custom_preprocessor=custum_preproc,
+        custom_in_fold_preprocessor=custom_infold_preproc,
+    )
+    bluecast_no_cust_model.conf_training.hypertuning_cv_folds = 2
+    bluecast_no_cust_model.conf_training.hyperparameter_tuning_rounds = 2
+    bluecast_no_cust_model.conf_training.use_full_data_for_final_model = True
+    bluecast_no_cust_model.conf_training.precise_cv_tuning = True
+
+    # Fit the BlueCast model using the custom model
+    bluecast_no_cust_model.fit(x_train, "target")
+
+    # Predict on the test data using the custom model
+    predicted_probas, predicted_classes = bluecast_no_cust_model.predict(x_test)
+
+    # Assert the expected results
+    assert isinstance(predicted_probas, np.ndarray)
+    assert isinstance(predicted_classes, np.ndarray)
 
 
 @pytest.fixture

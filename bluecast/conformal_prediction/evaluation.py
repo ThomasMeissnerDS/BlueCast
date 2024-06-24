@@ -9,14 +9,15 @@ from bluecast.conformal_prediction.effectiveness_nonconformity_measures import (
 
 
 def prediction_set_coverage(
-    y_true: Union[np.ndarray, pd.Series], prediction_sets: Union[np.ndarray, pd.Series]
+    y_true: Union[np.ndarray, pd.Series],
+    prediction_sets: Union[pd.Series, pd.DataFrame],
 ) -> float:
     """
     Calculate the percentyge of prediction sets that include the true label.
 
     This check can be used to validate that the model covers the true labels
     according to the alpha set during the prediction process.
-    :param y_true: Ground truth labels..
+    :param y_true: Ground truth labels.
     :param prediction_sets: Predicted probabilities of shape (n_samples, 1) where each row is a set of classes.
     """
     y_hat = convert_expected_effectiveness_nonconformity_input_types(prediction_sets)
@@ -39,6 +40,9 @@ def prediction_interval_coverage(
         contain columns of format f"{alpha}_low" and f"{1-alpha}_high" for each format.
     :param alphas: List of alphas indicating which confidence levels to check
     """
+    if isinstance(y_true, pd.Series):
+        y_true = y_true.values
+
     coverages = {}
     for alpha in alphas:
         coverages[alpha] = np.mean(

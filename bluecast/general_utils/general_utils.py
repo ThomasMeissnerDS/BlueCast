@@ -15,30 +15,37 @@ def check_gpu_support() -> Dict[str, str]:
     d_train = xgb.DMatrix(data, label=label)
 
     try:
-        params = {"device": "cuda"}
+        params = {
+            "device": "cuda",
+            "tree_method": "gpu",
+            "predictor": "gpu_predictor",
+        }
         xgb.train(params, d_train, num_boost_round=2)
         logging.info("Xgboost uses GPU.")
+        logging.info(
+            f"""Can use {params} for Xgboost (Will only be used when conf_training.autotune_on_device either
+        'auto' or 'gpu'."""
+        )
         return params
     except Exception:
         pass
 
     try:
-        params = {"tree_method": "gpu_hist"}
+        params = {
+            "tree_method": "gpu",
+            # "predictor": "gpu_predictor",
+        }
         xgb.train(params, d_train, num_boost_round=2)
         logging.info("Xgboost uses GPU.")
+        logging.info(f"Can use {params}.")
         return params
     except Exception:
-        pass
-
-    try:
-        params = {"tree_method": "gpu"}
-        xgb.train(params, d_train, num_boost_round=2)
-        logging.info("Xgboost uses GPU.")
-        return params
-    except Exception as e:
-        print(e)
-        params = {"tree_method": "exact"}
+        params = {"tree_method": "hist", "device": "cpu"}
         logging.info("Xgboost uses CPU.")
+        logging.info(
+            f"""Can use {params} for Xgboost (Will only be used when conf_training.autotune_on_device either
+        'auto' or 'gpu'."""
+        )
         return params
 
 

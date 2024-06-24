@@ -107,6 +107,7 @@ def test_blueprint_cv_xgboost(synthetic_train_test_data, synthetic_calibration_d
     train_config.enable_grid_search_fine_tuning = True
     train_config.gridsearch_nb_parameters_per_grid = 2
     train_config.precise_cv_tuning = False
+    train_config.early_stopping_rounds = None
 
     automl_cv = BlueCastCV(
         conf_xgboost=xgboost_param_config, conf_training=train_config, stratifier=None

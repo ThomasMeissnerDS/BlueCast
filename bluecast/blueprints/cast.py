@@ -22,7 +22,7 @@ from bluecast.config.training_config import (
 from bluecast.conformal_prediction.conformal_prediction import (
     ConformalPredictionWrapper,
 )
-from bluecast.evaluation.eval_metrics import eval_classifier
+from bluecast.evaluation.eval_metrics import ClassificationEvalWrapper, eval_classifier
 from bluecast.evaluation.shap_values import (
     shap_dependence_plots,
     shap_explanations,
@@ -74,6 +74,9 @@ class BlueCast:
         preprocessing steps which take place right before the model training.
     :param experiment_tracker: Takes an instance of an ExperimentTracker class. If not provided this will be initialized
         automatically.
+    :param single_fold_eval_metric_func: Takes a function which calculates the evaluation metric for a single fold.
+           Default is matthews_corrcoef. This function is used to calculate the evaluation metric for each fold during
+           hyperparameter tuning when hyperparameter_tuning_rounds = 1 (default). Lower must be better.
     """
 
     def __init__(
@@ -93,6 +96,7 @@ class BlueCast:
         conf_xgboost: Optional[XgboostTuneParamsConfig] = None,
         conf_params_xgboost: Optional[XgboostFinalParamConfig] = None,
         experiment_tracker: Optional[ExperimentTracker] = None,
+        single_fold_eval_metric_func: Optional[ClassificationEvalWrapper] = None,
     ):
         self.class_problem = class_problem
         self.prediction_mode: bool = False
@@ -125,6 +129,7 @@ class BlueCast:
         self.explainer = None
         self.eval_metrics: Optional[Dict[str, Any]] = None
         self.conformal_prediction_wrapper: Optional[ConformalPredictionWrapper] = None
+        self.single_fold_eval_metric_func = single_fold_eval_metric_func
 
         if experiment_tracker:
             self.experiment_tracker = experiment_tracker
@@ -139,6 +144,9 @@ class BlueCast:
 
         if not self.conf_xgboost:
             self.conf_xgboost = XgboostTuneParamsConfig()
+
+        if not self.single_fold_eval_metric_func:
+            self.single_fold_eval_metric_func = ClassificationEvalWrapper()
 
         logging.basicConfig(
             filename=self.conf_training.logging_file_path,
@@ -246,7 +254,7 @@ class BlueCast:
         """Train a full ML pipeline."""
 
         self.target_column = target_col
-        check_gpu_support()
+
         feat_type_detector = FeatureTypeDetector(
             cat_columns=self.cat_columns, num_columns=[], date_columns=[]
         )
@@ -267,6 +275,8 @@ class BlueCast:
 
         if not self.conf_training:
             self.conf_training = TrainingConfig()
+
+        check_gpu_support()
 
         self.initial_checks(df)
 
@@ -304,9 +314,13 @@ class BlueCast:
 
         x_train, x_test = fill_infinite_values(x_train), fill_infinite_values(x_test)
         x_train, x_test = date_converter(
-            x_train, self.date_columns, date_parts=["month", "day", "dayofweek", "hour"]
+            x_train,
+            self.date_columns,
+            date_parts=["year", "week_of_year", "month", "day", "dayofweek", "hour"],
         ), date_converter(
-            x_test, self.date_columns, date_parts=["month", "day", "dayofweek", "hour"]
+            x_test,
+            self.date_columns,
+            date_parts=["year", "week_of_year", "month", "day", "dayofweek", "hour"],
         )
 
         self.schema_detector = SchemaDetector()
@@ -392,6 +406,7 @@ class BlueCast:
                 experiment_tracker=self.experiment_tracker,
                 custom_in_fold_preprocessor=self.custom_in_fold_preprocessor,
                 cat_columns=self.cat_columns,
+                single_fold_eval_metric_func=self.single_fold_eval_metric_func,
             )
         self.ml_model.fit(x_train, x_test, y_train, y_test)
 
@@ -499,7 +514,9 @@ class BlueCast:
 
         df = fill_infinite_values(df)
         df = date_converter(
-            df, self.date_columns, date_parts=["month", "day", "dayofweek", "hour"]
+            df,
+            self.date_columns,
+            date_parts=["year", "week_of_year", "month", "day", "dayofweek", "hour"],
         )
 
         if self.schema_detector:
