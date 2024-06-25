@@ -43,6 +43,11 @@ class OneHotCategoryEncoder:
         x_new[encoded_cats.columns.to_list()] = x_new[
             encoded_cats.columns.to_list()
         ].astype(int)
+
+        # Set all new columns to -1 where all values are 0
+        mask_all_zero = (x_new[encoded_cats.columns.to_list()] == 0).all(axis=1)
+        x_new.loc[mask_all_zero, encoded_cats.columns.to_list()] = -1
+
         self.encoders["onehot_encoder_all_cols"] = enc
         return x_new.copy()  # copy against high fragmentation
 
@@ -56,4 +61,7 @@ class OneHotCategoryEncoder:
         x[encoded_cats.columns.to_list()] = x[encoded_cats.columns.to_list()].astype(
             int
         )
+        # Set all new columns to -1 where all values are 0
+        mask_all_zero = (x[encoded_cats.columns.to_list()] == 0).all(axis=1)
+        x.loc[mask_all_zero, encoded_cats.columns.to_list()] = -1
         return x
