@@ -223,10 +223,13 @@ class XgboostModelRegression(BaseClassMlRegressionModel):
         if self.conf_training.autotune_on_device in ["auto", "gpu"]:
             train_on = check_gpu_support()
             self.conf_params_xgboost.params["device"] = train_on["device"]
+            if (
+                "exact" in self.conf_xgboost.tree_method
+                and self.conf_params_xgboost.params["device"] in ["gpu", "cuda"]
+            ):
+                self.conf_xgboost.tree_method.remove("exact")
         else:
             train_on = {"tree_method": "exact", "device": "cpu"}
-            if "exact" in self.conf_xgboost.tree_method:
-                self.conf_xgboost.tree_method.remove("exact")
 
         x_train, x_test, y_train, y_test = sample_data(
             x_train, x_test, y_train, y_test, self.conf_training
