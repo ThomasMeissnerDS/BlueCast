@@ -32,6 +32,20 @@ def check_gpu_support() -> Dict[str, str]:
 
     try:
         params = {
+            "device": "cuda",
+        }
+        xgb.train(params, d_train, num_boost_round=2)
+        logging.info("Xgboost uses GPU.")
+        logging.info(
+            f"""Can use {params} for Xgboost (Will only be used when conf_training.autotune_on_device either
+        'auto' or 'gpu'."""
+        )
+        return params
+    except Exception:
+        pass
+
+    try:
+        params = {
             "tree_method": "gpu",
             # "predictor": "gpu_predictor",
         }
