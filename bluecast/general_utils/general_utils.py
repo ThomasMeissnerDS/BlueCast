@@ -37,7 +37,7 @@ def check_gpu_support() -> Dict[str, str]:
         try:
             with warnings.catch_warnings(record=True) as w:
                 warnings.simplefilter("always")
-                booster = xgb.train(params, d_train, num_boost_round=2)
+                xgb.train(params, d_train, num_boost_round=2)
 
                 # Check if any captured warnings indicate GPU-related issues
                 gpu_warning = any(
