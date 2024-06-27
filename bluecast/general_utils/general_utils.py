@@ -14,53 +14,24 @@ def check_gpu_support() -> Dict[str, str]:
     label = np.random.randint(2, size=50)
     d_train = xgb.DMatrix(data, label=label)
 
-    try:
-        params = {
-            "device": "cuda",
-            "tree_method": "gpu",
-            "predictor": "gpu_predictor",
-        }
-        xgb.train(params, d_train, num_boost_round=2)
-        logging.info("Xgboost uses GPU.")
-        logging.info(
-            f"""Can use {params} for Xgboost (Will only be used when conf_training.autotune_on_device either
-        'auto' or 'gpu'."""
-        )
-        return params
-    except Exception:
-        pass
+    params_list = [
+        {"device": "cuda", "tree_method": "gpu_hist", "predictor": "gpu_predictor"},
+        {"device": "cuda"},
+        {"tree_method": "gpu_hist"},
+    ]
 
-    try:
-        params = {
-            "device": "cuda",
-        }
-        xgb.train(params, d_train, num_boost_round=2)
-        logging.info("Xgboost uses GPU.")
-        logging.info(
-            f"""Can use {params} for Xgboost (Will only be used when conf_training.autotune_on_device either
-        'auto' or 'gpu'."""
-        )
-        return params
-    except Exception:
-        pass
+    for params in params_list:
+        try:
+            xgb.train(params, d_train, num_boost_round=2)
+            logging.info("Xgboost is using GPU with parameters: %s", params)
+            return params
+        except xgb.core.XGBoostError as e:
+            logging.warning("Failed with params %s. Error: %s", params, str(e))
 
-    try:
-        params = {
-            "tree_method": "gpu",
-            # "predictor": "gpu_predictor",
-        }
-        xgb.train(params, d_train, num_boost_round=2)
-        logging.info("Xgboost uses GPU.")
-        logging.info(f"Can use {params}.")
-        return params
-    except Exception:
-        params = {"tree_method": "exact", "device": "cpu"}
-        logging.info("Xgboost uses CPU.")
-        logging.info(
-            f"""Can use {params} for Xgboost (Will only be used when conf_training.autotune_on_device either
-        'auto' or 'gpu'."""
-        )
-        return params
+    # If no GPU parameters work, fall back to CPU
+    params = {"tree_method": "exact", "device": "cpu"}
+    logging.info("No GPU detected. Xgboost will use CPU with parameters: %s", params)
+    return params
 
 
 def save_to_production(
