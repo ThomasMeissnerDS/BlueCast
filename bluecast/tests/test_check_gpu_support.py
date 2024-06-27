@@ -1,3 +1,4 @@
+import warnings
 from unittest.mock import ANY, patch
 
 import numpy as np
@@ -11,7 +12,7 @@ def test_check_gpu_support_with_gpu():
     label = np.random.randint(2, size=50)
     xgb.DMatrix(data, label=label)
 
-    # Mock xgb.train to simulate GPU support
+    # Mock xgboost.train to simulate GPU support
     with patch("xgboost.train") as mock_train:
         mock_train.return_value = None  # Simulate successful training
         params = check_gpu_support()
@@ -24,11 +25,28 @@ def test_check_gpu_support_without_gpu():
     label = np.random.randint(2, size=50)
     xgb.DMatrix(data, label=label)
 
-    # Mock xgb.train to raise an error to simulate no GPU support
+    # Mock xgboost.train to raise an error to simulate no GPU support
     with patch("xgboost.train", side_effect=xgb.core.XGBoostError("GPU not found")):
         params = check_gpu_support()
         assert params["device"] == "cpu"
         assert params["tree_method"] == "hist"
+
+
+def test_check_gpu_support_with_warnings():
+    data = np.random.rand(50, 2)
+    label = np.random.randint(2, size=50)
+    xgb.DMatrix(data, label=label)
+
+    def mock_train_with_warning(*args, **kwargs):
+        warnings.warn("GPU warning", UserWarning, stacklevel=2)
+        return None
+
+    with patch("xgboost.train", side_effect=mock_train_with_warning):
+        with patch("logging.Logger.warning") as mock_logger_warning:
+            params = check_gpu_support()
+            mock_logger_warning.assert_any_call("GPU-related warning captured: %s", ANY)
+            assert params["device"] == "cpu"
+            assert params["tree_method"] == "hist"
 
 
 def test_check_gpu_support_with_xgboost_error():
