@@ -5,10 +5,12 @@ import pandas as pd
 
 from bluecast.config.training_config import (
     TrainingConfig,
+    XgboostFinalParamConfig,
+    XgboostRegressionFinalParamConfig,
     XgboostTuneParamsConfig,
     XgboostTuneParamsRegressionConfig,
 )
-from bluecast.general_utils.general_utils import log_sampling
+from bluecast.general_utils.general_utils import check_gpu_support, log_sampling
 
 
 def update_params_based_on_tree_method(
@@ -36,6 +38,26 @@ def update_params_based_on_tree_method(
         del param["gamma"]
         del param["tree_method"]
     return param
+
+
+def get_params_based_on_device(
+    conf_training: TrainingConfig,
+    conf_params_xgboost: Union[
+        XgboostFinalParamConfig, XgboostRegressionFinalParamConfig
+    ],
+    conf_xgboost: Union[XgboostTuneParamsConfig, XgboostTuneParamsRegressionConfig],
+) -> Dict[str, Any]:
+    """Get parameters based on available or chosen device."""
+    if conf_training.autotune_on_device in ["auto", "gpu"]:
+        train_on = check_gpu_support()
+        conf_params_xgboost.params["device"] = train_on["device"]
+        if "exact" in conf_xgboost.tree_method and conf_params_xgboost.params[
+            "device"
+        ] in ["gpu", "cuda"]:
+            conf_xgboost.tree_method.remove("exact")
+    else:
+        train_on = {"tree_method": "exact", "device": "cpu"}
+    return train_on
 
 
 def update_params_with_best_params(

@@ -23,9 +23,9 @@ from bluecast.config.training_config import (
 )
 from bluecast.evaluation.eval_metrics import ClassificationEvalWrapper
 from bluecast.experimentation.tracking import ExperimentTracker
-from bluecast.general_utils.general_utils import check_gpu_support
 from bluecast.ml_modelling.base_classes import BaseClassMlModel
 from bluecast.ml_modelling.parameter_tuning_utils import (
+    get_params_based_on_device,
     sample_data,
     update_params_based_on_tree_method,
     update_params_with_best_params,
@@ -217,16 +217,9 @@ class XgboostModel(BaseClassMlModel):
                 "At least one of the configs or experiment_tracker is None, which is not allowed"
             )
 
-        if self.conf_training.autotune_on_device in ["auto", "gpu"]:
-            train_on = check_gpu_support()
-            self.conf_params_xgboost.params["device"] = train_on["device"]
-            if (
-                "exact" in self.conf_xgboost.tree_method
-                and self.conf_params_xgboost.params["device"] in ["gpu", "cuda"]
-            ):
-                self.conf_xgboost.tree_method.remove("exact")
-        else:
-            train_on = {"tree_method": "exact", "device": "cpu"}
+        train_on = get_params_based_on_device(
+            self.conf_training, self.conf_params_xgboost, self.conf_xgboost
+        )
 
         x_train, x_test, y_train, y_test = sample_data(
             x_train, x_test, y_train, y_test, self.conf_training
