@@ -12,7 +12,6 @@ def test_check_gpu_support_with_gpu():
     label = np.random.randint(2, size=50)
     xgb.DMatrix(data, label=label)
 
-    # Mock xgboost.train to simulate GPU support
     with patch("xgboost.train") as mock_train:
         mock_train.return_value = None  # Simulate successful training
         params = check_gpu_support()
@@ -25,7 +24,6 @@ def test_check_gpu_support_without_gpu():
     label = np.random.randint(2, size=50)
     xgb.DMatrix(data, label=label)
 
-    # Mock xgboost.train to raise an error to simulate no GPU support
     with patch("xgboost.train", side_effect=xgb.core.XGBoostError("GPU not found")):
         params = check_gpu_support()
         assert params["device"] == "cpu"
