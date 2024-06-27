@@ -15,21 +15,27 @@ def check_gpu_support() -> Dict[str, str]:
     d_train = xgb.DMatrix(data, label=label)
 
     params_list = [
-        {"device": "cuda", "tree_method": "gpu_hist", "predictor": "gpu_predictor"},
+        {"device": "cuda", "tree_method": "gpu_hist"},
         {"device": "cuda"},
         {"tree_method": "gpu_hist"},
     ]
 
     for params in params_list:
         try:
-            xgb.train(params, d_train, num_boost_round=2)
-            logging.info("Xgboost is using GPU with parameters: %s", params)
-            return params
+            booster = xgb.train(params, d_train, num_boost_round=2)
+            if "gpu" in booster.attributes() or "cuda" in booster.attributes():
+                logging.info("Xgboost is using GPU with parameters: %s", params)
+                return params
+            else:
+                logging.warning(
+                    "GPU settings applied but no GPU detected in booster attributes: %s",
+                    params,
+                )
         except xgb.core.XGBoostError as e:
             logging.warning("Failed with params %s. Error: %s", params, str(e))
 
     # If no GPU parameters work, fall back to CPU
-    params = {"tree_method": "exact", "device": "cpu"}
+    params = {"tree_method": "hist", "device": "cpu"}
     logging.info("No GPU detected. Xgboost will use CPU with parameters: %s", params)
     return params
 
