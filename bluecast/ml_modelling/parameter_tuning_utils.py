@@ -73,6 +73,28 @@ def update_params_with_best_params(
     return param
 
 
+def update_hyperparam_space_after_nth_trial(
+    trial: optuna.Trial,
+    conf_xgboost: Union[XgboostTuneParamsConfig, XgboostTuneParamsRegressionConfig],
+    nth_trial: int = 25,
+) -> Union[XgboostTuneParamsConfig, XgboostTuneParamsRegressionConfig]:
+    eta_min_before = conf_xgboost.eta_min
+
+    if trial.number % nth_trial * 2 == 0 and eta_min_before == 5e-2:
+        conf_xgboost.eta_min = 1e-3
+        conf_xgboost.eta_max = 0.3
+        conf_xgboost.sub_sample_min = 0.5
+        conf_xgboost.min_child_weight_max = 100.0
+
+    if trial.number % nth_trial == 0 and eta_min_before == 1e-3:
+        conf_xgboost.eta_min = 5e-2
+        conf_xgboost.eta_max = 0.25
+        conf_xgboost.sub_sample_min = 1.0
+        conf_xgboost.min_child_weight_max = 50.0
+
+    return conf_xgboost
+
+
 def sample_data(
     x_train: pd.DataFrame,
     x_test: pd.DataFrame,
