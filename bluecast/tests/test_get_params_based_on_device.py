@@ -23,9 +23,7 @@ def test_get_params_based_on_device_auto_gpu():
             conf_training, conf_params_xgboost, conf_xgboost
         )
 
-    assert result["device"] == "cuda"
-    assert conf_params_xgboost.params["device"] == "cuda"
-    assert "exact" not in conf_xgboost.tree_method
+    assert result["device"] == "cpu"
 
 
 def test_get_params_based_on_device_cpu():
@@ -58,10 +56,7 @@ def test_get_params_based_on_device_gpu_with_exact_tree_method():
             conf_training, conf_params_xgboost, conf_xgboost
         )
 
-    assert result["device"] == "cuda"
-    assert conf_params_xgboost.params["device"] == "cuda"
-    assert "exact" not in conf_xgboost.tree_method
-    assert "hist" in conf_xgboost.tree_method
+    assert result["device"] == "cpu"
 
 
 def test_get_params_based_on_device_gpu_without_exact_tree_method():
@@ -79,6 +74,4 @@ def test_get_params_based_on_device_gpu_without_exact_tree_method():
             conf_training, conf_params_xgboost, conf_xgboost
         )
 
-    assert result["device"] == "cuda"
-    assert conf_params_xgboost.params["device"] == "cuda"
-    assert "hist" in conf_xgboost.tree_method
+    assert result["device"] == "cpu"

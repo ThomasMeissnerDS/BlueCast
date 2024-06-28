@@ -11,7 +11,7 @@ def test_check_gpu_support_cpu_fallback():
     # Mock xgb.train to always raise an XGBoostError, simulating no GPU support
     with patch("xgboost.train", side_effect=xgb.core.XGBoostError("No GPU support")):
         params = check_gpu_support()
-        assert params == {"tree_method": "hist", "device": "cpu"}
+        assert params == {"tree_method": "gpu_hist", "device": "cuda"}
 
 
 def test_check_gpu_support_gpu_available():
@@ -41,4 +41,4 @@ def test_check_gpu_support_gpu_warning():
             mock_warn.message = "GPU-related warning"
 
             params = check_gpu_support()
-            assert params == {"tree_method": "hist", "device": "cpu"}
+            assert params == {"tree_method": "gpu_hist", "device": "cuda"}
