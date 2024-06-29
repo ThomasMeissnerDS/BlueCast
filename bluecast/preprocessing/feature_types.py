@@ -85,6 +85,9 @@ class FeatureTypeDetector:
                     self.zero_var_cols.append(col)
 
         df = self.transform_drop_zero_variance_columns(df)
+        logging.info(
+            f"Dropped the following columns as constants only: {self.zero_var_cols}."
+        )
         return df
 
     def transform_drop_zero_variance_columns(self, df: pd.DataFrame) -> pd.DataFrame:
