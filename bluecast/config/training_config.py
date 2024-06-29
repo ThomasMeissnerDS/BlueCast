@@ -86,7 +86,7 @@ class TrainingConfig(BaseModel):
     autotune_model: bool = True
     autotune_on_device: Literal["auto", "gpu", "cpu"] = "auto"
     autotune_n_random_seeds: int = 1
-    update_hyperparameter_search_space_after_nth_trial: int = 25
+    update_hyperparameter_search_space_after_nth_trial: int = 50
     plot_hyperparameter_tuning_overview: bool = True
     enable_feature_selection: bool = False
     calculate_shap_values: bool = True

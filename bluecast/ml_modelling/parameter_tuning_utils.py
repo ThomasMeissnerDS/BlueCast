@@ -90,7 +90,8 @@ def update_hyperparam_space_after_nth_trial(
         conf_xgboost.eta_min = 5e-2
         conf_xgboost.eta_max = 0.25
         conf_xgboost.sub_sample_min = 1.0
-        conf_xgboost.min_child_weight_max = 50.0
+        conf_xgboost.min_child_weight_max = 10.0
+        conf_xgboost.col_sample_by_level_min = 0.5
 
     return conf_xgboost
 

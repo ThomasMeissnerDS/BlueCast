@@ -462,6 +462,7 @@ class XgboostModel(BaseClassMlModel):
                     self.conf_params_xgboost.params, xgboost_best_param
                 )
                 logging.info(f"Best params: {self.conf_params_xgboost.params}")
+                print(f"Best params: {self.conf_params_xgboost.params}")
                 self.conf_params_xgboost.sample_weight = xgboost_best_param[
                     "sample_weight"
                 ]
@@ -863,6 +864,7 @@ class XgboostModel(BaseClassMlModel):
                 f"Grid search improved eval metric from {best_score_cv} to {self.best_score}."
             )
             logging.info(f"Best params: {self.conf_params_xgboost.params}")
+            print(f"Best params: {self.conf_params_xgboost.params}")
         else:
             logging.info(
                 f"Grid search could not improve eval metric of {best_score_cv}. Best score reached was {study.best_value}"

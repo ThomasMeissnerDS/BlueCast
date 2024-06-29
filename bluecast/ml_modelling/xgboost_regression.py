@@ -458,6 +458,7 @@ class XgboostModelRegression(BaseClassMlRegressionModel):
                     self.conf_params_xgboost.params, xgboost_best_param
                 )
                 logging.info(f"Best params: {self.conf_params_xgboost.params}")
+                print(f"Best params: {self.conf_params_xgboost.params}")
 
     def create_d_matrices(self, x_train, y_train, x_test, y_test):
         d_train = xgb.DMatrix(
@@ -838,7 +839,8 @@ class XgboostModelRegression(BaseClassMlRegressionModel):
             logging.info(
                 f"Grid search improved eval metric from {best_score_cv} to {self.best_score}."
             )
-            logging.info("Best params: {self.conf_params_xgboost.params}")
+            logging.info(f"Best params: {self.conf_params_xgboost.params}")
+            print(f"Best params: {self.conf_params_xgboost.params}")
         else:
             logging.info(
                 f"Grid search could not improve eval metric of {best_score_cv}. Best score reached was {study.best_value}"
