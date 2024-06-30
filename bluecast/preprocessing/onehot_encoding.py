@@ -39,10 +39,8 @@ class OneHotCategoryEncoder:
         x_new = x.drop(
             self.cat_columns, axis=1
         ).copy()  # copy against high fragmentation
-        x_new[encoded_cats.columns.to_list()] = encoded_cats
-        x_new[encoded_cats.columns.to_list()] = x_new[
-            encoded_cats.columns.to_list()
-        ].astype(int)
+        x_new = self.append_encoded_columns(x_new, encoded_cats)
+
         self.encoders["onehot_encoder_all_cols"] = enc
         return x_new.copy()  # copy against high fragmentation
 
@@ -52,8 +50,18 @@ class OneHotCategoryEncoder:
         enc = self.encoders["onehot_encoder_all_cols"]
         encoded_cats = enc.transform(x[self.cat_columns])
         x = x.drop(self.cat_columns, axis=1)
+        x = self.append_encoded_columns(x, encoded_cats)
+        return x
+
+    def append_encoded_columns(
+        self, x: pd.DataFrame, encoded_cats: pd.DataFrame
+    ) -> pd.DataFrame:
+        """Append encoded columns to the DataFrame."""
         x[encoded_cats.columns.to_list()] = encoded_cats
         x[encoded_cats.columns.to_list()] = x[encoded_cats.columns.to_list()].astype(
             int
         )
+        # Set all new columns to -1 where all values are 0
+        mask_all_zero = (x[encoded_cats.columns.to_list()] == 0).all(axis=1)
+        x.loc[mask_all_zero, encoded_cats.columns.to_list()] = -1
         return x

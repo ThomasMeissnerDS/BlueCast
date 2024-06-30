@@ -39,6 +39,8 @@ class TrainingConfig(BaseModel):
     :param autotune_on_device: Whether to autotune on CPU or GPU. Chose any of ["auto", "gpu", "cpu"].
         Not used when custom ML model is passed.
     :param autotune_n_random_seeds: Number of random seeds to use for autotuning. This changes Optuna's random seed only.
+        Will be updated back after every nth trial back again. Not used when custom ML model is passed.
+    :param update_hyperparameter_search_space_after_nth_trial: Update the hyperparameter search space after the nth trial.
         Not used when custom ML model is passed.
     :param plot_hyperparameter_tuning_overview: Whether to plot the hyperparameter tuning overview. Not used when custom
         ML model is passed.
@@ -84,6 +86,7 @@ class TrainingConfig(BaseModel):
     autotune_model: bool = True
     autotune_on_device: Literal["auto", "gpu", "cpu"] = "auto"
     autotune_n_random_seeds: int = 1
+    update_hyperparameter_search_space_after_nth_trial: int = 25
     plot_hyperparameter_tuning_overview: bool = True
     enable_feature_selection: bool = False
     calculate_shap_values: bool = True
@@ -115,17 +118,17 @@ class XgboostTuneParamsConfig(BaseModel):
     lambda_min: float = 1
     lambda_max: float = 100
     gamma_min: float = 1e-8
-    gamma_max: float = 5
+    gamma_max: float = 100
     min_child_weight_min: float = 1
-    min_child_weight_max: float = 10
+    min_child_weight_max: float = 100
     sub_sample_min: float = 0.5
     sub_sample_max: float = 1.0
     col_sample_by_tree_min: float = 0.5
     col_sample_by_tree_max: float = 1.0
-    col_sample_by_level_min: float = 0.5
+    col_sample_by_level_min: float = 1.0
     col_sample_by_level_max: float = 1.0
-    eta_min: float = 5e-2
-    eta_max: float = 0.25
+    eta_min: float = 1e-3
+    eta_max: float = 0.3
     steps_min: int = 50
     steps_max: int = 1000
     verbosity_during_hyperparameter_tuning: int = 0
@@ -147,17 +150,17 @@ class XgboostTuneParamsRegressionConfig(BaseModel):
     lambda_min: float = 1e-8
     lambda_max: float = 100
     gamma_min: float = 1e-8
-    gamma_max: float = 5
+    gamma_max: float = 100
     min_child_weight_min: float = 1
-    min_child_weight_max: float = 10
-    sub_sample_min: float = 1.0
+    min_child_weight_max: float = 100
+    sub_sample_min: float = 0.5
     sub_sample_max: float = 1.0
     col_sample_by_tree_min: float = 0.5
     col_sample_by_tree_max: float = 1.0
-    col_sample_by_level_min: float = 0.5
+    col_sample_by_level_min: float = 1.0
     col_sample_by_level_max: float = 1.0
-    eta_min: float = 5e-2
-    eta_max: float = 0.25
+    eta_min: float = 1e-3
+    eta_max: float = 0.3
     steps_min: int = 50
     steps_max: int = 1000
     verbosity_during_hyperparameter_tuning: int = 0

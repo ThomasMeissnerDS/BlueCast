@@ -1,52 +1,68 @@
 """General utilities."""
 
 import logging
+import warnings
 from typing import Any, Dict, Optional
 
 import dill as pickle
 import numpy as np
 import xgboost as xgb
 
+# Configure logging
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger()
+
+
+# Capture warnings and redirect them to logging
+def warning_to_logger(message, category, filename, lineno, file=None, line=None):
+    logger.warning(f"{filename}:{lineno}: {category.__name__}: {message}")
+
+
+warnings.showwarning = warning_to_logger
+
 
 def check_gpu_support() -> Dict[str, str]:
-    logging.info("Start checking if GPU is available for usage.")
+    logger.info("Start checking if GPU is available for usage.")
     data = np.random.rand(50, 2)
     label = np.random.randint(2, size=50)
     d_train = xgb.DMatrix(data, label=label)
 
-    try:
-        params = {
-            "device": "cuda",
-            "tree_method": "gpu",
-            "predictor": "gpu_predictor",
-        }
-        xgb.train(params, d_train, num_boost_round=2)
-        logging.info("Xgboost uses GPU.")
-        logging.info(
-            f"""Can use {params} for Xgboost (Will only be used when conf_training.autotune_on_device either
-        'auto' or 'gpu'."""
-        )
-        return params
-    except Exception:
-        pass
+    params_list = [
+        {"device": "cuda", "tree_method": "gpu_hist"},
+        {"device": "cuda"},
+        {"tree_method": "gpu_hist"},
+    ]
 
-    try:
-        params = {
-            "tree_method": "gpu",
-            # "predictor": "gpu_predictor",
-        }
-        xgb.train(params, d_train, num_boost_round=2)
-        logging.info("Xgboost uses GPU.")
-        logging.info(f"Can use {params}.")
-        return params
-    except Exception:
-        params = {"tree_method": "hist", "device": "cpu"}
-        logging.info("Xgboost uses CPU.")
-        logging.info(
-            f"""Can use {params} for Xgboost (Will only be used when conf_training.autotune_on_device either
-        'auto' or 'gpu'."""
-        )
-        return params
+    for params in params_list:
+        try:
+            with warnings.catch_warnings(record=True) as w:
+                warnings.simplefilter("always")
+                xgb.train(params, d_train, num_boost_round=2)
+
+                # Check if any captured warnings indicate GPU-related issues
+                gpu_warning = any(
+                    "GPU" in str(warn.message) or "gpu" in str(warn.message)
+                    for warn in w
+                )
+                if gpu_warning:
+                    logger.warning(f"GPU-related warning captured: {w}")
+
+                # If no warnings or no GPU-related warnings, consider GPU support confirmed
+                if not gpu_warning:
+                    logger.info("Xgboost is using GPU with parameters: %s", params)
+                    return params
+                else:
+                    logger.warning(
+                        "GPU settings applied but GPU-related warning detected: %s",
+                        params,
+                    )
+        except xgb.core.XGBoostError as e:
+            logger.warning("Failed with params %s. Error: %s", params, str(e))
+
+    # If no GPU parameters work, fall back to CPU
+    params = {"tree_method": "hist", "device": "cpu"}
+    logger.info("No GPU detected. Xgboost will use CPU with parameters: %s", params)
+    return params
 
 
 def save_to_production(

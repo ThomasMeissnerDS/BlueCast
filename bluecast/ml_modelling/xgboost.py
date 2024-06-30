@@ -23,10 +23,11 @@ from bluecast.config.training_config import (
 )
 from bluecast.evaluation.eval_metrics import ClassificationEvalWrapper
 from bluecast.experimentation.tracking import ExperimentTracker
-from bluecast.general_utils.general_utils import check_gpu_support
 from bluecast.ml_modelling.base_classes import BaseClassMlModel
 from bluecast.ml_modelling.parameter_tuning_utils import (
+    get_params_based_on_device,
     sample_data,
+    update_hyperparam_space_after_nth_trial,
     update_params_based_on_tree_method,
     update_params_with_best_params,
 )
@@ -217,19 +218,21 @@ class XgboostModel(BaseClassMlModel):
                 "At least one of the configs or experiment_tracker is None, which is not allowed"
             )
 
-        if self.conf_training.autotune_on_device in ["auto", "gpu"]:
-            train_on = check_gpu_support()
-            self.conf_params_xgboost.params["device"] = train_on["device"]
-        else:
-            train_on = {"tree_method": "exact", "device": "cpu"}
-            if "exact" in self.conf_xgboost.tree_method:
-                self.conf_xgboost.tree_method.remove("exact")
+        train_on = get_params_based_on_device(
+            self.conf_training, self.conf_params_xgboost, self.conf_xgboost
+        )
 
         x_train, x_test, y_train, y_test = sample_data(
             x_train, x_test, y_train, y_test, self.conf_training
         )
 
         def objective(trial):
+            self.conf_xgboost = update_hyperparam_space_after_nth_trial(
+                trial,
+                self.conf_xgboost,
+                self.conf_training.update_hyperparameter_search_space_after_nth_trial,
+            )
+
             param = {
                 "validate_parameters": False,
                 "objective": self.conf_xgboost.xgboost_objective,
@@ -459,6 +462,7 @@ class XgboostModel(BaseClassMlModel):
                     self.conf_params_xgboost.params, xgboost_best_param
                 )
                 logging.info(f"Best params: {self.conf_params_xgboost.params}")
+                print(f"Best params: {self.conf_params_xgboost.params}")
                 self.conf_params_xgboost.sample_weight = xgboost_best_param[
                     "sample_weight"
                 ]
@@ -860,6 +864,7 @@ class XgboostModel(BaseClassMlModel):
                 f"Grid search improved eval metric from {best_score_cv} to {self.best_score}."
             )
             logging.info(f"Best params: {self.conf_params_xgboost.params}")
+            print(f"Best params: {self.conf_params_xgboost.params}")
         else:
             logging.info(
                 f"Grid search could not improve eval metric of {best_score_cv}. Best score reached was {study.best_value}"

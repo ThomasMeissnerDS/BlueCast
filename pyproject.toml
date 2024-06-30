@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "bluecast"
-version = "1.4.1"
+version = "1.4.2"
 description = "A lightweight and fast automl framework"
 authors = ["Thomas Meißner <meissnercorporation@gmx.de>"]
 license = "GPL-3.0-only"
@@ -35,8 +35,7 @@ xgboost = "<2.2.0" # from here saving as binary is not default anymore
 
 [tool.poetry.group.dev.dependencies]
 recommonmark = "^0.7.1"
-ipython = "^7.10.0"
-jupyter_core = "^4.7.0"
+ipython = "^8.0.0"
 myst-parser = ">=0.14.0, <1.0.0"
 pre-commit = "^2.9.3"
 pytest = "^6.2.5"
