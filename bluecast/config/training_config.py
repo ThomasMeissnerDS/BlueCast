@@ -138,6 +138,7 @@ class XgboostTuneParamsConfig(BaseModel):
     tree_method: List[str] = ["exact", "approx", "hist"]
     xgboost_objective: str = "multi:softprob"
     xgboost_eval_metric: str = "mlogloss"
+    xgboost_eval_metric_tune_direction: Literal["minimize", "maximize"] = "minimize"
 
 
 class XgboostTuneParamsRegressionConfig(BaseModel):
@@ -170,6 +171,7 @@ class XgboostTuneParamsRegressionConfig(BaseModel):
     tree_method: List[str] = ["exact", "approx", "hist"]
     xgboost_objective: str = "reg:squarederror"
     xgboost_eval_metric: str = "rmse"
+    xgboost_eval_metric_tune_direction: Literal["minimize", "maximize"] = "minimize"
 
 
 @dataclass

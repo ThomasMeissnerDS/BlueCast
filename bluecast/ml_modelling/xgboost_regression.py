@@ -397,7 +397,7 @@ class XgboostModelRegression(BaseClassMlRegressionModel):
                 warn_independent_sampling=False,
             )
             study = optuna.create_study(
-                direction="minimize",
+                direction=self.conf_xgboost.xgboost_eval_metric_tune_direction,
                 sampler=sampler,
                 study_name="xgboost regression tuning",
                 pruner=optuna.pruners.MedianPruner(
@@ -799,7 +799,7 @@ class XgboostModelRegression(BaseClassMlRegressionModel):
             ValueError("Some parameters are not floats or strings")
 
         study = optuna.create_study(
-            direction="minimize",
+            direction=self.conf_xgboost.xgboost_eval_metric_tune_direction,
             sampler=optuna.samplers.GridSampler(search_space),
             pruner=optuna.pruners.MedianPruner(n_startup_trials=20, n_warmup_steps=50),
         )
