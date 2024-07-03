@@ -127,8 +127,8 @@ class XgboostTuneParamsConfig(BaseModel):
     col_sample_by_tree_max: float = 1.0
     col_sample_by_level_min: float = 1.0
     col_sample_by_level_max: float = 1.0
-    max_bin_min: int = 256
-    max_bin_max: int = 25000
+    max_bin_min: int = 255
+    max_bin_max: int = 255
     eta_min: float = 1e-3
     eta_max: float = 0.3
     steps_min: int = 50
@@ -162,6 +162,8 @@ class XgboostTuneParamsRegressionConfig(BaseModel):
     col_sample_by_tree_max: float = 1.0
     col_sample_by_level_min: float = 1.0
     col_sample_by_level_max: float = 1.0
+    max_bin_min: int = 128
+    max_bin_max: int = 512
     eta_min: float = 1e-3
     eta_max: float = 0.3
     steps_min: int = 50
