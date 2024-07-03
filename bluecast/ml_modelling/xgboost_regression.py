@@ -440,7 +440,6 @@ class XgboostModelRegression(BaseClassMlRegressionModel):
                     "max_depth": xgboost_best_param[
                         "max_depth"
                     ],  # maximum depth of the decision trees being trained
-                    "max_bin": xgboost_best_param["max_bin"],
                     "alpha": xgboost_best_param["alpha"],
                     "lambda": xgboost_best_param["lambda"],
                     "gamma": xgboost_best_param["gamma"],
