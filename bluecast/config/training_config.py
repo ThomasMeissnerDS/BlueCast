@@ -86,7 +86,7 @@ class TrainingConfig(BaseModel):
     autotune_model: bool = True
     autotune_on_device: Literal["auto", "gpu", "cpu"] = "auto"
     autotune_n_random_seeds: int = 1
-    update_hyperparameter_search_space_after_nth_trial: int = 25
+    update_hyperparameter_search_space_after_nth_trial: int = 200
     plot_hyperparameter_tuning_overview: bool = True
     enable_feature_selection: bool = False
     calculate_shap_values: bool = True
@@ -118,7 +118,7 @@ class XgboostTuneParamsConfig(BaseModel):
     lambda_min: float = 1
     lambda_max: float = 100
     gamma_min: float = 1e-8
-    gamma_max: float = 100
+    gamma_max: float = 10
     min_child_weight_min: float = 1
     min_child_weight_max: float = 100
     sub_sample_min: float = 0.5
@@ -127,8 +127,8 @@ class XgboostTuneParamsConfig(BaseModel):
     col_sample_by_tree_max: float = 1.0
     col_sample_by_level_min: float = 1.0
     col_sample_by_level_max: float = 1.0
-    max_bin_min: int = 255
-    max_bin_max: int = 255
+    max_bin_min: int = 128
+    max_bin_max: int = 512
     eta_min: float = 1e-3
     eta_max: float = 0.3
     steps_min: int = 50
@@ -153,7 +153,7 @@ class XgboostTuneParamsRegressionConfig(BaseModel):
     lambda_min: float = 1e-8
     lambda_max: float = 100
     gamma_min: float = 1e-8
-    gamma_max: float = 100
+    gamma_max: float = 10
     min_child_weight_min: float = 1
     min_child_weight_max: float = 100
     sub_sample_min: float = 0.5

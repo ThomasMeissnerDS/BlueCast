@@ -552,3 +552,15 @@ def test_precise_cv_tuning_warnings(bluecast_instance):
     ):
         bluecast_instance.conf_training.hypertuning_cv_folds = 1
         bluecast_instance.initial_checks(df)
+
+
+def test_categorical_encoding_not_supported_by_exact_tree_method(bluecast_instance):
+    df = pd.DataFrame({"feature1": [1, 2, 3], "target": [0, 1, 0]})
+    bluecast_instance.conf_training.calculate_shap_values = True
+    bluecast_instance.conf_training.cat_encoding_via_ml_algorithm = True
+    with pytest.warns(
+        UserWarning,
+        match=f"""Categorical encoding via ML algorithm is enabled. The tree method 'exact' is not supported
+            with categorical encoding within Xgboost. The tree method 'exact' has been removed. Using {bluecast_instance.conf_xgboost.tree_method} only during hyperparameter tuning.""",
+    ):
+        bluecast_instance.initial_checks(df)
