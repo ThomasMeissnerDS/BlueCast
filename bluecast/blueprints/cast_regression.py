@@ -170,9 +170,6 @@ class BlueCastRegression:
         if not self.conf_training:
             self.conf_training = TrainingConfig()
 
-        if not self.conf_xgboost:
-            self.conf_xgboost = XgboostTuneParamsRegressionConfig()
-
         if not self.conf_training.enable_feature_selection:
             message = """Feature selection is disabled. Update the TrainingConfig param 'enable_feature_selection'
             to enable it or make use of a custom preprocessor to do it manually during the last mile computations step.
@@ -254,14 +251,15 @@ class BlueCastRegression:
             or higher or disable precise_cv_tuning."""
             warnings.warn(message, UserWarning, stacklevel=2)
 
-        if (
-            self.conf_training.cat_encoding_via_ml_algorithm
-            and "exact" in self.conf_xgboost.tree_method
-        ):
-            self.conf_xgboost.tree_method.remove("exact")
-            message = f"""Categorical encoding via ML algorithm is enabled. The tree method 'exact' is not supported
-            with categorical encoding within Xgboost. The tree method 'exact' has been removed. Using {self.conf_xgboost.tree_method} only during hyperparameter tuning."""
-            warnings.warn(message, UserWarning, stacklevel=2)
+        if self.conf_xgboost:
+            if (
+                self.conf_training.cat_encoding_via_ml_algorithm
+                and "exact" in self.conf_xgboost.tree_method
+            ):
+                self.conf_xgboost.tree_method.remove("exact")
+                message = f"""Categorical encoding via ML algorithm is enabled. The tree method 'exact' is not supported
+                with categorical encoding within Xgboost. The tree method 'exact' has been removed. Using {self.conf_xgboost.tree_method} only during hyperparameter tuning."""
+                warnings.warn(message, UserWarning, stacklevel=2)
 
     def fit(self, df: pd.DataFrame, target_col: str) -> None:
         """Train a full ML pipeline."""
