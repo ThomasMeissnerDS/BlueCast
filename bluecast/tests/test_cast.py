@@ -496,6 +496,6 @@ def test_categorical_encoding_not_supported_by_exact_tree_method(bluecast_instan
     with pytest.warns(
         UserWarning,
         match=f"""Categorical encoding via ML algorithm is enabled. The tree method 'exact' is not supported
-            with categorical encoding within Xgboost. The tree method 'exact' has been removed. Using {bluecast_instance.conf_xgboost.tree_method} only during hyperparameter tuning.""",
+            with categorical encoding within Xgboost. The tree method 'exact' has been removed. Using {bluecast_instance.conf_xgboost.tree_method.remove("exact")} only during hyperparameter tuning.""",
     ):
         bluecast_instance.initial_checks(df)
