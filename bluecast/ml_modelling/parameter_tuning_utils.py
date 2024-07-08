@@ -52,13 +52,16 @@ def get_params_based_on_device(
     conf_xgboost: Union[XgboostTuneParamsConfig, XgboostTuneParamsRegressionConfig],
 ) -> Dict[str, Any]:
     """Get parameters based on available or chosen device."""
-    if conf_training.autotune_on_device in ["auto", "gpu"]:
+    if conf_training.autotune_on_device in ["auto"]:
         train_on = check_gpu_support()
         conf_params_xgboost.params["device"] = train_on["device"]
         if "exact" in conf_xgboost.tree_method and conf_params_xgboost.params[
             "device"
         ] in ["gpu", "cuda"]:
             conf_xgboost.tree_method.remove("exact")
+    elif conf_training.autotune_on_device == "gpu":
+        train_on = {"tree_method": "hist", "device": "cuda"}
+        conf_xgboost.tree_method.remove("exact")
     else:
         train_on = {"tree_method": "exact", "device": "cpu"}
     return train_on

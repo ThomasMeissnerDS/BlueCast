@@ -14,7 +14,12 @@ import numpy as np
 import optuna
 import pandas as pd
 import xgboost as xgb
-from sklearn.metrics import mean_squared_error
+
+try:
+    from sklearn.metrics import root_mean_squared_error as mean_squared_error
+except ImportError:
+    from sklearn.metrics import mean_squared_error
+
 from sklearn.model_selection import KFold, StratifiedKFold
 from sklearn.preprocessing import LabelEncoder
 

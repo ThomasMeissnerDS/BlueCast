@@ -10,6 +10,12 @@ from typing import Any, Dict, Literal, Union
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
+
+try:
+    from sklearn.metrics import root_mean_squared_error
+except ImportError:
+    from sklearn.metrics import mean_squared_error as root_mean_squared_error
+
 from sklearn.metrics import (
     accuracy_score,
     classification_report,
@@ -213,9 +219,20 @@ def eval_regressor(y_true: np.ndarray, y_preds: np.ndarray) -> Dict[str, Any]:
     print(f"The MAE score is {mean_absolute_error_score}")
     median_absolute_error_score = median_absolute_error(y_true, y_preds)
     print(f"The Median absolute error score is {median_absolute_error_score}")
-    mean_squared_error_score = mean_squared_error(y_true, y_preds, squared=True)
-    print(f"The MSE score is {mean_squared_error_score}")
-    root_mean_squared_error_score = mean_squared_error(y_true, y_preds, squared=False)
+
+    try:
+        mean_squared_error_score = mean_squared_error(y_true, y_preds)
+        print(f"The MSE score is {mean_squared_error_score}")
+    except Exception:
+        mean_squared_error_score = mean_squared_error(y_true, y_preds, squared=True)
+        print(f"The MSE score is {mean_squared_error_score}")
+
+    try:
+        root_mean_squared_error_score = root_mean_squared_error(y_true, y_preds)
+    except Exception:
+        root_mean_squared_error_score = mean_squared_error(
+            y_true, y_preds, squared=False
+        )
     print(f"The RMSE score is {root_mean_squared_error_score}")
 
     evaluation_scores = {
@@ -314,7 +331,7 @@ class RegressionEvalWrapper:
     def __init__(
         self,
         higher_is_better: bool = False,
-        metric_func=mean_squared_error,
+        metric_func=None,
         metric_name: str = "Mean squared error",
         **metric_func_args,
     ):
