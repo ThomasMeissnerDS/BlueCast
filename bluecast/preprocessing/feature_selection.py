@@ -56,7 +56,7 @@ class BoostaRootaWrapper(CustomPreprocessing):
         logging.info(
             f"{len(self.selected_features)} from {len(df.columns)} features selected."
         )
-        logging.info("Selected features are {self.selected_features}).")
+        logging.info(f"Selected features are {self.selected_features}).")
         return df.loc[:, self.selected_features], targets
 
     def transform(
