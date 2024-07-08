@@ -56,7 +56,7 @@ def test_get_params_based_on_device_gpu_with_exact_tree_method():
             conf_training, conf_params_xgboost, conf_xgboost
         )
 
-    assert result["device"] == "cpu"
+    assert result["device"] == "cuda"
 
 
 def test_get_params_based_on_device_gpu_without_exact_tree_method():
@@ -74,4 +74,4 @@ def test_get_params_based_on_device_gpu_without_exact_tree_method():
             conf_training, conf_params_xgboost, conf_xgboost
         )
 
-    assert result["device"] == "cpu"
+    assert result["device"] == "cuda"

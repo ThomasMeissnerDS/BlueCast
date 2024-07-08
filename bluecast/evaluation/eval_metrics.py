@@ -336,7 +336,14 @@ class RegressionEvalWrapper:
         **metric_func_args,
     ):
         self.higher_is_better = higher_is_better
-        self.metric_func = metric_func
+        if metric_func:
+            self.metric_func = metric_func
+        else:
+            try:
+                self.metric_func = root_mean_squared_error
+            except Exception:
+                self.metric_func = mean_squared_error
+                self.metric_func_args = {"squared": True}
         self.metric_name = metric_name
         self.metric_func_args = metric_func_args
 
