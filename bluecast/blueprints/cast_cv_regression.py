@@ -4,7 +4,8 @@ from typing import Any, List, Literal, Optional, Tuple, Union
 import numpy as np
 import pandas as pd
 from sklearn.metrics import mean_squared_error
-from sklearn.model_selection import RepeatedKFold
+from sklearn.model_selection import RepeatedStratifiedKFold
+from sklearn.preprocessing import LabelEncoder
 
 from bluecast.blueprints.cast_regression import BlueCastRegression
 from bluecast.config.training_config import (
@@ -156,14 +157,17 @@ class BlueCastCVRegression:
         if not self.conf_training:
             self.conf_training = TrainingConfig()
 
+        le = LabelEncoder()
+        y_binned = le.fit_transform(pd.qcut(y, 10, duplicates="drop"))
+
         if not self.stratifier:
-            self.stratifier = RepeatedKFold(
+            self.stratifier = RepeatedStratifiedKFold(
                 n_splits=self.conf_training.bluecast_cv_train_n_model[0],
                 n_repeats=self.conf_training.bluecast_cv_train_n_model[1],
                 random_state=self.conf_training.global_random_state,
             )
 
-        for fn, (trn_idx, val_idx) in enumerate(self.stratifier.split(X, y)):
+        for fn, (trn_idx, val_idx) in enumerate(self.stratifier.split(X, y_binned)):
             X_train, X_val = X.iloc[trn_idx], X.iloc[val_idx]
             y_train, y_val = y.iloc[trn_idx], y.iloc[val_idx]
             x_train = pd.concat([X_train, X_val], ignore_index=True)
@@ -214,14 +218,17 @@ class BlueCastCVRegression:
         if not self.conf_training:
             self.conf_training = TrainingConfig()
 
+        le = LabelEncoder()
+        y_binned = le.fit_transform(pd.qcut(y, 10, duplicates="drop"))
+
         if not self.stratifier:
-            self.stratifier = RepeatedKFold(
+            self.stratifier = RepeatedStratifiedKFold(
                 n_splits=self.conf_training.bluecast_cv_train_n_model[0],
                 n_repeats=self.conf_training.bluecast_cv_train_n_model[1],
                 random_state=self.conf_training.global_random_state,
             )
 
-        for fn, (trn_idx, val_idx) in enumerate(self.stratifier.split(X, y)):
+        for fn, (trn_idx, val_idx) in enumerate(self.stratifier.split(X, y_binned)):
             X_train, X_val = X.iloc[trn_idx], X.iloc[val_idx]
             y_train, y_val = y.iloc[trn_idx], y.iloc[val_idx]
 

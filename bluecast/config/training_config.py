@@ -150,7 +150,7 @@ class XgboostTuneParamsRegressionConfig(BaseModel):
     max_depth_max: int = 10
     alpha_min: float = 1e-8
     alpha_max: float = 100
-    lambda_min: float = 1e-8
+    lambda_min: float = 1
     lambda_max: float = 100
     gamma_min: float = 1e-8
     gamma_max: float = 10
@@ -189,7 +189,6 @@ class XgboostFinalParamConfig:
         "lambda": 1.0,
         "gamma": 0.0,
         "subsample": 1.0,
-        "max_bin": 255,
         "min_child_weight": 1.0,
         "colsample_bytree": 1.0,
         "colsample_bylevel": 1.0,
@@ -198,7 +197,6 @@ class XgboostFinalParamConfig:
         "objective": "multi:softprob",
         "eval_metric": "mlogloss",
         "tree_method": "hist",
-        "grow_policy": "depthwise",
         "device": "cpu",
     }
     sample_weight: Optional[Dict[str, float]] = None
@@ -216,7 +214,6 @@ class XgboostRegressionFinalParamConfig:
         "lambda": 1.0,
         "gamma": 0.0,
         "subsample": 1.0,
-        "max_bin": 255,
         "min_child_weight": 1.0,
         "colsample_bytree": 1.0,
         "colsample_bylevel": 1.0,
@@ -225,6 +222,5 @@ class XgboostRegressionFinalParamConfig:
         "objective": "reg:squarederror",
         "eval_metric": "rmse",
         "tree_method": "hist",
-        "grow_policy": "depthwise",
         "device": "cpu",
     }

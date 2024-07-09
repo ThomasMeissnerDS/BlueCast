@@ -1,3 +1,4 @@
+import re
 from typing import Optional, Tuple
 
 import numpy as np
@@ -496,9 +497,11 @@ def test_categorical_encoding_not_supported_by_exact_tree_method(bluecast_instan
     config = XgboostTuneParamsConfig()
     config.tree_method.remove("exact")
 
-    with pytest.warns(
-        UserWarning,
-        match=f"""Categorical encoding via ML algorithm is enabled. The tree method 'exact' is not supported
-            with categorical encoding within Xgboost. The tree method 'exact' has been removed. Using {config.tree_method} only during hyperparameter tuning.""",
-    ):
+    expected_message = re.escape(
+        "Categorical encoding via ML algorithm is enabled. The tree method 'exact' is not supported "
+        "with categorical encoding within Xgboost. The tree method 'exact' has been removed. Using "
+        f"{config.tree_method} only during hyperparameter tuning."
+    )
+
+    with pytest.warns(UserWarning, match=expected_message):
         bluecast_instance.initial_checks(df)
