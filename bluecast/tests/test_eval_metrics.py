@@ -5,6 +5,7 @@ from sklearn.metrics import (
     log_loss,
     matthews_corrcoef,
     mean_squared_error,
+    root_mean_squared_error,
 )
 
 from bluecast.evaluation.eval_metrics import (
@@ -88,7 +89,7 @@ def test_invalid_eval_against():
 def test_regression_init():
     wrapper = RegressionEvalWrapper()
     assert not wrapper.higher_is_better
-    assert wrapper.metric_func == mean_squared_error
+    assert wrapper.metric_func == root_mean_squared_error
 
 
 def test_regression_run_with_args(sample_data_regression):

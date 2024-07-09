@@ -257,8 +257,7 @@ class BlueCast:
                 and "exact" in self.conf_xgboost.tree_method
             ):
                 self.conf_xgboost.tree_method.remove("exact")
-                message = f"""Categorical encoding via ML algorithm is enabled. The tree method 'exact' is not supported
-                with categorical encoding within Xgboost. The tree method 'exact' has been removed. Using {self.conf_xgboost.tree_method} only during hyperparameter tuning."""
+                message = f"""Categorical encoding via ML algorithm is enabled. The tree method 'exact' is not supported with categorical encoding within Xgboost. The tree method 'exact' has been removed. Using {self.conf_xgboost.tree_method} only during hyperparameter tuning."""
                 warnings.warn(message, UserWarning, stacklevel=2)
 
     def fit(self, df: pd.DataFrame, target_col: str) -> None:
