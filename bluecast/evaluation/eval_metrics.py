@@ -118,24 +118,15 @@ def plot_probability_distribution(
         probs.shape[0] == y_classes.shape[0]
     ), "probs and y_classes must have the same number of samples"
 
-    print(f"Initial shape of probs: {probs.shape}")
-
     # Ensure probs is a 2D array
     if probs.ndim == 1:
         probs = np.column_stack((probs, 1 - probs))
     elif probs.ndim == 2 and probs.shape[1] == 1:
         probs = np.column_stack((probs[:, 0], 1 - probs[:, 0]))
-
-    print(f"Shape of probs after ensuring 2D: {probs.shape}")
-
     colors = plt.get_cmap("tab10")  # Get a colormap
 
     for class_idx in range(probs.shape[1]):
-        print(class_idx)
         class_probs = probs[:, class_idx]
-        print(f"Class {class_idx} has {class_probs.shape} shape")
-        class_labels = y_classes == class_idx
-        print(f"Class labels {class_labels} ")
         plt.hist(
             class_probs,
             bins=30,
