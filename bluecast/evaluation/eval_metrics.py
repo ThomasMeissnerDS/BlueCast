@@ -120,10 +120,8 @@ def plot_probability_distribution(
 
     # Ensure probs is a 2D array
     if probs.ndim == 1:
-        # Convert 1D binary probabilities to 2D
         probs = np.column_stack((probs, 1 - probs))
     elif probs.ndim == 2 and probs.shape[1] == 1:
-        # Handle the case where probs is (n_samples, 1) by converting it to (n_samples, 2)
         probs = np.column_stack((probs[:, 0], 1 - probs[:, 0]))
 
     unique_classes = np.unique(y_classes)
