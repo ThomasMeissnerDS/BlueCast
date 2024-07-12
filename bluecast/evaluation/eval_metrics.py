@@ -105,25 +105,43 @@ def plot_roc_auc(
 
 
 def plot_probability_distribution(
-    y_probs: np.array, num_bins: int = 20, title: str = "Probability Distribution"
-) -> None:
+    probs: np.ndarray, y_classes: np.ndarray, opacity: float = 0.5
+):
     """
-    Plot the distribution of predicted probabilities as a histogram using Matplotlib.
+    Plots the probability distribution of each class in an individual color.
 
-    Parameters:
-    :param y_probs: NumPy array of predicted probabilities.
-    :param num_bins: Number of bins for the histogram (default is 20).
-    :param title: Title for the plot (default is "Probability Distribution").
+    :param probs: A 2D array of shape (n_samples, n_classes) containing probability distributions.
+    :param y_classes: An array of shape (n_samples,) containing the class labels for each sample.
+    :param opacity: Opacity level for the plots. Default is 0.5.
     """
-    # Create a histogram of the probabilities
-    plt.hist(y_probs, bins=num_bins, edgecolor="k", alpha=0.7)
+    assert (
+        probs.shape[0] == y_classes.shape[0]
+    ), "probs and y_classes must have the same number of samples"
 
-    # Set plot labels and title
+    # Ensure probs is a 2D array
+    if probs.ndim == 1:
+        probs = np.column_stack(
+            (probs, 1 - probs)
+        )  # Create a 2D array with (probs, 1 - probs)
+
+    unique_classes = np.unique(y_classes)
+    colors = plt.get_cmap("tab10")  # Get a colormap
+
+    for class_idx in unique_classes:
+        class_probs = probs[:, class_idx]
+        class_labels = y_classes == class_idx
+        plt.hist(
+            class_probs[class_labels],
+            bins=30,
+            alpha=opacity,
+            color=colors(class_idx),
+            label=f"Class {class_idx}",
+        )
+
     plt.xlabel("Probability")
     plt.ylabel("Frequency")
-    plt.title(title)
-
-    # Display the plot
+    plt.legend()
+    plt.title("Probability Distribution by Class")
     plt.show()
 
 
@@ -192,7 +210,7 @@ def eval_classifier(
             Check if there is any varance in the predicted probabilities.""",
                 stacklevel=2,
             )
-        plot_probability_distribution(y_probs)
+        plot_probability_distribution(y_probs, y_classes, opacity=0.5)
     else:
         logging.info(f"Skip ROC AUC curve as number of classes is {y_probs.shape[1]}.")
 

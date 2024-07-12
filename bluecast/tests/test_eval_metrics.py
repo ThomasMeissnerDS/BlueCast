@@ -1,5 +1,6 @@
 from unittest.mock import patch
 
+import matplotlib.pyplot as plt
 import numpy as np
 import pytest
 from sklearn.metrics import (
@@ -15,6 +16,7 @@ from bluecast.evaluation.eval_metrics import (
     RegressionEvalWrapper,
     eval_classifier,
     eval_regressor,
+    plot_probability_distribution,
 )
 
 
@@ -234,3 +236,26 @@ def test_eval_regressor_exceptions():
 
     with pytest.raises(ValueError):
         eval_regressor(y_true, y_preds)
+
+
+def test_plot_probability_distribution_multiclass():
+    # Generate synthetic data for testing
+    np.random.seed(0)
+    n_samples = 100
+    n_classes = 3
+    probs = np.random.rand(n_samples, n_classes)
+    probs /= probs.sum(
+        axis=1, keepdims=True
+    )  # Normalize to ensure they are valid probabilities
+    y_classes = np.random.randint(0, n_classes, n_samples)  # TODO: Fix random_seed
+
+    # Call the function and catch the plot
+    plt.figure()
+    plot_probability_distribution(probs, y_classes, opacity=0.7)
+
+    # Since the function generates a plot, we can use plt.gcf() to get the current figure and perform assertions
+    fig = plt.gcf()
+    assert fig is not None, "The plot was not created."
+
+    # Cleanup the plot to avoid side effects
+    plt.close(fig)
