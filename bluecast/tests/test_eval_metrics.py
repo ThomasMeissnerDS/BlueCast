@@ -1,3 +1,5 @@
+from unittest.mock import patch
+
 import numpy as np
 import pytest
 from sklearn.metrics import (
@@ -7,11 +9,12 @@ from sklearn.metrics import (
     mean_squared_error,
     root_mean_squared_error,
 )
-from unittest.mock import patch
 
 from bluecast.evaluation.eval_metrics import (
     ClassificationEvalWrapper,
     RegressionEvalWrapper,
+    eval_classifier,
+    eval_regressor,
 )
 
 
@@ -114,17 +117,23 @@ def test_regression_run_witouth_args(sample_data_regression):
 
 
 def test_root_mean_squared_error_import():
-    with patch.dict('sys.modules', {'sklearn.metrics.root_mean_squared_error': None}):
-        with patch('sklearn.metrics.mean_squared_error') as mock_mse:
+    with patch.dict("sys.modules", {"sklearn.metrics.root_mean_squared_error": None}):
+        with patch("sklearn.metrics.mean_squared_error") as mock_mse:
             from sklearn.metrics import mean_squared_error as root_mean_squared_error
+
             assert root_mean_squared_error is mock_mse
 
 
 def test_root_mean_squared_error_direct_import():
-    with patch.dict('sys.modules', {'sklearn.metrics.root_mean_squared_error': object()}):
+    with patch.dict(
+        "sys.modules", {"sklearn.metrics.root_mean_squared_error": object()}
+    ):
         from sklearn.metrics import root_mean_squared_error
+
         assert root_mean_squared_error is not None
-        assert callable(root_mean_squared_error)  # assuming root_mean_squared_error is callable
+        assert callable(
+            root_mean_squared_error
+        )  # assuming root_mean_squared_error is callable
 
 
 def test_classification_eval_func_wrapper_invalid_eval_against():
@@ -137,7 +146,9 @@ def test_classification_eval_func_wrapper_invalid_eval_against():
         def __init__(self, eval_against, metric_func):
             super().__init__(eval_against=eval_against, metric_func=metric_func)
 
-    test_obj = TestClass(eval_against="probas_all_classes", metric_func=dummy_metric_func)
+    test_obj = TestClass(
+        eval_against="probas_all_classes", metric_func=dummy_metric_func
+    )
     test_obj.eval_against = "invalid_value"
 
     # Dummy data for testing
@@ -145,5 +156,81 @@ def test_classification_eval_func_wrapper_invalid_eval_against():
     y_probs = [[0.4, 0.6], [0.7, 0.3], [0.2, 0.8]]
 
     # Use pytest to check if ValueError is raised
-    with pytest.raises(ValueError, match=r"Unknown value for eval_against: invalid_value\. Possible values are 'probas' or 'classes'"):
+    with pytest.raises(
+        ValueError,
+        match=r"Unknown value for eval_against: invalid_value\. Possible values are 'probas' or 'classes'",
+    ):
         test_obj.classification_eval_func_wrapper(y_true, y_probs)
+
+
+def test_eval_classifier_binary():
+    y_true = np.array([0, 1, 0, 1])
+    y_probs = np.array([0.1, 0.9, 0.2, 0.8])
+    y_classes = np.array([0, 1, 0, 1])
+
+    result = eval_classifier(y_true, y_probs, y_classes)
+
+    assert "matthews" in result
+    assert "accuracy" in result
+    assert "recall" in result
+    assert "f1_score_macro" in result
+    assert "f1_score_micro" in result
+    assert "f1_score_weighted" in result
+    assert "log_loss" in result
+    assert "balanced_logloss" in result
+    assert "roc_auc" in result
+    assert "classfication_report" in result
+    assert "confusion_matrix" in result
+
+
+def test_eval_classifier_multiclass():
+    y_true = np.array([0, 1, 2, 1])
+    y_probs = np.array(
+        [[0.8, 0.1, 0.1], [0.1, 0.7, 0.2], [0.2, 0.2, 0.6], [0.3, 0.4, 0.3]]
+    )
+    y_classes = np.array([0, 1, 2, 1])
+
+    result = eval_classifier(y_true, y_probs, y_classes)
+
+    assert "matthews" in result
+    assert "accuracy" in result
+    assert "recall" in result
+    assert "f1_score_macro" in result
+    assert "f1_score_micro" in result
+    assert "f1_score_weighted" in result
+    assert "log_loss" in result
+    assert "balanced_logloss" in result
+    assert "roc_auc" in result
+    assert "classfication_report" in result
+    assert "confusion_matrix" in result
+
+
+def test_eval_regressor():
+    y_true = np.array([3.0, -0.5, 2.0, 7.0])
+    y_preds = np.array([2.5, 0.0, 2.1, 7.8])
+
+    result = eval_regressor(y_true, y_preds)
+
+    assert "mae" in result
+    assert "r2_score" in result
+    assert "MSE" in result
+    assert "RMSE" in result
+    assert "median_absolute_error" in result
+
+
+def test_eval_classifier_exceptions():
+    y_true = np.array([0, 0, 0, 1])
+    y_probs = np.array([0.0, 0.0, 0.0, 0.0])
+    y_classes = np.array([0, 0, 0, 0])  # Introduce an error here
+
+    result = eval_classifier(y_true, y_probs, y_classes)
+
+    assert result["matthews"] == 0  # Error handling should set matthews to 0
+
+
+def test_eval_regressor_exceptions():
+    y_true = np.array([3.0, -0.5, 2.0, 7.0])
+    y_preds = np.array([2.5, 0.0, np.nan, 7.8])  # Introduce a NaN value
+
+    with pytest.raises(ValueError):
+        eval_regressor(y_true, y_preds)
