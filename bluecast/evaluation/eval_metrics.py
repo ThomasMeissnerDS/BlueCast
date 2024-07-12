@@ -128,14 +128,16 @@ def plot_probability_distribution(
 
     print(f"Shape of probs after ensuring 2D: {probs.shape}")
 
-    unique_classes = np.unique(y_classes)
     colors = plt.get_cmap("tab10")  # Get a colormap
 
-    for class_idx in unique_classes:
+    for class_idx in range(probs.shape[1]):
+        print(class_idx)
         class_probs = probs[:, class_idx]
+        print(f"Class {class_idx} has {class_probs.shape} shape")
         class_labels = y_classes == class_idx
+        print(f"Class labels {class_labels} ")
         plt.hist(
-            class_probs[class_labels],
+            class_probs,
             bins=30,
             alpha=opacity,
             color=colors(class_idx),
