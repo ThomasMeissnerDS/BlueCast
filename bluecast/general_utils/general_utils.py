@@ -2,7 +2,7 @@
 
 import logging
 import warnings
-from typing import Any, Dict, Optional, Union
+from typing import Any, Dict, Literal, Optional, Union
 
 import dill as pickle
 import numpy as np
@@ -135,17 +135,28 @@ def log_sampling(nb_rows: int, alpha: float = 2.0) -> int:
 def save_out_of_fold_data(
     oof_data: pd.DataFrame,
     y_hat: Union[pd.Series, np.ndarray],
+    class_problem: Literal["binary", "multiclass", "regression"],
     training_config: TrainingConfig,
 ) -> None:
     """Save out of fold data.
 
     :param oof_data: Data to save.
-    :param y_hat: Predictions. Will be appended to oof_data and saved together.
+    :param y_hat: Predictions. Will be appended to oof_data and saved together. When class_problem is "binary", only the
+        target class score is expected.
+    :param class_problem: Takes a string containing the class problem type. Either "binary", "multiclass" or
+        "regression".
     :param training_config: Training configuration.
     """
     logging.info("Start saving out of fold data.")
     oof_data_copy = oof_data.copy()
-    oof_data_copy["preditions"] = y_hat
+
+    if class_problem == "binary":
+        oof_data_copy["predictions_class_1"] = y_hat
+    elif class_problem == "multiclass":
+        for cls_idx in range(y_hat.shape[1]):
+            oof_data_copy[f"predictions_class_{cls_idx}"] = y_hat[:, cls_idx]
+    else:
+        oof_data_copy["predictions"] = y_hat
 
     if isinstance(training_config.out_of_fold_dataset_store_path, str):
         oof_data_copy.to_parquet(

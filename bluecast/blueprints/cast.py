@@ -484,7 +484,7 @@ class BlueCast:
         if len(self.experiment_tracker.experiment_id) == 0:
             self.experiment_tracker.experiment_id.append(0)
 
-        save_out_of_fold_data(df_eval, y_probs, self.conf_training)
+        save_out_of_fold_data(df_eval, y_probs, self.class_problem, self.conf_training)
 
         # enrich experiment tracker
         for metric, higher_is_better in zip(

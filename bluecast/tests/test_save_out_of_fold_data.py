@@ -1,7 +1,9 @@
 import os
 import tempfile
 
+import numpy as np
 import pandas as pd
+import pytest
 
 from bluecast.config.training_config import TrainingConfig
 from bluecast.general_utils.general_utils import save_out_of_fold_data
@@ -20,7 +22,7 @@ def test_save_out_of_fold_data():
         )
 
         # Call the function to save out of fold data
-        save_out_of_fold_data(oof_data, y_hat, training_config)
+        save_out_of_fold_data(oof_data, y_hat, "regression", training_config)
 
         # Construct the expected file path
         expected_file_path = os.path.join(
@@ -37,3 +39,64 @@ def test_save_out_of_fold_data():
         expected_oof_data["preditions"] = y_hat
 
         pd.testing.assert_frame_equal(saved_oof_data, expected_oof_data)
+
+
+@pytest.fixture
+def sample_oof_data():
+    return pd.DataFrame({"feature1": [1, 2, 3], "feature2": [4, 5, 6]})
+
+
+@pytest.fixture
+def training_config():
+    return TrainingConfig(out_of_fold_dataset_store_path="test_path/")
+
+
+def test_save_out_of_fold_data_binary(sample_oof_data, training_config, mocker):
+    y_hat = pd.Series([0.1, 0.4, 0.8])
+    mock_to_parquet = mocker.patch("pandas.DataFrame.to_parquet")
+
+    save_out_of_fold_data(sample_oof_data, y_hat, "binary", training_config)
+
+    expected_data = sample_oof_data.copy()
+    expected_data["predictions_class_1"] = y_hat
+
+    mock_to_parquet.assert_called_once_with("test_path/oof_data_33.parquet")
+    pd.testing.assert_frame_equal(mock_to_parquet.call_args[0][0], expected_data)
+
+
+def test_save_out_of_fold_data_multiclass(sample_oof_data, training_config, mocker):
+    y_hat = np.array([[0.1, 0.7, 0.2], [0.2, 0.5, 0.3], [0.3, 0.4, 0.3]])
+    mock_to_parquet = mocker.patch("pandas.DataFrame.to_parquet")
+
+    save_out_of_fold_data(sample_oof_data, y_hat, "multiclass", training_config)
+
+    expected_data = sample_oof_data.copy()
+    expected_data["predictions_class_0"] = y_hat[:, 0]
+    expected_data["predictions_class_1"] = y_hat[:, 1]
+    expected_data["predictions_class_2"] = y_hat[:, 2]
+
+    mock_to_parquet.assert_called_once_with("test_path/oof_data_33.parquet")
+    pd.testing.assert_frame_equal(mock_to_parquet.call_args[0][0], expected_data)
+
+
+def test_save_out_of_fold_data_regression(sample_oof_data, training_config, mocker):
+    y_hat = pd.Series([10.5, 20.3, 30.2])
+    mock_to_parquet = mocker.patch("pandas.DataFrame.to_parquet")
+
+    save_out_of_fold_data(sample_oof_data, y_hat, "regression", training_config)
+
+    expected_data = sample_oof_data.copy()
+    expected_data["predictions"] = y_hat
+
+    mock_to_parquet.assert_called_once_with("test_path/oof_data_33.parquet")
+    pd.testing.assert_frame_equal(mock_to_parquet.call_args[0][0], expected_data)
+
+
+def test_save_out_of_fold_data_no_store_path(sample_oof_data, mocker):
+    y_hat = pd.Series([0.1, 0.4, 0.8])
+    training_config = TrainingConfig(out_of_fold_dataset_store_path=None)
+    mock_to_parquet = mocker.patch("pandas.DataFrame.to_parquet")
+
+    save_out_of_fold_data(sample_oof_data, y_hat, "binary", training_config)
+
+    mock_to_parquet.assert_not_called()
