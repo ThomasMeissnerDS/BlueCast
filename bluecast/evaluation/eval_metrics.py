@@ -227,6 +227,27 @@ def eval_classifier(
     return evaluation_scores
 
 
+def mean_squared_error_diff_sklearn_versions(y_true, y_preds):
+    try:
+        mean_squared_error_score = mean_squared_error(y_true, y_preds)
+        print(f"The MSE score is {mean_squared_error_score}")
+    except Exception:
+        mean_squared_error_score = mean_squared_error(y_true, y_preds, squared=True)
+        print(f"The MSE score is {mean_squared_error_score}")
+    return mean_squared_error_score
+
+
+def root_mean_squared_error_diff_sklearn_versions(y_true, y_preds):
+    try:
+        root_mean_squared_error_score = root_mean_squared_error(y_true, y_preds)
+    except Exception:
+        root_mean_squared_error_score = mean_squared_error(
+            y_true, y_preds, squared=False
+        )
+    print(f"The RMSE score is {root_mean_squared_error_score}")
+    return root_mean_squared_error_score
+
+
 def eval_regressor(y_true: np.ndarray, y_preds: np.ndarray) -> Dict[str, Any]:
     r2 = r2_score(y_true, y_preds)
     print(f"The R2 score is {r2}")
@@ -235,20 +256,10 @@ def eval_regressor(y_true: np.ndarray, y_preds: np.ndarray) -> Dict[str, Any]:
     median_absolute_error_score = median_absolute_error(y_true, y_preds)
     print(f"The Median absolute error score is {median_absolute_error_score}")
 
-    try:
-        mean_squared_error_score = mean_squared_error(y_true, y_preds)
-        print(f"The MSE score is {mean_squared_error_score}")
-    except Exception:
-        mean_squared_error_score = mean_squared_error(y_true, y_preds, squared=True)
-        print(f"The MSE score is {mean_squared_error_score}")
-
-    try:
-        root_mean_squared_error_score = root_mean_squared_error(y_true, y_preds)
-    except Exception:
-        root_mean_squared_error_score = mean_squared_error(
-            y_true, y_preds, squared=False
-        )
-    print(f"The RMSE score is {root_mean_squared_error_score}")
+    mean_squared_error_score = mean_squared_error_diff_sklearn_versions(y_true, y_preds)
+    root_mean_squared_error_score = root_mean_squared_error_diff_sklearn_versions(
+        y_true, y_preds
+    )
 
     evaluation_scores = {
         "mae": mean_absolute_error_score,

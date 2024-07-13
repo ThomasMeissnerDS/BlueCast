@@ -16,6 +16,7 @@ from bluecast.evaluation.eval_metrics import (
     RegressionEvalWrapper,
     eval_classifier,
     eval_regressor,
+    mean_squared_error_diff_sklearn_versions,
     plot_probability_distribution,
 )
 
@@ -259,3 +260,32 @@ def test_plot_probability_distribution_multiclass():
 
     # Cleanup the plot to avoid side effects
     plt.close(fig)
+
+
+def test_mean_squared_error_diff_sklearn_versions():
+    # Test case 1: Simple example with integers
+    y_true_1 = [1, 2, 3, 4, 5]
+    y_preds_1 = [1, 2, 3, 4, 5]
+    expected_mse_1 = 0.0
+    mse_1 = mean_squared_error_diff_sklearn_versions(y_true_1, y_preds_1)
+    assert (
+        mse_1 == expected_mse_1
+    ), f"Test Case 1 Failed: Expected {expected_mse_1}, got {mse_1}"
+
+    # Test case 2: Example with slight differences
+    y_true_2 = [1, 2, 3, 4, 5]
+    y_preds_2 = [1, 2, 3, 4, 6]
+    expected_mse_2 = 0.2
+    mse_2 = mean_squared_error_diff_sklearn_versions(y_true_2, y_preds_2)
+    assert (
+        mse_2 == expected_mse_2
+    ), f"Test Case 2 Failed: Expected {expected_mse_2}, got {mse_2}"
+
+    # Test case 3: Example with negative values
+    y_true_3 = [-1, -2, -3, -4, -5]
+    y_preds_3 = [-1, -2, -3, -4, -5]
+    expected_mse_3 = 0.0
+    mse_3 = mean_squared_error_diff_sklearn_versions(y_true_3, y_preds_3)
+    assert (
+        mse_3 == expected_mse_3
+    ), f"Test Case 3 Failed: Expected {expected_mse_3}, got {mse_3}"
