@@ -18,6 +18,7 @@ from bluecast.evaluation.eval_metrics import (
     eval_regressor,
     mean_squared_error_diff_sklearn_versions,
     plot_probability_distribution,
+    root_mean_squared_error_diff_sklearn_versions,
 )
 
 
@@ -289,3 +290,46 @@ def test_mean_squared_error_diff_sklearn_versions():
     assert (
         mse_3 == expected_mse_3
     ), f"Test Case 3 Failed: Expected {expected_mse_3}, got {mse_3}"
+
+
+def mock_root_mean_squared_error(y_true, y_preds):
+    raise AttributeError("root_mean_squared_error is not available")
+
+
+def test_root_mean_squared_error_diff_sklearn_versions_correct():
+    y_true = [1, 2, 3, 4, 5]
+    y_preds = [1, 2, 3, 4, 6]
+    expected_rmse = mean_squared_error(y_true, y_preds, squared=False)
+    result = root_mean_squared_error_diff_sklearn_versions(y_true, y_preds)
+    assert np.isclose(result, expected_rmse), f"Expected {expected_rmse}, got {result}"
+
+
+def test_root_mean_squared_error_diff_sklearn_versions_fallback(monkeypatch):
+    monkeypatch.setattr('your_module.root_mean_squared_error', mock_root_mean_squared_error)
+    y_true = [1, 2, 3, 4, 5]
+    y_preds = [1, 2, 3, 4, 6]
+    expected_rmse = mean_squared_error(y_true, y_preds, squared=False)
+    result = root_mean_squared_error_diff_sklearn_versions(y_true, y_preds)
+    assert np.isclose(result, expected_rmse), f"Expected {expected_rmse}, got {result}"
+
+
+def test_root_mean_squared_error_diff_sklearn_versions_empty():
+    y_true = []
+    y_preds = []
+    with pytest.raises(ValueError):
+        root_mean_squared_error_diff_sklearn_versions(y_true, y_preds)
+
+
+def test_root_mean_squared_error_diff_sklearn_versions_single_element():
+    y_true = [1]
+    y_preds = [1]
+    expected_rmse = mean_squared_error(y_true, y_preds, squared=False)
+    result = root_mean_squared_error_diff_sklearn_versions(y_true, y_preds)
+    assert np.isclose(result, expected_rmse), f"Expected {expected_rmse}, got {result}"
+
+
+def test_root_mean_squared_error_diff_sklearn_versions_mismatched_lengths():
+    y_true = [1, 2, 3]
+    y_preds = [1, 2]
+    with pytest.raises(ValueError):
+        root_mean_squared_error_diff_sklearn_versions(y_true, y_preds)

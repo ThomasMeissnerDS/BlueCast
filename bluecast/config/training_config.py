@@ -78,7 +78,7 @@ class TrainingConfig(BaseModel):
     shuffle_during_training: bool = True
     hyperparameter_tuning_rounds: int = 200
     hyperparameter_tuning_max_runtime_secs: int = 3600
-    hypertuning_cv_folds: int = 1
+    hypertuning_cv_folds: int = 5
     sample_data_during_tuning: bool = False
     sample_data_during_tuning_alpha: float = 2.0
     precise_cv_tuning: bool = False
