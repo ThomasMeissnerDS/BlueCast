@@ -30,7 +30,10 @@ from bluecast.evaluation.shap_values import (
     shap_waterfall_plot,
 )
 from bluecast.experimentation.tracking import ExperimentTracker
-from bluecast.general_utils.general_utils import check_gpu_support
+from bluecast.general_utils.general_utils import (
+    check_gpu_support,
+    save_out_of_fold_data,
+)
 from bluecast.ml_modelling.xgboost_regression import XgboostModelRegression
 from bluecast.preprocessing.category_encoder_orchestration import (
     CategoryEncoderOrchestrator,
@@ -447,6 +450,8 @@ class BlueCastRegression:
 
         if len(self.experiment_tracker.experiment_id) == 0:
             self.experiment_tracker.experiment_id.append(0)
+
+        save_out_of_fold_data(df_eval, y_preds, self.conf_training)
 
         # enrich experiment tracker
         for metric, higher_is_better in zip(

@@ -71,6 +71,8 @@ class TrainingConfig(BaseModel):
     :param experiment_name: Name of the experiment. Will be logged inside the ExperimentTracker.
     :param logging_file_path: Path to the logging file. If None, the logging will be printed to the Jupyter notebook
         instead.
+    :param out_of_fold_dataset_store_path: Path to store the out of fold dataset. If None, the out of fold dataset will
+        not be stored. Shall end with a slash. Only used when BlueCast instances are called with fit_eval method.
     """
 
     global_random_state: int = 33
@@ -106,6 +108,7 @@ class TrainingConfig(BaseModel):
     bluecast_cv_train_n_model: Tuple[int, int] = (5, 1)
     logging_file_path: Optional[str] = None
     experiment_name: str = "new experiment"
+    out_of_fold_dataset_store_path: Optional[str] = None
 
 
 class XgboostTuneParamsConfig(BaseModel):

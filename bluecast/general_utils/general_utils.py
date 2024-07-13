@@ -2,11 +2,14 @@
 
 import logging
 import warnings
-from typing import Any, Dict, Optional
+from typing import Any, Dict, Optional, Union
 
 import dill as pickle
 import numpy as np
+import pandas as pd
 import xgboost as xgb
+
+from bluecast.config.training_config import TrainingConfig
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)
@@ -127,3 +130,25 @@ def log_sampling(nb_rows: int, alpha: float = 2.0) -> int:
     nb_samples = int(round(nb_rows * (1 - perc_reduction), 0))
     logging.info(f"Down sampling from {nb_rows} to {nb_samples} samples.")
     return nb_samples
+
+
+def save_out_of_fold_data(
+    oof_data: pd.DataFrame,
+    y_hat: Union[pd.Series, np.ndarray],
+    training_config: TrainingConfig,
+) -> None:
+    """Save out of fold data.
+
+    :param oof_data: Data to save.
+    :param y_hat: Predictions. Will be appended to oof_data and saved together.
+    :param training_config: Training configuration.
+    """
+    logging.info("Start saving out of fold data.")
+    oof_data_copy = oof_data.copy()
+    oof_data_copy["preditions"] = y_hat
+
+    if isinstance(training_config.out_of_fold_dataset_store_path, str):
+        oof_data_copy.to_parquet(
+            training_config.out_of_fold_dataset_store_path
+            + f"oof_data_{training_config.global_random_state}.parquet"
+        )
