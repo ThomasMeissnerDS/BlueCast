@@ -1,5 +1,6 @@
 """General utilities."""
 
+import gc
 import logging
 import warnings
 from typing import Any, Dict, Literal, Optional, Union
@@ -135,6 +136,8 @@ def log_sampling(nb_rows: int, alpha: float = 2.0) -> int:
 def save_out_of_fold_data(
     oof_data: pd.DataFrame,
     y_hat: Union[pd.Series, np.ndarray],
+    y_true: Union[pd.Series, np.ndarray],
+    target_column: str,
     class_problem: Literal["binary", "multiclass", "regression"],
     training_config: TrainingConfig,
 ) -> None:
@@ -143,6 +146,8 @@ def save_out_of_fold_data(
     :param oof_data: Data to save.
     :param y_hat: Predictions. Will be appended to oof_data and saved together. When class_problem is "binary", only the
         target class score is expected.
+    :param y_true: True targets.
+    :param target_column: String specifying name of the target column.
     :param class_problem: Takes a string containing the class problem type. Either "binary", "multiclass" or
         "regression".
     :param training_config: Training configuration.
@@ -158,8 +163,13 @@ def save_out_of_fold_data(
     else:
         oof_data_copy["predictions"] = y_hat
 
+    oof_data_copy[target_column] = y_true
+
     if isinstance(training_config.out_of_fold_dataset_store_path, str):
         oof_data_copy.to_parquet(
             training_config.out_of_fold_dataset_store_path
             + f"oof_data_{training_config.global_random_state}.parquet"
         )
+
+    del oof_data_copy
+    _ = gc.collect()
