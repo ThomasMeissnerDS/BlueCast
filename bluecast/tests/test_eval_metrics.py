@@ -306,7 +306,8 @@ def test_root_mean_squared_error_diff_sklearn_versions_correct():
 
 def test_root_mean_squared_error_diff_sklearn_versions_fallback(monkeypatch):
     monkeypatch.setattr(
-        "your_module.root_mean_squared_error", mock_root_mean_squared_error
+        "bluecast.evaluation.eval_metrics.root_mean_squared_error",
+        mock_root_mean_squared_error,
     )
     y_true = [1, 2, 3, 4, 5]
     y_preds = [1, 2, 3, 4, 6]
