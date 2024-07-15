@@ -484,7 +484,6 @@ class BlueCastRegression:
 
     def transform_new_data(self, df: pd.DataFrame) -> pd.DataFrame:
         """Transform new data according to preprocessing pipeline."""
-        check_gpu_support()
         if not self.feat_type_detector:
             raise Exception("Feature type converter could not be found.")
 
