@@ -491,6 +491,7 @@ class BlueCast:
             self.target_column,
             self.class_problem,
             self.conf_training,
+            self.target_label_encoder,
         )
 
         # enrich experiment tracker
