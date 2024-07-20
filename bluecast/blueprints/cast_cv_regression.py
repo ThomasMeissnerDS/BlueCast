@@ -1,6 +1,7 @@
 import logging
 from typing import Any, List, Literal, Optional, Tuple, Union
 
+from copy import deepcopy
 import numpy as np
 import pandas as pd
 from sklearn.metrics import mean_squared_error
@@ -187,7 +188,7 @@ class BlueCastCVRegression:
                 cat_columns=self.cat_columns,
                 conf_training=self.conf_training,
                 conf_xgboost=self.conf_xgboost,
-                conf_params_xgboost=self.conf_params_xgboost,
+                conf_params_xgboost=deepcopy(self.conf_params_xgboost),
                 experiment_tracker=self.experiment_tracker,
                 custom_in_fold_preprocessor=self.custom_in_fold_preprocessor,
                 custom_preprocessor=self.custom_preprocessor,
@@ -244,7 +245,7 @@ class BlueCastCVRegression:
                 cat_columns=self.cat_columns,
                 conf_training=self.conf_training,
                 conf_xgboost=self.conf_xgboost,
-                conf_params_xgboost=self.conf_params_xgboost,
+                conf_params_xgboost=deepcopy(self.conf_params_xgboost),
                 experiment_tracker=self.experiment_tracker,
                 custom_in_fold_preprocessor=self.custom_in_fold_preprocessor,
                 custom_preprocessor=self.custom_preprocessor,
