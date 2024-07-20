@@ -71,7 +71,6 @@ class BlueCastCV:
     ):
         self.class_problem = class_problem
         self.conf_xgboost = conf_xgboost
-        self.conf_training = conf_training
         self.conf_params_xgboost = conf_params_xgboost
         self.custom_in_fold_preprocessor = custom_in_fold_preprocessor
         self.custom_preprocessor = custom_preprocessor
@@ -96,8 +95,7 @@ class BlueCastCV:
         if not self.conf_params_xgboost:
             self.conf_params_xgboost = XgboostFinalParamConfig()
 
-        if not self.conf_training:
-            self.conf_training = TrainingConfig()
+        self.conf_training: TrainingConfig = conf_training or TrainingConfig()
 
         if not self.conf_xgboost:
             self.conf_xgboost = XgboostTuneParamsConfig()

@@ -114,7 +114,6 @@ class BlueCastRegression:
         self.date_columns = date_columns
         self.time_split_column = time_split_column
         self.target_column = "Undefined"
-        self.conf_training = conf_training
         self.conf_xgboost = conf_xgboost
         self.conf_params_xgboost = conf_params_xgboost
         self.feat_type_detector: Optional[FeatureTypeDetector] = None
@@ -147,8 +146,7 @@ class BlueCastRegression:
             self.conf_params_xgboost = XgboostRegressionFinalParamConfig()
             self.conf_params_xgboost.params.pop("num_class", None)
 
-        if not self.conf_training:
-            self.conf_training = TrainingConfig()
+        self.conf_training: TrainingConfig = conf_training or TrainingConfig()
 
         if not self.conf_xgboost:
             self.conf_xgboost = XgboostTuneParamsRegressionConfig()

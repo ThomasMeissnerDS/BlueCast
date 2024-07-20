@@ -137,6 +137,7 @@ def plot_count_pair(
     data_df = df_1.copy()
     data_df["set"] = df_aliases[0]
     data_df = pd.concat([data_df, df_2.copy()]).fillna(df_aliases[1])
+    data_df = data_df.reset_index(drop=True)
     f, ax = plt.subplots(1, 1, figsize=(8, 6))  # Increased height to 6
 
     # Create countplot

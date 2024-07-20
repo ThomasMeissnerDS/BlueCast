@@ -170,6 +170,9 @@ def save_out_of_fold_data(
         reverse_target_mapping = {}
 
     if class_problem == "binary":
+        oof_data_copy[f"predictions_class_{reverse_target_mapping.get(0, 0)}"] = (
+            1 - y_hat
+        )
         oof_data_copy[f"predictions_class_{reverse_target_mapping.get(1, 1)}"] = y_hat
     elif class_problem == "multiclass":
         for cls_idx in range(y_hat.shape[1]):
