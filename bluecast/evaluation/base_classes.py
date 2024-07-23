@@ -1,7 +1,7 @@
 """Base classes for evaluation purposes"""
 
 from abc import ABC, abstractmethod
-from typing import Union
+from typing import Callable, Union
 
 import pandas as pd
 import polars as pl
@@ -32,7 +32,11 @@ class ErrorAnalyser(ABC):
     """Abstract class to define analysing prediction errors on out of fold datasets"""
 
     @abstractmethod
-    def analyse_errors(self, df) -> None:
+    def stack_predictions_by_class(self, df: pl.DataFrame) -> pl.DataFrame:
+        raise NotImplementedError
+
+    @abstractmethod
+    def analyse_errors(self, df, loss_func: Callable) -> None:
         raise NotImplementedError
 
     @abstractmethod

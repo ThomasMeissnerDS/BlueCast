@@ -5,7 +5,7 @@ This step follows the training step. Ideally
 it uses stored out of fold datasets from using the 'fit_eval' methods.
 """
 
-from typing import List, Optional, Union
+from typing import Callable, List, Optional, Union
 
 import pandas as pd
 import polars as pl
@@ -70,19 +70,6 @@ class OutOfFoldDataReader(DataReader):
         """
         oof_df = self.read_data_from_bluecast_instance(bluecast_instance)
         return oof_df
-
-    def analyse_errors(self, df: Union[pd.DataFrame, pl.DataFrame]):
-        """
-        Analyse errors of predictions on out of fold data.
-
-        :param df: DataFrame holding out of fold data and predictions.
-        :return: None
-        """
-        if isinstance(df, pd.DataFrame):
-            df = pl.from_dataframe(df)
-
-    def show_leaderboard(self) -> pd.DataFrame:
-        pass
 
 
 class OutOfFoldDataReaderCV(DataReader):
@@ -153,11 +140,23 @@ class OutOfFoldDataReaderCV(DataReader):
 
 
 class ErrorAnalyserClassification(ErrorAnalyser, OutOfFoldDataReader):
-    def analyse_errors(self, df: Union[pd.DataFrame, pl.DataFrame]):
+    def stack_predictions_by_class(self, df: pl.DataFrame) -> pl.DataFrame:
+        stacked_df = []
+        for cls in self.target_classes:
+            temp_df = df.filter(self.target_column == cls)
+            stacked_df.append(temp_df)
+
+        return pl.concat(stacked_df)
+
+    def analyse_errors(
+        self, df: Union[pd.DataFrame, pl.DataFrame], loss_func: Callable
+    ):
         """
         Analyse errors of predictions on out of fold data.
 
         :param df: DataFrame holding out of fold data and predictions.
+        :param loss_func: Function that takes (y_true, y_pred) and returns a score. Will be used to evaluate
+            prediction errors.
         :return: None
         """
         if isinstance(df, pd.DataFrame):
@@ -168,11 +167,23 @@ class ErrorAnalyserClassification(ErrorAnalyser, OutOfFoldDataReader):
 
 
 class ErrorAnalyserClassificationCV(ErrorAnalyser, OutOfFoldDataReaderCV):
-    def analyse_errors(self, df: Union[pd.DataFrame, pl.DataFrame]):
+    def stack_predictions_by_class(self, df: pl.DataFrame) -> pl.DataFrame:
+        stacked_df = []
+        for cls in self.target_classes:
+            temp_df = df.filter(self.target_column == cls)
+            stacked_df.append(temp_df)
+
+        return pl.concat(stacked_df)
+
+    def analyse_errors(
+        self, df: Union[pd.DataFrame, pl.DataFrame], loss_func: Callable
+    ):
         """
         Analyse errors of predictions on out of fold data.
 
         :param df: DataFrame holding out of fold data and predictions.
+        :param loss_func: Function that takes (y_true, y_pred) and returns a score. Will be used to evaluate
+            prediction errors.
         :return: None
         """
         if isinstance(df, pd.DataFrame):
