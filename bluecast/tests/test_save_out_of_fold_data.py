@@ -114,6 +114,7 @@ def test_save_out_of_fold_data_binary():
         # Read the file back and check its contents
         saved_oof_data = pd.read_parquet(expected_file_path)
         expected_data = oof_data.copy()
+        expected_data["predictions_class_0"] = 1 - y_hat
         expected_data["predictions_class_1"] = y_hat
         expected_data["target_col_name"] = y_true
 
@@ -185,6 +186,7 @@ def test_save_out_of_fold_data_binary_with_string_labels():
         # Read the file back and check its contents
         saved_oof_data = pd.read_parquet(expected_file_path)
         expected_data = oof_data.copy()
+        expected_data["predictions_class_no"] = 1 - y_hat
         expected_data["predictions_class_yes"] = y_hat
         expected_data["target_col_name"] = y_true_encoded
 

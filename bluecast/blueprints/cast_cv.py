@@ -1,7 +1,7 @@
 import logging
+from copy import deepcopy
 from typing import Any, List, Literal, Optional, Tuple, Union
 
-from copy import deepcopy
 import numpy as np
 import pandas as pd
 from sklearn.model_selection import RepeatedStratifiedKFold
