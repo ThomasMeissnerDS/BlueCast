@@ -36,6 +36,10 @@ class ErrorAnalyser(ABC):
         raise NotImplementedError
 
     @abstractmethod
+    def calculate_errors(self, df, loss_func: Callable) -> pl.DataFrame:
+        raise NotImplementedError
+
+    @abstractmethod
     def analyse_errors(self, df, loss_func: Callable) -> None:
         raise NotImplementedError
 

@@ -143,12 +143,16 @@ class ErrorAnalyserClassification(ErrorAnalyser, OutOfFoldDataReader):
     def stack_predictions_by_class(self, df: pl.DataFrame) -> pl.DataFrame:
         stacked_df = []
         for cls in self.target_classes:
-            temp_df = df.filter(self.target_column == cls)
+            cls_pred_col = [col for col in self.prediction_columns if cls in col]
+            other_cls_pred_col = [col for col in self.prediction_columns if cls not in col]  # TODO: Check if similar names cause trouble
+            temp_df = df.filter(self.target_column == cls).drop(other_cls_pred_col)
+            temp_df = temp_df.rename({cls_pred_col[0]: "prediction"})
+            temp_df = temp_df.with_columns(pl.lit(cls).alias("target_class"))
             stacked_df.append(temp_df)
 
         return pl.concat(stacked_df)
 
-    def analyse_errors(
+    def calculate_errors(
         self, df: Union[pd.DataFrame, pl.DataFrame], loss_func: Callable
     ):
         """
@@ -159,8 +163,20 @@ class ErrorAnalyserClassification(ErrorAnalyser, OutOfFoldDataReader):
             prediction errors.
         :return: None
         """
+        if isinstance(df, pl.DataFrame):
+            df = df.to_pandas()
+
+        df["prediction_error"] = loss_func(df[self.target_column], df["target_class"])
+
         if isinstance(df, pd.DataFrame):
             df = pl.from_dataframe(df)
+
+        return df
+
+    def analyse_errors(
+            self, df: Union[pd.DataFrame, pl.DataFrame], loss_func: Callable
+    ):
+        pass
 
     def show_leaderboard(self) -> pd.DataFrame:
         pass
@@ -170,12 +186,16 @@ class ErrorAnalyserClassificationCV(ErrorAnalyser, OutOfFoldDataReaderCV):
     def stack_predictions_by_class(self, df: pl.DataFrame) -> pl.DataFrame:
         stacked_df = []
         for cls in self.target_classes:
-            temp_df = df.filter(self.target_column == cls)
+            cls_pred_col = [col for col in self.prediction_columns if cls in col]
+            other_cls_pred_col = [col for col in self.prediction_columns if cls not in col]  # TODO: Check if similar names cause trouble
+            temp_df = df.filter(self.target_column == cls).drop(other_cls_pred_col)
+            temp_df = temp_df.rename({cls_pred_col[0]: "prediction"})
+            temp_df = temp_df.with_columns(pl.lit(cls).alias("target_class"))
             stacked_df.append(temp_df)
 
         return pl.concat(stacked_df)
 
-    def analyse_errors(
+    def calculate_errors(
         self, df: Union[pd.DataFrame, pl.DataFrame], loss_func: Callable
     ):
         """
@@ -186,8 +206,20 @@ class ErrorAnalyserClassificationCV(ErrorAnalyser, OutOfFoldDataReaderCV):
             prediction errors.
         :return: None
         """
+        if isinstance(df, pl.DataFrame):
+            df = df.to_pandas()
+
+        df["prediction_error"] = loss_func(df[self.target_column], df["target_class"])
+
         if isinstance(df, pd.DataFrame):
             df = pl.from_dataframe(df)
+
+        return df
+
+    def analyse_errors(
+            self, df: Union[pd.DataFrame, pl.DataFrame], loss_func: Callable
+    ):
+        pass
 
     def show_leaderboard(self) -> pd.DataFrame:
         pass
