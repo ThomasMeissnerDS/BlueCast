@@ -10,6 +10,7 @@ from typing import List, Optional, Union
 import numpy as np
 import pandas as pd
 import polars as pl
+import pytest
 
 from bluecast.blueprints.cast import BlueCast
 from bluecast.blueprints.cast_cv import BlueCastCV
@@ -45,7 +46,7 @@ class OutOfFoldDataReader(DataReader):
                 "out_of_fold_dataset_store_path has not been configured in Training config"
             )
 
-        self.target_classes = (
+        self.target_classes = sorted(
             oof_dataset.unique(subset=[self.target_column])
             .select(self.target_column)
             .to_series()
@@ -112,7 +113,7 @@ class OutOfFoldDataReaderCV(DataReader):
             oof_datasets.append(temp_df)
 
         oof_dataset = pl.concat(oof_datasets)
-        self.target_classes = (
+        self.target_classes = sorted(
             oof_dataset.unique(subset=[self.target_column])
             .select(self.target_column)
             .to_series()
@@ -243,7 +244,7 @@ class ErrorAnalyserClassification(
 
         return df
 
-    def analyse_segement_errors(self) -> pl.DataFrame:
+    def analyse_segment_errors(self) -> pl.DataFrame:
         oof_data = self.read_data_from_bluecast_instance()
         stacked_oof_data = self.stack_predictions_by_class(oof_data)
         errors = self.calculate_errors(stacked_oof_data)
@@ -293,9 +294,99 @@ class ErrorAnalyserClassificationCV(
 
         return df
 
-    def analyse_segement_errors(self) -> pl.DataFrame:
+    def analyse_segment_errors(self) -> pl.DataFrame:
         oof_data = self.read_data_from_bluecast_cv_instance()
         stacked_oof_data = self.stack_predictions_by_class(oof_data)
         errors = self.calculate_errors(stacked_oof_data)
         errors_analysed = self.analyse_errors(errors.drop(self.target_column))
         return errors_analysed
+
+
+@pytest.fixture
+def create_test_bluecast_instance():
+    # Create a mock or a test instance of BlueCast
+    bluecast_instance = BlueCast(class_problem="multiclass")
+    return bluecast_instance
+
+
+def test_analyse_segment_errors(create_test_bluecast_instance):
+    bluecast_instance = create_test_bluecast_instance
+
+    error_analyser = ErrorAnalyserClassification(bluecast_instance)
+
+    # Sample data for testing
+    oof_data = pl.DataFrame(
+        {
+            "target": [0, 1, 2, 0, 1, 2],
+            "predictions_class_0": [0.7, 0.1, 0.2, 0.6, 0.2, 0.2],
+            "predictions_class_1": [0.2, 0.7, 0.1, 0.3, 0.6, 0.1],
+            "predictions_class_2": [0.1, 0.2, 0.7, 0.1, 0.2, 0.7],
+        }
+    )
+
+    error_analyser.target_classes = [0, 1, 2]
+    error_analyser.prediction_columns = [
+        "predictions_class_0",
+        "predictions_class_1",
+        "predictions_class_2",
+    ]
+    error_analyser.target_column = "target"
+
+    # Perform the analysis
+    analysis_result = error_analyser.analyse_segment_errors(oof_data)
+
+    # Define expected results based on the functionality of analyse_segment_errors
+    expected_analysis_result = {
+        # Replace with the expected output format and values
+    }
+
+    # Use appropriate assertions based on the expected result
+    assert analysis_result == expected_analysis_result
+
+
+@pytest.fixture
+def create_test_bluecast_cv_instance():
+    # Create a mock or a test instance of BlueCastCV
+    bluecast_cv_instance = BlueCastCV(class_problem="multiclass")
+    bluecast_cv_instance.bluecast_models = []
+
+    # Initialize bluecast_models with dummy models to avoid IndexError
+    for _ in range(5):
+        model = BlueCastCV(class_problem="multiclass")
+        model.target_column = "target"
+        bluecast_cv_instance.bluecast_models.append(model)
+    return bluecast_cv_instance
+
+
+def test_analyse_segment_errors_cv(create_test_bluecast_cv_instance):
+    bluecast_cv_instance = create_test_bluecast_cv_instance
+
+    error_analyser_cv = ErrorAnalyserClassificationCV(bluecast_cv_instance)
+
+    # Sample data for testing
+    oof_data = pl.DataFrame(
+        {
+            "target": [0, 1, 2, 0, 1, 2],
+            "predictions_class_0": [0.7, 0.1, 0.2, 0.6, 0.2, 0.2],
+            "predictions_class_1": [0.2, 0.7, 0.1, 0.3, 0.6, 0.1],
+            "predictions_class_2": [0.1, 0.2, 0.7, 0.1, 0.2, 0.7],
+        }
+    )
+
+    error_analyser_cv.target_classes = [0, 1, 2]
+    error_analyser_cv.prediction_columns = [
+        "predictions_class_0",
+        "predictions_class_1",
+        "predictions_class_2",
+    ]
+
+    # Perform the analysis
+    analysis_result_cv = error_analyser_cv.analyse_segment_errors(oof_data)
+
+    # Define expected results based on the functionality of analyse_segment_errors
+    expected_analysis_result_cv = {
+        # Replace with the expected output format and values
+    }
+
+    # Use appropriate assertions based on the expected result
+    assert analysis_result_cv == expected_analysis_result_cv

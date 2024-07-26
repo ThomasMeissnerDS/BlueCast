@@ -185,6 +185,7 @@ def create_test_bluecast_instance_multiclass():
 
 def test_out_of_fold_data_reader_multiclass(create_test_bluecast_instance_multiclass):
     bluecast_instance = create_test_bluecast_instance_multiclass
+    bluecast_instance.target_column = "target"
 
     data_reader = OutOfFoldDataReader(bluecast_instance)
 
@@ -194,7 +195,15 @@ def test_out_of_fold_data_reader_multiclass(create_test_bluecast_instance_multic
         data_reader.read_data_from_bluecast_instance()
 
     with tempfile.TemporaryDirectory() as tmpdir:
-        bluecast_instance.conf_training.out_of_fold_dataset_store_path = tmpdir
+
+        # Test error when Bluecast instance type mismatches data reader type (CV vs non-CV)
+        with pytest.raises(ValueError):
+            bluecast_instance.conf_training.out_of_fold_dataset_store_path = (
+                tmpdir + "/"
+            )
+            data_reader.read_data_from_bluecast_cv_instance()
+
+        bluecast_instance.conf_training.out_of_fold_dataset_store_path = tmpdir + "/"
         oof_data = pl.DataFrame(
             {
                 "target": [0, 1, 2, 0, 1, 2],
@@ -204,8 +213,20 @@ def test_out_of_fold_data_reader_multiclass(create_test_bluecast_instance_multic
             }
         )
 
-        oof_data.write_parquet(f"{tmpdir}/oof_data_42.parquet")
+        oof_data.write_parquet(f"{tmpdir}/oof_data_33.parquet")
         # Add more assertions or tests as needed
+        data_reader = OutOfFoldDataReader(bluecast_instance)
+        read_data = data_reader.read_data_from_bluecast_instance()
+        assert isinstance(read_data, pl.DataFrame)
+        assert sorted(data_reader.prediction_columns) == sorted(
+            [
+                f"predictions_class_{target_class}"
+                for target_class in oof_data.unique(subset=["target"])
+                .select("target")
+                .to_series()
+                .to_list()
+            ]
+        )
 
 
 def test_error_analyser_classification_multiclass(
@@ -278,6 +299,14 @@ def test_out_of_fold_data_reader_cv_multiclass(
         data_reader_cv.read_data_from_bluecast_cv_instance()
 
     with tempfile.TemporaryDirectory() as tmpdir:
+
+        # Test error when Bluecast instance type mismatches data reader type (CV vs non-CV)
+        with pytest.raises(ValueError):
+            bluecast_cv_instance.bluecast_models[
+                0
+            ].conf_training.out_of_fold_dataset_store_path = (tmpdir + "/")
+            data_reader_cv.read_data_from_bluecast_instance()
+
         bluecast_cv_instance.conf_training.out_of_fold_dataset_store_path = tmpdir + "/"
 
         for model in bluecast_cv_instance.bluecast_models:
