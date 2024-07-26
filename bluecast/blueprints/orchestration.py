@@ -38,7 +38,7 @@ class ModelMatchMaker:
         self.training_datasets.append(df)
 
     def find_best_match(
-        self, df: pd.DataFrame, use_cols: List[Union[int, float, str]], threshold: float
+        self, df: pd.DataFrame, use_cols: List[Union[int, float, str]], delta: float
     ) -> Tuple[
         Optional[Union[BlueCast, BlueCastRegression, BlueCastCV, BlueCastCVRegression]],
         Optional[pd.DataFrame],
@@ -47,8 +47,8 @@ class ModelMatchMaker:
         Find the best match based on the adversarial validation score.
         :param df: Dataset to match.
         :param use_cols: Columns to use for the adversarial validation. Numerical columns are allowed only.
-        :param threshold: Maximum threshold for the adversarial validation score. If no dataset reaches this threshold,
-            (None, None) is returned.
+        :param delta: Maximum delta for the adversarial validation score to be away from 0.5. If no dataset reaches this
+         delta, (None, None) is returned.
         :return: If a match is found, the BlueCast instance and the dataset are returned. Otherwise, (None, None) is
             returned.
         """
@@ -60,10 +60,14 @@ class ModelMatchMaker:
             auc_score = data_drift_checker.adversarial_validation(
                 self.training_datasets[idx].loc[:, use_cols], df.loc[:, use_cols]
             )
-            if auc_score < best_score and auc_score < threshold:
-                print(f"Found best match using idx {idx} with AUC score of {auc_score}")
-                best_score = auc_score
+            score_delta = np.abs(auc_score - 0.5)
+            if score_delta < best_score and np.abs(auc_score - 0.5) <= delta:
+                print(
+                    f"Found best match using idx {idx} with AUC score of {auc_score} and delta of {score_delta}"
+                )
+                best_score = score_delta
                 best_idx = idx
+                print(f"Best idx: {best_idx}, {self.bluecast_instances[best_idx]}")
 
         if best_idx:
             return self.bluecast_instances[best_idx], self.training_datasets[best_idx]
