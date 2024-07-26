@@ -149,7 +149,9 @@ class ErrorAnalyserClassification(ErrorAnalyser, OutOfFoldDataReader):
             other_cls_pred_col = [
                 col for col in self.prediction_columns if str(cls) not in str(col)
             ]  # TODO: Check if similar names cause trouble
-            temp_df = df.filter(self.target_column == cls).drop(other_cls_pred_col)
+            temp_df = df.filter(pl.col(self.target_column) == cls).drop(
+                other_cls_pred_col
+            )
             temp_df = temp_df.rename({cls_pred_col[0]: "prediction"})
             temp_df = temp_df.with_columns(pl.lit(cls).alias("target_class"))
             stacked_df.append(temp_df)
@@ -170,7 +172,7 @@ class ErrorAnalyserClassification(ErrorAnalyser, OutOfFoldDataReader):
         if isinstance(df, pl.DataFrame):
             df = df.to_pandas()
 
-        df["prediction_error"] = loss_func(df[self.target_column], df["target_class"])
+        df["prediction_error"] = loss_func(df["prediction"].values.tolist(), df["target_class"].values.tolist())
 
         if isinstance(df, pd.DataFrame):
             df = pl.from_dataframe(df)
@@ -211,16 +213,28 @@ class ErrorAnalyserClassification(ErrorAnalyser, OutOfFoldDataReader):
         for col in groupby_cols:
             if col in numeric_columns:
                 error_df = (
-                    df.select(pl.col(col).qcut(quantiles), pl.col("prediction_error"))
+                    df.select(
+                        pl.col("target_class"),
+                        pl.col(col).rank("ordinal").qcut(quantiles),
+                        pl.col("prediction_error"),
+                    )
                     .group_by([col, "target_class"])
                     .agg(pl.mean("prediction_error"))
                 )
+                error_df = error_df.with_columns(pl.col(col).cast(pl.String))
+                error_df = error_df.rename({col: "column_subset"})
+                error_df = error_df.with_columns(pl.lit(col).alias("column_name"))
             else:
                 error_df = (
-                    df.select(pl.col(col), pl.col("prediction_error"))
+                    df.select(
+                        pl.col("target_class"), pl.col(col), pl.col("prediction_error")
+                    )
                     .group_by([col, "target_class"])
                     .agg(pl.mean("prediction_error"))
                 )
+                error_df = error_df.with_columns(pl.col(col).cast(pl.String))
+                error_df = error_df.rename({col: "column_subset"})
+                error_df = error_df.with_columns(pl.lit(col).alias("column_name"))
             error_dfs.append(error_df)
 
         return pl.concat(error_dfs).sort("prediction_error", descending=descending)
@@ -236,7 +250,9 @@ class ErrorAnalyserClassificationCV(ErrorAnalyser, OutOfFoldDataReaderCV):
             other_cls_pred_col = [
                 col for col in self.prediction_columns if str(cls) not in str(col)
             ]  # TODO: Check if similar names cause trouble
-            temp_df = df.filter(self.target_column == cls).drop(other_cls_pred_col)
+            temp_df = df.filter(pl.col(self.target_column) == cls).drop(
+                other_cls_pred_col
+            )
             temp_df = temp_df.rename({cls_pred_col[0]: "prediction"})
             temp_df = temp_df.with_columns(pl.lit(cls).alias("target_class"))
             stacked_df.append(temp_df)
@@ -257,7 +273,7 @@ class ErrorAnalyserClassificationCV(ErrorAnalyser, OutOfFoldDataReaderCV):
         if isinstance(df, pl.DataFrame):
             df = df.to_pandas()
 
-        df["prediction_error"] = loss_func(df[self.target_column], df["target_class"])
+        df["prediction_error"] = loss_func(df["prediction"].values.tolist(), df["target_class"].values.tolist())
 
         if isinstance(df, pd.DataFrame):
             df = pl.from_dataframe(df)
@@ -298,16 +314,28 @@ class ErrorAnalyserClassificationCV(ErrorAnalyser, OutOfFoldDataReaderCV):
         for col in groupby_cols:
             if col in numeric_columns:
                 error_df = (
-                    df.select(pl.col(col).qcut(quantiles), pl.col("prediction_error"))
+                    df.select(
+                        pl.col("target_class"),
+                        pl.col(col).rank("ordinal").qcut(quantiles),
+                        pl.col("prediction_error"),
+                    )
                     .group_by([col, "target_class"])
                     .agg(pl.mean("prediction_error"))
                 )
+                error_df = error_df.with_columns(pl.col(col).cast(pl.String))
+                error_df = error_df.rename({col: "column_subset"})
+                error_df = error_df.with_columns(pl.lit(col).alias("column_name"))
             else:
                 error_df = (
-                    df.select(pl.col(col), pl.col("prediction_error"))
+                    df.select(
+                        pl.col("target_class"), pl.col(col), pl.col("prediction_error")
+                    )
                     .group_by([col, "target_class"])
                     .agg(pl.mean("prediction_error"))
                 )
+                error_df = error_df.with_columns(pl.col(col).cast(pl.String))
+                error_df = error_df.rename({col: "column_subset"})
+                error_df = error_df.with_columns(pl.lit(col).alias("column_name"))
             error_dfs.append(error_df)
 
         return pl.concat(error_dfs).sort("prediction_error", descending=descending)
