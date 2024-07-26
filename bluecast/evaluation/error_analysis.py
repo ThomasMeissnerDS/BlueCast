@@ -15,7 +15,11 @@ from bluecast.blueprints.cast import BlueCast
 from bluecast.blueprints.cast_cv import BlueCastCV
 from bluecast.blueprints.cast_cv_regression import BlueCastCVRegression
 from bluecast.blueprints.cast_regression import BlueCastRegression
-from bluecast.evaluation.base_classes import DataReader, ErrorAnalyser
+from bluecast.evaluation.base_classes import (
+    DataReader,
+    ErrorAnalyser,
+    ErrorPreprocessor,
+)
 from bluecast.preprocessing.encode_target_labels import TargetLabelEncoder
 
 
@@ -140,46 +144,7 @@ class OutOfFoldDataReaderCV(DataReader):
         return oof_df
 
 
-class ErrorAnalyserClassification(ErrorAnalyser, OutOfFoldDataReader):
-    def stack_predictions_by_class(self, df: pl.DataFrame) -> pl.DataFrame:
-        stacked_df = []
-        for cls in self.target_classes:
-            cls_pred_col = [
-                col for col in self.prediction_columns if str(cls) in str(col)
-            ]
-            other_cls_pred_col = [
-                col for col in self.prediction_columns if str(cls) not in str(col)
-            ]  # TODO: Check if similar names cause trouble
-            temp_df = df.filter(pl.col(self.target_column) == cls).drop(
-                other_cls_pred_col
-            )
-            temp_df = temp_df.rename({cls_pred_col[0]: "prediction"})
-            temp_df = temp_df.with_columns(pl.lit(cls).alias("target_class"))
-            stacked_df.append(temp_df)
-
-        return pl.concat(stacked_df)
-
-    def calculate_errors(self, df: Union[pd.DataFrame, pl.DataFrame]):
-        """
-        Analyse errors of predictions on out of fold data.
-
-        :param df: DataFrame holding out of fold data and predictions.
-        :param loss_func: Function that takes (y_true, y_pred) and returns a score. Will be used to evaluate
-            prediction errors.
-        :return: None
-        """
-        if isinstance(df, pl.DataFrame):
-            df = df.to_pandas()
-
-        df["prediction_error"] = np.abs(
-            df["target_class"].astype(float) - df["prediction"].astype(float)
-        )
-
-        if isinstance(df, pd.DataFrame):
-            df = pl.from_dataframe(df)
-
-        return df
-
+class ErrorAnalyserClassificationMixin(ErrorAnalyser):
     def analyse_errors(
         self, df: Union[pd.DataFrame, pl.DataFrame], descending: bool = True
     ):
@@ -241,7 +206,9 @@ class ErrorAnalyserClassification(ErrorAnalyser, OutOfFoldDataReader):
         return pl.concat(error_dfs).sort("prediction_error", descending=descending)
 
 
-class ErrorAnalyserClassificationCV(ErrorAnalyser, OutOfFoldDataReaderCV):
+class ErrorAnalyserClassification(
+    OutOfFoldDataReader, ErrorPreprocessor, ErrorAnalyserClassificationMixin
+):
     def stack_predictions_by_class(self, df: pl.DataFrame) -> pl.DataFrame:
         stacked_df = []
         for cls in self.target_classes:
@@ -281,62 +248,45 @@ class ErrorAnalyserClassificationCV(ErrorAnalyser, OutOfFoldDataReaderCV):
 
         return df
 
-    def analyse_errors(
-        self, df: Union[pd.DataFrame, pl.DataFrame], descending: bool = True
-    ):
-        groupby_cols = [
-            col for col in df.columns if col not in ["prediction_error", "target_class"]
-        ]
-        quantiles = [
-            0.05,
-            0.1,
-            0.15,
-            0.2,
-            0.25,
-            0.3,
-            0.35,
-            0.4,
-            0.45,
-            0.5,
-            0.55,
-            0.6,
-            0.65,
-            0.7,
-            0.75,
-            0.8,
-            0.85,
-            0.9,
-            0.95,
-        ]
-        numeric_columns = df.select(pl.col(pl.NUMERIC_DTYPES)).columns
 
-        error_dfs = []
+class ErrorAnalyserClassificationCV(
+    OutOfFoldDataReaderCV, ErrorPreprocessor, ErrorAnalyserClassificationMixin
+):
+    def stack_predictions_by_class(self, df: pl.DataFrame) -> pl.DataFrame:
+        stacked_df = []
+        for cls in self.target_classes:
+            cls_pred_col = [
+                col for col in self.prediction_columns if str(cls) in str(col)
+            ]
+            other_cls_pred_col = [
+                col for col in self.prediction_columns if str(cls) not in str(col)
+            ]  # TODO: Check if similar names cause trouble
+            temp_df = df.filter(pl.col(self.target_column) == cls).drop(
+                other_cls_pred_col
+            )
+            temp_df = temp_df.rename({cls_pred_col[0]: "prediction"})
+            temp_df = temp_df.with_columns(pl.lit(cls).alias("target_class"))
+            stacked_df.append(temp_df)
 
-        for col in groupby_cols:
-            if col in numeric_columns:
-                error_df = (
-                    df.select(
-                        pl.col("target_class"),
-                        pl.col(col).rank("ordinal").qcut(quantiles),
-                        pl.col("prediction_error"),
-                    )
-                    .group_by([col, "target_class"])
-                    .agg(pl.mean("prediction_error"))
-                )
-                error_df = error_df.with_columns(pl.col(col).cast(pl.String))
-                error_df = error_df.rename({col: "column_subset"})
-                error_df = error_df.with_columns(pl.lit(col).alias("column_name"))
-            else:
-                error_df = (
-                    df.select(
-                        pl.col("target_class"), pl.col(col), pl.col("prediction_error")
-                    )
-                    .group_by([col, "target_class"])
-                    .agg(pl.mean("prediction_error"))
-                )
-                error_df = error_df.with_columns(pl.col(col).cast(pl.String))
-                error_df = error_df.rename({col: "column_subset"})
-                error_df = error_df.with_columns(pl.lit(col).alias("column_name"))
-            error_dfs.append(error_df)
+        return pl.concat(stacked_df)
 
-        return pl.concat(error_dfs).sort("prediction_error", descending=descending)
+    def calculate_errors(self, df: Union[pd.DataFrame, pl.DataFrame]):
+        """
+        Analyse errors of predictions on out of fold data.
+
+        :param df: DataFrame holding out of fold data and predictions.
+        :param loss_func: Function that takes (y_true, y_pred) and returns a score. Will be used to evaluate
+            prediction errors.
+        :return: None
+        """
+        if isinstance(df, pl.DataFrame):
+            df = df.to_pandas()
+
+        df["prediction_error"] = np.abs(
+            df["target_class"].astype(float) - df["prediction"].astype(float)
+        )
+
+        if isinstance(df, pd.DataFrame):
+            df = pl.from_dataframe(df)
+
+        return df

@@ -27,7 +27,7 @@ class DataReader(ABC):
         raise NotImplementedError
 
 
-class ErrorAnalyser(ABC):
+class ErrorPreprocessor(ABC):
     """Abstract class to define analysing prediction errors on out of fold datasets"""
 
     @abstractmethod
@@ -37,6 +37,10 @@ class ErrorAnalyser(ABC):
     @abstractmethod
     def calculate_errors(self, df) -> pl.DataFrame:
         raise NotImplementedError
+
+
+class ErrorAnalyser(ABC):
+    """Abstract class to define analysing prediction errors on out of fold datasets"""
 
     @abstractmethod
     def analyse_errors(self, df, descending: bool = True) -> None:
