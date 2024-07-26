@@ -3,7 +3,6 @@
 from abc import ABC, abstractmethod
 from typing import Callable, Union
 
-import pandas as pd
 import polars as pl
 
 from bluecast.blueprints.cast import BlueCast
@@ -40,9 +39,5 @@ class ErrorAnalyser(ABC):
         raise NotImplementedError
 
     @abstractmethod
-    def analyse_errors(self, df, loss_func: Callable) -> None:
-        raise NotImplementedError
-
-    @abstractmethod
-    def show_leaderboard(self) -> pd.DataFrame:
+    def analyse_errors(self, df, descending: bool = True) -> None:
         raise NotImplementedError
