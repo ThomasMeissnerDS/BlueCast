@@ -60,18 +60,6 @@ class OutOfFoldDataReader(DataReader):
     def read_data_from_bluecast_cv_instance(self) -> pl.DataFrame:
         raise ValueError("Please use OutOfFoldDataReaderCV class instead.")
 
-    def read_data_from_path(
-        self,
-        bluecast_instance: Union[BlueCast, BlueCastRegression],
-    ) -> pl.DataFrame:
-        """
-        Read and create DataFrame for analyse_errors function
-
-        :param bluecast_instance: Instance of BlueCast that created the data.
-        """
-        oof_df = self.read_data_from_bluecast_instance()
-        return oof_df
-
 
 class OutOfFoldDataReaderCV(DataReader):
     def __init__(self, bluecast_instance: Union[BlueCastCV, BlueCastCVRegression]):
@@ -125,18 +113,6 @@ class OutOfFoldDataReaderCV(DataReader):
             0
         ].target_label_encoder
         return oof_dataset
-
-    def read_data_from_path(
-        self,
-        bluecast_instance: Union[BlueCastCV, BlueCastCVRegression],
-    ) -> pl.DataFrame:
-        """
-        Read and create DataFrame for analyse_errors function
-
-        :param bluecast_instance: Instance of BlueCast that created the data.
-        """
-        oof_df = self.read_data_from_bluecast_cv_instance()
-        return oof_df
 
 
 class ErrorAnalyserClassificationMixin(ErrorAnalyser):
