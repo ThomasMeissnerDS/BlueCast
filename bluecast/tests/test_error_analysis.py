@@ -9,6 +9,7 @@ from bluecast.blueprints.cast_cv import BlueCastCV
 from bluecast.evaluation.error_analysis import (
     ErrorAnalyserClassification,
     ErrorAnalyserClassificationCV,
+    ErrorAnalyserClassificationMixin,
     OutOfFoldDataReader,
     OutOfFoldDataReaderCV,
 )
@@ -382,3 +383,126 @@ def test_error_analyser_classification_cv_multiclass(
         )
         is None
     )
+
+
+@pytest.fixture
+def create_test_error_analyser_mixin_instance():
+    return ErrorAnalyserClassificationMixin()
+
+
+def test_analyse_errors_with_numeric_columns(create_test_error_analyser_mixin_instance):
+    analyser_instance = create_test_error_analyser_mixin_instance
+
+    df = pl.DataFrame(
+        {
+            "target_class": [0, 0, 1, 1, 2, 2],
+            "feature_1": [0.1, 0.2, 0.1, 0.2, 0.3, 0.4],
+            "feature_2": [1, 2, 1, 2, 3, 4],
+            "prediction_error": [0.5, 0.6, 0.7, 0.8, 0.9, 1.0],
+        }
+    )
+
+    result = analyser_instance.analyse_errors(df)
+
+    expected_columns = [
+        "target_class",
+        "column_subset",
+        "prediction_error",
+        "column_name",
+    ]
+    assert all(col in result.columns for col in expected_columns)
+
+
+def test_analyse_errors_with_categorical_columns(
+    create_test_error_analyser_mixin_instance,
+):
+    analyser_instance = create_test_error_analyser_mixin_instance
+
+    df = pl.DataFrame(
+        {
+            "target_class": [0, 0, 1, 1, 2, 2],
+            "feature_1": ["A", "B", "A", "B", "C", "D"],
+            "feature_2": ["X", "Y", "X", "Y", "Z", "W"],
+            "prediction_error": [0.5, 0.6, 0.7, 0.8, 0.9, 1.0],
+        }
+    )
+
+    result = analyser_instance.analyse_errors(df)
+
+    expected_columns = [
+        "target_class",
+        "column_subset",
+        "prediction_error",
+        "column_name",
+    ]
+    assert all(col in result.columns for col in expected_columns)
+
+
+def test_analyse_errors_with_mixed_columns(create_test_error_analyser_mixin_instance):
+    analyser_instance = create_test_error_analyser_mixin_instance
+
+    df = pl.DataFrame(
+        {
+            "target_class": [0, 0, 1, 1, 2, 2],
+            "feature_1": [0.1, 0.2, 0.1, 0.2, 0.3, 0.4],
+            "feature_2": ["A", "B", "A", "B", "C", "D"],
+            "prediction_error": [0.5, 0.6, 0.7, 0.8, 0.9, 1.0],
+        }
+    )
+
+    result = analyser_instance.analyse_errors(df)
+
+    expected_columns = [
+        "target_class",
+        "column_subset",
+        "prediction_error",
+        "column_name",
+    ]
+    assert all(col in result.columns for col in expected_columns)
+
+
+def test_analyse_errors_descending_false(create_test_error_analyser_mixin_instance):
+    analyser_instance = create_test_error_analyser_mixin_instance
+
+    df = pl.DataFrame(
+        {
+            "target_class": [0, 0, 1, 1, 2, 2],
+            "feature_1": [0.1, 0.2, 0.1, 0.2, 0.3, 0.4],
+            "feature_2": ["A", "B", "A", "B", "C", "D"],
+            "prediction_error": [0.5, 0.6, 0.7, 0.8, 0.9, 1.0],
+        }
+    )
+
+    result = analyser_instance.analyse_errors(df, descending=False)
+
+    expected_columns = [
+        "target_class",
+        "column_subset",
+        "prediction_error",
+        "column_name",
+    ]
+    assert all(col in result.columns for col in expected_columns)
+
+
+def test_analyse_errors_with_empty_dataframe(create_test_error_analyser_mixin_instance):
+    analyser_instance = create_test_error_analyser_mixin_instance
+
+    df = pl.DataFrame(
+        {
+            "target_class": [],
+            "feature_1": [],
+            "feature_2": [],
+            "prediction_error": [],
+        }
+    )
+
+    result = analyser_instance.analyse_errors(df)
+
+    expected_columns = [
+        "target_class",
+        "column_subset",
+        "prediction_error",
+        "column_name",
+    ]
+    assert all(col in result.columns for col in expected_columns)
+    assert result.shape == (0, len(expected_columns))
