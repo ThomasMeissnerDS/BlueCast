@@ -1,7 +1,7 @@
 """Base classes for evaluation purposes"""
 
 from abc import ABC, abstractmethod
-from typing import Callable, Union
+from typing import Union
 
 import polars as pl
 
@@ -35,7 +35,7 @@ class ErrorAnalyser(ABC):
         raise NotImplementedError
 
     @abstractmethod
-    def calculate_errors(self, df, loss_func: Callable) -> pl.DataFrame:
+    def calculate_errors(self, df) -> pl.DataFrame:
         raise NotImplementedError
 
     @abstractmethod

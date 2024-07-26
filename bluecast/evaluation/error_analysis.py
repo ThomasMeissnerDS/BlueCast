@@ -5,8 +5,9 @@ This step follows the training step. Ideally
 it uses stored out of fold datasets from using the 'fit_eval' methods.
 """
 
-from typing import Callable, List, Optional, Union
+from typing import List, Optional, Union
 
+import numpy as np
 import pandas as pd
 import polars as pl
 
@@ -158,9 +159,7 @@ class ErrorAnalyserClassification(ErrorAnalyser, OutOfFoldDataReader):
 
         return pl.concat(stacked_df)
 
-    def calculate_errors(
-        self, df: Union[pd.DataFrame, pl.DataFrame], loss_func: Callable
-    ):
+    def calculate_errors(self, df: Union[pd.DataFrame, pl.DataFrame]):
         """
         Analyse errors of predictions on out of fold data.
 
@@ -172,7 +171,9 @@ class ErrorAnalyserClassification(ErrorAnalyser, OutOfFoldDataReader):
         if isinstance(df, pl.DataFrame):
             df = df.to_pandas()
 
-        df["prediction_error"] = loss_func(df["prediction"].values.tolist(), df["target_class"].values.tolist())
+        df["prediction_error"] = np.abs(
+            df["target_class"].astype(float) - df["prediction"].astype(float)
+        )
 
         if isinstance(df, pd.DataFrame):
             df = pl.from_dataframe(df)
@@ -259,9 +260,7 @@ class ErrorAnalyserClassificationCV(ErrorAnalyser, OutOfFoldDataReaderCV):
 
         return pl.concat(stacked_df)
 
-    def calculate_errors(
-        self, df: Union[pd.DataFrame, pl.DataFrame], loss_func: Callable
-    ):
+    def calculate_errors(self, df: Union[pd.DataFrame, pl.DataFrame]):
         """
         Analyse errors of predictions on out of fold data.
 
@@ -273,7 +272,9 @@ class ErrorAnalyserClassificationCV(ErrorAnalyser, OutOfFoldDataReaderCV):
         if isinstance(df, pl.DataFrame):
             df = df.to_pandas()
 
-        df["prediction_error"] = loss_func(df["prediction"].values.tolist(), df["target_class"].values.tolist())
+        df["prediction_error"] = np.abs(
+            df["target_class"].astype(float) - df["prediction"].astype(float)
+        )
 
         if isinstance(df, pd.DataFrame):
             df = pl.from_dataframe(df)
