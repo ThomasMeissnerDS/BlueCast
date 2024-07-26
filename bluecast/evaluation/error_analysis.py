@@ -25,22 +25,20 @@ from bluecast.preprocessing.encode_target_labels import TargetLabelEncoder
 
 class OutOfFoldDataReader(DataReader):
     def __init__(self, bluecast_instance: Union[BlueCast, BlueCastRegression]):
-
+        self.bluecast_instance: Union[BlueCast, BlueCastRegression] = bluecast_instance
         self.class_problem = bluecast_instance.class_problem
         self.target_column = bluecast_instance.target_column
         self.target_classes: List[Union[str, int, float]] = []
         self.prediction_columns: List[str] = []
         self.target_label_encoder: Optional[TargetLabelEncoder] = None
 
-    def read_data_from_bluecast_instance(
-        self, bluecast_instance: Union[BlueCast, BlueCastRegression]
-    ) -> pl.DataFrame:
+    def read_data_from_bluecast_instance(self) -> pl.DataFrame:
         if isinstance(
-            bluecast_instance.conf_training.out_of_fold_dataset_store_path, str
+            self.bluecast_instance.conf_training.out_of_fold_dataset_store_path, str
         ):
             oof_dataset = pl.read_parquet(
-                bluecast_instance.conf_training.out_of_fold_dataset_store_path
-                + f"oof_data_{bluecast_instance.conf_training.global_random_state}.parquet"
+                self.bluecast_instance.conf_training.out_of_fold_dataset_store_path
+                + f"oof_data_{self.bluecast_instance.conf_training.global_random_state}.parquet"
             )
         else:
             raise ValueError(
@@ -56,12 +54,10 @@ class OutOfFoldDataReader(DataReader):
         self.prediction_columns = [
             f"predictions_class_{target_class}" for target_class in self.target_classes
         ]
-        self.target_label_encoder = bluecast_instance.target_label_encoder
+        self.target_label_encoder = self.target_label_encoder
         return oof_dataset
 
-    def read_data_from_bluecast_cv_instance(
-        self, bluecast_instance: Union[BlueCastCV, BlueCastCVRegression]
-    ) -> pl.DataFrame:
+    def read_data_from_bluecast_cv_instance(self) -> pl.DataFrame:
         raise ValueError("Please use OutOfFoldDataReaderCV class instead.")
 
     def read_data_from_path(
@@ -73,35 +69,34 @@ class OutOfFoldDataReader(DataReader):
 
         :param bluecast_instance: Instance of BlueCast that created the data.
         """
-        oof_df = self.read_data_from_bluecast_instance(bluecast_instance)
+        oof_df = self.read_data_from_bluecast_instance()
         return oof_df
 
 
 class OutOfFoldDataReaderCV(DataReader):
     def __init__(self, bluecast_instance: Union[BlueCastCV, BlueCastCVRegression]):
+        self.bluecast_instance: Union[BlueCastCV, BlueCastCVRegression] = (
+            bluecast_instance
+        )
         self.class_problem = bluecast_instance.bluecast_models[0].class_problem
         self.target_column = bluecast_instance.bluecast_models[0].target_column
         self.target_classes: List[Union[str, int, float]] = []
         self.prediction_columns: List[str] = []
         self.target_label_encoder: Optional[TargetLabelEncoder] = None
 
-    def read_data_from_bluecast_instance(
-        self, bluecast_instance: Union[BlueCast, BlueCastRegression]
-    ) -> pl.DataFrame:
+    def read_data_from_bluecast_instance(self) -> pl.DataFrame:
         raise ValueError("Please use OutOfFoldDataReader class instead.")
 
-    def read_data_from_bluecast_cv_instance(
-        self, bluecast_instance: Union[BlueCastCV, BlueCastCVRegression]
-    ) -> pl.DataFrame:
+    def read_data_from_bluecast_cv_instance(self) -> pl.DataFrame:
         oof_datasets = []
 
         if isinstance(
-            bluecast_instance.bluecast_models[
+            self.bluecast_instance.bluecast_models[
                 0
             ].conf_training.out_of_fold_dataset_store_path,
             str,
         ):
-            path: str = bluecast_instance.bluecast_models[
+            path: str = self.bluecast_instance.bluecast_models[
                 0
             ].conf_training.out_of_fold_dataset_store_path
         else:
@@ -109,10 +104,10 @@ class OutOfFoldDataReaderCV(DataReader):
                 "out_of_fold_dataset_store_path has not been configured in Training config"
             )
 
-        for idx in range(len(bluecast_instance.bluecast_models)):
+        for idx in range(len(self.bluecast_instance.bluecast_models)):
             temp_df = pl.read_parquet(
                 path
-                + f"oof_data_{bluecast_instance.bluecast_models[idx].conf_training.global_random_state}.parquet"
+                + f"oof_data_{self.bluecast_instance.bluecast_models[idx].conf_training.global_random_state}.parquet"
             )
             oof_datasets.append(temp_df)
 
@@ -126,7 +121,7 @@ class OutOfFoldDataReaderCV(DataReader):
         self.prediction_columns = [
             f"predictions_class_{target_class}" for target_class in self.target_classes
         ]
-        self.target_label_encoder = bluecast_instance.bluecast_models[
+        self.target_label_encoder = self.bluecast_instance.bluecast_models[
             0
         ].target_label_encoder
         return oof_dataset
@@ -140,7 +135,7 @@ class OutOfFoldDataReaderCV(DataReader):
 
         :param bluecast_instance: Instance of BlueCast that created the data.
         """
-        oof_df = self.read_data_from_bluecast_cv_instance(bluecast_instance)
+        oof_df = self.read_data_from_bluecast_cv_instance()
         return oof_df
 
 
@@ -248,6 +243,13 @@ class ErrorAnalyserClassification(
 
         return df
 
+    def analyse_segement_errors(self) -> pl.DataFrame:
+        oof_data = self.read_data_from_bluecast_instance()
+        stacked_oof_data = self.stack_predictions_by_class(oof_data)
+        errors = self.calculate_errors(stacked_oof_data)
+        errors_analysed = self.analyse_errors(errors.drop(self.target_column))
+        return errors_analysed
+
 
 class ErrorAnalyserClassificationCV(
     OutOfFoldDataReaderCV, ErrorPreprocessor, ErrorAnalyserClassificationMixin
@@ -290,3 +292,10 @@ class ErrorAnalyserClassificationCV(
             df = pl.from_dataframe(df)
 
         return df
+
+    def analyse_segement_errors(self) -> pl.DataFrame:
+        oof_data = self.read_data_from_bluecast_cv_instance()
+        stacked_oof_data = self.stack_predictions_by_class(oof_data)
+        errors = self.calculate_errors(stacked_oof_data)
+        errors_analysed = self.analyse_errors(errors.drop(self.target_column))
+        return errors_analysed
