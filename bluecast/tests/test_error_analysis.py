@@ -173,6 +173,11 @@ def test_out_of_fold_data_reader_cv(create_test_bluecast_cv_instance):
         assert "predictions_class_0" in read_data.columns
         assert "predictions_class_1" in read_data.columns
 
+        # test full pipeline
+        error_analyser = ErrorAnalyserClassificationCV(bluecast_cv_instance)
+        analysis_result = error_analyser.analyse_segment_errors()
+        assert isinstance(analysis_result, pl.DataFrame)
+
 
 def test_error_analyser_classification_cv(create_test_bluecast_cv_instance):
     bluecast_cv_instance = create_test_bluecast_cv_instance
@@ -297,6 +302,11 @@ def test_out_of_fold_data_reader_multiclass(create_test_bluecast_instance_multic
             ]
         )
 
+        # test full pipeline
+        error_analyser = ErrorAnalyserClassification(bluecast_instance)
+        analysis_result = error_analyser.analyse_segment_errors()
+        assert isinstance(analysis_result, pl.DataFrame)
+
 
 def test_error_analyser_classification_multiclass(
     create_test_bluecast_instance_multiclass,
@@ -409,6 +419,11 @@ def test_out_of_fold_data_reader_cv_multiclass(
         assert "predictions_class_0" in read_data.columns
         assert "predictions_class_1" in read_data.columns
         assert "predictions_class_2" in read_data.columns
+
+        # test full pipeline
+        error_analyser = ErrorAnalyserClassificationCV(bluecast_cv_instance)
+        analysis_result = error_analyser.analyse_segment_errors()
+        assert isinstance(analysis_result, pl.DataFrame)
 
 
 def test_error_analyser_classification_cv_multiclass(
