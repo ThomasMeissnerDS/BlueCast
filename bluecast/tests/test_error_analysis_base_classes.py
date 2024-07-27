@@ -75,3 +75,46 @@ def test_base_class_errorpreprocessor_notimplemented_error():
     with pytest.raises(NotImplementedError):
         fail_cls = FailEErrorPreprocessor()
         fail_cls.calculate_errors(test_df)
+
+
+class ConcreteDataReader(DataReader):
+    def read_data_from_bluecast_instance(self) -> pl.DataFrame:
+        super().read_data_from_bluecast_instance()
+
+    def read_data_from_bluecast_cv_instance(self) -> pl.DataFrame:
+        super().read_data_from_bluecast_cv_instance()
+
+
+class ConcreteErrorPreprocessor(ErrorPreprocessor):
+    def stack_predictions_by_class(self, df: pl.DataFrame) -> pl.DataFrame:
+        super().stack_predictions_by_class(df)
+
+    def calculate_errors(self, df: pl.DataFrame) -> pl.DataFrame:
+        super().calculate_errors(df)
+
+
+class ConcreteErrorAnalyser(ErrorAnalyser):
+    def analyse_errors(self, df: pl.DataFrame, descending: bool = True) -> None:
+        super().analyse_errors(df, descending)
+
+
+def test_data_reader_not_implemented():
+    reader = ConcreteDataReader()
+    with pytest.raises(NotImplementedError):
+        reader.read_data_from_bluecast_instance()
+    with pytest.raises(NotImplementedError):
+        reader.read_data_from_bluecast_cv_instance()
+
+
+def test_error_preprocessor_not_implemented():
+    preprocessor = ConcreteErrorPreprocessor()
+    with pytest.raises(NotImplementedError):
+        preprocessor.stack_predictions_by_class(pl.DataFrame())
+    with pytest.raises(NotImplementedError):
+        preprocessor.calculate_errors(pl.DataFrame())
+
+
+def test_error_analyser_not_implemented():
+    analyser = ConcreteErrorAnalyser()
+    with pytest.raises(NotImplementedError):
+        analyser.analyse_errors(pl.DataFrame())
