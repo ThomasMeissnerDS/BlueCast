@@ -1,11 +1,4 @@
-"""
-Module for error analysis.
-
-This step follows the training step. Ideally
-it uses stored out of fold datasets from using the 'fit_eval' methods.
-"""
-
-from typing import List, Optional, Union
+from typing import List, Union
 
 import numpy as np
 import pandas as pd
@@ -20,17 +13,14 @@ from bluecast.evaluation.base_classes import (
     ErrorAnalyser,
     ErrorPreprocessor,
 )
-from bluecast.preprocessing.encode_target_labels import TargetLabelEncoder
 
 
-class OutOfFoldDataReader(DataReader):
+class OutOfFoldDataReaderRegression(DataReader):
     def __init__(self, bluecast_instance: Union[BlueCast, BlueCastRegression]):
         self.bluecast_instance: Union[BlueCast, BlueCastRegression] = bluecast_instance
         self.class_problem = bluecast_instance.class_problem
         self.target_column = bluecast_instance.target_column
-        self.target_classes: List[Union[str, int, float]] = []
         self.prediction_columns: List[str] = []
-        self.target_label_encoder: Optional[TargetLabelEncoder] = None
 
     def read_data_from_bluecast_instance(self) -> pl.DataFrame:
         if isinstance(
@@ -45,35 +35,24 @@ class OutOfFoldDataReader(DataReader):
                 "out_of_fold_dataset_store_path has not been configured in Training config"
             )
 
-        self.target_classes = sorted(
-            oof_dataset.unique(subset=[self.target_column])
-            .select(self.target_column)
-            .to_series()
-            .to_list()
-        )
-        self.prediction_columns = [
-            f"predictions_class_{target_class}" for target_class in self.target_classes
-        ]
-        self.target_label_encoder = self.target_label_encoder
+        self.prediction_columns = ["predictions"]
         return oof_dataset
 
     def read_data_from_bluecast_cv_instance(self) -> pl.DataFrame:
-        raise ValueError("Please use OutOfFoldDataReaderCV class instead.")
+        raise ValueError("Please use OutOfFoldDataReaderRegressionCV class instead.")
 
 
-class OutOfFoldDataReaderCV(DataReader):
+class OutOfFoldDataReaderRegressionCV(DataReader):
     def __init__(self, bluecast_instance: Union[BlueCastCV, BlueCastCVRegression]):
         self.bluecast_instance: Union[BlueCastCV, BlueCastCVRegression] = (
             bluecast_instance
         )
         self.class_problem = bluecast_instance.bluecast_models[0].class_problem
         self.target_column = bluecast_instance.bluecast_models[0].target_column
-        self.target_classes: List[Union[str, int, float]] = []
         self.prediction_columns: List[str] = []
-        self.target_label_encoder: Optional[TargetLabelEncoder] = None
 
     def read_data_from_bluecast_instance(self) -> pl.DataFrame:
-        raise ValueError("Please use OutOfFoldDataReader class instead.")
+        raise ValueError("Please use OutOfFoldDataReaderRegression class instead.")
 
     def read_data_from_bluecast_cv_instance(self) -> pl.DataFrame:
         oof_datasets = []
@@ -100,27 +79,16 @@ class OutOfFoldDataReaderCV(DataReader):
             oof_datasets.append(temp_df)
 
         oof_dataset = pl.concat(oof_datasets)
-        self.target_classes = sorted(
-            oof_dataset.unique(subset=[self.target_column])
-            .select(self.target_column)
-            .to_series()
-            .to_list()
-        )
-        self.prediction_columns = [
-            f"predictions_class_{target_class}" for target_class in self.target_classes
-        ]
-        self.target_label_encoder = self.bluecast_instance.bluecast_models[
-            0
-        ].target_label_encoder
+        self.prediction_columns = ["predictions"]
         return oof_dataset
 
 
-class ErrorAnalyserClassificationMixin(ErrorAnalyser):
+class ErrorAnalyserRegressionMixin(ErrorAnalyser):
     def analyse_errors(
         self, df: Union[pd.DataFrame, pl.DataFrame], descending: bool = True
     ) -> pl.DataFrame:
         groupby_cols = [
-            col for col in df.columns if col not in ["prediction_error", "target_class"]
+            col for col in df.columns if col not in ["prediction_error", "predictions"]
         ]
         quantiles = [
             0.05,
@@ -151,11 +119,10 @@ class ErrorAnalyserClassificationMixin(ErrorAnalyser):
             if col in numeric_columns:
                 error_df = (
                     df.select(
-                        pl.col("target_class"),
                         pl.col(col).rank("ordinal").qcut(quantiles),
                         pl.col("prediction_error"),
                     )
-                    .group_by([col, "target_class"])
+                    .group_by([col])
                     .agg(pl.mean("prediction_error"))
                 )
                 error_df = error_df.with_columns(pl.col(col).cast(pl.String))
@@ -163,10 +130,8 @@ class ErrorAnalyserClassificationMixin(ErrorAnalyser):
                 error_df = error_df.with_columns(pl.lit(col).alias("column_name"))
             else:
                 error_df = (
-                    df.select(
-                        pl.col("target_class"), pl.col(col), pl.col("prediction_error")
-                    )
-                    .group_by([col, "target_class"])
+                    df.select(pl.col(col), pl.col("prediction_error"))
+                    .group_by([col])
                     .agg(pl.mean("prediction_error"))
                 )
                 error_df = error_df.with_columns(pl.col(col).cast(pl.String))
@@ -177,26 +142,11 @@ class ErrorAnalyserClassificationMixin(ErrorAnalyser):
         return pl.concat(error_dfs).sort("prediction_error", descending=descending)
 
 
-class ErrorAnalyserClassification(
-    OutOfFoldDataReader, ErrorPreprocessor, ErrorAnalyserClassificationMixin
+class ErrorAnalyserRegression(
+    OutOfFoldDataReaderRegression, ErrorPreprocessor, ErrorAnalyserRegressionMixin
 ):
     def stack_predictions_by_class(self, df: pl.DataFrame) -> pl.DataFrame:
-        stacked_df = []
-        for cls in self.target_classes:
-            cls_pred_col = [
-                col for col in self.prediction_columns if str(cls) in str(col)
-            ]
-            other_cls_pred_col = [
-                col for col in self.prediction_columns if str(cls) not in str(col)
-            ]  # TODO: Check if similar names cause trouble
-            temp_df = df.filter(pl.col(self.target_column) == cls).drop(
-                other_cls_pred_col
-            )
-            temp_df = temp_df.rename({cls_pred_col[0]: "prediction"})
-            temp_df = temp_df.with_columns(pl.lit(cls).alias("target_class"))
-            stacked_df.append(temp_df)
-
-        return pl.concat(stacked_df)
+        return df
 
     def calculate_errors(self, df: Union[pd.DataFrame, pl.DataFrame]):
         """
@@ -211,7 +161,7 @@ class ErrorAnalyserClassification(
             df = df.to_pandas()
 
         df["prediction_error"] = np.abs(
-            df["target_class"].astype(float) - df["prediction"].astype(float)
+            df["target"].astype(float) - df["predictions"].astype(float)
         )
 
         if isinstance(df, pd.DataFrame):
@@ -227,26 +177,11 @@ class ErrorAnalyserClassification(
         return errors_analysed
 
 
-class ErrorAnalyserClassificationCV(
-    OutOfFoldDataReaderCV, ErrorPreprocessor, ErrorAnalyserClassificationMixin
+class ErrorAnalyserRegressionCV(
+    OutOfFoldDataReaderRegressionCV, ErrorPreprocessor, ErrorAnalyserRegressionMixin
 ):
     def stack_predictions_by_class(self, df: pl.DataFrame) -> pl.DataFrame:
-        stacked_df = []
-        for cls in self.target_classes:
-            cls_pred_col = [
-                col for col in self.prediction_columns if str(cls) in str(col)
-            ]
-            other_cls_pred_col = [
-                col for col in self.prediction_columns if str(cls) not in str(col)
-            ]  # TODO: Check if similar names cause trouble
-            temp_df = df.filter(pl.col(self.target_column) == cls).drop(
-                other_cls_pred_col
-            )
-            temp_df = temp_df.rename({cls_pred_col[0]: "prediction"})
-            temp_df = temp_df.with_columns(pl.lit(cls).alias("target_class"))
-            stacked_df.append(temp_df)
-
-        return pl.concat(stacked_df)
+        return df
 
     def calculate_errors(self, df: Union[pd.DataFrame, pl.DataFrame]):
         """
@@ -261,7 +196,7 @@ class ErrorAnalyserClassificationCV(
             df = df.to_pandas()
 
         df["prediction_error"] = np.abs(
-            df["target_class"].astype(float) - df["prediction"].astype(float)
+            df["target"].astype(float) - df["predictions"].astype(float)
         )
 
         if isinstance(df, pd.DataFrame):
