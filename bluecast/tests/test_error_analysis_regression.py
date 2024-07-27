@@ -23,6 +23,7 @@ def create_test_bluecast_instance():
 
 def test_out_of_fold_data_reader(create_test_bluecast_instance):
     bluecast_instance = create_test_bluecast_instance
+    bluecast_instance.target_column = "target"
 
     data_reader = OutOfFoldDataReaderRegression(bluecast_instance)
 
@@ -32,7 +33,7 @@ def test_out_of_fold_data_reader(create_test_bluecast_instance):
         data_reader.read_data_from_bluecast_instance()
 
     with tempfile.TemporaryDirectory() as tmpdir:
-        bluecast_instance.conf_training.out_of_fold_dataset_store_path = tmpdir
+        bluecast_instance.conf_training.out_of_fold_dataset_store_path = tmpdir + "/"
         oof_data = pl.DataFrame(
             {
                 "target": [1.0, 2.0, 1.5, 2.5],
@@ -42,8 +43,12 @@ def test_out_of_fold_data_reader(create_test_bluecast_instance):
             }
         )
 
-        oof_data.write_parquet(f"{tmpdir}/oof_data_42.parquet")
-        # Add more assertions or tests as needed
+        oof_data.write_parquet(f"{tmpdir}/oof_data_33.parquet")
+
+        # test full pipeline
+        error_analyser = ErrorAnalyserRegression(bluecast_instance)
+        analysis_result = error_analyser.analyse_segment_errors()
+        assert isinstance(analysis_result, pl.DataFrame)
 
 
 def test_error_analyser_regression(create_test_bluecast_instance):
@@ -260,11 +265,12 @@ def test_analyse_errors_regression(create_test_error_analyser_mixin_instance):
             "target": [1.0, 1.5, 2.0, 2.5],
             "feature_1": [0.1, 0.2, 0.1, 0.2],
             "feature_2": [1, 2, 1, 2],
+            "feature_3": ["male", "female", "male", "female"],
             "prediction_error": [0.5, 0.6, 0.7, 0.8],
         }
     )
 
     result_df = analyser_instance.analyse_errors(df)
 
-    assert result_df.shape[0] == 12
+    assert result_df.shape[0] == 14
     assert result_df.shape[1] == 3
