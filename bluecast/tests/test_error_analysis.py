@@ -81,6 +81,40 @@ def test_error_analyser_classification(create_test_bluecast_instance):
     )
 
 
+def test_calculate_errors_classification(create_test_bluecast_instance):
+    bluecast_instance = create_test_bluecast_instance
+
+    error_analyser = ErrorAnalyserClassification(bluecast_instance)
+
+    stacked_data = pl.DataFrame(
+        {
+            "target": [0, 0, 1, 1],
+            "prediction": [0.8, 0.7, 0.8, 0.7],
+            "target_class": [0, 0, 1, 1],
+        }
+    )
+
+    expected_errors = pl.DataFrame(
+        {
+            "target": [0, 0, 1, 1],
+            "prediction": [0.8, 0.7, 0.8, 0.7],
+            "target_class": [0, 0, 1, 1],
+            "prediction_error": [0.8, 0.7, 0.2, 0.3],
+        }
+    )
+
+    calculated_errors = error_analyser.calculate_errors(stacked_data)
+
+    assert (
+        pd.testing.assert_frame_equal(
+            calculated_errors.to_pandas(),
+            expected_errors.to_pandas(),
+            check_dtype=False,
+        )
+        is None
+    )
+
+
 @pytest.fixture
 def create_test_bluecast_cv_instance():
     # Create a mock or a test instance of BlueCastCV
@@ -172,6 +206,40 @@ def test_error_analyser_classification_cv(create_test_bluecast_cv_instance):
         pd.testing.assert_frame_equal(
             stacked_data_cv.to_pandas(),
             expected_stacked_data_cv.to_pandas(),
+            check_dtype=False,
+        )
+        is None
+    )
+
+
+def test_calculate_errors_classification_cv(create_test_bluecast_cv_instance):
+    bluecast_cv_instance = create_test_bluecast_cv_instance
+
+    error_analyser_cv = ErrorAnalyserClassificationCV(bluecast_cv_instance)
+
+    stacked_data = pl.DataFrame(
+        {
+            "target": [0, 0, 1, 1],
+            "prediction": [0.8, 0.7, 0.8, 0.7],
+            "target_class": [0, 0, 1, 1],
+        }
+    )
+
+    expected_errors = pl.DataFrame(
+        {
+            "target": [0, 0, 1, 1],
+            "prediction": [0.8, 0.7, 0.8, 0.7],
+            "target_class": [0, 0, 1, 1],
+            "prediction_error": [0.8, 0.7, 0.2, 0.3],
+        }
+    )
+
+    calculated_errors = error_analyser_cv.calculate_errors(stacked_data)
+
+    assert (
+        pd.testing.assert_frame_equal(
+            calculated_errors.to_pandas(),
+            expected_errors.to_pandas(),
             check_dtype=False,
         )
         is None
