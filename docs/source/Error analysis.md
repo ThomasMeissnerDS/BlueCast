@@ -63,3 +63,7 @@ analysis_result = error_analyser.analyse_segment_errors()
 
 Now we receive a Polars DataFrame showing the mean absolute prediction
 errors of all subsegments in the dataset, which can be used for further analysis.
+
+![Error analysis example](error_analysis_table.png)
+
+Error analysis is avilaable for all regression models as well.
