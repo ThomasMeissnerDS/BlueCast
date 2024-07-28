@@ -88,30 +88,16 @@ class ErrorAnalyserRegressionMixin(ErrorAnalyser):
         self, df: Union[pd.DataFrame, pl.DataFrame], descending: bool = True
     ) -> pl.DataFrame:
         groupby_cols = [
-            col for col in df.columns if col not in ["prediction_error", "predictions"]
+            col
+            for col in df.columns
+            if col not in ["prediction_error", "predictions", "target_quantiles"]
         ]
-        quantiles = [
-            0.05,
-            0.1,
-            0.15,
-            0.2,
-            0.25,
-            0.3,
-            0.35,
-            0.4,
-            0.45,
-            0.5,
-            0.55,
-            0.6,
-            0.65,
-            0.7,
-            0.75,
-            0.8,
-            0.85,
-            0.9,
-            0.95,
+        quantiles = [round(i, 2) for i in np.linspace(0, 0.95, 10)]
+        numeric_columns = [
+            col
+            for col in df.select(pl.col(pl.NUMERIC_DTYPES)).columns
+            if "target_quantiles" not in col
         ]
-        numeric_columns = df.select(pl.col(pl.NUMERIC_DTYPES)).columns
 
         error_dfs = []
 
@@ -119,10 +105,11 @@ class ErrorAnalyserRegressionMixin(ErrorAnalyser):
             if col in numeric_columns:
                 error_df = (
                     df.select(
+                        pl.col("target_quantiles"),
                         pl.col(col).rank("ordinal").qcut(quantiles),
                         pl.col("prediction_error"),
                     )
-                    .group_by([col])
+                    .group_by([col, "target_quantiles"])
                     .agg(pl.mean("prediction_error"))
                 )
                 error_df = error_df.with_columns(pl.col(col).cast(pl.String))
@@ -130,8 +117,12 @@ class ErrorAnalyserRegressionMixin(ErrorAnalyser):
                 error_df = error_df.with_columns(pl.lit(col).alias("column_name"))
             else:
                 error_df = (
-                    df.select(pl.col(col), pl.col("prediction_error"))
-                    .group_by([col])
+                    df.select(
+                        pl.col("target_quantiles"),
+                        pl.col(col),
+                        pl.col("prediction_error"),
+                    )
+                    .group_by([col, "target_quantiles"])
                     .agg(pl.mean("prediction_error"))
                 )
                 error_df = error_df.with_columns(pl.col(col).cast(pl.String))
@@ -146,6 +137,13 @@ class ErrorAnalyserRegression(
     OutOfFoldDataReaderRegression, ErrorPreprocessor, ErrorAnalyserRegressionMixin
 ):
     def stack_predictions_by_class(self, df: pl.DataFrame) -> pl.DataFrame:
+        quantiles = [round(i, 2) for i in np.linspace(0, 0.95, 10)]
+        df = df.with_columns(
+            pl.col(self.target_column)
+            .rank("ordinal")
+            .qcut(quantiles)
+            .alias("target_quantiles")
+        )
         return df
 
     def calculate_errors(self, df: Union[pd.DataFrame, pl.DataFrame]):
@@ -181,6 +179,13 @@ class ErrorAnalyserRegressionCV(
     OutOfFoldDataReaderRegressionCV, ErrorPreprocessor, ErrorAnalyserRegressionMixin
 ):
     def stack_predictions_by_class(self, df: pl.DataFrame) -> pl.DataFrame:
+        quantiles = [round(i, 2) for i in np.linspace(0, 0.95, 10)]
+        df = df.with_columns(
+            pl.col(self.target_column)
+            .rank("ordinal")
+            .qcut(quantiles)
+            .alias("target_quantiles")
+        )
         return df
 
     def calculate_errors(self, df: Union[pd.DataFrame, pl.DataFrame]):

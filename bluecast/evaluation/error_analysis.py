@@ -122,27 +122,7 @@ class ErrorAnalyserClassificationMixin(ErrorAnalyser):
         groupby_cols = [
             col for col in df.columns if col not in ["prediction_error", "target_class"]
         ]
-        quantiles = [
-            0.05,
-            0.1,
-            0.15,
-            0.2,
-            0.25,
-            0.3,
-            0.35,
-            0.4,
-            0.45,
-            0.5,
-            0.55,
-            0.6,
-            0.65,
-            0.7,
-            0.75,
-            0.8,
-            0.85,
-            0.9,
-            0.95,
-        ]
+        quantiles = [round(i, 2) for i in np.linspace(0, 0.95, 10)]
         numeric_columns = df.select(pl.col(pl.NUMERIC_DTYPES)).columns
 
         error_dfs = []
