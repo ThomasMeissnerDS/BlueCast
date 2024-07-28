@@ -161,6 +161,7 @@ with BlueCast, covering:
 * [Customize training settings](docs/source/Customize%20training%20settings.md)
 * [Customizing configurations and objects](docs/source/Customizing%20configurations%20and%20objects.md)
 * [Model evaluation](docs/source/Model%20evaluation.md)
+* [Error analysis](docs/source/Error%20analysis.md)
 * [Model explainability (XAI)](docs/source/Model%20explainability%20(XAI).md)
 * [Uncertainty quantification](docs/source/Uncertainty%20quantification.md)
 * [Monitoring](docs/source/Monitoring.md)

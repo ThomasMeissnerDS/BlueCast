@@ -33,6 +33,11 @@ class OutOfFoldDataReader(DataReader):
         self.target_label_encoder: Optional[TargetLabelEncoder] = None
 
     def read_data_from_bluecast_instance(self) -> pl.DataFrame:
+        """
+        Read out of fold datasetsfrom defined storage location.
+
+        :return: Out of fold dataset.
+        """
         if isinstance(
             self.bluecast_instance.conf_training.out_of_fold_dataset_store_path, str
         ):
@@ -58,6 +63,12 @@ class OutOfFoldDataReader(DataReader):
         return oof_dataset
 
     def read_data_from_bluecast_cv_instance(self) -> pl.DataFrame:
+        """
+        Function to fail when called.
+
+        Please use read_data_from_bluecast_instance instead.
+        :return: Will raise an error.
+        """
         raise ValueError("Please use OutOfFoldDataReaderCV class instead.")
 
 
@@ -73,9 +84,20 @@ class OutOfFoldDataReaderCV(DataReader):
         self.target_label_encoder: Optional[TargetLabelEncoder] = None
 
     def read_data_from_bluecast_instance(self) -> pl.DataFrame:
+        """
+        Function to fail when called.
+
+        Please use read_data_from_bluecast_cv_instance instead.
+        :return: Will raise an error.
+        """
         raise ValueError("Please use OutOfFoldDataReader class instead.")
 
     def read_data_from_bluecast_cv_instance(self) -> pl.DataFrame:
+        """
+        Read out of fold datasets from defined storage location.
+
+        :return: Concatenated out of fold dataset.
+        """
         oof_datasets = []
 
         if isinstance(
@@ -119,6 +141,12 @@ class ErrorAnalyserClassificationMixin(ErrorAnalyser):
     def analyse_errors(
         self, df: Union[pd.DataFrame, pl.DataFrame], descending: bool = True
     ) -> pl.DataFrame:
+        """
+        Find mean absolute errors for all subsegments
+        :param df: Preprocessed out of fold DataFrame.
+        :param descending: Bool indicating if errors shall be ordered descending in final DataFrame.
+        :return: Polars DataFrame with all subsegments and mean absolute error in each of them.
+        """
         groupby_cols = [
             col for col in df.columns if col not in ["prediction_error", "target_class"]
         ]
@@ -161,6 +189,14 @@ class ErrorAnalyserClassification(
     OutOfFoldDataReader, ErrorPreprocessor, ErrorAnalyserClassificationMixin
 ):
     def stack_predictions_by_class(self, df: pl.DataFrame) -> pl.DataFrame:
+        """
+        Stack class predictions into a long format.
+
+        BlueCast returns predictions for each class as separate columns. This function returns a DataFrame where
+        all predictions are stacked as a single 'prediction' column.
+        :param df: Polars DataFrame with wide predictions  format.
+        :return: Polars DataFrame with stacked predictions.
+        """
         stacked_df = []
         for cls in self.target_classes:
             cls_pred_col = [
@@ -178,14 +214,12 @@ class ErrorAnalyserClassification(
 
         return pl.concat(stacked_df)
 
-    def calculate_errors(self, df: Union[pd.DataFrame, pl.DataFrame]):
+    def calculate_errors(self, df: Union[pd.DataFrame, pl.DataFrame]) -> pl.DataFrame:
         """
         Analyse errors of predictions on out of fold data.
 
         :param df: DataFrame holding out of fold data and predictions.
-        :param loss_func: Function that takes (y_true, y_pred) and returns a score. Will be used to evaluate
-            prediction errors.
-        :return: None
+        :return: Polars DataFrame with additional 'prediction_error' column.
         """
         if isinstance(df, pl.DataFrame):
             df = df.to_pandas()
@@ -200,6 +234,14 @@ class ErrorAnalyserClassification(
         return df
 
     def analyse_segment_errors(self) -> pl.DataFrame:
+        """
+        Pipeline for error analysis.
+
+        Reads the out of fold datasets from the output location defined in the training config inside the provided
+        BlueCast instance, preprocess the data and calculate errors for all subsegments of the data.
+        Numerical columns will be split into quantiles to get subsegments.
+        :return: Polars DataFrame with subsegments and errors.
+        """
         oof_data = self.read_data_from_bluecast_instance()
         stacked_oof_data = self.stack_predictions_by_class(oof_data)
         errors = self.calculate_errors(stacked_oof_data)
@@ -211,6 +253,14 @@ class ErrorAnalyserClassificationCV(
     OutOfFoldDataReaderCV, ErrorPreprocessor, ErrorAnalyserClassificationMixin
 ):
     def stack_predictions_by_class(self, df: pl.DataFrame) -> pl.DataFrame:
+        """
+        Stack class predictions into a long format.
+
+        BlueCast returns predictions for each class as separate columns. This function returns a DataFrame where
+        all predictions are stacked as a single 'prediction' column.
+        :param df: Polars DataFrame with wide predictions  format.
+        :return: Polars DataFrame with stacked predictions.
+        """
         stacked_df = []
         for cls in self.target_classes:
             cls_pred_col = [
@@ -228,14 +278,12 @@ class ErrorAnalyserClassificationCV(
 
         return pl.concat(stacked_df)
 
-    def calculate_errors(self, df: Union[pd.DataFrame, pl.DataFrame]):
+    def calculate_errors(self, df: Union[pd.DataFrame, pl.DataFrame]) -> pl.DataFrame:
         """
         Analyse errors of predictions on out of fold data.
 
         :param df: DataFrame holding out of fold data and predictions.
-        :param loss_func: Function that takes (y_true, y_pred) and returns a score. Will be used to evaluate
-            prediction errors.
-        :return: None
+        :return: Polars DataFrame with additional 'prediction_error' column.
         """
         if isinstance(df, pl.DataFrame):
             df = df.to_pandas()
@@ -250,6 +298,14 @@ class ErrorAnalyserClassificationCV(
         return df
 
     def analyse_segment_errors(self) -> pl.DataFrame:
+        """
+        Pipeline for error analysis.
+
+        Reads the out of fold datasets from the output location defined in the training config inside the provided
+        BlueCast instance, preprocess the data and calculate errors for all subsegments of the data.
+        Numerical columns will be split into quantiles to get subsegments.
+        :return: Polars DataFrame with subsegments and errors.
+        """
         oof_data = self.read_data_from_bluecast_cv_instance()
         stacked_oof_data = self.stack_predictions_by_class(oof_data)
         errors = self.calculate_errors(stacked_oof_data)
