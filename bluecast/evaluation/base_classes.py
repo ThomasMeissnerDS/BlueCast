@@ -41,5 +41,9 @@ class ErrorDistributionPlotter(ABC):
     """Abstract class to define the plots for error analysis"""
 
     @abstractmethod
-    def plot_error_distributions(self, df: pl.DataFrame, hue_column: str):
+    def plot_error_distributions(
+        self,
+        df: pl.DataFrame,
+        target_column: str,
+    ):
         raise NotImplementedError

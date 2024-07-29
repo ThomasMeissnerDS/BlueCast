@@ -131,4 +131,4 @@ def test_error_analyser_not_implemented():
 def test_error_distribution_plotter_not_implemented():
     analyser = ConcreteErrorDistributionPlotter()
     with pytest.raises(NotImplementedError):
-        analyser.plot_error_distributions(pl.DataFrame())
+        analyser.plot_error_distributions(pl.DataFrame(), "target_column")

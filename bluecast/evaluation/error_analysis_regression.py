@@ -8,7 +8,7 @@ from bluecast.blueprints.cast import BlueCast
 from bluecast.blueprints.cast_cv import BlueCastCV
 from bluecast.blueprints.cast_cv_regression import BlueCastCVRegression
 from bluecast.blueprints.cast_regression import BlueCastRegression
-from bluecast.eda.analyse import bi_variate_plots
+from bluecast.eda.analyse import plot_error_distributions
 from bluecast.evaluation.base_classes import (
     DataReader,
     ErrorAnalyser,
@@ -163,18 +163,27 @@ class ErrorAnalyserRegressionMixin(ErrorAnalyser):
         return pl.concat(error_dfs).sort("prediction_error", descending=descending)
 
 
-class ErrorDistributionPlotterMixin(ErrorDistributionPlotter):
+class ErrorDistributionRegressionPlotterMixin(ErrorDistributionPlotter):
     def plot_error_distributions(
-        self, df: pl.DataFrame, hue_column: str = "target_quantiles"
+        self,
+        df: pl.DataFrame,
+        target_column: str = "target_quantiles",
     ):
-        bi_variate_plots(df.sort(by="target").to_pandas(), hue_column, num_cols_grid=2)
+        res_df = df.to_pandas()
+
+        plot_error_distributions(
+            res_df,
+            target=target_column,
+            prediction_error="prediction_error",
+            num_cols_grid=2,
+        )
 
 
 class ErrorAnalyserRegression(
     OutOfFoldDataReaderRegression,
     ErrorPreprocessor,
     ErrorAnalyserRegressionMixin,
-    ErrorDistributionPlotterMixin,
+    ErrorDistributionRegressionPlotterMixin,
 ):
     def stack_predictions_by_class(self, df: pl.DataFrame) -> pl.DataFrame:
         """
@@ -223,7 +232,7 @@ class ErrorAnalyserRegression(
         oof_data = self.read_data_from_bluecast_instance()
         stacked_oof_data = self.stack_predictions_by_class(oof_data)
         errors = self.calculate_errors(stacked_oof_data)
-        self.plot_error_distributions(errors)
+        self.plot_error_distributions(errors, "target_quantiles")
         errors_analysed = self.analyse_errors(errors.drop(self.target_column))
         return errors_analysed
 
@@ -232,7 +241,7 @@ class ErrorAnalyserRegressionCV(
     OutOfFoldDataReaderRegressionCV,
     ErrorPreprocessor,
     ErrorAnalyserRegressionMixin,
-    ErrorDistributionPlotterMixin,
+    ErrorDistributionRegressionPlotterMixin,
 ):
     def stack_predictions_by_class(self, df: pl.DataFrame) -> pl.DataFrame:
         """
@@ -283,6 +292,6 @@ class ErrorAnalyserRegressionCV(
         oof_data = self.read_data_from_bluecast_cv_instance()
         stacked_oof_data = self.stack_predictions_by_class(oof_data)
         errors = self.calculate_errors(stacked_oof_data)
-        self.plot_error_distributions(errors)
+        self.plot_error_distributions(errors, "target_quantiles")
         errors_analysed = self.analyse_errors(errors.drop(self.target_column))
         return errors_analysed

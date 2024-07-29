@@ -218,7 +218,7 @@ def eval_classifier(
         "f1_score_macro": f1_score_macro,
         "f1_score_micro": f1_score_micro,
         "f1_score_weighted": f1_score_weighted,
-        "log_loss": log_loss,
+        "log_loss": logloss,
         "balanced_logloss": bll,
         "roc_auc": roc_auc,
         "classfication_report": full_classification_report,
