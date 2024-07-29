@@ -4,6 +4,7 @@ import pytest
 from bluecast.evaluation.base_classes import (
     DataReader,
     ErrorAnalyser,
+    ErrorDistributionPlotter,
     ErrorPreprocessor,
 )
 
@@ -98,6 +99,11 @@ class ConcreteErrorAnalyser(ErrorAnalyser):
         super().analyse_errors(df, descending)
 
 
+class ConcreteErrorDistributionPlotter(ErrorDistributionPlotter):
+    def plot_error_distributions(self, df: pl.DataFrame, hue_column: str = "target_class") -> None:
+        super().plot_error_distributions(df, hue_column)
+
+
 def test_data_reader_not_implemented():
     reader = ConcreteDataReader()
     with pytest.raises(NotImplementedError):
@@ -118,3 +124,9 @@ def test_error_analyser_not_implemented():
     analyser = ConcreteErrorAnalyser()
     with pytest.raises(NotImplementedError):
         analyser.analyse_errors(pl.DataFrame())
+
+
+def test_error_distribution_plotter_not_implemented():
+    analyser = ConcreteErrorDistributionPlotter()
+    with pytest.raises(NotImplementedError):
+        analyser.plot_error_distributions(pl.DataFrame())

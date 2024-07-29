@@ -30,8 +30,16 @@ class ErrorPreprocessor(ABC):
 
 
 class ErrorAnalyser(ABC):
-    """Abstract class to define analysing prediction errors on out of fold datasets"""
+    """Abstract class to define the analysis of prediction errors on out of fold datasets"""
 
     @abstractmethod
     def analyse_errors(self, df, descending: bool = True) -> None:
+        raise NotImplementedError
+
+
+class ErrorDistributionPlotter(ABC):
+    """Abstract class to define the plots for error analysis"""
+
+    @abstractmethod
+    def plot_error_distributions(self, df: pl.DataFrame, hue_column: str):
         raise NotImplementedError
