@@ -15,9 +15,11 @@ from bluecast.blueprints.cast import BlueCast
 from bluecast.blueprints.cast_cv import BlueCastCV
 from bluecast.blueprints.cast_cv_regression import BlueCastCVRegression
 from bluecast.blueprints.cast_regression import BlueCastRegression
+from bluecast.eda.analyse import bi_variate_plots
 from bluecast.evaluation.base_classes import (
     DataReader,
     ErrorAnalyser,
+    ErrorDistributionPlotter,
     ErrorPreprocessor,
 )
 from bluecast.preprocessing.encode_target_labels import TargetLabelEncoder
@@ -185,8 +187,18 @@ class ErrorAnalyserClassificationMixin(ErrorAnalyser):
         return pl.concat(error_dfs).sort("prediction_error", descending=descending)
 
 
+class ErrorDistributionPlotterMixin(ErrorDistributionPlotter):
+    def plot_error_distributions(
+        self, df: pl.DataFrame, hue_column: str = "target_class"
+    ):
+        bi_variate_plots(df.to_pandas(), hue_column)
+
+
 class ErrorAnalyserClassification(
-    OutOfFoldDataReader, ErrorPreprocessor, ErrorAnalyserClassificationMixin
+    OutOfFoldDataReader,
+    ErrorPreprocessor,
+    ErrorAnalyserClassificationMixin,
+    ErrorDistributionPlotterMixin,
 ):
     def stack_predictions_by_class(self, df: pl.DataFrame) -> pl.DataFrame:
         """
@@ -245,12 +257,16 @@ class ErrorAnalyserClassification(
         oof_data = self.read_data_from_bluecast_instance()
         stacked_oof_data = self.stack_predictions_by_class(oof_data)
         errors = self.calculate_errors(stacked_oof_data)
+        self.plot_error_distributions(errors)
         errors_analysed = self.analyse_errors(errors.drop(self.target_column))
         return errors_analysed
 
 
 class ErrorAnalyserClassificationCV(
-    OutOfFoldDataReaderCV, ErrorPreprocessor, ErrorAnalyserClassificationMixin
+    OutOfFoldDataReaderCV,
+    ErrorPreprocessor,
+    ErrorAnalyserClassificationMixin,
+    ErrorDistributionPlotterMixin,
 ):
     def stack_predictions_by_class(self, df: pl.DataFrame) -> pl.DataFrame:
         """
@@ -309,5 +325,6 @@ class ErrorAnalyserClassificationCV(
         oof_data = self.read_data_from_bluecast_cv_instance()
         stacked_oof_data = self.stack_predictions_by_class(oof_data)
         errors = self.calculate_errors(stacked_oof_data)
+        self.plot_error_distributions(errors)
         errors_analysed = self.analyse_errors(errors.drop(self.target_column))
         return errors_analysed

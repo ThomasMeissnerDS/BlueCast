@@ -248,18 +248,31 @@ def bi_variate_plots(df: pd.DataFrame, target: str, num_cols_grid: int = 4) -> N
     ) // num_cols  # Calculate the number of rows needed
 
     # Set the size of the figure
-    fig, axes = plt.subplots(num_rows, num_cols, figsize=(12, 4 * num_rows))
+    fig, axes = plt.subplots(
+        num_rows, num_cols, figsize=(12, 4 * num_rows), squeeze=False
+    )
 
-    # Generate violin plots for each variable with respect to EC1
+    # Define a color palette for the categories
+    unique_categories = df[target].unique()
+    palette = sns.color_palette("husl", len(unique_categories))
+    palette_dict = dict(zip(map(str, unique_categories), palette))
+
+    # Convert target to string to ensure the palette dictionary matches
+    df[target] = df[target].astype(str)
+
+    # Generate violin plots for each variable with respect to the target
     for i, variable in enumerate(variables):
         row = i // num_cols
         col = i % num_cols
         ax = axes[row][col]
 
-        sns.violinplot(data=df, x=target, y=variable, ax=ax)
+        sns.violinplot(data=df, x=target, y=variable, ax=ax, palette=palette_dict)
         ax.set_xlabel(target)
         ax.set_ylabel(variable)
         ax.set_title(f"Violin Plot: {variable} vs {target}")
+
+        # Rotate x-axis labels by 90 degrees
+        ax.tick_params(axis="x", rotation=90)
 
     # Remove any empty subplots
     if num_variables < num_rows * num_cols:

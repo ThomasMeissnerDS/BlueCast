@@ -100,7 +100,9 @@ class ConcreteErrorAnalyser(ErrorAnalyser):
 
 
 class ConcreteErrorDistributionPlotter(ErrorDistributionPlotter):
-    def plot_error_distributions(self, df: pl.DataFrame, hue_column: str = "target_class") -> None:
+    def plot_error_distributions(
+        self, df: pl.DataFrame, hue_column: str = "target_class"
+    ) -> None:
         super().plot_error_distributions(df, hue_column)
 
 
