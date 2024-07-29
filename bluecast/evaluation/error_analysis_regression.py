@@ -4,8 +4,6 @@ import numpy as np
 import pandas as pd
 import polars as pl
 
-from bluecast.blueprints.cast import BlueCast
-from bluecast.blueprints.cast_cv import BlueCastCV
 from bluecast.blueprints.cast_cv_regression import BlueCastCVRegression
 from bluecast.blueprints.cast_regression import BlueCastRegression
 from bluecast.eda.analyse import plot_error_distributions
@@ -18,8 +16,8 @@ from bluecast.evaluation.base_classes import (
 
 
 class OutOfFoldDataReaderRegression(DataReader):
-    def __init__(self, bluecast_instance: Union[BlueCast, BlueCastRegression]):
-        self.bluecast_instance: Union[BlueCast, BlueCastRegression] = bluecast_instance
+    def __init__(self, bluecast_instance: BlueCastRegression):
+        self.bluecast_instance: BlueCastRegression = bluecast_instance
         self.class_problem = bluecast_instance.class_problem
         self.target_column = bluecast_instance.target_column
         self.prediction_columns: List[str] = []
@@ -56,10 +54,8 @@ class OutOfFoldDataReaderRegression(DataReader):
 
 
 class OutOfFoldDataReaderRegressionCV(DataReader):
-    def __init__(self, bluecast_instance: Union[BlueCastCV, BlueCastCVRegression]):
-        self.bluecast_instance: Union[BlueCastCV, BlueCastCVRegression] = (
-            bluecast_instance
-        )
+    def __init__(self, bluecast_instance: BlueCastCVRegression):
+        self.bluecast_instance: BlueCastCVRegression = bluecast_instance
         self.class_problem = bluecast_instance.bluecast_models[0].class_problem
         self.target_column = bluecast_instance.bluecast_models[0].target_column
         self.prediction_columns: List[str] = []
@@ -164,12 +160,17 @@ class ErrorAnalyserRegressionMixin(ErrorAnalyser):
 
 
 class ErrorDistributionRegressionPlotterMixin(ErrorDistributionPlotter):
+    def __init__(self, ignore_columns_during_visualization: List[str]):
+        if not isinstance(ignore_columns_during_visualization, list):
+            ignore_columns_during_visualization = []
+        self.ignore_columns_during_visualization = ignore_columns_during_visualization
+
     def plot_error_distributions(
         self,
         df: pl.DataFrame,
         target_column: str = "target_quantiles",
     ):
-        res_df = df.to_pandas()
+        res_df = df.to_pandas().drop(self.ignore_columns_during_visualization, axis=1)
 
         plot_error_distributions(
             res_df,
@@ -185,6 +186,17 @@ class ErrorAnalyserRegression(
     ErrorAnalyserRegressionMixin,
     ErrorDistributionRegressionPlotterMixin,
 ):
+    def __init__(
+        self,
+        bluecast_instance: BlueCastRegression,
+        ignore_columns_during_visualization=None,
+    ):
+        OutOfFoldDataReaderRegression.__init__(self, bluecast_instance)
+        ErrorDistributionRegressionPlotterMixin.__init__(
+            self, ignore_columns_during_visualization
+        )
+        super().__init__(bluecast_instance)
+
     def stack_predictions_by_class(self, df: pl.DataFrame) -> pl.DataFrame:
         """
         Add additional column with binned target.
@@ -243,6 +255,17 @@ class ErrorAnalyserRegressionCV(
     ErrorAnalyserRegressionMixin,
     ErrorDistributionRegressionPlotterMixin,
 ):
+    def __init__(
+        self,
+        bluecast_instance: BlueCastCVRegression,
+        ignore_columns_during_visualization=None,
+    ):
+        OutOfFoldDataReaderRegressionCV.__init__(self, bluecast_instance)
+        ErrorDistributionRegressionPlotterMixin.__init__(
+            self, ignore_columns_during_visualization
+        )
+        super().__init__(bluecast_instance)
+
     def stack_predictions_by_class(self, df: pl.DataFrame) -> pl.DataFrame:
         """
         Add additional column with binned target.
