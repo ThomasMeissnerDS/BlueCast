@@ -1,12 +1,17 @@
 """General utilities."""
 
+import gc
 import logging
 import warnings
-from typing import Any, Dict, Optional
+from typing import Any, Dict, Literal, Optional, Union
 
 import dill as pickle
 import numpy as np
+import pandas as pd
 import xgboost as xgb
+
+from bluecast.config.training_config import TrainingConfig
+from bluecast.preprocessing.encode_target_labels import TargetLabelEncoder
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)
@@ -127,3 +132,63 @@ def log_sampling(nb_rows: int, alpha: float = 2.0) -> int:
     nb_samples = int(round(nb_rows * (1 - perc_reduction), 0))
     logging.info(f"Down sampling from {nb_rows} to {nb_samples} samples.")
     return nb_samples
+
+
+def save_out_of_fold_data(
+    oof_data: pd.DataFrame,
+    y_hat: Union[pd.Series, np.ndarray],
+    y_true: Union[pd.Series, np.ndarray],
+    target_column: str,
+    class_problem: Literal["binary", "multiclass", "regression"],
+    training_config: TrainingConfig,
+    target_label_encoder: Optional[TargetLabelEncoder] = None,
+) -> None:
+    """Save out of fold data.
+
+    :param oof_data: Data to save.
+    :param y_hat: Predictions. Will be appended to oof_data and saved together. When class_problem is "binary", only the
+        target class score is expected.
+    :param y_true: True targets.
+    :param target_column: String specifying name of the target column.
+    :param class_problem: Takes a string containing the class problem type. Either "binary", "multiclass" or
+        "regression".
+    :param training_config: Training configuration.
+    :param target_label_encoder: (Optional) TargetLabelEncoder object. This object will be created during classification
+        tasks automatically when the target label is a string. It can be retrieved from the BlueCast and BlueCastCV
+        instances via bluecast_obj.target_label_encoder or
+        bluecast_cv_onj.bluecast_models[idx_of_model].target_label_encoder. Adding this argument will reverse translate
+        the targets from numerical encodings back to the original strings for the column nam representation.
+    """
+    logging.info("Start saving out of fold data.")
+    oof_data_copy = oof_data.copy()
+
+    if isinstance(target_label_encoder, TargetLabelEncoder):
+        reverse_target_mapping = {
+            v: k for k, v in target_label_encoder.target_label_mapping.items()
+        }
+    else:
+        reverse_target_mapping = {}
+
+    if class_problem == "binary":
+        oof_data_copy[f"predictions_class_{reverse_target_mapping.get(0, 0)}"] = (
+            1 - y_hat
+        )
+        oof_data_copy[f"predictions_class_{reverse_target_mapping.get(1, 1)}"] = y_hat
+    elif class_problem == "multiclass":
+        for cls_idx in range(y_hat.shape[1]):
+            oof_data_copy[
+                f"predictions_class_{reverse_target_mapping.get(cls_idx, cls_idx)}"
+            ] = y_hat[:, cls_idx]
+    else:
+        oof_data_copy["predictions"] = y_hat
+
+    oof_data_copy[target_column] = y_true
+
+    if isinstance(training_config.out_of_fold_dataset_store_path, str):
+        oof_data_copy.to_parquet(
+            training_config.out_of_fold_dataset_store_path
+            + f"oof_data_{training_config.global_random_state}.parquet"
+        )
+
+    del oof_data_copy
+    _ = gc.collect()

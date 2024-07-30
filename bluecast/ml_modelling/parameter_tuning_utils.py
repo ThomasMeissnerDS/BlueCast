@@ -23,6 +23,10 @@ def update_params_based_on_tree_method(
     param["tree_method"] = trial.suggest_categorical(
         "tree_method", xgboost_params.tree_method
     )
+    if param["tree_method"] in ["hist", "approx"]:
+        param["max_bin"] = trial.suggest_int(
+            "max_bin", xgboost_params.max_bin_min, xgboost_params.max_bin_max
+        )
 
     param["booster"] = trial.suggest_categorical("booster", xgboost_params.booster)
     if param["booster"] == "gbtree":
@@ -48,12 +52,16 @@ def get_params_based_on_device(
     conf_xgboost: Union[XgboostTuneParamsConfig, XgboostTuneParamsRegressionConfig],
 ) -> Dict[str, Any]:
     """Get parameters based on available or chosen device."""
-    if conf_training.autotune_on_device in ["auto", "gpu"]:
+    if conf_training.autotune_on_device in ["auto"]:
         train_on = check_gpu_support()
         conf_params_xgboost.params["device"] = train_on["device"]
         if "exact" in conf_xgboost.tree_method and conf_params_xgboost.params[
             "device"
         ] in ["gpu", "cuda"]:
+            conf_xgboost.tree_method.remove("exact")
+    elif conf_training.autotune_on_device == "gpu":
+        train_on = {"tree_method": "hist", "device": "cuda"}
+        if "exact" in conf_xgboost.tree_method:
             conf_xgboost.tree_method.remove("exact")
     else:
         train_on = {"tree_method": "exact", "device": "cpu"}
@@ -66,7 +74,7 @@ def update_params_with_best_params(
 ) -> Dict[str, Any]:
     """Update parameters based on best parameters after tuning."""
 
-    params_to_check = ["tree_method", "booster", "grow_policy"]
+    params_to_check = ["tree_method", "booster", "grow_policy", "max_bin"]
     for param_name in params_to_check:
         if param_name in best_params:
             param[param_name] = best_params[param_name]

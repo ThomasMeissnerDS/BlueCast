@@ -12,6 +12,8 @@ from sklearn.feature_selection import mutual_info_classif, mutual_info_regressio
 from sklearn.manifold import TSNE
 from sklearn.preprocessing import StandardScaler
 
+plt.set_loglevel("WARNING")
+
 
 def plot_pie_chart(
     df: pd.DataFrame,
@@ -137,6 +139,7 @@ def plot_count_pair(
     data_df = df_1.copy()
     data_df["set"] = df_aliases[0]
     data_df = pd.concat([data_df, df_2.copy()]).fillna(df_aliases[1])
+    data_df = data_df.reset_index(drop=True)
     f, ax = plt.subplots(1, 1, figsize=(8, 6))  # Increased height to 6
 
     # Create countplot
@@ -247,18 +250,33 @@ def bi_variate_plots(df: pd.DataFrame, target: str, num_cols_grid: int = 4) -> N
     ) // num_cols  # Calculate the number of rows needed
 
     # Set the size of the figure
-    fig, axes = plt.subplots(num_rows, num_cols, figsize=(12, 4 * num_rows))
+    fig, axes = plt.subplots(
+        num_rows, num_cols, figsize=(12, 4 * num_rows), squeeze=False
+    )
 
-    # Generate violin plots for each variable with respect to EC1
+    # Define a color palette for the categories
+    unique_categories = df[target].unique()
+    palette = sns.color_palette("husl", len(unique_categories))
+    palette_dict = dict(zip(map(str, unique_categories), palette))
+
+    # Convert target to string to ensure the palette dictionary matches
+    df[target] = df[target].astype(str)
+
+    # Generate violin plots for each variable with respect to the target
     for i, variable in enumerate(variables):
         row = i // num_cols
         col = i % num_cols
         ax = axes[row][col]
 
-        sns.violinplot(data=df, x=target, y=variable, ax=ax)
+        sns.violinplot(
+            data=df, x=target, y=variable, ax=ax, palette=palette_dict, hue=target
+        )
         ax.set_xlabel(target)
         ax.set_ylabel(variable)
         ax.set_title(f"Violin Plot: {variable} vs {target}")
+
+        # Rotate x-axis labels by 90 degrees
+        ax.tick_params(axis="x", rotation=90)
 
     # Remove any empty subplots
     if num_variables < num_rows * num_cols:
@@ -659,3 +677,79 @@ def plot_ecdf(
             plt.ylabel("ECDF")
             plt.legend()
             plt.show()
+
+
+def plot_error_distributions(
+    df: pd.DataFrame, target: str, prediction_error: str, num_cols_grid: int = 4
+) -> None:
+    """
+    Plots bivariate plots for each column in the dataframe with respect to the target.
+    Each subplot represents unique values of the target column.
+    The 'prediction_error' is plotted using unique values of the target column as the hue.
+    Param num_cols_grid specifies how many columns the grid shall have.
+    """
+    if target not in df.columns.to_list():
+        raise ValueError("Target column must be part of the provided DataFrame")
+    if prediction_error not in df.columns.to_list():
+        raise ValueError(
+            "Prediction error column must be part of the provided DataFrame"
+        )
+
+    # Get the list of column names except for the target and prediction error columns
+    variables = [
+        col
+        for col in df.columns
+        if col not in [target, prediction_error, "prediction", "predictions"]
+    ]
+
+    # Define the grid layout based on the number of variables
+    num_variables = len(variables)
+    num_cols = num_cols_grid  # Number of columns in the grid
+    num_rows = (
+        num_variables + num_cols - 1
+    ) // num_cols  # Calculate the number of rows needed
+
+    # Set the size of the figure
+    fig, axes = plt.subplots(
+        num_rows, num_cols, figsize=(12, 4 * num_rows), squeeze=False
+    )
+
+    # Define a color palette for the categories
+    unique_categories = df[target].unique()
+    palette = sns.color_palette("husl", len(unique_categories))
+    palette_dict = dict(zip(map(str, unique_categories), palette))
+
+    # Convert target to string to ensure the palette dictionary matches
+    df[target] = df[target].astype(str)
+
+    # Generate plots for each variable
+    for i, variable in enumerate(variables):
+        row = i // num_cols
+        col = i % num_cols
+        ax = axes[row][col]
+
+        sns.violinplot(
+            data=df,
+            x=variable,
+            y=prediction_error,
+            hue=target,
+            ax=ax,
+            palette=palette_dict,
+        )
+        ax.set_xlabel(variable)
+        ax.set_ylabel(prediction_error)
+        ax.set_title(f"Scatter Plot: {variable} vs {prediction_error}")
+
+        # Rotate x-axis labels by 90 degrees
+        ax.tick_params(axis="x", rotation=90)
+
+    # Remove any empty subplots
+    if num_variables < num_rows * num_cols:
+        for i in range(num_variables, num_rows * num_cols):
+            fig.delaxes(axes.flatten()[i])
+
+    # Adjust the spacing between subplots
+    plt.tight_layout()
+
+    # Show the plot
+    plt.show()

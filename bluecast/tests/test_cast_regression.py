@@ -1,3 +1,4 @@
+import re
 from typing import Optional, Tuple
 
 import numpy as np
@@ -551,4 +552,21 @@ def test_precise_cv_tuning_warnings(bluecast_instance):
         match="Precise fine tuning has been enabled, but number of hypertuning_cv_folds is less than 2.",
     ):
         bluecast_instance.conf_training.hypertuning_cv_folds = 1
+        bluecast_instance.initial_checks(df)
+
+
+def test_categorical_encoding_not_supported_by_exact_tree_method(bluecast_instance):
+    df = pd.DataFrame({"feature1": [1, 2, 3], "target": [0, 1, 0]})
+    bluecast_instance.conf_training.calculate_shap_values = True
+    bluecast_instance.conf_training.cat_encoding_via_ml_algorithm = True
+    config = XgboostTuneParamsRegressionConfig()
+    config.tree_method.remove("exact")
+
+    expected_message = re.escape(
+        "Categorical encoding via ML algorithm is enabled. The tree method 'exact' is not supported "
+        "with categorical encoding within Xgboost. The tree method 'exact' has been removed. Using "
+        f"{config.tree_method} only during hyperparameter tuning."
+    )
+
+    with pytest.warns(UserWarning, match=expected_message):
         bluecast_instance.initial_checks(df)

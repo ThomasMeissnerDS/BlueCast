@@ -29,7 +29,10 @@ from bluecast.evaluation.shap_values import (
     shap_waterfall_plot,
 )
 from bluecast.experimentation.tracking import ExperimentTracker
-from bluecast.general_utils.general_utils import check_gpu_support
+from bluecast.general_utils.general_utils import (
+    check_gpu_support,
+    save_out_of_fold_data,
+)
 from bluecast.ml_modelling.xgboost import XgboostModel
 from bluecast.preprocessing.category_encoder_orchestration import (
     CategoryEncoderOrchestrator,
@@ -109,7 +112,6 @@ class BlueCast:
         self.date_columns = date_columns
         self.time_split_column = time_split_column
         self.target_column = "Undefined"
-        self.conf_training = conf_training
         self.conf_xgboost = conf_xgboost
         self.conf_params_xgboost = conf_params_xgboost
         self.feat_type_detector: Optional[FeatureTypeDetector] = None
@@ -139,8 +141,7 @@ class BlueCast:
         if not self.conf_params_xgboost:
             self.conf_params_xgboost = XgboostFinalParamConfig()
 
-        if not self.conf_training:
-            self.conf_training = TrainingConfig()
+        self.conf_training: TrainingConfig = conf_training or TrainingConfig()
 
         if not self.conf_xgboost:
             self.conf_xgboost = XgboostTuneParamsConfig()
@@ -162,6 +163,7 @@ class BlueCast:
     def initial_checks(self, df: pd.DataFrame) -> None:
         if not self.conf_training:
             self.conf_training = TrainingConfig()
+
         if not self.conf_training.enable_feature_selection:
             message = """Feature selection is disabled. Update the TrainingConfig param 'enable_feature_selection'
             to enable it or make use of a custom preprocessor to do it manually during the last mile computations step.
@@ -249,6 +251,15 @@ class BlueCast:
             message = """During class instantiation class_problem = 'multiclass' has been passed. However less than 3
             unique target classes have been found. Did you mean 'binary' instead?"""
             warnings.warn(message, UserWarning, stacklevel=2)
+
+        if self.conf_xgboost:
+            if (
+                self.conf_training.cat_encoding_via_ml_algorithm
+                and "exact" in self.conf_xgboost.tree_method
+            ):
+                self.conf_xgboost.tree_method.remove("exact")
+                message = f"""Categorical encoding via ML algorithm is enabled. The tree method 'exact' is not supported with categorical encoding within Xgboost. The tree method 'exact' has been removed. Using {self.conf_xgboost.tree_method} only during hyperparameter tuning."""
+                warnings.warn(message, UserWarning, stacklevel=2)
 
     def fit(self, df: pd.DataFrame, target_col: str) -> None:
         """Train a full ML pipeline."""
@@ -471,6 +482,16 @@ class BlueCast:
         if len(self.experiment_tracker.experiment_id) == 0:
             self.experiment_tracker.experiment_id.append(0)
 
+        save_out_of_fold_data(
+            df_eval,
+            y_probs,
+            target_eval,
+            self.target_column,
+            self.class_problem,
+            self.conf_training,
+            self.target_label_encoder,
+        )
+
         # enrich experiment tracker
         for metric, higher_is_better in zip(
             [
@@ -497,7 +518,6 @@ class BlueCast:
 
     def transform_new_data(self, df: pd.DataFrame) -> pd.DataFrame:
         """Transform new data according to preprocessing pipeline."""
-        check_gpu_support()
         if not self.feat_type_detector:
             raise Exception("Feature type converter could not be found.")
 

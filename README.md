@@ -134,7 +134,12 @@ feature- and performance-wise.
 * PS3E25: Predict hardness of steel via regression ([notebook](https://www.kaggle.com/code/thomasmeiner/ps3e25-bluecast-automl?scriptVersionId=153347618))
 * PS4E1: Bank churn top 13% finish ([notebook](https://www.kaggle.com/code/thomasmeiner/ps4e1-eda-feature-engineering-modelling?scriptVersionId=158121062))
 * A comprehensive guide about BlueCast showing many capabilities ([notebook](https://www.kaggle.com/code/thomasmeiner/ps4e3-bluecast-a-comprehensive-overview))
-* BlueCast using a custom Catboost model for quantile regression ([notebook](https://www.kaggle.com/code/thomasmeiner/birth-weight-with-bluecast-catboost))
+* BlueCast using a custom Catboost model for quantile regression
+and adding conformal prediction ([notebook](https://www.kaggle.com/code/thomasmeiner/bluecast-has-conformal-prediction))
+* 26th place in the Kaggle 24h "AutoMl" GrandPrix July 2024 blitz competition ([notebook](https://www.kaggle.com/code/thomasmeiner/automl-grand-prix-bluecast-26th-place-solution))
+
+Please note that some notebooks ran older versions of BlueCast and
+might not be compatible with the most recent version anymore.
 
 ## About the code
 
@@ -161,6 +166,7 @@ with BlueCast, covering:
 * [Customize training settings](docs/source/Customize%20training%20settings.md)
 * [Customizing configurations and objects](docs/source/Customizing%20configurations%20and%20objects.md)
 * [Model evaluation](docs/source/Model%20evaluation.md)
+* [Error analysis](docs/source/Error%20analysis.md)
 * [Model explainability (XAI)](docs/source/Model%20explainability%20(XAI).md)
 * [Uncertainty quantification](docs/source/Uncertainty%20quantification.md)
 * [Monitoring](docs/source/Monitoring.md)

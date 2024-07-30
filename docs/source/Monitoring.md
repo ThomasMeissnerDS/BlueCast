@@ -82,3 +82,35 @@ data_drift_checker = DataDrift()
 # statistical data drift checks for numerical features
 data_drift_checker.adversarial_validation(data, new_data)
 ```
+
+## ModelMatchMaker for data drift
+
+The next question after the identification of data drift is how to
+deal with it. One way is regular model retraining. Another way is to
+use the `ModelMatchMaker` to find the best model for the new data.
+
+```python
+from bluecast.blueprints.cast import BlueCast
+from bluecast.blueprints.orchestration import ModelMatchMaker
+
+# create matchmaker instance
+model_matchmaker = ModelMatchMaker()
+
+# create BlueCast automl instance
+automl = BlueCast(class_problem="binary")
+
+# add model and dataset to matchmaker (this can be done with several models and datasets)
+model_matchmaker.append_model_and_dataset(
+    automl,
+    dataset # this can or cannot include the target column, numerical
+)
+
+# retrieve best modela nd dataset based on best adversarial score
+automl, historic_df = model_matchmaker.find_best_match(new_dataset, numeric_cols, 0.1)
+```
+
+Please note that  `find_best_match` requires a list of column names
+that are numerical, otherwise the function will fail.
+The last parameter is the threshold for the adversarial validation score.
+If abs(0.5 - score) is below the threshold, the model is considered a good match.
+If no dataset matches the threshold, the function will return a tuple of (None, None).

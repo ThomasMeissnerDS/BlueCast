@@ -32,16 +32,16 @@ def date_converter(
 
     for c in date_columns:
         if "year" in date_parts:
-            df[str(c) + "_year"] = df[c].dt.year
+            df[str(c) + "_year"] = df[c].dt.year.astype(int)
         if "month" in date_parts:
-            df[str(c) + "_month"] = df[c].dt.month
+            df[str(c) + "_month"] = df[c].dt.month.astype(int)
         if "week_of_year" in date_parts:
-            df[str(c) + "_week_of_year"] = df[c].dt.isocalendar().week
+            df[str(c) + "_week_of_year"] = df[c].dt.isocalendar().week.astype(int)
         if "day" in date_parts:
-            df[str(c) + "_day"] = df[c].dt.day
+            df[str(c) + "_day"] = df[c].dt.day.astype(int)
         if "dayofweek" in date_parts:
-            df[str(c) + "_dayofweek"] = df[c].dt.dayofweek
+            df[str(c) + "_dayofweek"] = df[c].dt.dayofweek.astype(int)
         if "hour" in date_parts:
-            df[str(c) + "_hour"] = df[c].dt.hour
+            df[str(c) + "_hour"] = df[c].dt.hour.astype(int)
         df = df.drop(c, axis=1)
     return df
