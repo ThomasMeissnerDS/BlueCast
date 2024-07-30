@@ -61,9 +61,45 @@ error_analyser = ErrorAnalyserClassification(automl)
 analysis_result = error_analyser.analyse_segment_errors()
 ```
 
-Now we receive a Polars DataFrame showing the mean absolute prediction
+Now we receive two pieces of information:
+
+* a plot for every feature and target class / bin combination
+    showing the distribution of mean absolute prediction errors
+* a Polars DataFrame showing the mean of mean absolute prediction
 errors of all subsegments in the dataset, which can be used for further analysis.
+
+![Error analysis prediction error distribution example](error_anakysis_pred_error_violin_plots.png)
 
 ![Error analysis example](error_analysis_table.png)
 
-Error analysis is avilaable for all regression models as well.
+Error analysis is available for all regression models as well.
+
+## Having more fine-grained control
+
+The error analysis can be done in different way:
+
+* fully automated like seen above
+* semi-automated by calling the error analysis methods
+individually on demand
+
+```python
+from bluecast.evaluation.error_analysis import ErrorAnalyserClassification, ErrorAnalyserClassificationCV
+
+analyser = ErrorAnalyserClassification(automl, ignore_columns_during_visualization=["PassengerId"])
+
+# read oof data + predictions (required information is inferred from the automl instance)
+oof_data = analyser.read_data_from_bluecast_cv_instance()
+
+# preprocess data: stack predictions by class or target bin
+stacked_oof_data = analyser.stack_predictions_by_class(oof_data)
+
+# calculate errors: can also be replaced with custom errors
+# the final output needs to have a prediction_error column
+errors = analyser.calculate_errors(stacked_oof_data)
+
+# plot error distributions
+analyser.plot_error_distributions(errors, "target_class")
+
+# get prediction errors per each actegory or bin of numerical features
+errors_analysed = analyser.analyse_errors(errors.drop(analyser.target_column))
+```
