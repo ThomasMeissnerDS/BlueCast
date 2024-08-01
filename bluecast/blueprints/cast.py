@@ -352,7 +352,7 @@ class BlueCast:
             self.infreq_cat_encoder = InFrequentCategoryEncoder(
                 self.cat_columns,
                 self.target_column,
-                self.conf_training.infrequent_threshold,
+                self.conf_training.infrequent_categories_threshold,
             )
             x_train = self.infreq_cat_encoder.fit_transform(x_train, y_train)
             x_test = self.infreq_cat_encoder.transform(x_test)
