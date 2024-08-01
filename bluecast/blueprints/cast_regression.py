@@ -43,6 +43,7 @@ from bluecast.preprocessing.datetime_features import date_converter
 from bluecast.preprocessing.encode_target_labels import TargetLabelEncoder
 from bluecast.preprocessing.feature_selection import BoostaRootaWrapper
 from bluecast.preprocessing.feature_types import FeatureTypeDetector
+from bluecast.preprocessing.infrequent_categories import InFrequentCategoryEncoder
 from bluecast.preprocessing.nulls_and_infs import fill_infinite_values
 from bluecast.preprocessing.onehot_encoding import OneHotCategoryEncoder
 from bluecast.preprocessing.schema_checks import SchemaDetector
@@ -117,6 +118,7 @@ class BlueCastRegression:
         self.conf_xgboost = conf_xgboost
         self.conf_params_xgboost = conf_params_xgboost
         self.feat_type_detector: Optional[FeatureTypeDetector] = None
+        self.infreq_cat_encoder: Optional[InFrequentCategoryEncoder] = None
         self.cat_encoder: Optional[
             Union[BinaryClassTargetEncoder, MultiClassTargetEncoder]
         ] = None
@@ -330,6 +332,18 @@ class BlueCastRegression:
             self.cat_columns is not None
             and not self.conf_training.cat_encoding_via_ml_algorithm
         ):
+            from bluecast.preprocessing.infrequent_categories import (
+                InFrequentCategoryEncoder,
+            )
+
+            self.infreq_cat_encoder = InFrequentCategoryEncoder(
+                self.cat_columns,
+                self.target_column,
+                self.conf_training.infrequent_threshold,
+            )
+            x_train = self.infreq_cat_encoder.fit_transform(x_train, y_train)
+            x_test = self.infreq_cat_encoder.transform(x_test)
+
             self.category_encoder_orchestrator = CategoryEncoderOrchestrator(
                 self.target_column
             )
@@ -505,6 +519,13 @@ class BlueCastRegression:
 
         if self.schema_detector:
             df = self.schema_detector.transform(df)
+
+        if (
+            self.cat_columns is not None
+            and self.infreq_cat_encoder
+            and not self.conf_training.cat_encoding_via_ml_algorithm
+        ):
+            df = self.infreq_cat_encoder.transform(df.copy())
 
         if (
             self.cat_columns is not None
