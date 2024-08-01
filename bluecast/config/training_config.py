@@ -87,7 +87,7 @@ class TrainingConfig(BaseModel):
     sample_data_during_tuning: bool = False
     sample_data_during_tuning_alpha: float = 2.0
     precise_cv_tuning: bool = False
-    early_stopping_rounds: Optional[int] = 10
+    early_stopping_rounds: Optional[int] = 20
     autotune_model: bool = True
     autotune_on_device: Literal["auto", "gpu", "cpu"] = "auto"
     autotune_n_random_seeds: int = 1
