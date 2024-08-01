@@ -115,8 +115,8 @@ class FeatureTypeDetector:
 
                 for col in df.columns.to_list():
                     if (
-                            col not in num_col_list
-                            and df[col].astype(str).str.len().max() < 10
+                        col not in num_col_list
+                        and df[col].astype(str).str.len().max() < 10
                     ):
                         try:
                             df[col] = df[col].astype(float)
@@ -209,7 +209,7 @@ class FeatureTypeDetector:
                     elif (df[col].fillna(0) - df[col].fillna(0).astype(int)).sum() == 0:
                         df[col] = df[col].fillna(0).astype(int)
                         self.detected_col_types[col] = "int"
-                except Exception as e:
+                except Exception:
                     df[col] = df[col].astype(str)
                     self.detected_col_types[col] = "object"
                     cat_columns.append(col)
