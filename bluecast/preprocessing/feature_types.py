@@ -99,6 +99,10 @@ class FeatureTypeDetector:
         )
         return df
 
+    def check_if_column_is_float(self, col: pd.Series) -> bool:
+        """Check if column is float."""
+        return col.apply(lambda x: isinstance(x, float)).any()
+
     def identify_num_columns(self, df: pd.DataFrame):
         """Identify numerical columns based on already existing data type."""
         # detect numeric columns by type
@@ -108,7 +112,19 @@ class FeatureTypeDetector:
                 num_cols = df.select_dtypes(include=[vartype]).columns
                 for col in num_cols:
                     num_col_list.append(col)
+
+                for col in df.columns.to_list():
+                    if (
+                            col not in num_col_list
+                            and df[col].astype(str).str.len().max() < 10
+                    ):
+                        try:
+                            df[col] = df[col].astype(float)
+                            num_col_list.append(col)
+                        except Exception:
+                            pass
             self.num_columns = num_col_list
+
         return self.num_columns
 
     def identify_bool_columns(
@@ -178,6 +194,7 @@ class FeatureTypeDetector:
             no_bool_dt_cols = []
         no_bool_datetime_df = df.loc[:, ~df.columns.isin(no_bool_dt_cols)]
         no_bool_datetime_cols = no_bool_datetime_df.columns.to_list()
+
         cat_columns = []
         for col in no_bool_datetime_cols:
             if col in self.cat_columns:
@@ -186,13 +203,13 @@ class FeatureTypeDetector:
                 cat_columns.append(col)
             else:
                 try:
-                    if (df[col] - df[col].astype(int)).sum() == 0:
-                        df[col] = df[col].astype(int)
-                        self.detected_col_types[col] = "int"
-                    else:
-                        df[col] = df[col].astype(float)
+                    if self.check_if_column_is_float(df[col].fillna(0)):
+                        df[col] = df[col].fillna(0).astype(float)
                         self.detected_col_types[col] = "float"
-                except Exception:
+                    elif (df[col].fillna(0) - df[col].fillna(0).astype(int)).sum() == 0:
+                        df[col] = df[col].fillna(0).astype(int)
+                        self.detected_col_types[col] = "int"
+                except Exception as e:
                     df[col] = df[col].astype(str)
                     self.detected_col_types[col] = "object"
                     cat_columns.append(col)
