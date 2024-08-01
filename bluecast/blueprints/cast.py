@@ -397,8 +397,9 @@ class BlueCast:
             )
             x_test = self.cat_encoder.transform_target_encode_multiclass(x_test.copy())
         elif self.conf_training.cat_encoding_via_ml_algorithm:
-            x_train[self.cat_columns] = x_train[self.cat_columns].astype("category")
-            x_test[self.cat_columns] = x_test[self.cat_columns].astype("category")
+            cat_cols = [col for col in self.cat_columns if col != self.target_column]
+            x_train[cat_cols] = x_train[cat_cols].astype("category")
+            x_test[cat_cols] = x_test[cat_cols].astype("category")
 
         if self.custom_last_mile_computation:
             x_train, y_train = self.custom_last_mile_computation.fit_transform(
@@ -587,7 +588,8 @@ class BlueCast:
         ):
             df = self.cat_encoder.transform_target_encode_multiclass(df.copy())
         elif self.conf_training.cat_encoding_via_ml_algorithm:
-            df[self.cat_columns] = df[self.cat_columns].astype("category")
+            cat_cols = [col for col in self.cat_columns if col != self.target_column]
+            df[cat_cols] = df[cat_cols].astype("category")
 
         if self.custom_last_mile_computation:
             df, _ = self.custom_last_mile_computation.transform(
