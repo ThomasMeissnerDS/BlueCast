@@ -467,6 +467,7 @@ class BlueCastRegression:
         save_out_of_fold_data(
             df_eval,
             y_preds,
+            None,
             target_eval,
             self.target_column,
             self.class_problem,

@@ -137,6 +137,7 @@ def log_sampling(nb_rows: int, alpha: float = 2.0) -> int:
 def save_out_of_fold_data(
     oof_data: pd.DataFrame,
     y_hat: Union[pd.Series, np.ndarray],
+    y_classes: Optional[Union[pd.Series, np.ndarray]],
     y_true: Union[pd.Series, np.ndarray],
     target_column: str,
     class_problem: Literal["binary", "multiclass", "regression"],
@@ -148,6 +149,8 @@ def save_out_of_fold_data(
     :param oof_data: Data to save.
     :param y_hat: Predictions. Will be appended to oof_data and saved together. When class_problem is "binary", only the
         target class score is expected.
+    :param y_classes: Predicted classes. Will be appended to oof_data and saved together. Only required for class_problem
+        'binary' or 'multiclass'.
     :param y_true: True targets.
     :param target_column: String specifying name of the target column.
     :param class_problem: Takes a string containing the class problem type. Either "binary", "multiclass" or
@@ -170,11 +173,37 @@ def save_out_of_fold_data(
         reverse_target_mapping = {}
 
     if class_problem == "binary":
+        if (
+            not isinstance(y_classes, pd.Series)
+            and not isinstance(y_classes, np.ndarray)
+            and not isinstance(y_classes, list)
+        ):
+            raise ValueError(
+                "For 'class_problem binary and multiclass the array for y_classes has to be provided"
+            )
+
+        oof_data_copy["predicted_class"] = y_classes
+        oof_data_copy["target_class_predicted_probas"] = [
+            1 - preds if cls == 0 else preds for preds, cls in zip(y_hat, y_classes)
+        ]
         oof_data_copy[f"predictions_class_{reverse_target_mapping.get(0, 0)}"] = (
             1 - y_hat
         )
         oof_data_copy[f"predictions_class_{reverse_target_mapping.get(1, 1)}"] = y_hat
     elif class_problem == "multiclass":
+        if (
+            not isinstance(y_classes, pd.Series)
+            and not isinstance(y_classes, np.ndarray)
+            and not isinstance(y_classes, list)
+        ):
+            raise ValueError(
+                "For 'class_problem binary and multiclass the array for y_classes has to be provided"
+            )
+
+        oof_data_copy["predicted_class"] = y_classes
+        oof_data_copy["target_class_predicted_probas"] = np.asarray(
+            [pred[target_cls] for pred, target_cls in zip(y_hat, y_true)]
+        )
         for cls_idx in range(y_hat.shape[1]):
             oof_data_copy[
                 f"predictions_class_{reverse_target_mapping.get(cls_idx, cls_idx)}"
