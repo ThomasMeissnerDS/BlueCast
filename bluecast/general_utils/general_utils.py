@@ -182,6 +182,14 @@ def save_out_of_fold_data(
                 "For 'class_problem binary and multiclass the array for y_classes has to be provided"
             )
 
+        print("DEBUUUUUUUUUUUUUUUUG")
+        print(y_true.shape)
+        print(y_true)
+
+        print("DEBUUUUUUUUUUUUUUUUG AGAIN")
+        print(y_hat.shape)
+        print(y_hat)
+
         oof_data_copy["predicted_class"] = y_classes
         oof_data_copy["target_class_predicted_probas"] = [
             1 - preds if cls == 0 else preds for preds, cls in zip(y_hat, y_classes)
