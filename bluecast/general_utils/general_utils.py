@@ -173,14 +173,14 @@ def save_out_of_fold_data(
         reverse_target_mapping = {}
 
     if class_problem == "binary":
-        if (
-            not isinstance(y_classes, pd.Series)
-            and not isinstance(y_classes, np.ndarray)
-            and not isinstance(y_classes, list)
-        ):
+        if not isinstance(y_classes, (pd.Series, np.ndarray, list)):
             raise ValueError(
                 "For 'class_problem binary and multiclass the array for y_classes has to be provided"
             )
+        elif isinstance(y_classes, list):
+            y_classes = np.asarray(y_classes).astype(int)
+
+        y_true = y_true.astype(int)
 
         print("DEBUUUUUUUUUUUUUUUUG")
         print(y_true.shape)
@@ -199,14 +199,22 @@ def save_out_of_fold_data(
         )
         oof_data_copy[f"predictions_class_{reverse_target_mapping.get(1, 1)}"] = y_hat
     elif class_problem == "multiclass":
-        if (
-            not isinstance(y_classes, pd.Series)
-            and not isinstance(y_classes, np.ndarray)
-            and not isinstance(y_classes, list)
-        ):
+        if not isinstance(y_classes, (pd.Series, np.ndarray, list)):
             raise ValueError(
                 "For 'class_problem binary and multiclass the array for y_classes has to be provided"
             )
+        elif isinstance(y_classes, list):
+            y_classes = np.asarray(y_classes).astype(int)
+
+        y_true = y_true.astype(int)
+
+        print("DEBUUUUUUUUUUUUUUUUG MULTICLASS")
+        print(y_true.shape)
+        print(y_true)
+
+        print("DEBUUUUUUUUUUUUUUUUG MULTICLASS AGAIN")
+        print(y_hat.shape)
+        print(y_hat)
 
         oof_data_copy["predicted_class"] = y_classes
         oof_data_copy["target_class_predicted_probas"] = np.asarray(
