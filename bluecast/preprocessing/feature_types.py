@@ -222,13 +222,14 @@ class FeatureTypeDetector:
         Wrapper function to orchester different detection methods.
         """
         logging.info("Start detecting and casting feature types.")
-        df = self.fit_transform_drop_all_null_columns(df)
-        df = self.fit_transform_drop_zero_variance_columns(df)
-        self.identify_num_columns(df)
-        bool_cols, no_bool_cols = self.identify_bool_columns(df)
-        self.identify_date_time_columns(df, no_bool_cols)
-        df = self.cast_rest_columns_to_object(df, bool_cols)
-        return df
+        df_clean = df.copy()
+        df_clean = self.fit_transform_drop_all_null_columns(df_clean)
+        df_clean = self.fit_transform_drop_zero_variance_columns(df_clean)
+        self.identify_num_columns(df_clean)
+        bool_cols, no_bool_cols = self.identify_bool_columns(df_clean)
+        self.identify_date_time_columns(df_clean, no_bool_cols)
+        df_clean = self.cast_rest_columns_to_object(df_clean, bool_cols)
+        return df_clean
 
     def transform_feature_types(
         self, df: pd.DataFrame, ignore_cols: List[Union[str, float, int, None]]
@@ -239,12 +240,13 @@ class FeatureTypeDetector:
         :return: Returns casted dataframe
         """
         logging.info("Start casting feature types.")
-        df = self.transform_drop_all_null_columns(df)
-        df = self.transform_drop_zero_variance_columns(df)
+        df_clean = df.copy()
+        df_clean = self.transform_drop_all_null_columns(df_clean)
+        df_clean = self.transform_drop_zero_variance_columns(df_clean)
         for key in self.detected_col_types:
-            if ignore_cols and key not in ignore_cols and key in df.columns:
+            if ignore_cols and key not in ignore_cols and key in df_clean.columns:
                 if self.detected_col_types[key] == "datetime[ns]":
-                    df[key] = pd.to_datetime(df[key], yearfirst=True)
+                    df_clean[key] = pd.to_datetime(df[key], yearfirst=True)
                 else:
-                    df[key] = df[key].astype(self.detected_col_types[key])
-        return df
+                    df_clean[key] = df_clean[key].astype(self.detected_col_types[key])
+        return df_clean
