@@ -497,6 +497,13 @@ class BlueCast:
         if len(self.experiment_tracker.experiment_id) == 0:
             self.experiment_tracker.experiment_id.append(0)
 
+        if self.feat_type_detector:
+            if self.target_column in self.feat_type_detector.cat_columns:
+                self.target_label_encoder = TargetLabelEncoder()
+                target_eval = self.target_label_encoder.transform_target_labels(
+                    pd.DataFrame({self.target_column: target_eval})
+                )
+
         save_out_of_fold_data(
             df_eval,
             y_probs,
