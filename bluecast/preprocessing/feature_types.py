@@ -229,6 +229,11 @@ class FeatureTypeDetector:
         bool_cols, no_bool_cols = self.identify_bool_columns(df_clean)
         self.identify_date_time_columns(df_clean, no_bool_cols)
         df_clean = self.cast_rest_columns_to_object(df_clean, bool_cols)
+        for key in self.detected_col_types:
+            if self.detected_col_types[key] == "datetime[ns]":
+                df_clean[key] = pd.to_datetime(df[key], yearfirst=True)
+            else:
+                df_clean[key] = df_clean[key].astype(self.detected_col_types[key])
         return df_clean
 
     def transform_feature_types(
@@ -246,7 +251,7 @@ class FeatureTypeDetector:
         for key in self.detected_col_types:
             if ignore_cols and key not in ignore_cols and key in df_clean.columns:
                 if self.detected_col_types[key] == "datetime[ns]":
-                    df_clean[key] = pd.to_datetime(df[key], yearfirst=True)
+                    df_clean[key] = pd.to_datetime(df_clean[key], yearfirst=True)
                 else:
                     df_clean[key] = df_clean[key].astype(self.detected_col_types[key])
         return df_clean

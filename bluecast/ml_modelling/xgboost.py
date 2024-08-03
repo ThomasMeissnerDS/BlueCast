@@ -748,7 +748,7 @@ class XgboostModel(BaseClassMlModel):
                     shuffle=self.conf_training.shuffle_during_training,
                 )
                 folds = []
-                for train_index, test_index in skf.split(x_train, y_train):
+                for train_index, test_index in skf.split(x_train, y_train.astype(int)):
                     folds.append((train_index.tolist(), test_index.tolist()))
 
                 result = xgb.cv(
