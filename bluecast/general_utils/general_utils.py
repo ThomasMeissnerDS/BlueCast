@@ -206,7 +206,7 @@ def save_out_of_fold_data(
         elif isinstance(y_classes, list):
             y_classes = np.asarray(y_classes).astype(int)
 
-        y_true = y_true.astype(int)
+        y_true = y_true.astype(int).flatten()
 
         print("DEBUUUUUUUUUUUUUUUUG MULTICLASS")
         print(y_true.shape)
