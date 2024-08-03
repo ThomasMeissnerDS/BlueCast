@@ -22,6 +22,14 @@ import gc
 import re
 from tqdm import tqdm
 
+import matplotlib
+matplotlib.use('Agg')
+
+import plotly.io as pio
+import plotly.graph_objects as go
+
+pio.renderers.default = 'svg'
+
 
 def competition_pipeline():
     print("Starting competition pipeline.")
@@ -49,7 +57,7 @@ def competition_pipeline():
         train_config.hypertuning_cv_folds = 10
         train_config.hyperparameter_tuning_rounds = 25
         train_config.hyperparameter_tuning_max_runtime_secs = 60 * 60 * 5
-        train_config.enable_grid_search_fine_tuning = True
+        train_config.enable_grid_search_fine_tuning = False
         train_config.calculate_shap_values = False
         train_config.show_detailed_tuning_logs = True
         train_config.train_size = 0.9
