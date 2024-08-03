@@ -500,8 +500,8 @@ class BlueCast:
         if self.feat_type_detector:
             if self.target_column in self.feat_type_detector.cat_columns:
                 self.target_label_encoder = TargetLabelEncoder()
-                target_eval = self.target_label_encoder.transform_target_labels(
-                    pd.DataFrame({self.target_column: target_eval})
+                target_eval = self.target_label_encoder.label_encoder_reverse_transform(
+                    target_eval
                 )
 
         save_out_of_fold_data(
