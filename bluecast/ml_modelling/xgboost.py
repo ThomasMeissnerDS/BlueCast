@@ -13,7 +13,7 @@ import numpy as np
 import optuna
 import pandas as pd
 import xgboost as xgb
-from sklearn.model_selection import StratifiedKFold
+from sklearn.model_selection import RepeatedStratifiedKFold
 from sklearn.utils import class_weight
 
 from bluecast.config.training_config import (
@@ -345,10 +345,10 @@ class XgboostModel(BaseClassMlModel):
 
                 return self._fine_tune_precise(params, x_train, y_train, x_test, y_test)
             else:
-                skf = StratifiedKFold(
-                    n_splits=5,
+                skf = RepeatedStratifiedKFold(
+                    n_splits=self.conf_training.hypertuning_cv_folds,
+                    n_repeats=self.conf_training.hypertuning_cv_repeats,
                     random_state=self.conf_training.global_random_state,
-                    shuffle=self.conf_training.shuffle_during_training,
                 )
                 folds = []
                 for train_index, test_index in skf.split(x_train, y_train.tolist()):
@@ -549,9 +549,9 @@ class XgboostModel(BaseClassMlModel):
                 "Could not find Training config. Falling back to default values"
             )
 
-        stratifier = StratifiedKFold(
+        stratifier = RepeatedStratifiedKFold(
             n_splits=self.conf_training.hypertuning_cv_folds,
-            shuffle=self.conf_training.shuffle_during_training,
+            n_repeats=self.conf_training.hypertuning_cv_repeats,
             random_state=self.conf_training.global_random_state,
         )
 
@@ -742,10 +742,10 @@ class XgboostModel(BaseClassMlModel):
                     y_test,
                 )
             else:
-                skf = StratifiedKFold(
-                    n_splits=5,
+                skf = RepeatedStratifiedKFold(
+                    n_splits=self.conf_training.hypertuning_cv_folds,
+                    n_repeats=self.conf_training.hypertuning_cv_repeats,
                     random_state=self.conf_training.global_random_state,
-                    shuffle=self.conf_training.shuffle_during_training,
                 )
                 folds = []
                 for train_index, test_index in skf.split(x_train, y_train.astype(int)):

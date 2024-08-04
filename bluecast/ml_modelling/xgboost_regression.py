@@ -20,7 +20,7 @@ try:
 except ImportError:
     from sklearn.metrics import mean_squared_error
 
-from sklearn.model_selection import KFold, StratifiedKFold
+from sklearn.model_selection import KFold, RepeatedStratifiedKFold
 from sklearn.preprocessing import LabelEncoder
 
 from bluecast.config.training_config import (
@@ -347,10 +347,10 @@ class XgboostModelRegression(BaseClassMlRegressionModel):
                 # make regression cv startegy stratified
                 le = LabelEncoder()
                 y_binned = le.fit_transform(pd.qcut(y_train, 10, duplicates="drop"))
-                skf = StratifiedKFold(
-                    n_splits=5,
+                skf = RepeatedStratifiedKFold(
+                    n_splits=self.conf_training.hypertuning_cv_folds,
+                    n_repeats=self.conf_training.hypertuning_cv_repeats,
                     random_state=self.conf_training.global_random_state,
-                    shuffle=self.conf_training.shuffle_during_training,
                 )
                 folds = []
                 for train_index, test_index in skf.split(x_train, y_binned):
@@ -724,10 +724,10 @@ class XgboostModelRegression(BaseClassMlRegressionModel):
                 # make regression cv startegy stratified
                 le = LabelEncoder()
                 y_binned = le.fit_transform(pd.qcut(y_train, 10, duplicates="drop"))
-                skf = StratifiedKFold(
-                    n_splits=5,
+                skf = RepeatedStratifiedKFold(
+                    n_splits=self.conf_training.hypertuning_cv_folds,
+                    n_repeats=self.conf_training.hypertuning_cv_repeats,
                     random_state=self.conf_training.global_random_state,
-                    shuffle=self.conf_training.shuffle_during_training,
                 )
                 folds = []
                 for train_index, test_index in skf.split(x_train, y_binned):

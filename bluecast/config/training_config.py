@@ -28,6 +28,8 @@ class TrainingConfig(BaseModel):
         custom ML model is passed.
     :param hypertuning_cv_folds: Number of cross-validation folds to use for hyperparameter tuning. Not used when
         custom ML model is passed.
+    :param hypertuning_cv_repeats: Number of repetitions for each cross-validation fold during hyperparameter
+        tuning. Not used when custom ML model is passed.
     :param sample_data_during_tuning: Whether to sample the data during tuning. Not used when custom ML model is passed.
     :param sample_data_during_tuning_alpha: Alpha value for sampling the data during tuning. The higher alpha the
         fewer samples will be left. Not used when custom ML model is passed.
@@ -84,6 +86,7 @@ class TrainingConfig(BaseModel):
     hyperparameter_tuning_rounds: int = 200
     hyperparameter_tuning_max_runtime_secs: int = 3600
     hypertuning_cv_folds: int = 5
+    hypertuning_cv_repeats: int = 1
     sample_data_during_tuning: bool = False
     sample_data_during_tuning_alpha: float = 2.0
     precise_cv_tuning: bool = False

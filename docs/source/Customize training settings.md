@@ -59,6 +59,13 @@ can test many more hyperparameters than usual cross validation.
 For regression problems Xgboost's inbuilt cross validation routine is also used,
 however BlueCast uses stratification to ensure that the folds are balanced.
 
+## Repeated cross-validation
+
+BlueCast supports repeated cross-validation as well. This can be enabled by
+setting `hypertuning_cv_repeats` to a value greater than 1. This will repeat
+the cross-validation routine n times and will return the average performance
+of all runs.
+
 ## Enable even more overfitting-robust cross-validation
 
 There might be situations where a preprocessing step has a high risk of overfitting
