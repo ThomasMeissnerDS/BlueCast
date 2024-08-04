@@ -57,7 +57,9 @@ def competition_pipeline():
     df_unseed_target = df_unseen.pop(target)
     train = train.drop(df_unseen.index)
 
-    automl.fit_eval(train, df_eval=df_unseen, target_eval=df_unseed_target, target_col=target)
+    automl.fit_eval(
+        train, df_eval=df_unseen, target_eval=df_unseed_target, target_col=target
+    )
 
     y_probs, y_classes = automl.predict(test)
 
