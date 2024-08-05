@@ -605,7 +605,10 @@ class BlueCast:
         return df
 
     def predict(
-        self, df: pd.DataFrame, save_shap_values: bool = False
+        self,
+        df: pd.DataFrame,
+        save_shap_values: bool = False,
+        return_original_labels: bool = False,
     ) -> Tuple[np.ndarray, np.ndarray]:
         """Predict on unseen data.
 
@@ -643,6 +646,11 @@ class BlueCast:
                 y_classes = self.target_label_encoder.label_encoder_reverse_transform(
                     pd.Series(y_classes)
                 )
+
+        if return_original_labels and self.target_label_encoder:
+            y_classes = self.target_label_encoder.label_encoder_reverse_transform(
+                pd.Series(y_classes)
+            )
 
         return y_probs, y_classes
 
