@@ -160,17 +160,20 @@ class FeatureTypeDetector:
                 try:
                     if self.check_if_column_is_float_from_string(df[col]):
                         df[col] = df[col].astype(float)
+                        self.detected_col_types[col] = "float"
                         num_col_list.append(col)
                     elif (
                         self.check_if_column_is_int_from_string(df[col])
                         and df[col].nunique() > 2
                     ):
                         df[col] = df[col].astype("Int64")
+                        self.detected_col_types[col] = "Int64"
                         num_col_list.append(col)
                     elif (df[col] - df[col].astype("Int64")).sum() == 0 and df[
                         col
                     ].nunique() > 2:
                         df[col] = df[col].astype("Int64")
+                        self.detected_col_types[col] = "Int64"
                         num_col_list.append(col)
                 except Exception:
                     pass
@@ -252,8 +255,23 @@ class FeatureTypeDetector:
                 df[col] = df[col].astype(str)
                 self.detected_col_types[col] = "object"
                 cat_columns.append(col)
-            else:
+            if col in self.num_columns:
                 pass
+            else:
+                try:
+                    if self.check_if_column_is_int(df[col].dropna(subset=[col])):
+                        df[col] = df[col].astype("Int64")
+                        self.detected_col_types[col] = "Int64"
+                    elif self.check_if_column_is_float(df[col]):
+                        df[col] = df[col].astype(float)
+                        self.detected_col_types[col] = "float"
+                    elif (df[col] - df[col].astype("Int64")).sum() == 0:
+                        df[col] = df[col].astype("Int64")
+                        self.detected_col_types[col] = "Int64"
+                except Exception:
+                    df[col] = df[col].astype(str)
+                    self.detected_col_types[col] = "object"
+                    cat_columns.append(col)
         self.cat_columns = cat_columns
         return df
 

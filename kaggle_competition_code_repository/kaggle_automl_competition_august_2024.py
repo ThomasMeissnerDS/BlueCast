@@ -42,6 +42,8 @@ def competition_pipeline():
         test.drop(ignore_cols, axis=1), ignore_cols
     )
     print(f"Cat columns are: {feat_type_detector.cat_columns}")
+    print(f"Num columns are: {feat_type_detector.num_columns}")
+    print(f"Date columns are: {feat_type_detector.date_columns}")
 
     # Iterate through each categorical column
     for col in feat_type_detector.cat_columns:

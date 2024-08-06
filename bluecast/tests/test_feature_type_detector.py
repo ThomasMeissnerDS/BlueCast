@@ -20,13 +20,14 @@ def test_feature_type_detector():
             "date_col2": ["2022-01-01", "2022-02-01", "2022-03-01", "2022-04-01"],
             "categorical_col1": ["cat", "dog", "cat", "dog"],
             "categorical_col2": ["dog", "cat", "dog", "cat"],
+            "categorical_col3": ["e", "f", "h", "o"],
         }
     )
 
     # Initialize the FeatureTypeDetector object
     detector = FeatureTypeDetector(
         num_columns=["numeric_col1", "numeric_col2", "float_col1", "float_col2"],
-        cat_columns=["categorical_col1", "categorical_col2"],
+        cat_columns=["categorical_col1", "categorical_col2", "categorical_col3"],
         date_columns=["date_col1", "date_col2"],
     )
 
@@ -60,6 +61,7 @@ def test_feature_type_detector():
     # Categorical columns should remain the same
     assert transformed_df["categorical_col1"].equals(df["categorical_col1"])
     assert transformed_df["categorical_col2"].equals(df["categorical_col2"])
+    assert transformed_df["categorical_col3"].equals(df["categorical_col3"])
 
     # Test transform_feature_types
     transformed_df = detector.transform_feature_types(transformed_df, ignore_cols=[])
@@ -80,6 +82,7 @@ def test_feature_type_detector():
     assert transformed_df["date_col2"].dtype == np.dtype("datetime64[ns]")
     assert transformed_df["categorical_col1"].dtype == np.object_
     assert transformed_df["categorical_col2"].dtype == np.object_
+    assert transformed_df["categorical_col3"].dtype == np.object_
 
     # Ensure the transformed dataframe is not the same as the original dataframe (transformed datetime columns)
     assert not transformed_df.equals(df)
