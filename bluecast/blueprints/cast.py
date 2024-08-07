@@ -39,7 +39,9 @@ from bluecast.preprocessing.category_encoder_orchestration import (
 )
 from bluecast.preprocessing.custom import CustomPreprocessing
 from bluecast.preprocessing.datetime_features import date_converter
-from bluecast.preprocessing.encode_target_labels import TargetLabelEncoder
+from bluecast.preprocessing.encode_target_labels import (  # cast_bool_to_int,
+    TargetLabelEncoder,
+)
 from bluecast.preprocessing.feature_selection import BoostaRootaWrapper
 from bluecast.preprocessing.feature_types import FeatureTypeDetector
 from bluecast.preprocessing.infrequent_categories import InFrequentCategoryEncoder
@@ -285,6 +287,8 @@ class BlueCast:
 
         self.cat_columns = self.feat_type_detector.cat_columns
         self.date_columns = self.feat_type_detector.date_columns
+
+        # df = cast_bool_to_int(df, self.target_column)
 
         if not self.conf_training:
             self.conf_training = TrainingConfig()
@@ -617,6 +621,7 @@ class BlueCast:
         :param df: Pandas DataFrame with unseen data
         :param save_shap_values: If True, calculates and saves shap values, so they can be used to plot
             waterfall plots for selected rows o demand.
+        :param return_original_labels: If True, returns the original labels instead of the encoded ones.
         """
         if not self.ml_model:
             raise Exception("Ml model could not be found")
@@ -636,16 +641,6 @@ class BlueCast:
             self.shap_values, self.explainer = shap_explanations(
                 self.ml_model.model, df
             )
-
-        if self.feat_type_detector.cat_columns:
-            if (
-                self.target_column in self.feat_type_detector.cat_columns
-                and self.target_label_encoder
-                and self.feat_type_detector
-            ):
-                y_classes = self.target_label_encoder.label_encoder_reverse_transform(
-                    pd.Series(y_classes)
-                )
 
         if return_original_labels and self.target_label_encoder:
             y_classes = self.target_label_encoder.label_encoder_reverse_transform(

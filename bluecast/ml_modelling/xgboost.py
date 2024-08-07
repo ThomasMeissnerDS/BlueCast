@@ -895,8 +895,11 @@ class XgboostModel(BaseClassMlModel):
         partial_probs = self.model.predict(d_test)
         if self.class_problem == "binary":
             predicted_probs = np.asarray([line[1] for line in partial_probs])
-            predicted_classes = (
-                predicted_probs > self.conf_params_xgboost.classification_threshold
+            predicted_classes = np.asarray(
+                [
+                    int(line[1] > self.conf_params_xgboost.classification_threshold)
+                    for line in partial_probs
+                ]
             )
         else:
             predicted_probs = partial_probs
