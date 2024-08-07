@@ -84,7 +84,11 @@ def test_bluecast_fit_binary_without_custom_model():
     predicted_probas, predicted_classes = bluecast.predict(
         x_test, return_original_labels=True
     )
-    assert "one" in predicted_classes.tolist() or "zero" in predicted_classes.tolist()
+    print(predicted_classes)
+    classes_flattened = predicted_classes[
+        predicted_classes.columns.to_list()[0]
+    ].values.tolist()
+    assert "one" in classes_flattened or "zero" in classes_flattened
 
     probas = bluecast.predict_proba(x_test)
     print("--------")
