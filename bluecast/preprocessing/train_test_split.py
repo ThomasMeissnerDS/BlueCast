@@ -21,7 +21,7 @@ def train_test_split_cross(
     stratify: bool = False,
 ):
     """Split data into train and test. Stratification is possible."""
-    logging.info("Start executing train-test split with train size of {train_size}.")
+    logging.info(f"Start executing train-test split with train size of {train_size}.")
     target = df[target_col].copy()
     df = df.drop(target_col, axis=1)
 

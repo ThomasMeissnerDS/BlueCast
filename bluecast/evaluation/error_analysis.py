@@ -258,7 +258,7 @@ class ErrorAnalyserClassification(
             df = df.to_pandas()
 
         df["prediction_error"] = np.abs(
-            df["target_class"].astype(float) - df["prediction"].astype(float)
+            1 - df["target_class_predicted_probas"].astype(float)
         )
 
         if isinstance(df, pd.DataFrame):
@@ -336,7 +336,7 @@ class ErrorAnalyserClassificationCV(
             df = df.to_pandas()
 
         df["prediction_error"] = np.abs(
-            df["target_class"].astype(float) - df["prediction"].astype(float)
+            1 - df["target_class_predicted_probas"].astype(float)
         )
 
         if isinstance(df, pd.DataFrame):

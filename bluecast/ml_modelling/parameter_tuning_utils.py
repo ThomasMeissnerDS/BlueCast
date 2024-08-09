@@ -1,3 +1,4 @@
+import logging
 from typing import Any, Dict, Tuple, Union
 
 import optuna
@@ -112,6 +113,8 @@ def sample_data(
     conf_training: TrainingConfig,
 ) -> Tuple[pd.DataFrame, pd.DataFrame, pd.Series, pd.Series]:
     if conf_training.sample_data_during_tuning:
+        original_size = len(x_train.index)
+
         nb_samples_train = log_sampling(
             len(x_train.index),
             alpha=conf_training.sample_data_during_tuning_alpha,
@@ -129,4 +132,7 @@ def sample_data(
             nb_samples_test, random_state=conf_training.global_random_state
         )
         y_test = y_test.loc[x_test.index]
+
+        new_size = len(x_train.index)
+        logging.info(f"Down sampling from {original_size} to {new_size} samples.")
     return x_train, x_test, y_train, y_test

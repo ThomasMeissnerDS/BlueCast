@@ -91,6 +91,7 @@ def test_calculate_errors_classification(create_test_bluecast_instance):
             "target": [0, 0, 1, 1],
             "prediction": [0.8, 0.7, 0.8, 0.7],
             "target_class": [0, 0, 1, 1],
+            "target_class_predicted_probas": [0.2, 0.3, 0.8, 0.7],
         }
     )
 
@@ -99,6 +100,7 @@ def test_calculate_errors_classification(create_test_bluecast_instance):
             "target": [0, 0, 1, 1],
             "prediction": [0.8, 0.7, 0.8, 0.7],
             "target_class": [0, 0, 1, 1],
+            "target_class_predicted_probas": [0.2, 0.3, 0.8, 0.7],
             "prediction_error": [0.8, 0.7, 0.2, 0.3],
         }
     )
@@ -157,6 +159,7 @@ def test_out_of_fold_data_reader_cv(create_test_bluecast_cv_instance):
                     "target": [0, 1, 0, 1],
                     "predictions_class_0": [0.8, 0.2, 0.7, 0.3],
                     "predictions_class_1": [0.2, 0.8, 0.3, 0.7],
+                    "target_class_predicted_probas": [0.2, 0.8, 0.7, 0.7],
                 }
             )
 
@@ -227,6 +230,7 @@ def test_calculate_errors_classification_cv(create_test_bluecast_cv_instance):
             "target": [0, 0, 1, 1],
             "prediction": [0.8, 0.7, 0.8, 0.7],
             "target_class": [0, 0, 1, 1],
+            "target_class_predicted_probas": [0.2, 0.3, 0.8, 0.7],
         }
     )
 
@@ -235,6 +239,7 @@ def test_calculate_errors_classification_cv(create_test_bluecast_cv_instance):
             "target": [0, 0, 1, 1],
             "prediction": [0.8, 0.7, 0.8, 0.7],
             "target_class": [0, 0, 1, 1],
+            "target_class_predicted_probas": [0.2, 0.3, 0.8, 0.7],
             "prediction_error": [0.8, 0.7, 0.2, 0.3],
         }
     )
@@ -284,6 +289,7 @@ def test_out_of_fold_data_reader_multiclass(create_test_bluecast_instance_multic
                 "predictions_class_0": [0.7, 0.1, 0.2, 0.6, 0.2, 0.2],
                 "predictions_class_1": [0.2, 0.7, 0.1, 0.3, 0.6, 0.1],
                 "predictions_class_2": [0.1, 0.2, 0.7, 0.1, 0.2, 0.7],
+                "target_class_predicted_probas": [0.7, 0.7, 0.7, 0.6, 0.6, 0.7],
             }
         )
 
@@ -403,6 +409,7 @@ def test_out_of_fold_data_reader_cv_multiclass(
                     "predictions_class_0": [0.7, 0.1, 0.2, 0.6, 0.2, 0.2],
                     "predictions_class_1": [0.2, 0.7, 0.1, 0.3, 0.6, 0.1],
                     "predictions_class_2": [0.1, 0.2, 0.7, 0.1, 0.2, 0.7],
+                    "target_class_predicted_probas": [0.7, 0.7, 0.7, 0.6, 0.6, 0.7],
                 }
             )
 

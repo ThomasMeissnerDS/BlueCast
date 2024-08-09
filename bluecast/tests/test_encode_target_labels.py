@@ -1,7 +1,10 @@
 import pandas as pd
 import pytest
 
-from bluecast.preprocessing.encode_target_labels import TargetLabelEncoder
+from bluecast.preprocessing.encode_target_labels import (
+    TargetLabelEncoder,
+    cast_bool_to_int,
+)
 
 
 @pytest.fixture
@@ -56,3 +59,41 @@ def test_label_encoder_reverse_transform(trained_label_encoder, sample_data):
     )
     expected_data = pd.DataFrame({"target": ["A", "B", "C", "A", "B", "C"]})
     pd.testing.assert_frame_equal(reversed_data, expected_data)
+
+
+# Test conversion of target labels to numeric values
+
+
+def test_cast_bool_to_int_with_bool_column():
+    df = pd.DataFrame({"a": [True, False, True]})
+    result = cast_bool_to_int(df, "a")
+    expected = pd.DataFrame({"a": [1, 0, 1]})
+    pd.testing.assert_frame_equal(result, expected)
+
+
+def test_cast_bool_to_int_with_non_bool_column():
+    df = pd.DataFrame({"a": [1, 2, 3]})
+    result = cast_bool_to_int(df, "a")
+    expected = df.copy()  # No change expected
+    pd.testing.assert_frame_equal(result, expected)
+
+
+def test_cast_bool_to_int_with_nonexistent_column():
+    df = pd.DataFrame({"a": [True, False, True]})
+    result = cast_bool_to_int(df, "b")
+    expected = df.copy()  # No change expected
+    pd.testing.assert_frame_equal(result, expected)
+
+
+def test_cast_bool_to_int_with_mixed_column():
+    df = pd.DataFrame({"a": [1, "2", True]})
+    result = cast_bool_to_int(df, "a")
+    expected = df.copy()  # No change expected
+    pd.testing.assert_frame_equal(result, expected)
+
+
+def test_cast_bool_to_int_with_empty_dataframe():
+    df = pd.DataFrame()
+    result = cast_bool_to_int(df, "a")
+    expected = df.copy()  # No change expected
+    pd.testing.assert_frame_equal(result, expected)

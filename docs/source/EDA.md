@@ -23,6 +23,7 @@ of visualizations.
   * [PCA cumulative variance](#pca-cumulative-variance)
   * [t-SNE](#t-sne)
   * [Target leakage](#target-leakage)
+  * [Feature distribution over time](#feature-distribution-over-time)
 
 <!-- tocstop -->
 
@@ -288,3 +289,17 @@ result = detect_categorical_leakage(
         train_data.loc[:, feat_type_detector.cat_columns], "target", threshold=0.9
     )
 ```
+
+## Feature distribution over time
+
+With the presence of timestamps we often want to understand how the
+distribution behaves over time. Does it change? Is there a trend?
+For this BlueCast offers the `plot_distribution_by_time` function.
+
+```python
+from bluecast.eda.analyse import plot_distribution_by_time
+
+plot_distribution_by_time(train_data, "num_column", "created_at")
+```
+
+![Distribution over time example](distribution_over_time.png)

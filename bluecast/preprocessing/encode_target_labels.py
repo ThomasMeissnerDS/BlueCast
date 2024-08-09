@@ -12,6 +12,21 @@ from typing import Dict, Optional, Union
 import pandas as pd
 
 
+def cast_bool_to_int(df: pd.DataFrame, column_name: str) -> pd.DataFrame:
+    """
+    This function takes a DataFrame and a column name. If the column is of type bool, it casts it to int and returns the DataFrame.
+
+    :param df: The input DataFrame.
+    :param column_name: The name of the column to check and possibly cast.
+
+    returns: The modified DataFrame with the column cast to bool if it was of type int.
+    """
+    if column_name in df.columns:
+        if pd.api.types.is_bool_dtype(df[column_name]):
+            df[column_name] = df[column_name].astype(int)
+    return df
+
+
 class TargetLabelEncoder:
     """
     Encode target column labels.
@@ -87,13 +102,11 @@ class TargetLabelEncoder:
     def label_encoder_reverse_transform(self, targets: pd.Series) -> pd.DataFrame:
         """Reverse numerical encodings back to original categories."""
         logging.info("Start reverse-encoding target labels.")
-        col = targets.name
-
         if isinstance(targets, pd.Series):
             targets = targets.to_frame()
 
         reverse_mapping = {
             value: key for key, value in self.target_label_mapping.items()
         }
-        targets = targets.replace({col: reverse_mapping})
+        targets = targets.replace(reverse_mapping)
         return targets

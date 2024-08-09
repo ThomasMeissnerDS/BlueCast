@@ -679,6 +679,43 @@ def plot_ecdf(
             plt.show()
 
 
+def plot_distribution_by_time(
+    df: pd.DataFrame,
+    col_to_plot: str,
+    date_col: str,
+    xlabel: str = "Week",
+    ylabel: str = "Feature distribution",
+    title: str = "Weekly distribution of the feature",
+    freq: str = "W",
+) -> None:
+    """
+    Plot the distribution of a feature over time.
+
+    :param df: Pandas DataFrame
+    :param col_to_plot: String indicating which column to plot
+    :param date_col: String indicating which column to use as date
+    :param xlabel: String indicating the x-axis label
+    :param ylabel: String indicating the y-axis label
+    :param title: String indicating the title of the plot
+    :param freq: Label indicating the frequency of the time grouping. Must be one of Pandas' Offset aliases.
+    :return: Nothing
+    """
+    # Convert created_at to date format and set as index
+    df = df.set_index(date_col)
+
+    # Group by week and calculate predict_proba distribution
+    grouped = df.groupby(pd.Grouper(freq=freq))[col_to_plot].apply(list)
+
+    # Plot boxplot for each group
+    fig, ax = plt.subplots(figsize=(20, 6))
+    ax.boxplot(grouped.values)
+    ax.set_xticklabels(grouped.index.strftime("%Y-%m-%d"), rotation=45, ha="right")
+    ax.set_xlabel(xlabel)
+    ax.set_ylabel(ylabel)
+    ax.set_title(title)
+    plt.show()
+
+
 def plot_error_distributions(
     df: pd.DataFrame, target: str, prediction_error: str, num_cols_grid: int = 4
 ) -> None:
