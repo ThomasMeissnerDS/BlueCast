@@ -206,3 +206,45 @@ def test_casting_with_nan_values():
     assert (
         transformed_df["mixed_float_str_col"].dtype == "float64"
     ), f"Expected 'float64', but got {transformed_df['mixed_float_str_col'].dtype}"
+
+
+def test_check_if_column_is_int():
+    # Initialize the FeatureTypeDetector object
+    detector = FeatureTypeDetector()
+
+    # Test cases for integer columns
+    int_series = pd.Series([1, 2, 3, 4])
+    assert detector.check_if_column_is_int(int_series)
+
+    # Test cases for mixed type (ints and floats)
+    mixed_series = pd.Series([1, 2.5, 3, 4.0])
+    assert not detector.check_if_column_is_int(mixed_series)  # Has ints
+
+    # Test cases for all floats
+    float_series = pd.Series([1.1, 2.2, 3.3, 4.4])
+    assert not detector.check_if_column_is_int(float_series)  # No ints
+
+    # Test cases for strings that look like ints
+    string_int_series = pd.Series(["1", "2", "3", "4"])
+    assert not detector.check_if_column_is_int(string_int_series)  # All strings
+
+
+def test_check_if_column_is_float():
+    # Initialize the FeatureTypeDetector object
+    detector = FeatureTypeDetector()
+
+    # Test cases for float columns
+    float_series = pd.Series([1.1, 2.2, 3.3, 4.4])
+    assert detector.check_if_column_is_float(float_series)
+
+    # Test cases for mixed type (ints and floats)
+    mixed_series = pd.Series([1, 2.5, 3, 4.0])
+    assert detector.check_if_column_is_float(mixed_series)  # Has floats
+
+    # Test cases for all integers
+    int_series = pd.Series([1, 2, 3, 4])
+    assert not detector.check_if_column_is_float(int_series)  # No floats
+
+    # Test cases for strings that look like floats
+    string_float_series = pd.Series(["1.1", "2.2", "3.3", "4.4"])
+    assert not (detector.check_if_column_is_float(string_float_series))  # All strings
