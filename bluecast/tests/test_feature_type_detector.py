@@ -86,3 +86,123 @@ def test_feature_type_detector():
 
     # Ensure the transformed dataframe is not the same as the original dataframe (transformed datetime columns)
     assert not transformed_df.equals(df)
+
+
+def test_casting_int_and_float_columns():
+    # Create a sample dataframe for testing
+    df = pd.DataFrame(
+        {
+            "int_col": [1, 2, 3, 4],
+            "float_col": [1.1, 2.2, 3.3, 4.4],
+            "mixed_int_str_col": ["1", "2", "3", "4"],
+            "mixed_float_str_col": ["1.1", "2.2", "3.3", "4.4"],
+            "non_castable_str_col": ["a", "b", "c", "d"],
+        }
+    )
+
+    # Initialize the FeatureTypeDetector object
+    detector = FeatureTypeDetector()
+
+    # Test fit_transform_feature_types
+    transformed_df = detector.fit_transform_feature_types(df)
+
+    # Check if the integer column is correctly cast to Int64
+    assert (
+        transformed_df["int_col"].dtype == "int64"
+    ), f"Expected 'Int64', but got {transformed_df['int_col'].dtype}"
+
+    # Check if the float column is correctly cast to float64
+    assert (
+        transformed_df["float_col"].dtype == "float64"
+    ), f"Expected 'float64', but got {transformed_df['float_col'].dtype}"
+
+    # Check if the mixed integer and string column is correctly cast to Int64
+    assert (
+        transformed_df["mixed_int_str_col"].dtype == "float64"
+    ), f"Expected 'float64', but got {transformed_df['mixed_int_str_col'].dtype}"
+
+    # Check if the mixed float and string column is correctly cast to float64
+    assert (
+        transformed_df["mixed_float_str_col"].dtype == "float64"
+    ), f"Expected 'float64', but got {transformed_df['mixed_float_str_col'].dtype}"
+
+    # Check if the non-castable string column remains as object
+    assert (
+        transformed_df["non_castable_str_col"].dtype == "object"
+    ), f"Expected 'object', but got {transformed_df['non_castable_str_col'].dtype}"
+
+
+def test_casting_edge_cases():
+    # Test case with negative integers, floats and mixed strings
+    df = pd.DataFrame(
+        {
+            "int_col": [-1, -2, -3, -4],
+            "float_col": [-1.1, -2.2, -3.3, -4.4],
+            "mixed_int_str_col": ["-1", "-2", "-3", "-4"],
+            "mixed_float_str_col": ["-1.1", "-2.2", "-3.3", "-4.4"],
+        }
+    )
+
+    # Initialize the FeatureTypeDetector object
+    detector = FeatureTypeDetector()
+
+    # Test fit_transform_feature_types
+    transformed_df = detector.fit_transform_feature_types(df)
+
+    # Check if the negative integer column is correctly cast to Int64
+    assert (
+        transformed_df["int_col"].dtype == "int64"
+    ), f"Expected 'int64', but got {transformed_df['int_col'].dtype}"
+
+    # Check if the negative float column is correctly cast to float64
+    assert (
+        transformed_df["float_col"].dtype == "float64"
+    ), f"Expected 'float64', but got {transformed_df['float_col'].dtype}"
+
+    # Check if the mixed negative integer and string column is cast to float64
+    assert (
+        transformed_df["mixed_int_str_col"].dtype == "float64"
+    ), f"Expected 'float64', but got {transformed_df['mixed_int_str_col'].dtype}"
+
+    # Check if the mixed negative float and string column is correctly cast to float64
+    assert (
+        transformed_df["mixed_float_str_col"].dtype == "float64"
+    ), f"Expected 'float64', but got {transformed_df['mixed_float_str_col'].dtype}"
+
+
+def test_casting_with_nan_values():
+    # Create a dataframe with NaN values
+    df = pd.DataFrame(
+        {
+            "int_col": [1, 2, np.nan, 4],
+            "float_col": [1.1, 2.2, np.nan, 4.4],
+            "mixed_int_str_col": ["1", np.nan, "3", "4"],
+            "mixed_float_str_col": ["1.1", "2.2", np.nan, "4.4"],
+        }
+    )
+
+    # Initialize the FeatureTypeDetector object
+    detector = FeatureTypeDetector()
+
+    # Test fit_transform_feature_types
+    transformed_df = detector.fit_transform_feature_types(df)
+
+    # Check if the integer column with NaN is correctly cast to Int64
+    assert (
+        transformed_df["int_col"].dtype == "float64"
+    ), f"Expected 'float64', but got {transformed_df['int_col'].dtype}"
+
+    # Check if the float column with NaN is correctly cast to float64
+    assert (
+        transformed_df["float_col"].dtype == "float64"
+    ), f"Expected 'float64', but got {transformed_df['float_col'].dtype}"
+
+    # Check if the mixed integer and string column with NaN is correctly cast to Int64
+    assert (
+        transformed_df["mixed_int_str_col"].dtype == "float64"
+    ), f"Expected 'float64', but got {transformed_df['mixed_int_str_col'].dtype}"
+
+    # Check if the mixed float and string column with NaN is correctly cast to float64
+    assert (
+        transformed_df["mixed_float_str_col"].dtype == "float64"
+    ), f"Expected 'float64', but got {transformed_df['mixed_float_str_col'].dtype}"

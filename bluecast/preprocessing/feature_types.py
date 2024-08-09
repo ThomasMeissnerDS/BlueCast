@@ -169,12 +169,6 @@ class FeatureTypeDetector:
                         df[col] = df[col].astype("Int64")
                         self.detected_col_types[col] = "Int64"
                         num_col_list.append(col)
-                    elif (df[col] - df[col].astype("Int64")).sum() == 0 and df[
-                        col
-                    ].nunique() > 2:
-                        df[col] = df[col].astype("Int64")
-                        self.detected_col_types[col] = "Int64"
-                        num_col_list.append(col)
                 except Exception:
                     pass
             self.num_columns = num_col_list
@@ -259,15 +253,9 @@ class FeatureTypeDetector:
                 pass
             else:
                 try:
-                    if self.check_if_column_is_int(df[col].dropna(subset=[col])):
-                        df[col] = df[col].astype("Int64")
-                        self.detected_col_types[col] = "Int64"
-                    elif self.check_if_column_is_float(df[col]):
-                        df[col] = df[col].astype(float)
-                        self.detected_col_types[col] = "float"
-                    elif (df[col] - df[col].astype("Int64")).sum() == 0:
-                        df[col] = df[col].astype("Int64")
-                        self.detected_col_types[col] = "Int64"
+                    self.check_if_column_is_int(df[col].dropna(subset=[col]))
+                    df[col] = df[col].astype(float)
+                    self.detected_col_types[col] = "float"
                 except Exception:
                     df[col] = df[col].astype(str)
                     self.detected_col_types[col] = "object"
