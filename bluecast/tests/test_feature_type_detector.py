@@ -187,6 +187,11 @@ def test_casting_with_nan_values():
     # Test fit_transform_feature_types
     transformed_df = detector.fit_transform_feature_types(df)
 
+    assert transformed_df["int_col"].isnull().sum().sum() == 1
+    assert transformed_df["float_col"].isnull().sum().sum() == 1
+    assert transformed_df["mixed_int_str_col"].isnull().sum().sum() == 1
+    assert transformed_df["mixed_float_str_col"].isnull().sum().sum() == 1
+
     # Check if the integer column with NaN is correctly cast to Int64
     assert (
         transformed_df["int_col"].dtype == "float64"

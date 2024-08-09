@@ -1,5 +1,6 @@
 import random
 from typing import Tuple
+from unittest.mock import patch
 
 import pandas as pd
 import pytest
@@ -11,6 +12,7 @@ from bluecast.eda.analyse import (
     correlation_to_target,
     mutual_info_to_target,
     plot_count_pairs,
+    plot_distribution_by_time,
     plot_ecdf,
     plot_null_percentage,
     plot_pca,
@@ -275,3 +277,27 @@ def test_plot_ecdf(synthetic_train_test_data):
     plot_ecdf(num_data, num_cols, plot_all_at_once=False)
     plot_ecdf(num_data, num_cols, plot_all_at_once=True)
     assert True
+
+
+def test_plot_distribution_by_time():
+    # Sample data
+    data = {
+        "date": pd.date_range(start="2023-01-01", periods=10, freq="D"),
+        "value": [1, 2, 3, 4, 5, 6, 7, 8, 9, 10],
+    }
+    df = pd.DataFrame(data)
+
+    # Mocking plt.show() to prevent actual plot display
+    with patch("matplotlib.pyplot.show") as mock_show:
+        # Call the function
+        plot_distribution_by_time(
+            df=df,
+            col_to_plot="value",
+            date_col="date",
+            xlabel="Date",
+            ylabel="Value Distribution",
+            title="Test Plot",
+            freq="D",
+        )
+        # Assert that plt.show() was called once
+        mock_show.assert_called_once()
