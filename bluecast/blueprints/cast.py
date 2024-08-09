@@ -39,8 +39,9 @@ from bluecast.preprocessing.category_encoder_orchestration import (
 )
 from bluecast.preprocessing.custom import CustomPreprocessing
 from bluecast.preprocessing.datetime_features import date_converter
-from bluecast.preprocessing.encode_target_labels import (  # cast_bool_to_int,
+from bluecast.preprocessing.encode_target_labels import (
     TargetLabelEncoder,
+    cast_bool_to_int,
 )
 from bluecast.preprocessing.feature_selection import BoostaRootaWrapper
 from bluecast.preprocessing.feature_types import FeatureTypeDetector
@@ -288,7 +289,7 @@ class BlueCast:
         self.cat_columns = self.feat_type_detector.cat_columns
         self.date_columns = self.feat_type_detector.date_columns
 
-        # df = cast_bool_to_int(df, self.target_column)
+        df = cast_bool_to_int(df, self.target_column)
 
         if not self.conf_training:
             self.conf_training = TrainingConfig()

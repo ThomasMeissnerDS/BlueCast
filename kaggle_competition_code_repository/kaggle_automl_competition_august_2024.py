@@ -73,15 +73,15 @@ def competition_pipeline():
     else:
         train_config.autotune_model = True
         train_config.hypertuning_cv_folds = 5
-        train_config.hypertuning_cv_repeats = 2
-        train_config.hyperparameter_tuning_rounds = 15
+        train_config.hypertuning_cv_repeats = 1
+        train_config.hyperparameter_tuning_rounds = 5
         train_config.hyperparameter_tuning_max_runtime_secs = 60 * 60 * 3
         # train_config.sample_data_during_tuning = True
         train_config.enable_grid_search_fine_tuning = False
         train_config.calculate_shap_values = False
         train_config.show_detailed_tuning_logs = True
         train_config.train_size = 0.85
-        train_config.autotune_on_device = "cpu"
+        train_config.autotune_on_device = "gpu"
         # train_config.infrequent_categories_threshold = 10
         train_config.cat_encoding_via_ml_algorithm = False
         train_config.out_of_fold_dataset_store_path = "/home/thomas/Schreibtisch/Data Science/Preprocessing lib test/automl_competition/"
