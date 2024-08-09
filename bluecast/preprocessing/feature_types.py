@@ -252,14 +252,9 @@ class FeatureTypeDetector:
             if col in self.num_columns:
                 pass
             else:
-                try:
-                    self.check_if_column_is_int(df[col].dropna(subset=[col]))
-                    df[col] = df[col].astype(float)
-                    self.detected_col_types[col] = "float"
-                except Exception:
-                    df[col] = df[col].astype(str)
-                    self.detected_col_types[col] = "object"
-                    cat_columns.append(col)
+                df[col] = df[col].astype(str)
+                self.detected_col_types[col] = "object"
+                cat_columns.append(col)
         self.cat_columns = cat_columns
         return df
 
