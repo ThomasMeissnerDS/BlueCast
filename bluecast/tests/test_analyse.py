@@ -17,6 +17,7 @@ from bluecast.eda.analyse import (
     plot_ecdf,
     plot_null_percentage,
     plot_pca,
+    plot_pca_biplot,
     plot_pca_cumulative_variance,
     plot_pie_chart,
     plot_theil_u_heatmap,
@@ -173,6 +174,37 @@ def test_pca_plot(synthetic_train_test_data):
                 "numerical_feature_2",
                 "numerical_feature_3",
                 "target",
+            ],
+        ],
+        "target",
+    )
+    assert True
+
+
+def test_pca_biplot(synthetic_train_test_data):
+    # test while having target column
+    plot_pca_biplot(
+        synthetic_train_test_data[0].loc[
+            :,
+            [
+                "numerical_feature_1",
+                "numerical_feature_2",
+                "numerical_feature_3",
+                "target",
+            ],
+        ],
+        "target",
+    )
+    assert True
+
+    # test absence of target column
+    plot_pca_biplot(
+        synthetic_train_test_data[0].loc[
+            :,
+            [
+                "numerical_feature_1",
+                "numerical_feature_2",
+                "numerical_feature_3",
             ],
         ],
         "target",

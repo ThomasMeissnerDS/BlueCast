@@ -50,6 +50,7 @@ from bluecast.eda.analyse import (
     correlation_to_target,
     plot_ecdf,
     plot_pca,
+    plot_pca_biplot,
     plot_pca_cumulative_variance,
     plot_theil_u_heatmap,
     plot_tsne,
@@ -251,6 +252,23 @@ plot_pca(
 ```
 
 ![PCA example](plot_pca.png)
+
+## PCA Biplot
+
+We might be interested to see which feature contributes to which
+principal component and by how much. For this purpose the
+`plot_pca_biplot` function can be used:
+
+```python
+from bluecast.eda.analyse import plot_pca_biplot
+
+plot_pca_biplot(
+  train_data.loc[:, feat_type_detector.num_columns],
+  "target"
+)
+```
+
+![PCA Biplot example](pca_biplot.png)
 
 ## PCA cumulative variance
 

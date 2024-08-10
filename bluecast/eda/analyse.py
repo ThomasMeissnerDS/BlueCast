@@ -353,6 +353,7 @@ def plot_pca(df: pd.DataFrame, target: str, scale_data: bool = True) -> None:
 
     Expects numeric columns only.
     :param df: Pandas DataFrame. Should not include the target variable.
+    :param target: String indicating the target column.
     :param scale_data: If true, standard scaling will be performed before applying PCA, otherwise the raw data is used.
     """
     if target not in df.columns.to_list():
@@ -452,6 +453,88 @@ def plot_pca_cumulative_variance(
     plt.legend(loc="upper left")
     plt.ylim(0, 1.1)  # extend y-axis limit to accommodate text labels
     plt.grid(True)
+    plt.show()
+
+
+def plot_pca_biplot(df: pd.DataFrame, target: str, scale_data: bool = True) -> None:
+    """
+    Plots PCA biplot for the dataframe.
+
+    Expects numeric columns only.
+
+    * Arrow direction: Indicates how the corresponding variable is aligned with the principal component.
+        Arrows that point in the same direction are positively correlated. Arrows pointing in the opposite direction are
+        negatively correlated.
+    * Arrow length: Shows how much the variable contributes to the principal components. Longer arrows mean stronger
+        contribution (the variable accounts for more explained variance). Shorter arrows mean weaker contribution (the
+        variable accounts for less explained variance).
+    * Angle between arrows: 0º indicates a perfect positive correlation. 180º indicates a perfect negative correlation.
+        90º indicates no correlation.
+
+    :param df: Pandas DataFrame.
+    :param target: String indicating the target column. Will be dropped if part of the DataFrame.
+    :param scale_data: If true, standard scaling will be performed before applying PCA, otherwise the raw data is used.
+    """
+    if target in df.columns.to_list():
+        df = df.drop(target, axis=1)
+
+    pca = PCA(n_components=2)
+
+    if scale_data:
+        scaler = StandardScaler()
+        df.loc[:, :] = scaler.fit_transform(df.loc[:, :])
+    else:
+        df = df.copy()
+
+    _ = pd.DataFrame(pca.fit_transform(df))
+
+    labels = df.columns
+    n = len(labels)
+    coeff = np.transpose(pca.components_)
+
+    plt.figure(figsize=(8, 8))
+
+    for i in range(n):
+        plt.arrow(
+            x=0,
+            y=0,
+            dx=coeff[i, 0],
+            dy=coeff[i, 1],
+            color="#000000",
+            width=0.003,
+            head_width=0.03,
+        )
+        plt.text(
+            x=coeff[i, 0] * 1.15,
+            y=coeff[i, 1] * 1.15,
+            s=labels[i],
+            size=13,
+            color="#000000",
+            ha="center",
+            va="center",
+        )
+
+    plt.axis("square")
+    plt.title(
+        "Dataset PCA Biplot",
+        loc="left",
+        fontdict={"weight": "bold"},
+        y=1.06,
+    )
+    plt.xlabel("Principal Component 1")
+    plt.ylabel("Principal Component 2")
+
+    plt.xlim(-1, 1)
+    plt.ylim(-1, 1)
+    plt.xticks(np.arange(-1, 1.1, 0.2))
+    plt.yticks(np.arange(-1, 1.1, 0.2))
+
+    plt.axhline(y=0, color="black", linestyle="--")
+    plt.axvline(x=0, color="black", linestyle="--")
+    circle = plt.Circle((0, 0), 0.99, color="gray", fill=False)
+    plt.gca().add_artist(circle)
+
+    plt.grid()
     plt.show()
 
 
@@ -610,7 +693,7 @@ def plot_classification_target_distribution_within_categories(
     :return:
     """
     if target_col not in df.columns.to_list():
-        raise ValueError("Target column must be part of the provided DataFrame")
+        raise KeyError("Target column must be part of the provided DataFrame")
 
     custom_palette = (0.2, 0.7, 0.6), (0.8, 0.7, 0.3)
     for col in cat_columns:
