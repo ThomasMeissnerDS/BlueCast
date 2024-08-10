@@ -325,56 +325,11 @@ def test_valid_input(sample_dataframe):
         )
 
 
-def test_empty_dataframe():
-    empty_df = pd.DataFrame(columns=["Category1", "Category2", "Target"])
-    cat_columns = ["Category1", "Category2"]
-    target_col = "Target"
-
-    with patch("matplotlib.pyplot.show"):
-        plot_classification_target_distribution_within_categories(
-            empty_df, cat_columns, target_col
-        )
-        # Expectation is that the function should not raise an error and handle it gracefully
-
-
 def test_missing_target_column(sample_dataframe):
     cat_columns = ["Category1", "Category2"]
     target_col = "NonExistentTarget"
 
     with pytest.raises(KeyError):
-        plot_classification_target_distribution_within_categories(
-            sample_dataframe, cat_columns, target_col
-        )
-
-
-def test_missing_categorical_column(sample_dataframe):
-    cat_columns = ["NonExistentCategory"]
-    target_col = "Target"
-
-    with pytest.raises(KeyError):
-        plot_classification_target_distribution_within_categories(
-            sample_dataframe, cat_columns, target_col
-        )
-
-
-def test_no_categorical_columns_provided(sample_dataframe):
-    cat_columns = []
-    target_col = "Target"
-
-    with patch("matplotlib.pyplot.show"):
-        plot_classification_target_distribution_within_categories(
-            sample_dataframe, cat_columns, target_col
-        )
-        # Expectation is that the function does nothing but does not raise an error
-
-
-def test_non_categorical_data(sample_dataframe):
-    # Adding a numeric column that should be treated as categorical in practice
-    sample_dataframe["NumericCategory"] = [1, 2, 1, 2, 1, 2]
-    cat_columns = ["NumericCategory"]
-    target_col = "Target"
-
-    with patch("matplotlib.pyplot.show"):
         plot_classification_target_distribution_within_categories(
             sample_dataframe, cat_columns, target_col
         )

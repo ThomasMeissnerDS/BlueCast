@@ -609,6 +609,9 @@ def plot_classification_target_distribution_within_categories(
     :param target_col: String indicating the target column name.
     :return:
     """
+    if target_col not in df.columns.to_list():
+        raise ValueError("Target column must be part of the provided DataFrame")
+
     custom_palette = (0.2, 0.7, 0.6), (0.8, 0.7, 0.3)
     for col in cat_columns:
         contingency_table = pd.crosstab(df[col], df[target_col], normalize="index")
