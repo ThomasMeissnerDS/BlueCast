@@ -15,6 +15,7 @@ of visualizations.
   * [Empirical cumulative density function (eCDF)](#empirical-cumulative-density-function-ecdf)
   * [Bivariate plots](#bivariate-plots)
   * [Count pairs](#count-pairs)
+  * [Classification target distribution in categorical features](#classification-target-distribution-in-categorical-features)
   * [Correlation to the target](#correlation-to-the-target)
   * [Correlation heatmap](#correlation-heatmap)
   * [Association of categorical features](#association-of-categorical-features)
@@ -42,7 +43,9 @@ of the pipeline.
 from bluecast.eda.analyse import (
     bi_variate_plots,
     univariate_plots,
+    plot_classification_target_distribution_within_categories,
     plot_count_pairs,
+    plot_distribution_by_time,
     correlation_heatmap,
     correlation_to_target,
     plot_ecdf,
@@ -80,7 +83,7 @@ plot_pie_chart(
     )
 ```
 
-![QQplot example](pie_chart.png)
+![Pie example](pie_chart.png)
 
 ## Nulls per column
 
@@ -96,7 +99,7 @@ plot_null_percentage(
     )
 ```
 
-![QQplot example](plot_nulls.png)
+![NULLs example](plot_nulls.png)
 
 ## Univariate plots
 
@@ -110,7 +113,7 @@ univariate_plots(
     )
 ```
 
-![QQplot example](univariate_plots.png)
+![Univariate example](univariate_plots.png)
 
 ## Empirical cumulative density function (eCDF)
 
@@ -127,7 +130,7 @@ plot_ecdf(
     )
 ```
 
-![QQplot example](ecdf.png)
+![ECDF example](ecdf.png)
 
 ## Bivariate plots
 
@@ -143,7 +146,7 @@ bi_variate_plots(
       )
 ```
 
-![QQplot example](bivariate_plots.png)
+![Bivariate example](bivariate_plots.png)
 
 ## Count pairs
 
@@ -160,7 +163,24 @@ plot_count_pairs(
       )
 ```
 
-![QQplot example](pair_countplot.png)
+![Count pairs example](pair_countplot.png)
+
+## Classification target distribution in categorical features
+
+We might also want to see how target classes are distributed
+within categorical features. This can be plotted with:
+
+```python
+from bluecast.eda.analyse import plot_distribution_by_time
+
+plot_classification_target_distribution_within_categories(
+    train,
+    cat_cols=train_data.loc[:, feat_type_detector.cat_columns],
+    target_col="target"
+      )
+```
+
+![Target class distro example](class_target_distribution.png)
 
 ## Correlation to the target
 
@@ -173,7 +193,7 @@ signal the correlation uses Pearson's r to indicate that.
 correlation_to_target(train_data.loc[:, feat_type_detector.num_columns])
 ```
 
-![QQplot example](correlation_to_target.png)
+![Corr to target example](correlation_to_target.png)
 
 ## Correlation heatmap
 
@@ -185,7 +205,7 @@ between features and reveals multicollinearity if present.
 correlation_heatmap(train_data.loc[:, feat_type_detector.num_columns])
 ```
 
-![QQplot example](correlation_heatmap.png)
+![Corr heatmap example](correlation_heatmap.png)
 
 ## Association of categorical features
 
@@ -197,7 +217,7 @@ we make use of Theil's U to build an association heatmap.
 theil_matrix = plot_theil_u_heatmap(train_data, feat_type_detector.cat_columns)
 ```
 
-![QQplot example](theil_u_matrix.png)
+![Theil U example](theil_u_matrix.png)
 
 ## Mutual information
 
@@ -214,7 +234,7 @@ extra_params = {"random_state": 30}
 mutual_info_to_target(train_data.loc[:, feat_type_detector.num_columns], "EC1", class_problem="binary", **extra_params)
 ```
 
-![QQplot example](mutual_information.png)
+![MI example](mutual_information.png)
 
 ## Principal components analysis (PCA)
 
@@ -230,7 +250,7 @@ plot_pca(
     )
 ```
 
-![QQplot example](plot_pca.png)
+![PCA example](plot_pca.png)
 
 ## PCA cumulative variance
 
@@ -246,7 +266,7 @@ plot_pca_cumulative_variance(
     )
 ```
 
-![QQplot example](plot_cumulative_pca_variance.png)
+![PCA cumulative example](plot_cumulative_pca_variance.png)
 
 ## t-SNE
 
@@ -265,7 +285,7 @@ plot_tsne(
     )
 ```
 
-![QQplot example](t_sne_plot.png)
+![TSNE example](t_sne_plot.png)
 
 ## Target leakage
 

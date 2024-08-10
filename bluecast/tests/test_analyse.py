@@ -11,6 +11,7 @@ from bluecast.eda.analyse import (
     correlation_heatmap,
     correlation_to_target,
     mutual_info_to_target,
+    plot_classification_target_distribution_within_categories,
     plot_count_pairs,
     plot_distribution_by_time,
     plot_ecdf,
@@ -301,3 +302,79 @@ def test_plot_distribution_by_time():
         )
         # Assert that plt.show() was called once
         mock_show.assert_called_once()
+
+
+@pytest.fixture
+def sample_dataframe():
+    return pd.DataFrame(
+        {
+            "Category1": ["A", "B", "A", "B", "A", "B"],
+            "Category2": ["X", "Y", "X", "Y", "X", "Y"],
+            "Target": [0, 1, 0, 1, 1, 0],
+        }
+    )
+
+
+def test_valid_input(sample_dataframe):
+    cat_columns = ["Category1", "Category2"]
+    target_col = "Target"
+
+    with patch("matplotlib.pyplot.show"):
+        plot_classification_target_distribution_within_categories(
+            sample_dataframe, cat_columns, target_col
+        )
+
+
+def test_empty_dataframe():
+    empty_df = pd.DataFrame(columns=["Category1", "Category2", "Target"])
+    cat_columns = ["Category1", "Category2"]
+    target_col = "Target"
+
+    with patch("matplotlib.pyplot.show"):
+        plot_classification_target_distribution_within_categories(
+            empty_df, cat_columns, target_col
+        )
+        # Expectation is that the function should not raise an error and handle it gracefully
+
+
+def test_missing_target_column(sample_dataframe):
+    cat_columns = ["Category1", "Category2"]
+    target_col = "NonExistentTarget"
+
+    with pytest.raises(KeyError):
+        plot_classification_target_distribution_within_categories(
+            sample_dataframe, cat_columns, target_col
+        )
+
+
+def test_missing_categorical_column(sample_dataframe):
+    cat_columns = ["NonExistentCategory"]
+    target_col = "Target"
+
+    with pytest.raises(KeyError):
+        plot_classification_target_distribution_within_categories(
+            sample_dataframe, cat_columns, target_col
+        )
+
+
+def test_no_categorical_columns_provided(sample_dataframe):
+    cat_columns = []
+    target_col = "Target"
+
+    with patch("matplotlib.pyplot.show"):
+        plot_classification_target_distribution_within_categories(
+            sample_dataframe, cat_columns, target_col
+        )
+        # Expectation is that the function does nothing but does not raise an error
+
+
+def test_non_categorical_data(sample_dataframe):
+    # Adding a numeric column that should be treated as categorical in practice
+    sample_dataframe["NumericCategory"] = [1, 2, 1, 2, 1, 2]
+    cat_columns = ["NumericCategory"]
+    target_col = "Target"
+
+    with patch("matplotlib.pyplot.show"):
+        plot_classification_target_distribution_within_categories(
+            sample_dataframe, cat_columns, target_col
+        )

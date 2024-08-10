@@ -597,6 +597,32 @@ def check_unique_values(
     return lots_uniques
 
 
+def plot_classification_target_distribution_within_categories(
+    df: pd.DataFrame, cat_columns: List[str], target_col: str
+) -> None:
+    """
+    Plot distribution of target across categorical features.
+
+    This suitable for classification tasks only.
+    :param df: Pandas dataFrame. Must include the target column.
+    :param cat_columns: List of categorical column names.
+    :param target_col: String indicating the target column name.
+    :return:
+    """
+    custom_palette = (0.2, 0.7, 0.6), (0.8, 0.7, 0.3)
+    for col in cat_columns:
+        contingency_table = pd.crosstab(df[col], df[target_col], normalize="index")
+        sns.set(style="whitegrid")
+        contingency_table.plot(
+            kind="bar", stacked=True, color=custom_palette, figsize=(20, 4)
+        )
+        plt.title(f"Percentage Distribution of Target across {col}")
+        plt.xlabel(col)
+        plt.ylabel("Percentage")
+        plt.legend(title="Target Class")
+        plt.show()
+
+
 def mutual_info_to_target(
     df: pd.DataFrame,
     target: str,
