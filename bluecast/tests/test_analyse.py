@@ -11,6 +11,7 @@ from bluecast.eda.analyse import (
     correlation_heatmap,
     correlation_to_target,
     mutual_info_to_target,
+    plot_andrews_curve,
     plot_classification_target_distribution_within_categories,
     plot_count_pairs,
     plot_distribution_by_time,
@@ -365,3 +366,17 @@ def test_missing_target_column(sample_dataframe):
         plot_classification_target_distribution_within_categories(
             sample_dataframe, cat_columns, target_col
         )
+
+
+def test_plot_andrews_curve(synthetic_train_test_data):
+    plot_andrews_curve(synthetic_train_test_data[0], "target")
+
+
+def test_plot_andrews_curve_sampled(synthetic_train_test_data):
+    plot_andrews_curve(synthetic_train_test_data[0], "target", n_samples=2)
+
+
+def test_plot_andrews_curve_missing_target(sample_dataframe):
+    target_col = "NonExistentTarget"
+    with pytest.raises(KeyError):
+        plot_andrews_curve(sample_dataframe, target_col)

@@ -902,3 +902,46 @@ def plot_error_distributions(
 
     # Show the plot
     plt.show()
+
+
+def plot_andrews_curve(
+    df: pd.DataFrame, target: str, n_samples: Optional[int] = 200, random_state=500
+) -> None:
+    """
+    Plot Andrews curve.
+
+    Andrews Curve helps visualize if there are inherent groupings of the numerical features based on a given grouping.
+
+    :param df: Pandas DataFrame
+    :param target: String indicating the target column
+    :param n_samples: Int indicating how many samples shall be shown. If None, the full DataFrame is taken.
+    :param random_state: Random seed determining the DataFrame sampling.
+    :return: None
+    """
+    if target not in df.columns.to_list():
+        raise KeyError("Target column must be part of the provided DataFrame")
+
+    plt.figure(figsize=(12, 9), dpi=80)
+
+    if isinstance(n_samples, int):
+        if n_samples >= len(df.index):
+            n_samples = len(df.index)
+    else:
+        n_samples = len(df.index)
+
+    pd.plotting.andrews_curves(
+        df.sample(n_samples, random_state=random_state), target, colormap="Set1"
+    )
+
+    # Lighten borders
+    plt.gca().spines["top"].set_alpha(0)
+    plt.gca().spines["bottom"].set_alpha(0.3)
+    plt.gca().spines["right"].set_alpha(0)
+    plt.gca().spines["left"].set_alpha(0.3)
+
+    plt.title("Andrews Curves", fontsize=22)
+    plt.xlim(-3, 3)
+    plt.grid(alpha=0.3)
+    plt.xticks(fontsize=12)
+    plt.yticks(fontsize=12)
+    plt.show()

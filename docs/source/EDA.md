@@ -18,6 +18,7 @@ of visualizations.
   * [Classification target distribution in categorical features](#classification-target-distribution-in-categorical-features)
   * [Correlation to the target](#correlation-to-the-target)
   * [Correlation heatmap](#correlation-heatmap)
+  * [Andrew Curve](#andrew-curve)
   * [Association of categorical features](#association-of-categorical-features)
   * [Mutual information](#mutual-information)
   * [Principal components analysis (PCA)](#principal-components-analysis-pca)
@@ -41,6 +42,7 @@ of the pipeline.
 
 ```sh
 from bluecast.eda.analyse import (
+    plot_andrews_curve,
     bi_variate_plots,
     univariate_plots,
     plot_classification_target_distribution_within_categories,
@@ -207,6 +209,26 @@ correlation_heatmap(train_data.loc[:, feat_type_detector.num_columns])
 ```
 
 ![Corr heatmap example](correlation_heatmap.png)
+
+## Andrew Curve
+
+Andrews curve brings the data into a lower space by retaining
+the relative distance between other samples and keeping the
+variance similar. We can show how similar samples are with
+regards to the same output.
+
+```python
+from bluecast.eda.analyse import plot_andrews_curve
+
+plot_andrews_curve(
+  train_data.loc[:, feat_type_detector.num_columns],
+  "target",
+  n_samples=20,
+  random_state=20
+)
+```
+
+![Andrew curve example](andrew_curve.png)
 
 ## Association of categorical features
 
