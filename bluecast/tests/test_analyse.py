@@ -369,11 +369,25 @@ def test_missing_target_column(sample_dataframe):
 
 
 def test_plot_andrews_curve(synthetic_train_test_data):
-    plot_andrews_curve(synthetic_train_test_data[0], "target")
+    feats = [
+        "numerical_feature_1",
+        "numerical_feature_2",
+        "numerical_feature_3",
+        "target",
+    ]
+    plot_andrews_curve(synthetic_train_test_data[0].loc[:, feats], "target")
 
 
 def test_plot_andrews_curve_sampled(synthetic_train_test_data):
-    plot_andrews_curve(synthetic_train_test_data[0], "target", n_samples=2)
+    feats = [
+        "numerical_feature_1",
+        "numerical_feature_2",
+        "numerical_feature_3",
+        "target",
+    ]
+    plot_andrews_curve(
+        synthetic_train_test_data[0].loc[:, feats], "target", n_samples=2
+    )
 
 
 def test_plot_andrews_curve_missing_target(sample_dataframe):
