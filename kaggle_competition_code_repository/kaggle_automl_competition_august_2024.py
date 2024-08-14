@@ -85,7 +85,7 @@ def competition_pipeline():
         train_config.autotune_on_device = "gpu"
         # train_config.infrequent_categories_threshold = 10
         train_config.bluecast_cv_train_n_model = (5, 1)
-        train_config.cat_encoding_via_ml_algorithm = True
+        train_config.cat_encoding_via_ml_algorithm = False
         train_config.out_of_fold_dataset_store_path = "/home/thomas/Schreibtisch/Data Science/Preprocessing lib test/automl_competition/"
 
     automl = BlueCastCV(
