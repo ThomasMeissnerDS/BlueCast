@@ -247,13 +247,13 @@ class FeatureTypeDetector:
         for col in no_bool_datetime_cols:
             if col in self.cat_columns:
                 df[col] = df[col].astype(str)
-                self.detected_col_types[col] = "category"
+                self.detected_col_types[col] = "object"
                 cat_columns.append(col)
             if col in self.num_columns:
                 pass
             else:
                 df[col] = df[col].astype(str)
-                self.detected_col_types[col] = "category"
+                self.detected_col_types[col] = "object"
                 cat_columns.append(col)
         self.cat_columns = cat_columns
         return df
