@@ -361,7 +361,7 @@ class CustomModel(BaseClassMlModel):
     ) -> None:
         self.autotune(x_train, x_test, y_train, y_test)
 
-    def predict(self, df: pd.DataFrame) -> Tuple[PredictedProbas, PredictedClasses]:
+    def predict(self, df: pd.DataFrame) -> np.ndarray:
         # predict Catboost classifier
         preds = self.model.predict(df)
 
