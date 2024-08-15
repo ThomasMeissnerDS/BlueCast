@@ -152,7 +152,8 @@ class FeatureTypeDetector:
             for vartype in self.num_dtypes:
                 num_cols = df.select_dtypes(include=[vartype]).columns
                 for col in num_cols:
-                    num_col_list.append(col)
+                    if col not in num_col_list:
+                        num_col_list.append(col)
 
         for col in df.columns.to_list():
             max_length = df[col].astype(str).str.len().max()
@@ -161,14 +162,16 @@ class FeatureTypeDetector:
                     if self.check_if_column_is_float_from_string(df[col]):
                         df[col] = df[col].astype(float)
                         self.detected_col_types[col] = "float"
-                        num_col_list.append(col)
+                        if col not in num_col_list:
+                            num_col_list.append(col)
                     elif (
                         self.check_if_column_is_int_from_string(df[col])
                         and df[col].nunique() > 2
                     ):
                         df[col] = df[col].astype("Int64")
                         self.detected_col_types[col] = "Int64"
-                        num_col_list.append(col)
+                        if col not in num_col_list:
+                            num_col_list.append(col)
                 except Exception:
                     pass
             self.num_columns = num_col_list
@@ -248,13 +251,15 @@ class FeatureTypeDetector:
             if col in self.cat_columns:
                 df[col] = df[col].astype(str)
                 self.detected_col_types[col] = "object"
-                cat_columns.append(col)
+                if col not in cat_columns:
+                    cat_columns.append(col)
             if col in self.num_columns:
                 pass
             else:
                 df[col] = df[col].astype(str)
                 self.detected_col_types[col] = "object"
-                cat_columns.append(col)
+                if col not in cat_columns:
+                    cat_columns.append(col)
         self.cat_columns = cat_columns
         return df
 

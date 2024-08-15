@@ -206,7 +206,7 @@ def univariate_plots(df: pd.DataFrame) -> None:
 
     Expects numeric columns only.
     """
-    for col in df.columns:
+    for col in df.columns.to_list():
         plt.figure(figsize=(8, 4))
 
         # Histogram
@@ -661,7 +661,7 @@ def plot_null_percentage(dataframe: pd.DataFrame) -> None:
 
 
 def check_unique_values(
-    df: pd.DataFrame, columns: List[Union[str, int, float]], threshold: float
+    df: pd.DataFrame, columns: List[Union[str, int, float]], threshold: float = 0.9
 ) -> List[Union[str, int, float]]:
     """
     Check if the columns have an amount of unique values that is almost the number of total rows (being above the defined threshold)

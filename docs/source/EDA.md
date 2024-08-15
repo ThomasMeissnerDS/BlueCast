@@ -58,7 +58,7 @@ from bluecast.eda.analyse import (
     plot_tsne,
     check_unique_values,
     plot_null_percentage,
-    mutual_info_to_target.
+    mutual_info_to_target,
     plot_pie_chart,
 )
 
@@ -69,7 +69,7 @@ feat_type_detector = FeatureTypeDetector()
 train_data = feat_type_detector.fit_transform_feature_types(train_data)
 
 # detect columns with a very high share of unique values
-many_unique_cols = check_unique_values(train_data, feat_type_detector.cat_columns)
+many_unique_cols = check_unique_values(train_data, train_data.columns.to_list())
 ```
 
 ## Pie chart
