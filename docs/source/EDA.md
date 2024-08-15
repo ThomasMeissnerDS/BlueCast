@@ -178,7 +178,7 @@ from bluecast.eda.analyse import plot_distribution_by_time
 
 plot_classification_target_distribution_within_categories(
     train,
-    cat_cols=train_data.loc[:, feat_type_detector.cat_columns],
+    cat_columns=train_data.loc[:, feat_type_detector.cat_columns],
     target_col="target"
       )
 ```
@@ -193,7 +193,7 @@ signal the correlation uses Pearson's r to indicate that.
 
 ```sh
 # show correlation to target
-correlation_to_target(train_data.loc[:, feat_type_detector.num_columns])
+correlation_to_target(train_data.loc[:, feat_type_detector.num_columns], "target")
 ```
 
 ![Corr to target example](correlation_to_target.png)
