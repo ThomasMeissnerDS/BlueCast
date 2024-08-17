@@ -198,6 +198,22 @@ correlation_to_target(train_data.loc[:, feat_type_detector.num_columns], "target
 
 ![Corr to target example](correlation_to_target.png)
 
+## Correlation to target via scatterplots
+
+For regression tasks we can also use scatterplots to investigate
+the relationships of numerical columns to the target variable.
+
+```sh
+# show correlation to target
+plot_against_target_for_regression(
+    train_data,
+    feat_type_detector.num_columns,
+    "target"
+)
+```
+
+![Corr to target via scatterplots example](scatterplots_against_target.png)
+
 ## Correlation heatmap
 
 The correlation heatmap however shows the linear relationships
