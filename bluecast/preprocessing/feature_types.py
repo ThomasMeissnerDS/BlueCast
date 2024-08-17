@@ -6,9 +6,12 @@ categorical and datetime columns. It also casts columns to a specific type.
 """
 
 import logging
+import warnings
 from typing import Dict, List, Optional, Tuple, Union
 
 import pandas as pd
+
+warnings.filterwarnings("ignore", "Could not infer format")
 
 
 class FeatureTypeDetector:

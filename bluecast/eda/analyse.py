@@ -1,4 +1,5 @@
 import math
+import warnings
 from collections import Counter
 from typing import List, Literal, Optional, Union
 
@@ -12,7 +13,18 @@ from sklearn.feature_selection import mutual_info_classif, mutual_info_regressio
 from sklearn.manifold import TSNE
 from sklearn.preprocessing import StandardScaler
 
+warnings.filterwarnings("ignore", "is_categorical_dtype")
+warnings.filterwarnings("ignore", "use_inf_as_na")
 plt.set_loglevel("WARNING")
+
+
+def find_nbins_with_freedman_diaconis(data: np.ndarray):
+    # Calculate the IQR
+    iqr = np.percentile(data, 75) - np.percentile(data, 25)
+
+    # Calculate the bin width using the Freedman-Diaconis rule
+    bin_width_fd = 2 * iqr / np.power(len(data), 1 / 3)
+    return bin_width_fd
 
 
 def plot_pie_chart(
@@ -199,34 +211,52 @@ def plot_count_pairs(
         )
 
 
-def univariate_plots(df: pd.DataFrame) -> None:
+def univariate_plots(df: pd.DataFrame, col_requires_at_least_n_values: int = 5) -> None:
     """
     Plots univariate plots for all the columns in the dataframe. Only numerical columns are expected.
     The target column does not need to be part of the provided DataFrame.
 
-    Expects numeric columns only.
+    Expects numeric columns only. The number of bins will be determined using the Freedman-Diaconis rule.
+
+    :param df: DataFrame holding the features.
+    :param col_requires_at_least_n_values: Minimum number of unique values required to plot the feature.
+        If number of unique features is less, the column will be skipped.
     """
     for col in df.columns.to_list():
-        plt.figure(figsize=(8, 4))
+        if df[col].nunique() >= col_requires_at_least_n_values:
+            nb_bins = len(
+                np.arange(
+                    min(df[col]),
+                    max(df[col]),
+                    max(find_nbins_with_freedman_diaconis(df[col].values), 0.1),
+                )
+            )
 
-        # Histogram
-        plt.subplot(1, 2, 1)
-        sns.histplot(data=df, x=col, kde=True)
-        plt.xlabel(col)
-        plt.ylabel("Frequency")
-        plt.title("Histogram")
+            plt.figure(figsize=(8, 4))
 
-        # Box plot
-        plt.subplot(1, 2, 2)
-        sns.boxplot(data=df, y=col)
-        plt.ylabel(col)
-        plt.title("Box Plot")
+            # Histogram
+            plt.subplot(1, 2, 1)
+            sns.histplot(
+                data=df,
+                x=col,
+                kde=True,
+                bins=min(nb_bins, 5),
+            )
+            plt.xlabel(col)
+            plt.ylabel("Frequency")
+            plt.title("Histogram")
 
-        # Adjust spacing between subplots
-        plt.tight_layout()
+            # Box plot
+            plt.subplot(1, 2, 2)
+            sns.boxplot(data=df, y=col)
+            plt.ylabel(col)
+            plt.title("Box Plot")
 
-        # Show the plots
-        plt.show()
+            # Adjust spacing between subplots
+            plt.tight_layout()
+
+            # Show the plots
+            plt.show()
 
 
 def bi_variate_plots(df: pd.DataFrame, target: str, num_cols_grid: int = 4) -> None:
@@ -759,7 +789,7 @@ def plot_ecdf(
     plot_all_at_once: bool = False,
 ) -> None:
     """
-    Plot the empirical cumulative density function.
+    Plot the empirical cumulative density function (ECDF) and histogram.
 
     Matplotlib contains a direct implementation at version 3.8 and higher, but
     this might run into dependency issues in environments with older data.
@@ -780,13 +810,40 @@ def plot_ecdf(
         plt.show()
     else:
         for col in columns:
-            plt.plot(
+            nb_bins = len(
+                np.arange(
+                    min(df[col]),
+                    max(df[col]),
+                    max(find_nbins_with_freedman_diaconis(df[col].values), 0.1),
+                )
+            )
+            fig, ax1 = plt.subplots()
+
+            # Plot ECDF
+            ax1.plot(
                 np.sort(df[col]),
                 np.linspace(0, 1, len(df[col]), endpoint=False),
-                label=col,
+                label="ECDF",
+                color="blue",
             )
-            plt.xlabel("Value")
-            plt.ylabel("ECDF")
+            ax1.set_xlabel("Value")
+            ax1.set_ylabel("ECDF", color="blue")
+            ax1.tick_params(axis="y", labelcolor="blue")
+
+            # Create a second y-axis for the histogram
+            ax2 = ax1.twinx()
+            ax2.hist(
+                df[col],
+                bins=min(nb_bins, 5),
+                alpha=0.3,
+                color="gray",
+                density=True,
+                label="Histogram",
+            )
+            ax2.set_ylabel("Density", color="gray")
+            ax2.tick_params(axis="y", labelcolor="gray")
+
+            fig.tight_layout()
             plt.legend()
             plt.show()
 

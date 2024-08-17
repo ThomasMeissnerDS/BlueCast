@@ -38,7 +38,11 @@ class ModelMatchMaker:
         self.training_datasets.append(df)
 
     def find_best_match(
-        self, df: pd.DataFrame, use_cols: List[Union[int, float, str]], delta: float
+        self,
+        df: pd.DataFrame,
+        use_cols: List[Union[int, float, str]],
+        cat_columns: Optional[List],
+        delta: float,
     ) -> Tuple[
         Optional[Union[BlueCast, BlueCastRegression, BlueCastCV, BlueCastCVRegression]],
         Optional[pd.DataFrame],
@@ -49,6 +53,7 @@ class ModelMatchMaker:
         :param use_cols: Columns to use for the adversarial validation. Numerical columns are allowed only.
         :param delta: Maximum delta for the adversarial validation score to be away from 0.5. If no dataset reaches this
          delta, (None, None) is returned.
+        :param cat_columns: (Optional) List with names of categorical columns.
         :return: If a match is found, the BlueCast instance and the dataset are returned. Otherwise, (None, None) is
             returned.
         """
@@ -58,7 +63,9 @@ class ModelMatchMaker:
         for idx in range(len(self.bluecast_instances)):
             data_drift_checker = DataDrift()
             auc_score = data_drift_checker.adversarial_validation(
-                self.training_datasets[idx].loc[:, use_cols], df.loc[:, use_cols]
+                self.training_datasets[idx].loc[:, use_cols],
+                df.loc[:, use_cols],
+                cat_columns,
             )
             score_delta = np.abs(auc_score - 0.5)
             if score_delta < best_score and np.abs(auc_score - 0.5) <= delta:
