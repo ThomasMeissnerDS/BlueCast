@@ -37,7 +37,7 @@ class LogisticRegressionModel(BaseClassMlModel):
         self.autotune(x_train, x_test, y_train, y_test)
 
     def predict(self, df: pd.DataFrame) -> Tuple[PredictedProbas, PredictedClasses]:
-        probas = self.model.predict_proba(df)
+        probas = self.model.predict_proba(df)[:, 1]
         classes = self.model.predict(df)
 
         return probas, classes

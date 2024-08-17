@@ -1,4 +1,4 @@
-from typing import Optional, Tuple
+from typing import List, Optional, Tuple, Union
 
 import numpy as np
 import pandas as pd
@@ -10,12 +10,16 @@ from bluecast.preprocessing.remove_collinearity import remove_correlated_columns
 
 
 class PreprocessingForLinearModels(CustomPreprocessing):
-    def __init__(self):
+    def __init__(self, num_columns: Optional[List]):
         super().__init__()
         self.missing_val_imputer = SimpleImputer(missing_values=np.nan, strategy="mean")
         self.scaler = StandardScaler()
-        self.num_columns = []
-        self.non_correlated_columns = []
+
+        if isinstance(num_columns, List):
+            self.num_columns = num_columns
+        else:
+            self.num_columns = []
+        self.non_correlated_columns: List[Union[str, float, int]] = []
 
     def fit_transform(
         self, df: pd.DataFrame, target: pd.Series
@@ -33,8 +37,16 @@ class PreprocessingForLinearModels(CustomPreprocessing):
         df.loc[:, self.num_columns] = self.scaler.fit_transform(
             df.loc[:, self.num_columns]
         )
-        df = remove_correlated_columns(df, 0.9)
-        self.non_correlated_columns = df.columns.to_list()
+
+        df_non_numerical = df.loc[
+            :, [col for col in df.columns.to_list() if col not in self.num_columns]
+        ]
+
+        df = remove_correlated_columns(df.loc[:, self.num_columns], 0.9)
+        df_numerical = df.loc[:, self.non_correlated_columns]
+        self.non_correlated_columns = df_numerical.columns.to_list()
+
+        df = pd.concat([df_numerical, df_non_numerical], axis=1)
 
         return df, target
 
@@ -52,6 +64,11 @@ class PreprocessingForLinearModels(CustomPreprocessing):
             df.loc[:, self.num_columns]
         )
         df.loc[:, self.num_columns] = self.scaler.transform(df.loc[:, self.num_columns])
-        df = df.loc[:, self.non_correlated_columns]
+
+        df_non_numerical = df.loc[
+            :, [col for col in df.columns.to_list() if col not in self.num_columns]
+        ]
+        df_numerical = df.loc[:, self.non_correlated_columns]
+        df = pd.concat([df_numerical, df_non_numerical], axis=1)
 
         return df, target
