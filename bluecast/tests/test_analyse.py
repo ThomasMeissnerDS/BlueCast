@@ -11,6 +11,7 @@ from bluecast.eda.analyse import (
     correlation_heatmap,
     correlation_to_target,
     mutual_info_to_target,
+    plot_against_target_for_regression,
     plot_andrews_curve,
     plot_classification_target_distribution_within_categories,
     plot_count_pairs,
@@ -394,3 +395,11 @@ def test_plot_andrews_curve_missing_target(sample_dataframe):
     target_col = "NonExistentTarget"
     with pytest.raises(KeyError):
         plot_andrews_curve(sample_dataframe, target_col)
+
+
+def test_plot_against_target_for_regression(synthetic_train_test_data_regression):
+    num_columns = ["numerical_feature_1", "numerical_feature_2", "numerical_feature_3"]
+    plot_against_target_for_regression(
+        synthetic_train_test_data_regression[0], num_columns, "target"
+    )
+    assert True
