@@ -60,7 +60,7 @@ def test_find_best_match_no_drift(setup_model_match_maker, mocker):
     mm, _, _, _, _, df1, _, _, _ = setup_model_match_maker
     mocker.patch.object(DataDrift, "adversarial_validation", return_value=np.inf)
 
-    model, dataset = mm.find_best_match(df1, ["a", "b"], 0.1)
+    model, dataset = mm.find_best_match(df1, ["a", "b"], cat_columns=[], delta=0.1)
 
     assert model is None
     assert dataset is None
@@ -72,7 +72,7 @@ def test_find_best_match_finds_best_model(setup_model_match_maker, mocker):
         DataDrift, "adversarial_validation", side_effect=[0.3, 0.5, 0.4, 0.6]
     )
 
-    model, dataset = mm.find_best_match(df2, ["a", "b"], 0.1)
+    model, dataset = mm.find_best_match(df2, ["a", "b"], cat_columns=[], delta=0.1)
 
     assert model == model2
     assert dataset.equals(mm.training_datasets[1])
@@ -84,7 +84,7 @@ def test_find_best_match_no_model_reaches_threshold(setup_model_match_maker, moc
         DataDrift, "adversarial_validation", side_effect=[0.61, 0.7, 0.8, 0.9]
     )
 
-    model, dataset = mm.find_best_match(df1, ["a", "b"], 0.1)
+    model, dataset = mm.find_best_match(df1, ["a", "b"], cat_columns=[], delta=0.1)
 
     assert model is None
     assert dataset is None
@@ -96,7 +96,7 @@ def test_find_best_match_with_all_models(setup_model_match_maker, mocker):
         DataDrift, "adversarial_validation", side_effect=[0.7, 0.5, 0.4, 0.6]
     )
 
-    model, dataset = mm.find_best_match(df2, ["a", "b"], 0.1)
+    model, dataset = mm.find_best_match(df2, ["a", "b"], cat_columns=[], delta=0.1)
 
     # Verify the model with the best score is chosen
     assert model == model2
