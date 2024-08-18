@@ -1,9 +1,9 @@
-from typing import Tuple
+from typing import Optional, Tuple
 
 import numpy as np
 import pandas as pd
 from sklearn.linear_model import LinearRegression, LogisticRegression
-from sklearn.model_selection import GridSearchCV, StratifiedKFold
+from sklearn.model_selection import GridSearchCV, KFold, StratifiedKFold
 
 from bluecast.ml_modelling.base_classes import (
     PredictedClasses,  # just for linting checks
@@ -16,7 +16,10 @@ from bluecast.ml_modelling.base_classes import BaseClassMlModel
 
 class LogisticRegressionModel(BaseClassMlModel):
     def __init__(self, max_iter=100000, random_state=300):
-        self.model = LogisticRegression(max_iter=max_iter, random_state=random_state)
+        self.logistic_regression_model: LogisticRegression = LogisticRegression(
+            max_iter=max_iter, random_state=random_state
+        )
+        self.model: Optional[GridSearchCV] = None
         self.random_state = random_state
 
     def autotune(
@@ -46,7 +49,7 @@ class LogisticRegressionModel(BaseClassMlModel):
         ]
 
         gs_lr = GridSearchCV(
-            estimator=self.model,
+            estimator=self.logistic_regression_model,
             param_grid=params,
             n_jobs=-1,
             cv=skfold,
@@ -68,15 +71,18 @@ class LogisticRegressionModel(BaseClassMlModel):
         self.autotune(x_train, x_test, y_train, y_test)
 
     def predict(self, df: pd.DataFrame) -> Tuple[PredictedProbas, PredictedClasses]:
-        probas = self.model.predict_proba(df)[:, 1]
-        classes = self.model.predict(df)
-
-        return probas, classes
+        if isinstance(self.model, GridSearchCV):
+            probas = self.model.predict_proba(df)[:, 1]
+            classes = self.model.predict(df)
+            return probas, classes
+        else:
+            raise ValueError("No fitted model has been found.")
 
 
 class LinearRegressionModel(BaseClassMlModel):
     def __init__(self):
-        self.model = LinearRegression()
+        self.linear_regression_model: LinearRegression = LinearRegression()
+        self.model: Optional[GridSearchCV] = None
 
     def autotune(
         self,
@@ -86,7 +92,7 @@ class LinearRegressionModel(BaseClassMlModel):
         y_test: pd.Series,
     ):
 
-        skfold = StratifiedKFold(n_splits=5)
+        skfold = KFold(n_splits=5)
 
         params = [
             {
@@ -105,7 +111,7 @@ class LinearRegressionModel(BaseClassMlModel):
         ]
 
         gs_lr = GridSearchCV(
-            estimator=self.model,
+            estimator=self.linear_regression_model,
             param_grid=params,
             n_jobs=-1,
             cv=skfold,
@@ -127,6 +133,9 @@ class LinearRegressionModel(BaseClassMlModel):
         self.autotune(x_train, x_test, y_train, y_test)
 
     def predict(self, df: pd.DataFrame) -> Tuple[PredictedProbas, PredictedClasses]:
-        preds = self.model.predict(df)
 
-        return preds
+        if isinstance(self.model, GridSearchCV):
+            preds = self.model.predict(df)
+            return preds
+        else:
+            raise ValueError("No fitted model has been found.")
