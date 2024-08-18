@@ -6,6 +6,7 @@ hyperparameter tuning.
 """
 
 import logging
+import warnings
 from copy import deepcopy
 from datetime import datetime
 from typing import Any, Dict, List, Literal, Optional, Union
@@ -39,6 +40,8 @@ from bluecast.ml_modelling.parameter_tuning_utils import (
     update_params_with_best_params,
 )
 from bluecast.preprocessing.custom import CustomPreprocessing
+
+warnings.filterwarnings("ignore", "is_sparse is deprecated")
 
 
 class XgboostModelRegression(BaseClassMlRegressionModel):

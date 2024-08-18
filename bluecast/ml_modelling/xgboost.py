@@ -6,6 +6,7 @@ hyperparameter tuning.
 """
 
 import logging
+import warnings
 from copy import deepcopy
 from typing import Any, Dict, List, Literal, Optional, Tuple, Union
 
@@ -32,6 +33,8 @@ from bluecast.ml_modelling.parameter_tuning_utils import (
     update_params_with_best_params,
 )
 from bluecast.preprocessing.custom import CustomPreprocessing
+
+warnings.filterwarnings("ignore", "is_sparse is deprecated")
 
 
 class XgboostModel(BaseClassMlModel):
@@ -298,6 +301,7 @@ class XgboostModel(BaseClassMlModel):
                 ),
             }
             params = {**param, **train_on}
+
             sample_weight = trial.suggest_categorical("sample_weight", [True, False])
             params = update_params_based_on_tree_method(
                 params, trial, self.conf_xgboost

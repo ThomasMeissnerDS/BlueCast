@@ -29,6 +29,9 @@ def update_params_based_on_tree_method(
             "max_bin", xgboost_params.max_bin_min, xgboost_params.max_bin_max
         )
 
+    if param.get("device", "cpu") == "cpu":
+        del param["device"]
+
     param["booster"] = trial.suggest_categorical("booster", xgboost_params.booster)
     if param["booster"] == "gbtree":
         param["grow_policy"] = trial.suggest_categorical(

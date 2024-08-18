@@ -34,8 +34,6 @@ def check_gpu_support() -> Dict[str, str]:
 
     params_list = [
         {"device": "cuda", "tree_method": "gpu_hist"},
-        {"device": "cuda"},
-        {"tree_method": "gpu_hist"},
     ]
 
     for params in params_list:
@@ -46,7 +44,11 @@ def check_gpu_support() -> Dict[str, str]:
 
                 # Check if any captured warnings indicate GPU-related issues
                 gpu_warning = any(
-                    "GPU" in str(warn.message) or "gpu" in str(warn.message)
+                    "GPU" in str(warn.message)
+                    or "gpu" in str(warn.message)
+                    or "device" in str(warn.message)
+                    or "Device" in str(warn.message)
+                    or "AllVisibleGPUs" in str(warn.message)
                     for warn in w
                 )
                 if gpu_warning:

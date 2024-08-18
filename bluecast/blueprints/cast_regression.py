@@ -30,10 +30,7 @@ from bluecast.evaluation.shap_values import (
     shap_waterfall_plot,
 )
 from bluecast.experimentation.tracking import ExperimentTracker
-from bluecast.general_utils.general_utils import (
-    check_gpu_support,
-    save_out_of_fold_data,
-)
+from bluecast.general_utils.general_utils import save_out_of_fold_data
 from bluecast.ml_modelling.xgboost_regression import XgboostModelRegression
 from bluecast.preprocessing.category_encoder_orchestration import (
     CategoryEncoderOrchestrator,
@@ -278,8 +275,6 @@ class BlueCastRegression:
 
         if not self.conf_training:
             self.conf_training = TrainingConfig()
-
-        check_gpu_support()
 
         self.initial_checks(df)
 

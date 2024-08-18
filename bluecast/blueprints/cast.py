@@ -29,10 +29,7 @@ from bluecast.evaluation.shap_values import (
     shap_waterfall_plot,
 )
 from bluecast.experimentation.tracking import ExperimentTracker
-from bluecast.general_utils.general_utils import (
-    check_gpu_support,
-    save_out_of_fold_data,
-)
+from bluecast.general_utils.general_utils import save_out_of_fold_data
 from bluecast.ml_modelling.xgboost import XgboostModel
 from bluecast.preprocessing.category_encoder_orchestration import (
     CategoryEncoderOrchestrator,
@@ -293,8 +290,6 @@ class BlueCast:
 
         if not self.conf_training:
             self.conf_training = TrainingConfig()
-
-        check_gpu_support()
 
         self.initial_checks(df)
 
@@ -633,7 +628,6 @@ class BlueCast:
         if not self.conf_training:
             raise ValueError("conf_training is None")
 
-        check_gpu_support()
         df = self.transform_new_data(df)
 
         logging.info("Predicting...")
@@ -735,7 +729,6 @@ class BlueCast:
         :returns a Pandas DataFrame with a column called 'prediction_set' holding a nested set with predicted classes.
         """
         if self.conformal_prediction_wrapper:
-            check_gpu_support()
             df = self.transform_new_data(df)
             pred_sets = self.conformal_prediction_wrapper.predict_sets(df, alpha)
             # transform numerical values back to original strings for the end user
