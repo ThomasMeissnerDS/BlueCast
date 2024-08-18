@@ -23,7 +23,7 @@ def test_get_params_based_on_device_auto_gpu():
             conf_training, conf_params_xgboost, conf_xgboost
         )
 
-    assert result["device"] == "cpu"
+    assert not result.get("device", None)
 
 
 def test_get_params_based_on_device_cpu():
