@@ -24,12 +24,12 @@ def update_params_based_on_tree_method(
     param["tree_method"] = trial.suggest_categorical(
         "tree_method", xgboost_params.tree_method
     )
-    if param["tree_method"] in ["hist", "approx"]:
+    if param["tree_method"] in ["hist", "approx", "gpu_hist"]:
         param["max_bin"] = trial.suggest_int(
             "max_bin", xgboost_params.max_bin_min, xgboost_params.max_bin_max
         )
 
-    if param.get("device", "cpu") == "cpu":
+    if param.get("device", None) == "cpu":
         del param["device"]
 
     param["booster"] = trial.suggest_categorical("booster", xgboost_params.booster)
@@ -58,7 +58,7 @@ def get_params_based_on_device(
     """Get parameters based on available or chosen device."""
     if conf_training.autotune_on_device in ["auto"]:
         train_on = check_gpu_support()
-        conf_params_xgboost.params["device"] = train_on["device"]
+        conf_params_xgboost.params["device"] = train_on.get("device", None)
         if "exact" in conf_xgboost.tree_method and conf_params_xgboost.params[
             "device"
         ] in ["gpu", "cuda"]:
