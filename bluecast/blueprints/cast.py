@@ -449,12 +449,11 @@ class BlueCast:
             shap_waterfall_plot(
                 explainer, self.conf_training.shap_waterfall_indices, self.class_problem
             )
-            if self.conf_training.show_dependence_plots_of_top_n_features > 0:
-                shap_dependence_plots(
-                    shap_values,
-                    x_test,
-                    self.conf_training.show_dependence_plots_of_top_n_features,
-                )
+            shap_dependence_plots(
+                shap_values,
+                x_test,
+                self.conf_training.show_dependence_plots_of_top_n_features,
+            )
         self.prediction_mode = True
 
     def fit_eval(
