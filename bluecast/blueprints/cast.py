@@ -396,7 +396,8 @@ class BlueCast:
                 x_train.copy(), y_train
             )
             x_test = self.cat_encoder.transform_target_encode_multiclass(x_test.copy())
-        elif self.conf_training.cat_encoding_via_ml_algorithm:
+
+        if self.conf_training.cat_encoding_via_ml_algorithm:
             cat_cols = [col for col in self.cat_columns if col != self.target_column]
             x_train[cat_cols] = x_train[cat_cols].astype("category")
             x_test[cat_cols] = x_test[cat_cols].astype("category")
@@ -588,7 +589,8 @@ class BlueCast:
             and not self.conf_training.cat_encoding_via_ml_algorithm
         ):
             df = self.cat_encoder.transform_target_encode_multiclass(df.copy())
-        elif self.conf_training.cat_encoding_via_ml_algorithm:
+
+        if self.conf_training.cat_encoding_via_ml_algorithm:
             cat_cols = [col for col in self.cat_columns if col != self.target_column]
             df[cat_cols] = df[cat_cols].astype("category")
 
@@ -726,7 +728,7 @@ class BlueCast:
         1 - alpha.
         :param df: Pandas DataFrame holding unseen data
         :param alpha: Float indicating the desired confidence level.
-        :returns a Pandas DataFrame with a column called 'prediction_set' holding a nested set with predicted classes.
+        :returns: a Pandas DataFrame with a column called 'prediction_set' holding a nested set with predicted classes.
         """
         if self.conformal_prediction_wrapper:
             df = self.transform_new_data(df)

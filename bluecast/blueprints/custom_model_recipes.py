@@ -3,7 +3,7 @@ from typing import Optional, Tuple
 import numpy as np
 import pandas as pd
 from sklearn.linear_model import LinearRegression, LogisticRegression
-from sklearn.model_selection import GridSearchCV, KFold, StratifiedKFold
+from sklearn.model_selection import GridSearchCV, StratifiedKFold
 
 from bluecast.ml_modelling.base_classes import (
     PredictedClasses,  # just for linting checks
@@ -91,33 +91,9 @@ class LinearRegressionModel(BaseClassMlModel):
         y_train: pd.Series,
         y_test: pd.Series,
     ):
+        self.linear_regression_model.fit(x_train, y_train)
 
-        skfold = KFold(n_splits=5)
-
-        params = [
-            {
-                "penalty": ["l2"],
-                "solver": ["newton-cg", "newton-cholesky", "sag", "saga"],
-            },
-            {
-                "penalty": ["elasticnet"],
-                "solver": ["newton-cg", "newton-cholesky", "sag", "saga"],
-                "l1_ratio": np.arange(0, 1, 3),
-            },
-        ]
-
-        gs_lr = GridSearchCV(
-            estimator=self.linear_regression_model,
-            param_grid=params,
-            n_jobs=-1,
-            cv=skfold,
-            scoring="neg_root_mean_squared_error",
-            verbose=1,
-        )
-
-        gs_lr.fit(x_train, y_train)
-
-        self.model = gs_lr
+        self.model = self.linear_regression_model
 
     def fit(
         self,

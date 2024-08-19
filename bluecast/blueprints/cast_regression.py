@@ -540,7 +540,8 @@ class BlueCastRegression:
             and not self.conf_training.cat_encoding_via_ml_algorithm
         ):
             df = self.cat_encoder.transform_target_encode_binary_class(df.copy())
-        elif self.conf_training.cat_encoding_via_ml_algorithm:
+
+        if self.conf_training.cat_encoding_via_ml_algorithm:
             cat_cols = [col for col in self.cat_columns if col != self.target_column]
             df[cat_cols] = df[cat_cols].astype("category")
 
@@ -611,7 +612,7 @@ class BlueCastRegression:
         1 - alpha.
         :param df: Pandas DataFrame holding unseen data
         :param alphas: List of floats indicating the desired confidence levels.
-        :returns A Pandas DataFrame with  sorted columns 'alpha_XX_low' (alpha) and 'alpha_XX_high' (1 - alpha) for each
+        :returns: A Pandas DataFrame with  sorted columns 'alpha_XX_low' (alpha) and 'alpha_XX_high' (1 - alpha) for each
             alpha in the provided list of alphas. To obtain the mean prediction call the 'predict' method.
         """
         if self.conformal_prediction_wrapper:
