@@ -114,7 +114,7 @@ def test_linear_autotune(regression_data, linear_model):
 
     # Check if the model has been fitted by inspecting the attributes
     assert hasattr(
-        linear_model.model.best_estimator_, "coef_"
+        linear_model.model, "coef_"
     ), "Model should have been fitted and have coefficients."
 
 
@@ -124,7 +124,7 @@ def test_linear_fit(regression_data, linear_model):
 
     # Again, check if the model has been fitted
     assert hasattr(
-        linear_model.model.best_estimator_, "coef_"
+        linear_model.model, "coef_"
     ), "Model should have been fitted after calling fit method."
 
 
