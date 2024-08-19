@@ -57,10 +57,10 @@ the quality of prediction sets:
 from bluecast.conformal_prediction.effectiveness_nonconformity_measures import one_c, avg_c
 
 # return the percentage of sets with one label only (higher is better)
-one_c(pred_sets.values)
+one_c(pred_sets)
 
 # return the mean number of labels per prediction set (lower is better)
-avg_c(pred_sets.values)
+avg_c(pred_sets)
 ```
 
 Finally we can check if the prediction sets have the credibility as expected
