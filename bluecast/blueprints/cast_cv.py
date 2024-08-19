@@ -320,8 +320,17 @@ class BlueCastCV:
             if return_sub_models_preds:
                 return result_df.loc[:, prob_cols], result_df.loc[:, class_cols]
             else:
+                if self.conf_params_xgboost:
+                    classification_threshold = (
+                        self.conf_params_xgboost.classification_threshold
+                    )
+                else:
+                    classification_threshold = 0.5
+
                 y_probs = result_df.loc[:, prob_cols].mean(axis=1)
-                y_classes = (result_df.loc[:, prob_cols].mean(axis=1) > 0.5).astype(int)
+                y_classes = (
+                    result_df.loc[:, prob_cols].mean(axis=1) > classification_threshold
+                ).astype(int)
 
                 if (
                     self.bluecast_models[0].feat_type_detector

@@ -82,7 +82,7 @@ class LogisticRegressionModel(BaseClassMlModel):
 class LinearRegressionModel(BaseClassMlModel):
     def __init__(self):
         self.linear_regression_model: LinearRegression = LinearRegression()
-        self.model: Optional[GridSearchCV] = None
+        self.model: Optional[LinearRegression] = None
 
     def autotune(
         self,
@@ -106,7 +106,7 @@ class LinearRegressionModel(BaseClassMlModel):
 
     def predict(self, df: pd.DataFrame) -> Tuple[PredictedProbas, PredictedClasses]:
 
-        if isinstance(self.model, GridSearchCV):
+        if isinstance(self.model, LinearRegression):
             preds = self.model.predict(df)
             return preds
         else:

@@ -72,7 +72,7 @@ def competition_pipeline():
         train_config.calculate_shap_values = False
     else:
         train_config.autotune_model = True
-        train_config.hypertuning_cv_folds = 1
+        train_config.hypertuning_cv_folds = 5
         train_config.hypertuning_cv_repeats = 1
         train_config.cardinality_threshold_for_onehot_encoding = 3
         train_config.hyperparameter_tuning_rounds = 50
