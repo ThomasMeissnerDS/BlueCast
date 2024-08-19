@@ -97,14 +97,10 @@ class LinearRegressionModel(BaseClassMlModel):
         params = [
             {
                 "penalty": ["l2"],
-                "C": np.logspace(0.1, 1, 5),
-                "class_weight": ["balanced", None],
                 "solver": ["newton-cg", "newton-cholesky", "sag", "saga"],
             },
             {
                 "penalty": ["elasticnet"],
-                "C": np.logspace(0.1, 1, 5),
-                "class_weight": ["balanced", None],
                 "solver": ["newton-cg", "newton-cholesky", "sag", "saga"],
                 "l1_ratio": np.arange(0, 1, 3),
             },
