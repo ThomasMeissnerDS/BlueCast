@@ -1,11 +1,13 @@
 from collections import namedtuple
 
 import pandas as pd
+import polars as pl
 import pytest
 
 from bluecast.preprocessing.feature_creation import (
     AddRowLevelAggFeatures,
     FeatureClusteringScorer,
+    GroupLevelAggFeatures,
 )
 
 
@@ -229,3 +231,136 @@ def test_changing_features(synthetic_data):
     assert cluster_results.head(1)["loyalty"].values[0] == 1
     assert cluster_results.tail(1)["loyalty"].values[0] == 4
     assert cluster_results["total_score"].max() == 11
+
+
+# test grouplevelaggfeature creator
+@pytest.fixture
+def polars_dataframe(sample_dataframe):
+    return pl.from_pandas(sample_dataframe)
+
+
+def test_initialization_grouplevelaggfeatures():
+    aggregator = GroupLevelAggFeatures()
+    assert aggregator.original_features == []
+    assert aggregator.agg_features_created == []
+
+
+def test_create_groupby_agg_features_pandas(sample_dataframe):
+    aggregator = GroupLevelAggFeatures()
+    groupby_columns = ["target"]
+    columns_to_agg = ["A", "B"]
+    target_col = "C"
+    aggregations = ["mean", "sum"]
+
+    result_df = aggregator.create_groupby_agg_features(
+        sample_dataframe, groupby_columns, columns_to_agg, target_col, aggregations
+    )
+
+    expected_columns = ["target", "A_mean", "A_sum", "B_mean", "B_sum", "C"]
+    assert list(result_df.columns) == expected_columns
+    assert aggregator.original_features == ["A", "B", "C", "target"]
+    assert aggregator.agg_features_created == ["A_mean", "A_sum", "B_mean", "B_sum"]
+
+
+def test_create_groupby_agg_features_polars(polars_dataframe):
+    aggregator = GroupLevelAggFeatures()
+    groupby_columns = ["target"]
+    columns_to_agg = ["A", "B"]
+    target_col = "C"
+    aggregations = ["min", "max"]
+
+    result_df = aggregator.create_groupby_agg_features(
+        polars_dataframe, groupby_columns, columns_to_agg, target_col, aggregations
+    )
+
+    expected_columns = ["target", "A_min", "A_max", "B_min", "B_max", "C"]
+    assert list(result_df.columns) == expected_columns
+    assert aggregator.original_features == ["A", "B", "C", "target"]
+    assert aggregator.agg_features_created == ["A_min", "A_max", "B_min", "B_max"]
+
+
+def test_create_groupby_agg_features_no_columns_to_agg(sample_dataframe):
+    aggregator = GroupLevelAggFeatures()
+    groupby_columns = ["target"]
+    columns_to_agg = None
+    target_col = "C"
+
+    result_df = aggregator.create_groupby_agg_features(
+        sample_dataframe, groupby_columns, columns_to_agg, target_col
+    )
+
+    expected_columns = [
+        "target",
+        "A_min",
+        "A_max",
+        "A_mean",
+        "A_sum",
+        "B_min",
+        "B_max",
+        "B_mean",
+        "B_sum",
+        "C",
+    ]
+    assert list(result_df.columns) == expected_columns
+    assert aggregator.original_features == ["A", "B", "C", "target"]
+    assert aggregator.agg_features_created == [
+        "A_min",
+        "A_max",
+        "A_mean",
+        "A_sum",
+        "B_min",
+        "B_max",
+        "B_mean",
+        "B_sum",
+    ]
+
+
+def test_create_groupby_agg_features_no_target_column(sample_dataframe):
+    aggregator = GroupLevelAggFeatures()
+    groupby_columns = ["target"]
+    columns_to_agg = ["A", "B"]
+    target_col = None
+
+    result_df = aggregator.create_groupby_agg_features(
+        sample_dataframe, groupby_columns, columns_to_agg, target_col
+    )
+
+    expected_columns = [
+        "target",
+        "A_min",
+        "A_max",
+        "A_mean",
+        "A_sum",
+        "B_min",
+        "B_max",
+        "B_mean",
+        "B_sum",
+    ]
+    assert list(result_df.columns) == expected_columns
+    assert aggregator.original_features == ["A", "B", "C", "target"]
+    assert aggregator.agg_features_created == [
+        "A_min",
+        "A_max",
+        "A_mean",
+        "A_sum",
+        "B_min",
+        "B_max",
+        "B_mean",
+        "B_sum",
+    ]
+
+
+def test_create_groupby_agg_features_default_aggregations(sample_dataframe):
+    aggregator = GroupLevelAggFeatures()
+    groupby_columns = ["target"]
+    columns_to_agg = ["A"]
+    target_col = None
+
+    result_df = aggregator.create_groupby_agg_features(
+        sample_dataframe, groupby_columns, columns_to_agg, target_col
+    )
+
+    expected_columns = ["target", "A_min", "A_max", "A_mean", "A_sum"]
+    assert list(result_df.columns) == expected_columns
+    assert aggregator.original_features == ["A", "B", "C", "target"]
+    assert aggregator.agg_features_created == ["A_min", "A_max", "A_mean", "A_sum"]

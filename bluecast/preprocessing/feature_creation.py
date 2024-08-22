@@ -2,6 +2,7 @@ from typing import Any, Dict, List, Optional, Union
 
 import numpy as np
 import pandas as pd
+import polars as pl
 from sklearn.cluster import KMeans
 from sklearn.preprocessing import MinMaxScaler
 
@@ -113,6 +114,74 @@ class AddRowLevelAggFeatures:
         df = self.add_row_level_max(df, self.original_features)
         df = self.add_row_level_sum(df, self.original_features)
         return df
+
+
+class GroupLevelAggFeatures:
+    def __init__(self):
+        self.original_features: List[Union[str, int, float]] = []
+        self.agg_features_created: List[Union[str, int, float]] = []
+
+    def create_groupby_agg_features(
+        self,
+        df: Union[pd.DataFrame, pl.DataFrame],
+        groupby_columns: List[str],
+        columns_to_agg: Optional[List[str]],
+        target_col: Optional[str],
+        aggregations: Optional[List[str]] = None,
+    ) -> pd.DataFrame:
+        """
+        Create aggregations based on groups for a given DataFrame.
+
+        :param df: Either Pandas or Polars DataFrame.
+        :param groupby_columns: List of column names to use for the groupby.
+        :param columns_to_agg: List of columns to aggregate. If empty all columns except
+            target column (target_col) will be chosen.
+        :param target_col: Target column name. Will be ignored during aggregation.
+        :param aggregations: Aggregations to perform. If not provided, ["min", "max", "mean", "sum"] will be used.
+        :return:
+        """
+        if not isinstance(aggregations, list):
+            aggregations = ["min", "max", "mean", "sum"]
+
+        if isinstance(df, pd.DataFrame):
+            df = pl.from_dataframe(df)
+
+        self.original_features = df.columns
+
+        # Determine which columns to aggregate
+        if not columns_to_agg:
+            columns_to_agg = df.columns
+
+        # Remove the target column from the aggregation list if specified
+        if isinstance(columns_to_agg, list):
+            if target_col in columns_to_agg:
+                columns_to_agg.remove(target_col)
+
+        # Define the aggregation operations
+        agg_ops = []
+        if isinstance(columns_to_agg, list):
+            for col in columns_to_agg:
+                for agg in aggregations:
+                    agg_ops.append(getattr(pl.col(col), agg)().alias(f"{col}_{agg}"))
+                    self.agg_features_created.append(f"{col}_{agg}")
+
+        df_grouped = df.group_by(groupby_columns).agg(agg_ops)
+
+        # Optionally add the target column back to the final DataFrame
+        if target_col in self.original_features:
+            df_grouped = df_grouped.join(
+                df.select(groupby_columns + [target_col]),
+                on=groupby_columns,
+                how="left",
+            )
+        else:
+            df_grouped = df_grouped.join(
+                df.select(groupby_columns),
+                on=groupby_columns,
+                how="left",
+            )
+
+        return df_grouped.to_pandas()
 
 
 class FeatureClusteringScorer:
