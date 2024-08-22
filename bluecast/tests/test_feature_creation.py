@@ -299,6 +299,10 @@ def test_create_groupby_agg_features_no_columns_to_agg(sample_dataframe):
         "B_max",
         "B_mean",
         "B_sum",
+        "target_min",
+        "target_max",
+        "target_mean",
+        "target_sum",
         "C",
     ]
     assert list(result_df.columns) == expected_columns
