@@ -164,6 +164,7 @@ with BlueCast, covering:
 * [EDA](docs/source/EDA.md)
 * [Basic usage](docs/source/Basic%20usage.md)
 * [Customize training settings](docs/source/Customize%20training%20settings.md)
+* [Feature engineering](docs/source/Feature%20engineering.md)
 * [Customizing configurations and objects](docs/source/Customizing%20configurations%20and%20objects.md)
 * [Model evaluation](docs/source/Model%20evaluation.md)
 * [Error analysis](docs/source/Error%20analysis.md)
