@@ -167,13 +167,6 @@ class GroupLevelAggFeatures:
 
         df_grouped = df.group_by(groupby_columns).agg(agg_ops)
 
-        # Optionally add the target column back to the final DataFrame
-        df_grouped = df_grouped.join(
-            df.select(groupby_columns),
-            on=groupby_columns,
-            how="left",
-        )
-
         return df_grouped.to_pandas()
 
 
