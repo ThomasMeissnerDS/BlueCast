@@ -6,6 +6,7 @@ hyperparameter tuning.
 """
 
 import logging
+import warnings
 from copy import deepcopy
 from typing import Any, Dict, List, Literal, Optional, Tuple, Union
 
@@ -13,7 +14,7 @@ import numpy as np
 import optuna
 import pandas as pd
 import xgboost as xgb
-from sklearn.model_selection import StratifiedKFold
+from sklearn.model_selection import RepeatedStratifiedKFold
 from sklearn.utils import class_weight
 
 from bluecast.config.training_config import (
@@ -32,6 +33,8 @@ from bluecast.ml_modelling.parameter_tuning_utils import (
     update_params_with_best_params,
 )
 from bluecast.preprocessing.custom import CustomPreprocessing
+
+warnings.filterwarnings("ignore", "is_sparse is deprecated")
 
 
 class XgboostModel(BaseClassMlModel):
@@ -298,6 +301,7 @@ class XgboostModel(BaseClassMlModel):
                 ),
             }
             params = {**param, **train_on}
+
             sample_weight = trial.suggest_categorical("sample_weight", [True, False])
             params = update_params_based_on_tree_method(
                 params, trial, self.conf_xgboost
@@ -345,10 +349,10 @@ class XgboostModel(BaseClassMlModel):
 
                 return self._fine_tune_precise(params, x_train, y_train, x_test, y_test)
             else:
-                skf = StratifiedKFold(
-                    n_splits=5,
+                skf = RepeatedStratifiedKFold(
+                    n_splits=self.conf_training.hypertuning_cv_folds,
+                    n_repeats=self.conf_training.hypertuning_cv_repeats,
                     random_state=self.conf_training.global_random_state,
-                    shuffle=self.conf_training.shuffle_during_training,
                 )
                 folds = []
                 for train_index, test_index in skf.split(x_train, y_train.tolist()):
@@ -549,9 +553,9 @@ class XgboostModel(BaseClassMlModel):
                 "Could not find Training config. Falling back to default values"
             )
 
-        stratifier = StratifiedKFold(
+        stratifier = RepeatedStratifiedKFold(
             n_splits=self.conf_training.hypertuning_cv_folds,
-            shuffle=self.conf_training.shuffle_during_training,
+            n_repeats=self.conf_training.hypertuning_cv_repeats,
             random_state=self.conf_training.global_random_state,
         )
 
@@ -742,13 +746,13 @@ class XgboostModel(BaseClassMlModel):
                     y_test,
                 )
             else:
-                skf = StratifiedKFold(
-                    n_splits=5,
+                skf = RepeatedStratifiedKFold(
+                    n_splits=self.conf_training.hypertuning_cv_folds,
+                    n_repeats=self.conf_training.hypertuning_cv_repeats,
                     random_state=self.conf_training.global_random_state,
-                    shuffle=self.conf_training.shuffle_during_training,
                 )
                 folds = []
-                for train_index, test_index in skf.split(x_train, y_train):
+                for train_index, test_index in skf.split(x_train, y_train.astype(int)):
                     folds.append((train_index.tolist(), test_index.tolist()))
 
                 result = xgb.cv(
@@ -895,8 +899,11 @@ class XgboostModel(BaseClassMlModel):
         partial_probs = self.model.predict(d_test)
         if self.class_problem == "binary":
             predicted_probs = np.asarray([line[1] for line in partial_probs])
-            predicted_classes = (
-                predicted_probs > self.conf_params_xgboost.classification_threshold
+            predicted_classes = np.asarray(
+                [
+                    int(line[1] > self.conf_params_xgboost.classification_threshold)
+                    for line in partial_probs
+                ]
             )
         else:
             predicted_probs = partial_probs

@@ -63,5 +63,5 @@ def test_adversarial_validation():
     )
 
     # Test Population Stability Index with no data drift
-    data_drift.adversarial_validation(data, new_data)
+    data_drift.adversarial_validation(data, new_data, cat_columns=[])
     assert data_drift.adversarial_auc_score > 0.5

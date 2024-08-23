@@ -33,8 +33,6 @@ def check_gpu_support() -> Dict[str, str]:
     d_train = xgb.DMatrix(data, label=label)
 
     params_list = [
-        {"device": "cuda", "tree_method": "gpu_hist"},
-        {"device": "cuda"},
         {"tree_method": "gpu_hist"},
     ]
 
@@ -46,7 +44,11 @@ def check_gpu_support() -> Dict[str, str]:
 
                 # Check if any captured warnings indicate GPU-related issues
                 gpu_warning = any(
-                    "GPU" in str(warn.message) or "gpu" in str(warn.message)
+                    "GPU" in str(warn.message)
+                    or "gpu" in str(warn.message)
+                    or "device" in str(warn.message)
+                    or "Device" in str(warn.message)
+                    or "AllVisibleGPUs" in str(warn.message)
                     for warn in w
                 )
                 if gpu_warning:
@@ -65,7 +67,7 @@ def check_gpu_support() -> Dict[str, str]:
             logger.warning("Failed with params %s. Error: %s", params, str(e))
 
     # If no GPU parameters work, fall back to CPU
-    params = {"tree_method": "hist", "device": "cpu"}
+    params = {"tree_method": "hist"}
     logger.info("No GPU detected. Xgboost will use CPU with parameters: %s", params)
     return params
 
@@ -137,6 +139,7 @@ def log_sampling(nb_rows: int, alpha: float = 2.0) -> int:
 def save_out_of_fold_data(
     oof_data: pd.DataFrame,
     y_hat: Union[pd.Series, np.ndarray],
+    y_classes: Optional[Union[pd.Series, np.ndarray]],
     y_true: Union[pd.Series, np.ndarray],
     target_column: str,
     class_problem: Literal["binary", "multiclass", "regression"],
@@ -148,6 +151,8 @@ def save_out_of_fold_data(
     :param oof_data: Data to save.
     :param y_hat: Predictions. Will be appended to oof_data and saved together. When class_problem is "binary", only the
         target class score is expected.
+    :param y_classes: Predicted classes. Will be appended to oof_data and saved together. Only required for class_problem
+        'binary' or 'multiclass'.
     :param y_true: True targets.
     :param target_column: String specifying name of the target column.
     :param class_problem: Takes a string containing the class problem type. Either "binary", "multiclass" or
@@ -170,11 +175,40 @@ def save_out_of_fold_data(
         reverse_target_mapping = {}
 
     if class_problem == "binary":
+        if not isinstance(y_classes, (pd.Series, np.ndarray, list)):
+            raise ValueError(
+                "For 'class_problem binary and multiclass the array for y_classes has to be provided"
+            )
+        elif isinstance(y_classes, list):
+            y_classes = np.asarray(y_classes).astype(int)
+
+        y_true = y_true.astype(int)
+
+        oof_data_copy["predicted_class"] = y_classes
+        oof_data_copy["target_class_predicted_probas"] = [
+            1 - preds if cls == 0 else preds for preds, cls in zip(y_hat, y_classes)
+        ]
         oof_data_copy[f"predictions_class_{reverse_target_mapping.get(0, 0)}"] = (
             1 - y_hat
         )
         oof_data_copy[f"predictions_class_{reverse_target_mapping.get(1, 1)}"] = y_hat
     elif class_problem == "multiclass":
+        if not isinstance(y_classes, (pd.Series, np.ndarray, list)):
+            raise ValueError(
+                "For 'class_problem binary and multiclass the array for y_classes has to be provided"
+            )
+        elif isinstance(y_classes, list):
+            y_classes = np.asarray(y_classes).astype(int)
+
+        if isinstance(y_true, pd.DataFrame):
+            y_true = y_true[target_column].values
+
+        y_true = y_true.astype(int)
+
+        oof_data_copy["predicted_class"] = y_classes
+        oof_data_copy["target_class_predicted_probas"] = np.asarray(
+            [pred[target_cls] for pred, target_cls in zip(y_hat, y_true)]
+        )
         for cls_idx in range(y_hat.shape[1]):
             oof_data_copy[
                 f"predictions_class_{reverse_target_mapping.get(cls_idx, cls_idx)}"

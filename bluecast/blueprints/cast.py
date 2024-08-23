@@ -29,19 +29,20 @@ from bluecast.evaluation.shap_values import (
     shap_waterfall_plot,
 )
 from bluecast.experimentation.tracking import ExperimentTracker
-from bluecast.general_utils.general_utils import (
-    check_gpu_support,
-    save_out_of_fold_data,
-)
+from bluecast.general_utils.general_utils import save_out_of_fold_data
 from bluecast.ml_modelling.xgboost import XgboostModel
 from bluecast.preprocessing.category_encoder_orchestration import (
     CategoryEncoderOrchestrator,
 )
 from bluecast.preprocessing.custom import CustomPreprocessing
 from bluecast.preprocessing.datetime_features import date_converter
-from bluecast.preprocessing.encode_target_labels import TargetLabelEncoder
+from bluecast.preprocessing.encode_target_labels import (
+    TargetLabelEncoder,
+    cast_bool_to_int,
+)
 from bluecast.preprocessing.feature_selection import BoostaRootaWrapper
 from bluecast.preprocessing.feature_types import FeatureTypeDetector
+from bluecast.preprocessing.infrequent_categories import InFrequentCategoryEncoder
 from bluecast.preprocessing.nulls_and_infs import fill_infinite_values
 from bluecast.preprocessing.onehot_encoding import OneHotCategoryEncoder
 from bluecast.preprocessing.schema_checks import SchemaDetector
@@ -115,6 +116,7 @@ class BlueCast:
         self.conf_xgboost = conf_xgboost
         self.conf_params_xgboost = conf_params_xgboost
         self.feat_type_detector: Optional[FeatureTypeDetector] = None
+        self.infreq_cat_encoder: Optional[InFrequentCategoryEncoder] = None
         self.cat_encoder: Optional[
             Union[BinaryClassTargetEncoder, MultiClassTargetEncoder]
         ] = None
@@ -284,10 +286,10 @@ class BlueCast:
         self.cat_columns = self.feat_type_detector.cat_columns
         self.date_columns = self.feat_type_detector.date_columns
 
+        df = cast_bool_to_int(df, self.target_column)
+
         if not self.conf_training:
             self.conf_training = TrainingConfig()
-
-        check_gpu_support()
 
         self.initial_checks(df)
 
@@ -343,6 +345,18 @@ class BlueCast:
             self.cat_columns is not None
             and not self.conf_training.cat_encoding_via_ml_algorithm
         ):
+            from bluecast.preprocessing.infrequent_categories import (
+                InFrequentCategoryEncoder,
+            )
+
+            self.infreq_cat_encoder = InFrequentCategoryEncoder(
+                self.cat_columns,
+                self.target_column,
+                self.conf_training.infrequent_categories_threshold,
+            )
+            x_train = self.infreq_cat_encoder.fit_transform(x_train, y_train)
+            x_test = self.infreq_cat_encoder.transform(x_test)
+
             self.category_encoder_orchestrator = CategoryEncoderOrchestrator(
                 self.target_column
             )
@@ -382,9 +396,11 @@ class BlueCast:
                 x_train.copy(), y_train
             )
             x_test = self.cat_encoder.transform_target_encode_multiclass(x_test.copy())
-        elif self.conf_training.cat_encoding_via_ml_algorithm:
-            x_train[self.cat_columns] = x_train[self.cat_columns].astype("category")
-            x_test[self.cat_columns] = x_test[self.cat_columns].astype("category")
+
+        if self.conf_training.cat_encoding_via_ml_algorithm:
+            cat_cols = [col for col in self.cat_columns if col != self.target_column]
+            x_train[cat_cols] = x_train[cat_cols].astype("category")
+            x_test[cat_cols] = x_test[cat_cols].astype("category")
 
         if self.custom_last_mile_computation:
             x_train, y_train = self.custom_last_mile_computation.fit_transform(
@@ -485,7 +501,8 @@ class BlueCast:
         save_out_of_fold_data(
             df_eval,
             y_probs,
-            target_eval,
+            y_classes,
+            y_true,
             self.target_column,
             self.class_problem,
             self.conf_training,
@@ -544,6 +561,13 @@ class BlueCast:
 
         if (
             self.cat_columns is not None
+            and self.infreq_cat_encoder
+            and not self.conf_training.cat_encoding_via_ml_algorithm
+        ):
+            df = self.infreq_cat_encoder.transform(df.copy())
+
+        if (
+            self.cat_columns is not None
             and self.onehot_encoder
             and not self.conf_training.cat_encoding_via_ml_algorithm
         ):
@@ -565,8 +589,10 @@ class BlueCast:
             and not self.conf_training.cat_encoding_via_ml_algorithm
         ):
             df = self.cat_encoder.transform_target_encode_multiclass(df.copy())
-        elif self.conf_training.cat_encoding_via_ml_algorithm:
-            df[self.cat_columns] = df[self.cat_columns].astype("category")
+
+        if self.conf_training.cat_encoding_via_ml_algorithm:
+            cat_cols = [col for col in self.cat_columns if col != self.target_column]
+            df[cat_cols] = df[cat_cols].astype("category")
 
         if self.custom_last_mile_computation:
             df, _ = self.custom_last_mile_computation.transform(
@@ -581,7 +607,10 @@ class BlueCast:
         return df
 
     def predict(
-        self, df: pd.DataFrame, save_shap_values: bool = False
+        self,
+        df: pd.DataFrame,
+        save_shap_values: bool = False,
+        return_original_labels: bool = False,
     ) -> Tuple[np.ndarray, np.ndarray]:
         """Predict on unseen data.
 
@@ -590,6 +619,7 @@ class BlueCast:
         :param df: Pandas DataFrame with unseen data
         :param save_shap_values: If True, calculates and saves shap values, so they can be used to plot
             waterfall plots for selected rows o demand.
+        :param return_original_labels: If True, returns the original labels instead of the encoded ones.
         """
         if not self.ml_model:
             raise Exception("Ml model could not be found")
@@ -600,7 +630,6 @@ class BlueCast:
         if not self.conf_training:
             raise ValueError("conf_training is None")
 
-        check_gpu_support()
         df = self.transform_new_data(df)
 
         logging.info("Predicting...")
@@ -610,15 +639,10 @@ class BlueCast:
                 self.ml_model.model, df
             )
 
-        if self.feat_type_detector.cat_columns:
-            if (
-                self.target_column in self.feat_type_detector.cat_columns
-                and self.target_label_encoder
-                and self.feat_type_detector
-            ):
-                y_classes = self.target_label_encoder.label_encoder_reverse_transform(
-                    pd.Series(y_classes)
-                )
+        if return_original_labels and self.target_label_encoder:
+            y_classes = self.target_label_encoder.label_encoder_reverse_transform(
+                pd.Series(y_classes)
+            )
 
         return y_probs, y_classes
 
@@ -704,10 +728,9 @@ class BlueCast:
         1 - alpha.
         :param df: Pandas DataFrame holding unseen data
         :param alpha: Float indicating the desired confidence level.
-        :returns a Pandas DataFrame with a column called 'prediction_set' holding a nested set with predicted classes.
+        :returns: a Pandas DataFrame with a column called 'prediction_set' holding a nested set with predicted classes.
         """
         if self.conformal_prediction_wrapper:
-            check_gpu_support()
             df = self.transform_new_data(df)
             pred_sets = self.conformal_prediction_wrapper.predict_sets(df, alpha)
             # transform numerical values back to original strings for the end user

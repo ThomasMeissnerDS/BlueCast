@@ -28,6 +28,8 @@ class TrainingConfig(BaseModel):
         custom ML model is passed.
     :param hypertuning_cv_folds: Number of cross-validation folds to use for hyperparameter tuning. Not used when
         custom ML model is passed.
+    :param hypertuning_cv_repeats: Number of repetitions for each cross-validation fold during hyperparameter
+        tuning. Not used when custom ML model is passed.
     :param sample_data_during_tuning: Whether to sample the data during tuning. Not used when custom ML model is passed.
     :param sample_data_during_tuning_alpha: Alpha value for sampling the data during tuning. The higher alpha the
         fewer samples will be left. Not used when custom ML model is passed.
@@ -59,6 +61,9 @@ class TrainingConfig(BaseModel):
     :param cardinality_threshold_for_onehot_encoding: Categorical features with a cardinality of less or equal
         this threshold will be onehot encoded. The rest will be target encoded. Will be ignored if
         cat_encoding_via_ml_algorithm is set to true.
+    :param infrequent_categories_threshold: Categories with a frequency of less this threshold will be
+        grouped into a common group. This is done to reduce the risk of overfitting. Will be ignored if
+        cat_encoding_via_ml_algorithm is set to true.
     :param cat_encoding_via_ml_algorithm: Whether to use an ML algorithm for categorical encoding. If True, the
         categorical encoding is done via a ML algorithm. If False, the categorical encoding is done via a  target
         encoding in the preprocessing steps. See the ReadMe for more details.
@@ -81,10 +86,11 @@ class TrainingConfig(BaseModel):
     hyperparameter_tuning_rounds: int = 200
     hyperparameter_tuning_max_runtime_secs: int = 3600
     hypertuning_cv_folds: int = 5
+    hypertuning_cv_repeats: int = 1
     sample_data_during_tuning: bool = False
     sample_data_during_tuning_alpha: float = 2.0
     precise_cv_tuning: bool = False
-    early_stopping_rounds: Optional[int] = 10
+    early_stopping_rounds: Optional[int] = 20
     autotune_model: bool = True
     autotune_on_device: Literal["auto", "gpu", "cpu"] = "auto"
     autotune_n_random_seeds: int = 1
@@ -93,12 +99,13 @@ class TrainingConfig(BaseModel):
     enable_feature_selection: bool = False
     calculate_shap_values: bool = True
     shap_waterfall_indices: List[int] = [0]
-    show_dependence_plots_of_top_n_features: int = 1
+    show_dependence_plots_of_top_n_features: int = 0
     store_shap_values_in_instance: bool = False
     train_size: float = 0.8
     train_split_stratify: bool = True
     use_full_data_for_final_model: bool = False
     cardinality_threshold_for_onehot_encoding: int = 5
+    infrequent_categories_threshold: int = 5
     cat_encoding_via_ml_algorithm: bool = False
     show_detailed_tuning_logs: bool = False
     optuna_sampler_n_startup_trials: int = 10

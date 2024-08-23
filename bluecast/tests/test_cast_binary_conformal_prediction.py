@@ -13,6 +13,7 @@ def test_bluecast_fit_binary_without_custom_model():
     # Create an instance of the BlueCast class with the custom model
     train_config = TrainingConfig()
     train_config.calculate_shap_values = False
+    train_config.hyperparameter_tuning_rounds = 10
 
     bluecast = BlueCast(
         class_problem="binary",
@@ -60,6 +61,8 @@ def test_bluecast_fit_binary_without_custom_model():
         [0, 1, 0, 1, 0, 1, 0, 1, 0, 0, 0, 1, 0, 1, 0, 1, 0, 0, 0, 1]
     )
     y_calibration = y_calibration.replace({0: "zero", 1: "one"})
+    print("y_calibration")
+    print(y_calibration)
 
     x_train["target"] = y_train
 
@@ -79,6 +82,20 @@ def test_bluecast_fit_binary_without_custom_model():
     print(predicted_probas.shape)
     print(type(predicted_probas))
     # assert predicted_probas.shape[1] == 1
+
+    # Test predicting and return original labels
+    predicted_probas, predicted_classes = bluecast.predict(
+        x_test, return_original_labels=True
+    )
+    print(predicted_classes)
+    print(
+        f"Check target label encoder: {bluecast.target_label_encoder.target_label_mapping}"
+    )
+
+    classes_flattened = predicted_classes[
+        predicted_classes.columns.to_list()[0]
+    ].values.tolist()
+    assert "one" in classes_flattened or "zero" in classes_flattened
 
     probas = bluecast.predict_proba(x_test)
     print("--------")

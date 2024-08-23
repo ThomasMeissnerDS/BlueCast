@@ -6,13 +6,16 @@ This is meant for pipelines on production.
 
 import logging
 import numbers
-from typing import Any, Dict
+import warnings
+from typing import Any, Dict, List, Optional
 
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 import xgboost as xgb
 from scipy.stats import ks_2samp
+
+warnings.filterwarnings("ignore", "is_sparse is deprecated")
 
 
 class DataDrift:
@@ -218,7 +221,9 @@ class DataDrift:
         plt.show()
         plt.close()
 
-    def adversarial_validation(self, df: pd.DataFrame, df_new: pd.DataFrame) -> float:
+    def adversarial_validation(
+        self, df: pd.DataFrame, df_new: pd.DataFrame, cat_columns: Optional[List]
+    ) -> float:
         """
         Perform adversarial validation to check if the new data is similar to the training data.
         If the AUC score is close to 0.5, then the new data is similar to the training data. The further the AUC score is
@@ -226,6 +231,7 @@ class DataDrift:
 
         :param df: Baseline DataFrame that is the point of comparison.
         :param df_new: New DataFrame to compare against the baseline.
+        :param cat_columns: (Optional) List with names of categorical columns.
         :return: Auc score that indicates similarity.
         """
         # add the train/test labels
@@ -237,11 +243,16 @@ class DataDrift:
         # shuffle
         all_data_shuffled = all_data.sample(frac=1, random_state=60)
 
+        if isinstance(cat_columns, list):
+            all_data_shuffled[cat_columns] = all_data_shuffled[cat_columns].astype(
+                "category"
+            )
+
         # create our DMatrix (the XGBoost data structure)
         X = all_data_shuffled.drop(["AV_label"], axis=1)
         y = all_data_shuffled["AV_label"]
 
-        xgb_data = xgb.DMatrix(data=X, label=y)
+        xgb_data = xgb.DMatrix(data=X, label=y, enable_categorical=True)
 
         # our XGBoost parameters
         params = {

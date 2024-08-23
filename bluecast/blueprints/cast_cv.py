@@ -320,10 +320,27 @@ class BlueCastCV:
             if return_sub_models_preds:
                 return result_df.loc[:, prob_cols], result_df.loc[:, class_cols]
             else:
-                return (
-                    result_df.loc[:, prob_cols].mean(axis=1),
-                    result_df.loc[:, prob_cols].mean(axis=1) > 0.5,
-                )
+                if self.conf_params_xgboost:
+                    classification_threshold = (
+                        self.conf_params_xgboost.classification_threshold
+                    )
+                else:
+                    classification_threshold = 0.5
+
+                y_probs = result_df.loc[:, prob_cols].mean(axis=1)
+                y_classes = (
+                    result_df.loc[:, prob_cols].mean(axis=1) > classification_threshold
+                ).astype(int)
+
+                if (
+                    self.bluecast_models[0].feat_type_detector
+                    and self.bluecast_models[0].target_label_encoder
+                ):
+                    y_classes = self.bluecast_models[
+                        0
+                    ].target_label_encoder.label_encoder_reverse_transform(y_classes)
+
+                return y_probs, y_classes
 
     def predict_proba(
         self,

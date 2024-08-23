@@ -1,3 +1,4 @@
+import logging
 from typing import Any, Dict, Tuple, Union
 
 import optuna
@@ -23,10 +24,13 @@ def update_params_based_on_tree_method(
     param["tree_method"] = trial.suggest_categorical(
         "tree_method", xgboost_params.tree_method
     )
-    if param["tree_method"] in ["hist", "approx"]:
+    if param["tree_method"] in ["hist", "approx", "gpu_hist"]:
         param["max_bin"] = trial.suggest_int(
             "max_bin", xgboost_params.max_bin_min, xgboost_params.max_bin_max
         )
+
+    if param.get("device", None) == "cpu":
+        del param["device"]
 
     param["booster"] = trial.suggest_categorical("booster", xgboost_params.booster)
     if param["booster"] == "gbtree":
@@ -54,7 +58,7 @@ def get_params_based_on_device(
     """Get parameters based on available or chosen device."""
     if conf_training.autotune_on_device in ["auto"]:
         train_on = check_gpu_support()
-        conf_params_xgboost.params["device"] = train_on["device"]
+        conf_params_xgboost.params["device"] = train_on.get("device", None)
         if "exact" in conf_xgboost.tree_method and conf_params_xgboost.params[
             "device"
         ] in ["gpu", "cuda"]:
@@ -112,6 +116,8 @@ def sample_data(
     conf_training: TrainingConfig,
 ) -> Tuple[pd.DataFrame, pd.DataFrame, pd.Series, pd.Series]:
     if conf_training.sample_data_during_tuning:
+        original_size = len(x_train.index)
+
         nb_samples_train = log_sampling(
             len(x_train.index),
             alpha=conf_training.sample_data_during_tuning_alpha,
@@ -129,4 +135,7 @@ def sample_data(
             nb_samples_test, random_state=conf_training.global_random_state
         )
         y_test = y_test.loc[x_test.index]
+
+        new_size = len(x_train.index)
+        logging.info(f"Down sampling from {original_size} to {new_size} samples.")
     return x_train, x_test, y_train, y_test

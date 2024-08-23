@@ -12,11 +12,14 @@ multiclass.
 """
 
 import logging
+import warnings
 from typing import Dict, List, Optional, Union
 
 import numpy as np
 import pandas as pd
 from category_encoders import OneHotEncoder, TargetEncoder
+
+warnings.filterwarnings("ignore", "is_categorical_dtype")
 
 
 class BinaryClassTargetEncoder:

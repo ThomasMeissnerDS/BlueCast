@@ -1,4 +1,5 @@
 import math
+import warnings
 from collections import Counter
 from typing import List, Literal, Optional, Union
 
@@ -7,12 +8,24 @@ import numpy as np
 import pandas as pd
 import scipy.stats as ss
 import seaborn as sns
+import statsmodels.api as sm
 from sklearn.decomposition import PCA
 from sklearn.feature_selection import mutual_info_classif, mutual_info_regression
 from sklearn.manifold import TSNE
 from sklearn.preprocessing import StandardScaler
 
+warnings.filterwarnings("ignore", "is_categorical_dtype")
+warnings.filterwarnings("ignore", "use_inf_as_na")
 plt.set_loglevel("WARNING")
+
+
+def find_bind_with_with_freedman_diaconis(data: np.ndarray):
+    # Calculate the IQR
+    iqr = np.percentile(data, 75) - np.percentile(data, 25)
+
+    # Calculate the bin width using the Freedman-Diaconis rule
+    bin_width_fd = 2 * iqr / np.power(len(data), 1 / 3)
+    return bin_width_fd
 
 
 def plot_pie_chart(
@@ -199,34 +212,52 @@ def plot_count_pairs(
         )
 
 
-def univariate_plots(df: pd.DataFrame) -> None:
+def univariate_plots(df: pd.DataFrame, col_requires_at_least_n_values: int = 5) -> None:
     """
     Plots univariate plots for all the columns in the dataframe. Only numerical columns are expected.
     The target column does not need to be part of the provided DataFrame.
 
-    Expects numeric columns only.
+    Expects numeric columns only. The number of bins will be determined using the Freedman-Diaconis rule.
+
+    :param df: DataFrame holding the features.
+    :param col_requires_at_least_n_values: Minimum number of unique values required to plot the feature.
+        If number of unique features is less, the column will be skipped.
     """
-    for col in df.columns:
-        plt.figure(figsize=(8, 4))
+    for col in df.columns.to_list():
+        if df[col].nunique() >= col_requires_at_least_n_values:
+            nb_bins = len(
+                np.arange(
+                    min(df[col]),
+                    max(df[col]),
+                    max(find_bind_with_with_freedman_diaconis(df[col].values), 0.1),
+                )
+            )
 
-        # Histogram
-        plt.subplot(1, 2, 1)
-        sns.histplot(data=df, x=col, kde=True)
-        plt.xlabel(col)
-        plt.ylabel("Frequency")
-        plt.title("Histogram")
+            plt.figure(figsize=(8, 4))
 
-        # Box plot
-        plt.subplot(1, 2, 2)
-        sns.boxplot(data=df, y=col)
-        plt.ylabel(col)
-        plt.title("Box Plot")
+            # Histogram
+            plt.subplot(1, 2, 1)
+            sns.histplot(
+                data=df,
+                x=col,
+                kde=True,
+                bins=min(nb_bins, 5),
+            )
+            plt.xlabel(col)
+            plt.ylabel("Frequency")
+            plt.title("Histogram")
 
-        # Adjust spacing between subplots
-        plt.tight_layout()
+            # Box plot
+            plt.subplot(1, 2, 2)
+            sns.boxplot(data=df, y=col)
+            plt.ylabel(col)
+            plt.title("Box Plot")
 
-        # Show the plots
-        plt.show()
+            # Adjust spacing between subplots
+            plt.tight_layout()
+
+            # Show the plots
+            plt.show()
 
 
 def bi_variate_plots(df: pd.DataFrame, target: str, num_cols_grid: int = 4) -> None:
@@ -347,12 +378,90 @@ def correlation_to_target(df: pd.DataFrame, target: str) -> None:
     plt.show()
 
 
+def plot_against_target_for_regression(
+    df: pd.DataFrame, num_columns: List[Union[int, float, str]], target_col: str
+) -> None:
+    """
+    Creates scatter plots for each column in num_columns against the target_col.
+    Draws a regression line and shows the p-value for the regression line.
+
+    Parameters:
+    - df: pd.DataFrame -> The input dataframe containing the data.
+    - num_columns: List[Union[int, float, str]] -> List of column names to plot against the target column.
+    - target_col: str -> The target column name for regression.
+
+    Returns:
+    - None -> The function displays plots.
+    """
+
+    if target_col not in df.columns:
+        raise ValueError(
+            f"Target column '{target_col}' must be part of the provided DataFrame"
+        )
+
+    num_cols_grid = 2  # Set the number of columns for the grid layout
+    num_variables = len(num_columns)
+    num_rows = (num_variables + num_cols_grid - 1) // num_cols_grid
+
+    # Set the size of the figure
+    fig, axes = plt.subplots(
+        num_rows, num_cols_grid, figsize=(14, 5 * num_rows), squeeze=False
+    )
+
+    for i, column in enumerate(num_columns):
+        if column not in df.columns:
+            raise ValueError(f"Column '{column}' not found in DataFrame")
+
+        row = i // num_cols_grid
+        col = i % num_cols_grid
+        ax = axes[row, col]
+
+        x = df[column]
+        y = df[target_col]
+
+        # Scatter plot
+        sns.scatterplot(x=x, y=y, ax=ax)
+
+        # Fit a regression line
+        X = sm.add_constant(x)  # Adds a constant term to the predictor
+        model = sm.OLS(y, X).fit()
+        prediction = model.predict(X)
+
+        # Plot the regression line
+        ax.plot(x, prediction, color="red", label="Regression Line")
+
+        # Calculate and show the p-value
+        p_value = model.pvalues[1]
+        ax.annotate(
+            f"p-value: {p_value:.4f}",
+            xy=(0.05, 0.95),
+            xycoords="axes fraction",
+            fontsize=12,
+            verticalalignment="top",
+            bbox=dict(boxstyle="round,pad=0.3", edgecolor="black", facecolor="white"),
+        )
+
+        ax.set_title(f"Scatter Plot: {column} vs {target_col}")
+        ax.set_xlabel(column)
+        ax.set_ylabel(target_col)
+
+    # Remove any empty subplots
+    if num_variables < num_rows * num_cols_grid:
+        for i in range(num_variables, num_rows * num_cols_grid):
+            fig.delaxes(axes.flatten()[i])
+
+    # Adjust the spacing between subplots
+    plt.tight_layout()
+    plt.show()
+
+
 def plot_pca(df: pd.DataFrame, target: str, scale_data: bool = True) -> None:
     """
     Plots PCA for the dataframe. The target column must be part of the provided DataFrame.
 
     Expects numeric columns only.
     :param df: Pandas DataFrame. Should not include the target variable.
+    :param target: String indicating the target column.
     :param scale_data: If true, standard scaling will be performed before applying PCA, otherwise the raw data is used.
     """
     if target not in df.columns.to_list():
@@ -452,6 +561,88 @@ def plot_pca_cumulative_variance(
     plt.legend(loc="upper left")
     plt.ylim(0, 1.1)  # extend y-axis limit to accommodate text labels
     plt.grid(True)
+    plt.show()
+
+
+def plot_pca_biplot(df: pd.DataFrame, target: str, scale_data: bool = True) -> None:
+    """
+    Plots PCA biplot for the dataframe.
+
+    Expects numeric columns only.
+
+    * Arrow direction: Indicates how the corresponding variable is aligned with the principal component.
+        Arrows that point in the same direction are positively correlated. Arrows pointing in the opposite direction are
+        negatively correlated.
+    * Arrow length: Shows how much the variable contributes to the principal components. Longer arrows mean stronger
+        contribution (the variable accounts for more explained variance). Shorter arrows mean weaker contribution (the
+        variable accounts for less explained variance).
+    * Angle between arrows: 0º indicates a perfect positive correlation. 180º indicates a perfect negative correlation.
+        90º indicates no correlation.
+
+    :param df: Pandas DataFrame.
+    :param target: String indicating the target column. Will be dropped if part of the DataFrame.
+    :param scale_data: If true, standard scaling will be performed before applying PCA, otherwise the raw data is used.
+    """
+    if target in df.columns.to_list():
+        df = df.drop(target, axis=1)
+
+    pca = PCA(n_components=2)
+
+    if scale_data:
+        scaler = StandardScaler()
+        df.loc[:, :] = scaler.fit_transform(df.loc[:, :])
+    else:
+        df = df.copy()
+
+    _ = pd.DataFrame(pca.fit_transform(df))
+
+    labels = df.columns
+    n = len(labels)
+    coeff = np.transpose(pca.components_)
+
+    plt.figure(figsize=(8, 8))
+
+    for i in range(n):
+        plt.arrow(
+            x=0,
+            y=0,
+            dx=coeff[i, 0],
+            dy=coeff[i, 1],
+            color="#000000",
+            width=0.003,
+            head_width=0.03,
+        )
+        plt.text(
+            x=coeff[i, 0] * 1.15,
+            y=coeff[i, 1] * 1.15,
+            s=labels[i],
+            size=13,
+            color="#000000",
+            ha="center",
+            va="center",
+        )
+
+    plt.axis("square")
+    plt.title(
+        "Dataset PCA Biplot",
+        loc="left",
+        fontdict={"weight": "bold"},
+        y=1.06,
+    )
+    plt.xlabel("Principal Component 1")
+    plt.ylabel("Principal Component 2")
+
+    plt.xlim(-1, 1)
+    plt.ylim(-1, 1)
+    plt.xticks(np.arange(-1, 1.1, 0.2))
+    plt.yticks(np.arange(-1, 1.1, 0.2))
+
+    plt.axhline(y=0, color="black", linestyle="--")
+    plt.axvline(x=0, color="black", linestyle="--")
+    circle = plt.Circle((0, 0), 0.99, color="gray", fill=False)
+    plt.gca().add_artist(circle)
+
+    plt.grid()
     plt.show()
 
 
@@ -578,7 +769,7 @@ def plot_null_percentage(dataframe: pd.DataFrame) -> None:
 
 
 def check_unique_values(
-    df: pd.DataFrame, columns: List[Union[str, int, float]], threshold: float
+    df: pd.DataFrame, columns: List[Union[str, int, float]], threshold: float = 0.9
 ) -> List[Union[str, int, float]]:
     """
     Check if the columns have an amount of unique values that is almost the number of total rows (being above the defined threshold)
@@ -595,6 +786,35 @@ def check_unique_values(
         if unique_values / total_rows >= threshold:
             lots_uniques.append(column)
     return lots_uniques
+
+
+def plot_classification_target_distribution_within_categories(
+    df: pd.DataFrame, cat_columns: List[str], target_col: str
+) -> None:
+    """
+    Plot distribution of target across categorical features.
+
+    This suitable for classification tasks only.
+    :param df: Pandas dataFrame. Must include the target column.
+    :param cat_columns: List of categorical column names.
+    :param target_col: String indicating the target column name.
+    :return:
+    """
+    if target_col not in df.columns.to_list():
+        raise KeyError("Target column must be part of the provided DataFrame")
+
+    custom_palette = (0.2, 0.7, 0.6), (0.8, 0.7, 0.3)
+    for col in cat_columns:
+        contingency_table = pd.crosstab(df[col], df[target_col], normalize="index")
+        sns.set(style="whitegrid")
+        contingency_table.plot(
+            kind="bar", stacked=True, color=custom_palette, figsize=(20, 4)
+        )
+        plt.title(f"Percentage Distribution of Target across {col}")
+        plt.xlabel(col)
+        plt.ylabel("Percentage")
+        plt.legend(title="Target Class")
+        plt.show()
 
 
 def mutual_info_to_target(
@@ -647,7 +867,7 @@ def plot_ecdf(
     plot_all_at_once: bool = False,
 ) -> None:
     """
-    Plot the empirical cumulative density function.
+    Plot the empirical cumulative density function (ECDF) and histogram.
 
     Matplotlib contains a direct implementation at version 3.8 and higher, but
     this might run into dependency issues in environments with older data.
@@ -668,15 +888,79 @@ def plot_ecdf(
         plt.show()
     else:
         for col in columns:
-            plt.plot(
+            nb_bins = len(
+                np.arange(
+                    min(df[col]),
+                    max(df[col]),
+                    max(find_bind_with_with_freedman_diaconis(df[col].values), 0.1),
+                )
+            )
+            fig, ax1 = plt.subplots()
+
+            # Plot ECDF
+            ax1.plot(
                 np.sort(df[col]),
                 np.linspace(0, 1, len(df[col]), endpoint=False),
-                label=col,
+                label="ECDF",
+                color="blue",
             )
-            plt.xlabel("Value")
-            plt.ylabel("ECDF")
+            ax1.set_xlabel("Value")
+            ax1.set_ylabel("ECDF", color="blue")
+            ax1.tick_params(axis="y", labelcolor="blue")
+
+            # Create a second y-axis for the histogram
+            ax2 = ax1.twinx()
+            ax2.hist(
+                df[col],
+                bins=min(nb_bins, 5),
+                alpha=0.3,
+                color="gray",
+                density=True,
+                label="Histogram",
+            )
+            ax2.set_ylabel("Density", color="gray")
+            ax2.tick_params(axis="y", labelcolor="gray")
+
+            fig.tight_layout()
             plt.legend()
             plt.show()
+
+
+def plot_distribution_by_time(
+    df: pd.DataFrame,
+    col_to_plot: str,
+    date_col: str,
+    xlabel: str = "Week",
+    ylabel: str = "Feature distribution",
+    title: str = "Weekly distribution of the feature",
+    freq: str = "W",
+) -> None:
+    """
+    Plot the distribution of a feature over time.
+
+    :param df: Pandas DataFrame
+    :param col_to_plot: String indicating which column to plot
+    :param date_col: String indicating which column to use as date
+    :param xlabel: String indicating the x-axis label
+    :param ylabel: String indicating the y-axis label
+    :param title: String indicating the title of the plot
+    :param freq: Label indicating the frequency of the time grouping. Must be one of Pandas' Offset aliases.
+    :return: Nothing
+    """
+    # Convert created_at to date format and set as index
+    df = df.set_index(date_col)
+
+    # Group by week and calculate predict_proba distribution
+    grouped = df.groupby(pd.Grouper(freq=freq))[col_to_plot].apply(list)
+
+    # Plot boxplot for each group
+    fig, ax = plt.subplots(figsize=(20, 6))
+    ax.boxplot(grouped.values)
+    ax.set_xticklabels(grouped.index.strftime("%Y-%m-%d"), rotation=45, ha="right")
+    ax.set_xlabel(xlabel)
+    ax.set_ylabel(ylabel)
+    ax.set_title(title)
+    plt.show()
 
 
 def plot_error_distributions(
@@ -752,4 +1036,47 @@ def plot_error_distributions(
     plt.tight_layout()
 
     # Show the plot
+    plt.show()
+
+
+def plot_andrews_curve(
+    df: pd.DataFrame, target: str, n_samples: Optional[int] = 200, random_state=500
+) -> None:
+    """
+    Plot Andrews curve.
+
+    Andrews Curve helps visualize if there are inherent groupings of the numerical features based on a given grouping.
+
+    :param df: Pandas DataFrame
+    :param target: String indicating the target column
+    :param n_samples: Int indicating how many samples shall be shown. If None, the full DataFrame is taken.
+    :param random_state: Random seed determining the DataFrame sampling.
+    :return: None
+    """
+    if target not in df.columns.to_list():
+        raise KeyError("Target column must be part of the provided DataFrame")
+
+    plt.figure(figsize=(12, 9), dpi=80)
+
+    if isinstance(n_samples, int):
+        if n_samples >= len(df.index):
+            n_samples = len(df.index)
+    else:
+        n_samples = len(df.index)
+
+    pd.plotting.andrews_curves(
+        df.sample(n_samples, random_state=random_state), target, colormap="Set1"
+    )
+
+    # Lighten borders
+    plt.gca().spines["top"].set_alpha(0)
+    plt.gca().spines["bottom"].set_alpha(0.3)
+    plt.gca().spines["right"].set_alpha(0)
+    plt.gca().spines["left"].set_alpha(0.3)
+
+    plt.title("Andrews Curves", fontsize=22)
+    plt.xlim(-3, 3)
+    plt.grid(alpha=0.3)
+    plt.xticks(fontsize=12)
+    plt.yticks(fontsize=12)
     plt.show()

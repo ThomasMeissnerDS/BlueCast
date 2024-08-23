@@ -1,5 +1,6 @@
 import random
 from typing import Tuple
+from unittest.mock import patch
 
 import pandas as pd
 import pytest
@@ -10,10 +11,15 @@ from bluecast.eda.analyse import (
     correlation_heatmap,
     correlation_to_target,
     mutual_info_to_target,
+    plot_against_target_for_regression,
+    plot_andrews_curve,
+    plot_classification_target_distribution_within_categories,
     plot_count_pairs,
+    plot_distribution_by_time,
     plot_ecdf,
     plot_null_percentage,
     plot_pca,
+    plot_pca_biplot,
     plot_pca_cumulative_variance,
     plot_pie_chart,
     plot_theil_u_heatmap,
@@ -177,6 +183,37 @@ def test_pca_plot(synthetic_train_test_data):
     assert True
 
 
+def test_pca_biplot(synthetic_train_test_data):
+    # test while having target column
+    plot_pca_biplot(
+        synthetic_train_test_data[0].loc[
+            :,
+            [
+                "numerical_feature_1",
+                "numerical_feature_2",
+                "numerical_feature_3",
+                "target",
+            ],
+        ],
+        "target",
+    )
+    assert True
+
+    # test absence of target column
+    plot_pca_biplot(
+        synthetic_train_test_data[0].loc[
+            :,
+            [
+                "numerical_feature_1",
+                "numerical_feature_2",
+                "numerical_feature_3",
+            ],
+        ],
+        "target",
+    )
+    assert True
+
+
 def test_plot_pca_cumulative_variance(synthetic_train_test_data):
     plot_pca_cumulative_variance(
         synthetic_train_test_data[0].loc[
@@ -274,4 +311,95 @@ def test_plot_ecdf(synthetic_train_test_data):
     ]
     plot_ecdf(num_data, num_cols, plot_all_at_once=False)
     plot_ecdf(num_data, num_cols, plot_all_at_once=True)
+    assert True
+
+
+def test_plot_distribution_by_time():
+    # Sample data
+    data = {
+        "date": pd.date_range(start="2023-01-01", periods=10, freq="D"),
+        "value": [1, 2, 3, 4, 5, 6, 7, 8, 9, 10],
+    }
+    df = pd.DataFrame(data)
+
+    # Mocking plt.show() to prevent actual plot display
+    with patch("matplotlib.pyplot.show") as mock_show:
+        # Call the function
+        plot_distribution_by_time(
+            df=df,
+            col_to_plot="value",
+            date_col="date",
+            xlabel="Date",
+            ylabel="Value Distribution",
+            title="Test Plot",
+            freq="D",
+        )
+        # Assert that plt.show() was called once
+        mock_show.assert_called_once()
+
+
+@pytest.fixture
+def sample_dataframe():
+    return pd.DataFrame(
+        {
+            "Category1": ["A", "B", "A", "B", "A", "B"],
+            "Category2": ["X", "Y", "X", "Y", "X", "Y"],
+            "Target": [0, 1, 0, 1, 1, 0],
+        }
+    )
+
+
+def test_valid_input(sample_dataframe):
+    cat_columns = ["Category1", "Category2"]
+    target_col = "Target"
+
+    with patch("matplotlib.pyplot.show"):
+        plot_classification_target_distribution_within_categories(
+            sample_dataframe, cat_columns, target_col
+        )
+
+
+def test_missing_target_column(sample_dataframe):
+    cat_columns = ["Category1", "Category2"]
+    target_col = "NonExistentTarget"
+
+    with pytest.raises(KeyError):
+        plot_classification_target_distribution_within_categories(
+            sample_dataframe, cat_columns, target_col
+        )
+
+
+def test_plot_andrews_curve(synthetic_train_test_data):
+    feats = [
+        "numerical_feature_1",
+        "numerical_feature_2",
+        "numerical_feature_3",
+        "target",
+    ]
+    plot_andrews_curve(synthetic_train_test_data[0].loc[:, feats], "target")
+
+
+def test_plot_andrews_curve_sampled(synthetic_train_test_data):
+    feats = [
+        "numerical_feature_1",
+        "numerical_feature_2",
+        "numerical_feature_3",
+        "target",
+    ]
+    plot_andrews_curve(
+        synthetic_train_test_data[0].loc[:, feats], "target", n_samples=2
+    )
+
+
+def test_plot_andrews_curve_missing_target(sample_dataframe):
+    target_col = "NonExistentTarget"
+    with pytest.raises(KeyError):
+        plot_andrews_curve(sample_dataframe, target_col)
+
+
+def test_plot_against_target_for_regression(synthetic_train_test_data_regression):
+    num_columns = ["numerical_feature_1", "numerical_feature_2", "numerical_feature_3"]
+    plot_against_target_for_regression(
+        synthetic_train_test_data_regression[0], num_columns, "target"
+    )
     assert True

@@ -15,14 +15,17 @@ of visualizations.
   * [Empirical cumulative density function (eCDF)](#empirical-cumulative-density-function-ecdf)
   * [Bivariate plots](#bivariate-plots)
   * [Count pairs](#count-pairs)
+  * [Classification target distribution in categorical features](#classification-target-distribution-in-categorical-features)
   * [Correlation to the target](#correlation-to-the-target)
   * [Correlation heatmap](#correlation-heatmap)
+  * [Andrew Curve](#andrew-curve)
   * [Association of categorical features](#association-of-categorical-features)
   * [Mutual information](#mutual-information)
   * [Principal components analysis (PCA)](#principal-components-analysis-pca)
   * [PCA cumulative variance](#pca-cumulative-variance)
   * [t-SNE](#t-sne)
   * [Target leakage](#target-leakage)
+  * [Feature distribution over time](#feature-distribution-over-time)
 
 <!-- tocstop -->
 
@@ -39,19 +42,23 @@ of the pipeline.
 
 ```sh
 from bluecast.eda.analyse import (
+    plot_andrews_curve,
     bi_variate_plots,
     univariate_plots,
+    plot_classification_target_distribution_within_categories,
     plot_count_pairs,
+    plot_distribution_by_time,
     correlation_heatmap,
     correlation_to_target,
     plot_ecdf,
     plot_pca,
+    plot_pca_biplot,
     plot_pca_cumulative_variance,
     plot_theil_u_heatmap,
     plot_tsne,
     check_unique_values,
     plot_null_percentage,
-    mutual_info_to_target.
+    mutual_info_to_target,
     plot_pie_chart,
 )
 
@@ -62,7 +69,7 @@ feat_type_detector = FeatureTypeDetector()
 train_data = feat_type_detector.fit_transform_feature_types(train_data)
 
 # detect columns with a very high share of unique values
-many_unique_cols = check_unique_values(train_data, feat_type_detector.cat_columns)
+many_unique_cols = check_unique_values(train_data, train_data.columns.to_list())
 ```
 
 ## Pie chart
@@ -79,7 +86,7 @@ plot_pie_chart(
     )
 ```
 
-![QQplot example](pie_chart.png)
+![Pie example](pie_chart.png)
 
 ## Nulls per column
 
@@ -95,7 +102,7 @@ plot_null_percentage(
     )
 ```
 
-![QQplot example](plot_nulls.png)
+![NULLs example](plot_nulls.png)
 
 ## Univariate plots
 
@@ -109,7 +116,7 @@ univariate_plots(
     )
 ```
 
-![QQplot example](univariate_plots.png)
+![Univariate example](univariate_plots.png)
 
 ## Empirical cumulative density function (eCDF)
 
@@ -126,7 +133,7 @@ plot_ecdf(
     )
 ```
 
-![QQplot example](ecdf.png)
+![ECDF example](ecdf.png)
 
 ## Bivariate plots
 
@@ -142,7 +149,7 @@ bi_variate_plots(
       )
 ```
 
-![QQplot example](bivariate_plots.png)
+![Bivariate example](bivariate_plots.png)
 
 ## Count pairs
 
@@ -159,7 +166,24 @@ plot_count_pairs(
       )
 ```
 
-![QQplot example](pair_countplot.png)
+![Count pairs example](pair_countplot.png)
+
+## Classification target distribution in categorical features
+
+We might also want to see how target classes are distributed
+within categorical features. This can be plotted with:
+
+```python
+from bluecast.eda.analyse import plot_distribution_by_time
+
+plot_classification_target_distribution_within_categories(
+    train,
+    cat_columns=train_data.loc[:, feat_type_detector.cat_columns],
+    target_col="target"
+      )
+```
+
+![Target class distro example](class_target_distribution.png)
 
 ## Correlation to the target
 
@@ -169,10 +193,26 @@ signal the correlation uses Pearson's r to indicate that.
 
 ```sh
 # show correlation to target
-correlation_to_target(train_data.loc[:, feat_type_detector.num_columns])
+correlation_to_target(train_data.loc[:, feat_type_detector.num_columns], "target")
 ```
 
-![QQplot example](correlation_to_target.png)
+![Corr to target example](correlation_to_target.png)
+
+## Correlation to target via scatterplots
+
+For regression tasks we can also use scatterplots to investigate
+the relationships of numerical columns to the target variable.
+
+```sh
+# show correlation to target
+plot_against_target_for_regression(
+    train_data,
+    feat_type_detector.num_columns,
+    "target"
+)
+```
+
+![Corr to target via scatterplots example](scatterplots_against_target.png)
 
 ## Correlation heatmap
 
@@ -184,7 +224,27 @@ between features and reveals multicollinearity if present.
 correlation_heatmap(train_data.loc[:, feat_type_detector.num_columns])
 ```
 
-![QQplot example](correlation_heatmap.png)
+![Corr heatmap example](correlation_heatmap.png)
+
+## Andrew Curve
+
+Andrews curve brings the data into a lower space by retaining
+the relative distance between other samples and keeping the
+variance similar. We can show how similar samples are with
+regards to the same output.
+
+```python
+from bluecast.eda.analyse import plot_andrews_curve
+
+plot_andrews_curve(
+  train_data.loc[:, feat_type_detector.num_columns],
+  "target",
+  n_samples=20,
+  random_state=20
+)
+```
+
+![Andrew curve example](andrew_curve.png)
 
 ## Association of categorical features
 
@@ -196,7 +256,7 @@ we make use of Theil's U to build an association heatmap.
 theil_matrix = plot_theil_u_heatmap(train_data, feat_type_detector.cat_columns)
 ```
 
-![QQplot example](theil_u_matrix.png)
+![Theil U example](theil_u_matrix.png)
 
 ## Mutual information
 
@@ -213,7 +273,7 @@ extra_params = {"random_state": 30}
 mutual_info_to_target(train_data.loc[:, feat_type_detector.num_columns], "EC1", class_problem="binary", **extra_params)
 ```
 
-![QQplot example](mutual_information.png)
+![MI example](mutual_information.png)
 
 ## Principal components analysis (PCA)
 
@@ -229,7 +289,24 @@ plot_pca(
     )
 ```
 
-![QQplot example](plot_pca.png)
+![PCA example](plot_pca.png)
+
+## PCA Biplot
+
+We might be interested to see which feature contributes to which
+principal component and by how much. For this purpose the
+`plot_pca_biplot` function can be used:
+
+```python
+from bluecast.eda.analyse import plot_pca_biplot
+
+plot_pca_biplot(
+  train_data.loc[:, feat_type_detector.num_columns],
+  "target"
+)
+```
+
+![PCA Biplot example](pca_biplot.png)
 
 ## PCA cumulative variance
 
@@ -245,7 +322,7 @@ plot_pca_cumulative_variance(
     )
 ```
 
-![QQplot example](plot_cumulative_pca_variance.png)
+![PCA cumulative example](plot_cumulative_pca_variance.png)
 
 ## t-SNE
 
@@ -264,7 +341,7 @@ plot_tsne(
     )
 ```
 
-![QQplot example](t_sne_plot.png)
+![TSNE example](t_sne_plot.png)
 
 ## Target leakage
 
@@ -288,3 +365,17 @@ result = detect_categorical_leakage(
         train_data.loc[:, feat_type_detector.cat_columns], "target", threshold=0.9
     )
 ```
+
+## Feature distribution over time
+
+With the presence of timestamps we often want to understand how the
+distribution behaves over time. Does it change? Is there a trend?
+For this BlueCast offers the `plot_distribution_by_time` function.
+
+```python
+from bluecast.eda.analyse import plot_distribution_by_time
+
+plot_distribution_by_time(train_data, "num_column", "created_at")
+```
+
+![Distribution over time example](distribution_over_time.png)
