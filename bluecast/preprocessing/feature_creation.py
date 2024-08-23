@@ -138,7 +138,7 @@ class GroupLevelAggFeatures:
             target column (target_col) will be chosen.
         :param target_col: Target column name. Will be ignored during aggregation.
         :param aggregations: Aggregations to perform. If not provided, ["min", "max", "mean", "sum"] will be used.
-        :return:
+        :return: Aggregated  Pandas DataFrame
         """
         if not isinstance(aggregations, list):
             aggregations = ["min", "max", "mean", "sum"]
@@ -168,18 +168,11 @@ class GroupLevelAggFeatures:
         df_grouped = df.group_by(groupby_columns).agg(agg_ops)
 
         # Optionally add the target column back to the final DataFrame
-        if target_col in self.original_features:
-            df_grouped = df_grouped.join(
-                df.select(groupby_columns + [target_col]),
-                on=groupby_columns,
-                how="left",
-            )
-        else:
-            df_grouped = df_grouped.join(
-                df.select(groupby_columns),
-                on=groupby_columns,
-                how="left",
-            )
+        df_grouped = df_grouped.join(
+            df.select(groupby_columns),
+            on=groupby_columns,
+            how="left",
+        )
 
         return df_grouped.to_pandas()
 
