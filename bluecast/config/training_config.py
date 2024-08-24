@@ -98,7 +98,7 @@ class TrainingConfig(BaseModel):
     plot_hyperparameter_tuning_overview: bool = True
     enable_feature_selection: bool = False
     calculate_shap_values: bool = True
-    shap_waterfall_indices: List[int] = [0]
+    shap_waterfall_indices: List[int] = []
     show_dependence_plots_of_top_n_features: int = 0
     store_shap_values_in_instance: bool = False
     train_size: float = 0.8
