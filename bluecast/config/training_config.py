@@ -103,7 +103,7 @@ class TrainingConfig(BaseModel):
     store_shap_values_in_instance: bool = False
     train_size: float = 0.8
     train_split_stratify: bool = True
-    use_full_data_for_final_model: bool = False
+    use_full_data_for_final_model: bool = True
     cardinality_threshold_for_onehot_encoding: int = 5
     infrequent_categories_threshold: int = 5
     cat_encoding_via_ml_algorithm: bool = False
