@@ -107,10 +107,7 @@ def competition_pipeline():
             train, df_eval=df_unseen, target_eval=df_unseed_target, target_col=target
         )
     else:
-        automl.fit(
-            train,
-            target_col=target
-        )
+        automl.fit_eval(train, target_col=target)
 
     if isinstance(automl, BlueCast):
         y_probs, y_classes = automl.predict(test, return_original_labels=True)
