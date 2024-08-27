@@ -298,8 +298,11 @@ class FeatureTypeDetector:
         df_clean = df.copy()
         df_clean = self.transform_drop_all_null_columns(df_clean)
         df_clean = self.transform_drop_zero_variance_columns(df_clean)
+        if not isinstance(ignore_cols, list):
+            ignore_cols = []
+
         for key in self.detected_col_types:
-            if ignore_cols and key not in ignore_cols and key in df_clean.columns:
+            if key not in ignore_cols and key in df_clean.columns:
                 if self.detected_col_types[key] == "datetime[ns]":
                     df_clean[key] = pd.to_datetime(df_clean[key], yearfirst=True)
                 else:
