@@ -74,18 +74,19 @@ def competition_pipeline():
         train_config.autotune_model = True
         train_config.hypertuning_cv_folds = 5
         train_config.hypertuning_cv_repeats = 1
-        train_config.cardinality_threshold_for_onehot_encoding = 3
-        train_config.hyperparameter_tuning_rounds = 50
+        train_config.cardinality_threshold_for_onehot_encoding = 5
+        train_config.hyperparameter_tuning_rounds = 200
         train_config.hyperparameter_tuning_max_runtime_secs = 60 * 60 * 3
         # train_config.sample_data_during_tuning = True
         train_config.enable_grid_search_fine_tuning = False
         train_config.calculate_shap_values = False
         train_config.show_detailed_tuning_logs = True
-        train_config.train_size = 0.85
+        train_config.train_size = 0.80
         train_config.autotune_on_device = "gpu"
         # train_config.infrequent_categories_threshold = 10
         train_config.bluecast_cv_train_n_model = (5, 1)
         train_config.cat_encoding_via_ml_algorithm = False
+        train_config.global_random_state = 200
         train_config.out_of_fold_dataset_store_path = "/home/thomas/Schreibtisch/Data Science/Preprocessing lib test/automl_competition/"
 
     automl = BlueCastCV(
@@ -106,10 +107,7 @@ def competition_pipeline():
             train, df_eval=df_unseen, target_eval=df_unseed_target, target_col=target
         )
     else:
-        automl.fit_eval(
-            train,
-            target_col=target,  # df_eval=df_unseen, target_eval=df_unseed_target,
-        )
+        automl.fit_eval(train, target_col=target)
 
     if isinstance(automl, BlueCast):
         y_probs, y_classes = automl.predict(test, return_original_labels=True)

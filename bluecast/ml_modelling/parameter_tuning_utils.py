@@ -95,7 +95,7 @@ def update_hyperparam_space_after_nth_trial(
     if trial.number % nth_trial * 2 == 0 and eta_min_before == 5e-2:
         conf_xgboost.eta_min = 1e-3
         conf_xgboost.eta_max = 0.3
-        conf_xgboost.sub_sample_min = 0.5
+        conf_xgboost.sub_sample_min = 0.1
         conf_xgboost.min_child_weight_max = 100.0
 
     if trial.number % nth_trial == 0 and eta_min_before == 1e-3:

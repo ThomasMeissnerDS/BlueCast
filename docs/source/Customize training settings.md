@@ -227,6 +227,10 @@ automl.fit_eval(df_train, target_col="target")
 y_hat = automl.predict(df_val)
 ```
 
+Be aware that `fit_eval` is meant to be used for prototyping and
+not for final model training as the model will have less training data
+available. For final model training use `fit` instead.
+
 ## Categorical encoding
 
 By default, BlueCast uses onehot and target encoding. An orchestrator measures the

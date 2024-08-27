@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "bluecast"
-version = "1.6.0"
+version = "1.6.1"
 description = "A lightweight and fast automl framework"
 authors = ["Thomas Meißner <meissnercorporation@gmx.de>"]
 license = "GPL-3.0-only"
@@ -33,15 +33,16 @@ pyarrow = "<17.0.0"
 pydantic = ">=1.1.0"
 seaborn = ">=0.10.0"
 scikit-learn = ">=1.0.1"
-shap = ">0.43" # versions of 0.39 and less require numpy 1.23 and less
+shap = "=0.44.1" # versions of 0.39 and less require numpy 1.23 and less, pined to 0.44.1 because otherwise Sshap print dependence instead of summary plot
 xgboost = "<2.2.0" # from here saving as binary is not default anymore
 
 [tool.poetry.group.dev.dependencies]
 recommonmark = ">=0.7.1"
+jupyter-server = "^2.0.0"
 jupyter-core = ">=5.0.0"
 ipython = ">=7.23.1, < 8.0.0"
 myst-parser = ">=0.14.0, <1.0.0"
-notebook = "<=7.0.0"
+notebook = "=7.1.3"
 nbclient = ">=0.7.0"
 pre-commit = "^2.9.3"
 pytest = "^6.2.5"
