@@ -224,7 +224,7 @@ class ErrorAnalyserRegression(
             df = df.to_pandas()
 
         df["prediction_error"] = np.abs(
-            df["target"].astype(float) - df["predictions"].astype(float)
+            df[self.target_column].astype(float) - df["predictions"].astype(float)
         )
 
         if isinstance(df, pd.DataFrame):
@@ -295,7 +295,7 @@ class ErrorAnalyserRegressionCV(
             df = df.to_pandas()
 
         df["prediction_error"] = np.abs(
-            df["target"].astype(float) - df["predictions"].astype(float)
+            df[self.target_column].astype(float) - df["predictions"].astype(float)
         )
 
         if isinstance(df, pd.DataFrame):
