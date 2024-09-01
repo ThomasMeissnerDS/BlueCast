@@ -18,7 +18,9 @@ from bluecast.evaluation.error_analysis_regression import (
 @pytest.fixture
 def create_test_bluecast_instance():
     # Create a mock or a test instance of BlueCast for regression
-    return BlueCastRegression(class_problem="regression")
+    bluecast_instance = BlueCastRegression(class_problem="regression")
+    bluecast_instance.target_column = "target"
+    return bluecast_instance
 
 
 def test_out_of_fold_data_reader(create_test_bluecast_instance):
