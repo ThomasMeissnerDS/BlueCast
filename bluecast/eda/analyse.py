@@ -964,7 +964,7 @@ def plot_distribution_by_time(
 
 
 def plot_error_distributions(
-    df: pd.DataFrame, target: str, prediction_error: str, num_cols_grid: int = 4
+    df: pd.DataFrame, target: str, prediction_error: str, num_cols_grid: int = 1
 ) -> None:
     """
     Plots bivariate plots for each column in the dataframe with respect to the target.
