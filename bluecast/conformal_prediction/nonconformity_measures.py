@@ -43,7 +43,10 @@ def hinge_loss(
 
     for true_class, preds_arr in zip(y_true, y_hat):
         hinge_losses.append(1 - preds_arr[true_class])
-    return np.asarray(hinge_losses)
+    try:
+        return np.asarray(hinge_losses, dtype="float64")
+    except ValueError:
+        return np.asarray(hinge_losses, dtype="object")
 
 
 def margin_nonconformity_measure(
@@ -71,7 +74,10 @@ def margin_nonconformity_measure(
         probas_y_false = np.delete(preds_arr, true_class)
         prob_y_most_likely_false = np.max(probas_y_false)
         mnm_losses.append(prob_y_true - prob_y_most_likely_false)
-    return np.asarray(mnm_losses)
+    try:
+        return np.asarray(mnm_losses, dtype="float64")
+    except ValueError:
+        return np.asarray(mnm_losses, dtype="object")
 
 
 def brier_score(
@@ -94,4 +100,7 @@ def brier_score(
     brier_losses = []
     for true_class, preds_arr in zip(y_true, y_hat):
         brier_losses.append((1 - preds_arr[true_class]) ** 2)
-    return np.asarray(brier_losses)
+    try:
+        return np.asarray(brier_losses, dtype="float64")
+    except ValueError:
+        return np.asarray(brier_losses, dtype="object")
