@@ -144,7 +144,7 @@ class GroupLevelAggFeatures:
             aggregations = ["min", "max", "mean", "sum"]
 
         if isinstance(df, pd.DataFrame):
-            df = pl.from_dataframe(df)
+            df = pl.from_pandas(df)
 
         self.original_features = df.columns
 
@@ -167,7 +167,7 @@ class GroupLevelAggFeatures:
 
         df_grouped = df.group_by(groupby_columns).agg(agg_ops)
 
-        return df_grouped.to_pandas()
+        return df_grouped.to_pandas(use_pyarrow_extension_array=True)
 
 
 class FeatureClusteringScorer:
