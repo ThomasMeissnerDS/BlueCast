@@ -10,6 +10,7 @@ import warnings
 from typing import Dict, List, Optional, Tuple, Union
 
 import pandas as pd
+import polars as pl
 
 warnings.filterwarnings("ignore", "Could not infer format")
 
@@ -49,13 +50,24 @@ class FeatureTypeDetector:
             "int16",
             "int32",
             "int64",
+            "int128",
             "Int8",
             "Int16",
             "Int32",
             "Int64",
+            "Int128",
+            "UInt8",
+            "UInt16",
+            "UInt32",
+            "UInt64",
+            "UInt128",
             "float16",
             "float32",
             "float64",
+            "Float8," "Float16",
+            "Float32",
+            "Float64",
+            "Float128" "Decimal",
         ]
 
     def fit_transform_drop_all_null_columns(self, df: pd.DataFrame) -> pd.DataFrame:
@@ -128,6 +140,8 @@ class FeatureTypeDetector:
         def is_float_or_castable(x):
             if isinstance(x, float):
                 return True
+            if isinstance(x, pl.Decimal):
+                return True
             if isinstance(x, str):
                 try:
                     float(x)
@@ -144,7 +158,9 @@ class FeatureTypeDetector:
 
     def check_if_column_is_float(self, col: pd.Series) -> bool:
         """Check if column is float."""
-        return col.apply(lambda x: isinstance(x, float)).any()
+        return col.apply(
+            lambda x: isinstance(x, float) or isinstance(x, pl.Decimal)
+        ).any()
 
     def identify_num_columns(self, df: pd.DataFrame) -> pd.DataFrame:
         """Identify numerical columns based on already existing data type."""
