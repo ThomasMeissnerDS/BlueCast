@@ -262,7 +262,7 @@ class ErrorAnalyserClassification(
         )
 
         if isinstance(df, pd.DataFrame):
-            df = pl.from_dataframe(df)
+            df = pl.from_pandas(df)
 
         return df
 
@@ -340,7 +340,7 @@ class ErrorAnalyserClassificationCV(
         )
 
         if isinstance(df, pd.DataFrame):
-            df = pl.from_dataframe(df)
+            df = pl.from_pandas(df)
 
         return df
 

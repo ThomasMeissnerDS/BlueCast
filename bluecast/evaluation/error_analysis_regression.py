@@ -228,7 +228,7 @@ class ErrorAnalyserRegression(
         )
 
         if isinstance(df, pd.DataFrame):
-            df = pl.from_dataframe(df)
+            df = pl.from_pandas(df)
 
         return df
 
@@ -299,7 +299,7 @@ class ErrorAnalyserRegressionCV(
         )
 
         if isinstance(df, pd.DataFrame):
-            df = pl.from_dataframe(df)
+            df = pl.from_pandas(df)
 
         return df
 
