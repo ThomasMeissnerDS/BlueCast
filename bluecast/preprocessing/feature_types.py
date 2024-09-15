@@ -169,10 +169,13 @@ class FeatureTypeDetector:
         if not self.num_columns:
 
             for vartype in self.num_dtypes:
-                num_cols = df.select_dtypes(include=[vartype]).columns
-                for col in num_cols:
-                    if col not in num_col_list:
-                        num_col_list.append(col)
+                try:
+                    num_cols = df.select_dtypes(include=[vartype]).columns
+                    for col in num_cols:
+                        if col not in num_col_list:
+                            num_col_list.append(col)
+                except Exception:
+                    pass
 
         for col in df.columns.to_list():
             max_length = df[col].astype(str).str.len().max()
