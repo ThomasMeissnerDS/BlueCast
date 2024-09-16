@@ -964,13 +964,18 @@ def plot_distribution_by_time(
 
 
 def plot_error_distributions(
-    df: pd.DataFrame, target: str, prediction_error: str, num_cols_grid: int = 1
+    df: pd.DataFrame,
+    target: str,
+    prediction_error: str,
+    num_cols_grid: int = 1,
+    max_x_elements: int = 5,
 ) -> None:
     """
     Plots bivariate plots for each column in the dataframe with respect to the target.
     Each subplot represents unique values of the target column.
     The 'prediction_error' is plotted using unique values of the target column as the hue.
     Param num_cols_grid specifies how many columns the grid shall have.
+    max_x_elements determines the maximum number of unique values on the x-axis per plot.
     """
     if target not in df.columns.to_list():
         raise ValueError("Target column must be part of the provided DataFrame")
@@ -986,18 +991,6 @@ def plot_error_distributions(
         if col not in [target, prediction_error, "prediction", "predictions"]
     ]
 
-    # Define the grid layout based on the number of variables
-    num_variables = len(variables)
-    num_cols = num_cols_grid  # Number of columns in the grid
-    num_rows = (
-        num_variables + num_cols - 1
-    ) // num_cols  # Calculate the number of rows needed
-
-    # Set the size of the figure
-    fig, axes = plt.subplots(
-        num_rows, num_cols, figsize=(12, 4 * num_rows), squeeze=False
-    )
-
     # Define a color palette for the categories
     unique_categories = df[target].unique()
     palette = sns.color_palette("husl", len(unique_categories))
@@ -1007,36 +1000,83 @@ def plot_error_distributions(
     df[target] = df[target].astype(str)
 
     # Generate plots for each variable
-    for i, variable in enumerate(variables):
-        row = i // num_cols
-        col = i % num_cols
-        ax = axes[row][col]
+    for variable in variables:
+        unique_values = sorted(
+            df[variable].unique()
+        )  # Sort unique values of the variable
+        unique_values_count = len(unique_values)
 
-        sns.violinplot(
-            data=df,
-            x=variable,
-            y=prediction_error,
-            hue=target,
-            ax=ax,
-            palette=palette_dict,
-        )
-        ax.set_xlabel(variable)
-        ax.set_ylabel(prediction_error)
-        ax.set_title(f"Scatter Plot: {variable} vs {prediction_error}")
+        # Split the plot into multiple figures if x-axis elements exceed the threshold
+        if unique_values_count > max_x_elements:
+            num_splits = (
+                unique_values_count + max_x_elements - 1
+            ) // max_x_elements  # Number of plots needed
 
-        # Rotate x-axis labels by 90 degrees
-        ax.tick_params(axis="x", rotation=90)
+            for split_index in range(num_splits):
+                # Create a subset of the DataFrame for each split
+                subset_values = unique_values[
+                    split_index * max_x_elements : (split_index + 1) * max_x_elements
+                ]
+                df_subset = df[df[variable].isin(subset_values)]
 
-    # Remove any empty subplots
-    if num_variables < num_rows * num_cols:
-        for i in range(num_variables, num_rows * num_cols):
-            fig.delaxes(axes.flatten()[i])
+                # Create the grid layout for this subset
+                fig, axes = plt.subplots(
+                    1, num_cols_grid, figsize=(12, 4), squeeze=False
+                )
 
-    # Adjust the spacing between subplots
-    plt.tight_layout()
+                ax = axes[0][0]
 
-    # Show the plot
-    plt.show()
+                sns.violinplot(
+                    data=df_subset,
+                    x=variable,
+                    y=prediction_error,
+                    hue=target,
+                    ax=ax,
+                    palette=palette_dict,
+                    order=subset_values,  # Ensure x-axis values are in the correct order
+                )
+                ax.set_xlabel(variable)
+                ax.set_ylabel(prediction_error)
+                ax.set_title(
+                    f"Violin Plot: {variable} vs {prediction_error} (Split {split_index + 1})"
+                )
+
+                # Rotate x-axis labels by 90 degrees
+                ax.tick_params(axis="x", rotation=90)
+
+                # Adjust the spacing between subplots
+                plt.tight_layout()
+
+                # Show the plot for this split
+                plt.show()
+
+        else:
+            # If the number of unique values is within the limit, plot normally
+            fig, axes = plt.subplots(1, num_cols_grid, figsize=(12, 4), squeeze=False)
+
+            ax = axes[0][0]
+
+            sns.violinplot(
+                data=df,
+                x=variable,
+                y=prediction_error,
+                hue=target,
+                ax=ax,
+                palette=palette_dict,
+                order=unique_values,  # Ensure x-axis values are in the correct order
+            )
+            ax.set_xlabel(variable)
+            ax.set_ylabel(prediction_error)
+            ax.set_title(f"Violin Plot: {variable} vs {prediction_error}")
+
+            # Rotate x-axis labels by 90 degrees
+            ax.tick_params(axis="x", rotation=90)
+
+            # Adjust the spacing between subplots
+            plt.tight_layout()
+
+            # Show the plot
+            plt.show()
 
 
 def plot_andrews_curve(
