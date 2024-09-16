@@ -8,6 +8,7 @@ from typing import Any, Dict, Literal, Optional, Union
 import dill as pickle
 import numpy as np
 import pandas as pd
+import s3fs
 import xgboost as xgb
 
 from bluecast.config.training_config import TrainingConfig
@@ -217,6 +218,18 @@ def save_out_of_fold_data(
         oof_data_copy["predictions"] = y_hat
 
     oof_data_copy[target_column] = y_true
+
+    if (
+        isinstance(training_config.out_of_fold_dataset_store_path, str)
+        and "s3://" in training_config.out_of_fold_dataset_store_path
+    ):
+        fs = s3fs.S3FileSystem()
+        with fs.open(
+            training_config.out_of_fold_dataset_store_path
+            + f"oof_data_{training_config.global_random_state}.parquet",
+            "wb",
+        ) as f:
+            oof_data_copy.to_parquet(f)
 
     if isinstance(training_config.out_of_fold_dataset_store_path, str):
         oof_data_copy.to_parquet(
