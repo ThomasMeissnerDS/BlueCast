@@ -58,19 +58,17 @@ class ConformalPredictionWrapper(ConformalPredictionWrapperBaseClass):
         for _, pred in enumerate(preds):
             p_values_each_class = []
             # within each row loop through each class score
-            for class_idx, pred_j in enumerate(pred):
-                p_values_each_class.append(
-                    (
-                        np.sum(
-                            self.nonconformity_scores
-                            >= self.nonconformity_measure_scorer(
-                                np.asarray([class_idx]), np.asarray([pred_j])
-                            )
+            for _class_idx, pred_j in enumerate(pred):
+                p_value = (
+                    np.sum(
+                        self.nonconformity_scores
+                        >= self.nonconformity_measure_scorer(
+                            np.asarray([1]), np.asarray([pred_j])
                         )
-                        + 1
                     )
-                    / (len(self.nonconformity_scores) + 1)
-                )
+                    + 1
+                ) / (len(self.nonconformity_scores) + 1)
+                p_values_each_class.append(p_value)
             p_values.append(p_values_each_class)
 
         return np.asarray(p_values)
