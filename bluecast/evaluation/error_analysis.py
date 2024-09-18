@@ -158,7 +158,7 @@ class ErrorAnalyserClassificationMixin(ErrorAnalyser):
                 error_df = (
                     df.select(
                         pl.col("target_class"),
-                        pl.col(col).rank("ordinal").qcut(quantiles),
+                        pl.col(col).rank("ordinal").qcut(quantiles).alias(col),
                         pl.col("prediction_error"),
                     )
                     .group_by([col, "target_class"])

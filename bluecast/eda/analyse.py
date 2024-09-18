@@ -282,7 +282,7 @@ def bi_variate_plots(df: pd.DataFrame, target: str, num_cols_grid: int = 4) -> N
 
     # Set the size of the figure
     fig, axes = plt.subplots(
-        num_rows, num_cols, figsize=(12, 4 * num_rows), squeeze=False
+        num_rows, num_cols, figsize=(12, 8 * num_rows), squeeze=False
     )
 
     # Define a color palette for the categories

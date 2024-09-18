@@ -176,7 +176,7 @@ class ErrorDistributionRegressionPlotterMixin(ErrorDistributionPlotter):
             res_df,
             target=target_column,
             prediction_error="prediction_error",
-            num_cols_grid=2,
+            num_cols_grid=1,
         )
 
 
