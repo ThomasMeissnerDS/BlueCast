@@ -87,7 +87,7 @@ class ConformalPredictionWrapper(ConformalPredictionWrapperBaseClass):
                         )
                     )
                     # handle ties
-                    + self.random_generator.integers(0, 1)
+                    + self.random_generator.random()
                     * np.sum(
                         self.nonconformity_scores
                         == self.nonconformity_measure_scorer(
