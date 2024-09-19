@@ -19,10 +19,17 @@ class ConformalPredictionWrapper(ConformalPredictionWrapperBaseClass):
         y_calibration, preds
     """
 
-    def __init__(self, model: Any, nonconformity_measure_scorer: Callable = hinge_loss):
+    def __init__(
+        self,
+        model: Any,
+        nonconformity_measure_scorer: Callable = hinge_loss,
+        random_seed: int = 20,
+    ):
         self.model = model
         self.nonconformity_measure_scorer = nonconformity_measure_scorer
         self.nonconformity_scores: List[float] = []
+        self.random_seed = random_seed
+        self.random_generator = np.random.default_rng(self.random_seed)
 
     def plot_non_conformity_scores(self, nonconformity_scores: List[float]) -> None:
         """
@@ -76,6 +83,14 @@ class ConformalPredictionWrapper(ConformalPredictionWrapperBaseClass):
                     np.sum(
                         self.nonconformity_scores
                         >= self.nonconformity_measure_scorer(
+                            np.asarray([1]), np.asarray([pred_j])
+                        )
+                    )
+                    # handle ties
+                    + self.random_generator.rand()
+                    * np.sum(
+                        self.nonconformity_scores
+                        == self.nonconformity_measure_scorer(
                             np.asarray([1]), np.asarray([pred_j])
                         )
                     )
