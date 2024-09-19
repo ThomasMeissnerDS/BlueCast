@@ -5,6 +5,7 @@ This is a convenience class to detect and cast feature types in a DataFrame. It 
 categorical and datetime columns. It also casts columns to a specific type.
 """
 
+import decimal
 import logging
 import warnings
 from typing import Dict, List, Optional, Tuple, Union
@@ -64,10 +65,12 @@ class FeatureTypeDetector:
             "float16",
             "float32",
             "float64",
-            "Float8," "Float16",
+            "Float8,",
+            "Float16",
             "Float32",
             "Float64",
-            "Float128" "Decimal",
+            "Float128",
+            "Decimal",
         ]
 
     def fit_transform_drop_all_null_columns(self, df: pd.DataFrame) -> pd.DataFrame:
@@ -138,9 +141,11 @@ class FeatureTypeDetector:
         """Check if column contains any floats or strings that can be cast to floats."""
 
         def is_float_or_castable(x):
-            if isinstance(x, float):
-                return True
-            if isinstance(x, pl.Decimal):
+            if (
+                isinstance(x, float)
+                or isinstance(x, pl.Decimal)
+                or isinstance(x, decimal.Decimal)
+            ):
                 return True
             if isinstance(x, str):
                 try:

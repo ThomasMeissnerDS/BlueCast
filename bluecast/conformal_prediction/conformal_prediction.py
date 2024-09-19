@@ -33,7 +33,7 @@ class ConformalPredictionWrapper(ConformalPredictionWrapperBaseClass):
         plt.plot(calib_conformal_vals)
         plt.grid(True)
         plt.ylabel("Conformity value")
-        plt.title("Distribution of conformity values")
+        plt.title("Distribution of non-conformity values")
 
     def calibrate(self, x_calibration: pd.DataFrame, y_calibration: pd.Series):
         """
