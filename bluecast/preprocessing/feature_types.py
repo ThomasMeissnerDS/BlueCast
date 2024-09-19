@@ -184,7 +184,7 @@ class FeatureTypeDetector:
 
         for col in df.columns.to_list():
             max_length = df[col].astype(str).str.len().max()
-            if col not in num_col_list and max_length < 10:
+            if col not in num_col_list and max_length < 20:
                 try:
                     if self.check_if_column_is_float_from_string(df[col]):
                         df[col] = df[col].astype(float)
