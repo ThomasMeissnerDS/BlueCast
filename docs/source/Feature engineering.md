@@ -71,3 +71,35 @@ test = test.merge(train_num, on=["Geography", "Gender", "NumOfProducts"], how="l
 
 Please note that this will increase the number of features
 significantly.
+
+BlueCast also offers a convenience function to create
+features in a simpler way:
+
+```python
+from bluecast.preprocessing.feature_creation import add_groupby_agg_feats
+import pandas as pd
+
+df = pd.DataFrame(
+    {
+        "group_col": ["A", "A", "B", "B", "C"],
+        "num_col1": [10, 20, 30, 40, 50],
+        "num_col2": [1, 2, 3, 4, 5],
+        "target_col": [100, 200, 300, 400, 500],
+    }
+)
+
+# Define parameters for the add_groupby_agg_feats function
+groupby_cols = ["group_col"]
+to_group_cols = ["num_col1", "num_col2"]
+num_col_prefix = "agg"
+target_col = "target_col"
+aggregations = ["min", "max", "mean", "sum"]
+
+# Call the function
+result_df = add_groupby_agg_feats(
+    df, groupby_cols, to_group_cols, num_col_prefix, target_col, aggregations
+)
+```
+
+This will return the original DataFrame enriched with
+the desired aggregations.

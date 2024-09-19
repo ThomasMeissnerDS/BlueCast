@@ -1,5 +1,6 @@
 from typing import Any, Callable, List
 
+import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 
@@ -23,6 +24,17 @@ class ConformalPredictionWrapper(ConformalPredictionWrapperBaseClass):
         self.nonconformity_measure_scorer = nonconformity_measure_scorer
         self.nonconformity_scores: List[float] = []
 
+    def plot_non_conformity_scores(self, nonconformity_scores: List[float]) -> None:
+        """
+        Plot the distribution of nonconformity scores.
+        :param nonconformity_scores: List of nonconformity scores
+        """
+        calib_conformal_vals = np.sort(nonconformity_scores)
+        plt.plot(calib_conformal_vals)
+        plt.grid(True)
+        plt.ylabel("Conformity value")
+        plt.title("Distribution of conformity values")
+
     def calibrate(self, x_calibration: pd.DataFrame, y_calibration: pd.Series):
         """
         Calibrate a model instance given a calibration set.
@@ -34,6 +46,7 @@ class ConformalPredictionWrapper(ConformalPredictionWrapperBaseClass):
         self.nonconformity_scores = self.nonconformity_measure_scorer(
             y_calibration, preds
         )
+        self.plot_non_conformity_scores(self.nonconformity_scores)
         return self.nonconformity_scores
 
     def predict(self, x):

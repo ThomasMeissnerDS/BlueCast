@@ -170,6 +170,52 @@ class GroupLevelAggFeatures:
         return df_grouped.to_pandas(use_pyarrow_extension_array=True)
 
 
+def add_groupby_agg_feats(
+    df: pd.DataFrame,
+    groupby_cols: List[str],
+    to_group_cols: List[str],
+    num_col_prefix: str,
+    target_col: str,
+    aggregations: List[str],
+) -> pd.DataFrame:
+    """
+    Add groupby aggregation features to a DataFrame.
+
+    :param df: Pandas DataFrame containing all relevant columns.
+    :param groupby_cols: List of columns to use as groups.
+    :param to_group_cols: List of columns to aggregate
+    :param num_col_prefix: Prefix to add to the new columns
+    :param target_col: String indicating the target column
+    :param aggregations: List of aggregations to perform. If not provided, ["min", "max", "mean", "sum"] will be used.
+    :return: Returns enriched DataFrame
+    """
+    group_agg_creator = GroupLevelAggFeatures()
+
+    if not isinstance(aggregations, list):
+        aggregations = ["min", "max", "mean", "sum"]
+
+    num_aggs = group_agg_creator.create_groupby_agg_features(
+        df=df,
+        groupby_columns=groupby_cols,
+        columns_to_agg=to_group_cols,
+        target_col=target_col,
+        aggregations=aggregations,  # falls back to some aggs
+    )
+
+    # update column names to avoid conflicts
+    rename_dict = {}
+    for col in to_group_cols:
+        for agg in aggregations:
+            rename_dict[col + "_" + agg] = num_col_prefix + "_" + str(col) + "_" + agg
+
+    num_aggs = num_aggs.rename(columns=rename_dict)
+
+    # joining the train information everywhere
+    df = df.merge(num_aggs, on=groupby_cols, how="left")
+
+    return df
+
+
 class FeatureClusteringScorer:
     def __init__(
         self,

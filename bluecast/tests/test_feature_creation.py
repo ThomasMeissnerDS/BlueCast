@@ -8,6 +8,7 @@ from bluecast.preprocessing.feature_creation import (
     AddRowLevelAggFeatures,
     FeatureClusteringScorer,
     GroupLevelAggFeatures,
+    add_groupby_agg_feats,
 )
 
 
@@ -371,3 +372,57 @@ def test_create_groupby_agg_features_default_aggregations(sample_dataframe):
     assert list(result_df.columns) == expected_columns
     assert aggregator.original_features == ["A", "B", "C", "target"]
     assert aggregator.agg_features_created == ["A_min", "A_max", "A_mean", "A_sum"]
+
+
+def test_add_groupby_agg_feats(sample_dataframe):
+    df = pd.DataFrame(
+        {
+            "group_col": ["A", "A", "B", "B", "C"],
+            "num_col1": [10, 20, 30, 40, 50],
+            "num_col2": [1, 2, 3, 4, 5],
+            "target_col": [100, 200, 300, 400, 500],
+        }
+    )
+
+    # Define parameters for the add_groupby_agg_feats function
+    groupby_cols = ["group_col"]
+    to_group_cols = ["num_col1", "num_col2"]
+    num_col_prefix = "agg"
+    target_col = "target_col"
+    aggregations = ["min", "max", "mean", "sum"]
+
+    # Call the function
+    result_df = add_groupby_agg_feats(
+        df, groupby_cols, to_group_cols, num_col_prefix, target_col, aggregations
+    )
+
+    # Check that the result contains the original columns and the new aggregated columns
+    expected_columns = [
+        "group_col",
+        "num_col1",
+        "num_col2",
+        "target_col",
+        "agg_num_col1_min",
+        "agg_num_col1_max",
+        "agg_num_col1_mean",
+        "agg_num_col1_sum",
+        "agg_num_col2_min",
+        "agg_num_col2_max",
+        "agg_num_col2_mean",
+        "agg_num_col2_sum",
+    ]
+    assert all(
+        col in result_df.columns for col in expected_columns
+    ), "Not all expected columns are present"
+
+    # Check some of the aggregated values for group 'A'
+    group_a = result_df[result_df["group_col"] == "A"].iloc[0]
+    assert group_a["agg_num_col1_min"] == 10, "Incorrect aggregation (min) for num_col1"
+    assert group_a["agg_num_col1_max"] == 20, "Incorrect aggregation (max) for num_col1"
+    assert (
+        group_a["agg_num_col1_mean"] == 15
+    ), "Incorrect aggregation (mean) for num_col1"
+    assert group_a["agg_num_col1_sum"] == 30, "Incorrect aggregation (sum) for num_col1"
+
+    # Check that the merge retains the number of rows in the original DataFrame
+    assert len(result_df) == len(df), "Row count mismatch after merging"
