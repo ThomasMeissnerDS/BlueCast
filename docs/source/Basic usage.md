@@ -1,5 +1,34 @@
 # Basic usage
 
+As part of our persona-driven development BlueCast offers two ways of
+configuration:
+
+* a non-programmatic way which uses widgets for most important options
+* a programmatic way with ull control and flexibility
+
+## Non-programmatic way for starters
+
+The non-programmatic way should be helpful for new BlueCast users
+or ml practitioners with little ml experience. The interface can be
+used like this:
+
+```python
+from bluecast.blueprints.welcome import WelcomeToBlueCast
+
+welcome = WelcomeToBlueCast()
+welcome.automl_configurator()
+
+# here users can chose from the given options and click 'submit' to create the instance
+# after submit the automl instance can be retrieved and used like:
+automl = welcome.automl_instance
+automl.fit(df_train, target_col="target")
+y_hat = automl.predict(df_val)
+```
+
+## Programmatic way
+
+The programmatic way is suitable for experienced users.
+
 The module blueprints contains the main functionality of the library. The main
 entry point is the `Blueprint` class. It already includes needed preprocessing
 (including some convenience functionality like feature type detection)
