@@ -6,6 +6,14 @@ configuration:
 * a non-programmatic way which uses widgets for most important options
 * a programmatic way with ull control and flexibility
 
+<!-- toc -->
+
+* [Basic usage](#basic-usage)
+  * [Non-programmatic way for starters](#non-programmatic-way-for-starters)
+  * [Programmatic way](#programmatic-way)
+
+<!-- tocstop -->
+
 ## Non-programmatic way for starters
 
 The non-programmatic way should be helpful for new BlueCast users
@@ -24,6 +32,8 @@ automl = welcome.automl_instance
 automl.fit(df_train, target_col="target")
 y_hat = automl.predict(df_val)
 ```
+
+![Welcome UI example](welcome_ui.png)
 
 ## Programmatic way
 
