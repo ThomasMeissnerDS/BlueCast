@@ -101,13 +101,14 @@ class ConformalPredictionWrapper(ConformalPredictionWrapperBaseClass):
 
         return np.asarray(p_values)
 
-    def predict_sets(self, x: pd.DataFrame, alpha: float = 0.05) -> List[set[int]]:
+    def predict_sets(self, x: pd.DataFrame, alpha: float = 0.05) -> np.ndarray:
         credible_intervals = self.predict_interval(x)
-        prediction_sets = []
-        for row in credible_intervals:
-            prediction_set = []
-            for class_idx, credible_interval in enumerate(row):
-                if credible_interval >= alpha:
-                    prediction_set.append(class_idx)
-            prediction_sets.append(set(prediction_set))
-        return prediction_sets
+
+        # Create the list of lists (rows x classes) where each entry is 1 (in set) or 0 (not in set)
+        prediction_matrix = [
+            [1 if credible_interval >= alpha else 0 for credible_interval in row]
+            for row in credible_intervals
+        ]
+
+        # Convert the list of lists to a numpy array
+        return np.array(prediction_matrix)
