@@ -26,11 +26,12 @@ class DataDrift:
     This is suitable for batch models and not recommended for online models.
     """
 
-    def __init__(self):
+    def __init__(self, random_state=25):
         self.kolmogorov_smirnov_flags: Dict[str, bool] = {}
         self.population_stability_index_values: Dict[str, float] = {}
         self.population_stability_index_flags: Dict[str, Any] = {}
         self.adversarial_auc_score: float = 0.0
+        self.random_state = random_state
 
     def kolmogorov_smirnov_test(
         self,
@@ -222,7 +223,11 @@ class DataDrift:
         plt.close()
 
     def adversarial_validation(
-        self, df: pd.DataFrame, df_new: pd.DataFrame, cat_columns: Optional[List]
+        self,
+        df: pd.DataFrame,
+        df_new: pd.DataFrame,
+        cat_columns: Optional[List],
+        sample_to_same_size: bool = True,
     ) -> float:
         """
         Perform adversarial validation to check if the new data is similar to the training data.
@@ -232,8 +237,15 @@ class DataDrift:
         :param df: Baseline DataFrame that is the point of comparison.
         :param df_new: New DataFrame to compare against the baseline.
         :param cat_columns: (Optional) List with names of categorical columns.
+        :param sample_to_same_size: If any of the two DataFrames is larger, subsample it to not impact AUC score due
+            to imbalance.
         :return: Auc score that indicates similarity.
         """
+        if sample_to_same_size:
+            min_size = min(len(df.index), len(df_new.index))
+            df = df.sample(n=min_size, random_state=self.random_state)
+            df_new = df_new.sample(n=min_size, random_state=self.random_state)
+
         # add the train/test labels
         df["AV_label"] = 0
         df_new["AV_label"] = 1
