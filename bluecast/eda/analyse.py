@@ -830,11 +830,11 @@ def mutual_info_to_target(
     :param target: String indicating which column is the target column.
     :param class_problem: Any of ["binary", "multiclass", "regression"]
     :param mut_params: Dictionary passing additional arguments into sklearn's mutual_info_classif function.
-
-    To be used for classification only.
     """
     if target not in df.columns.to_list():
         raise ValueError("Target column must be part of the provided DataFrame")
+
+    # Compute the mutual information scores
     if class_problem in ["binary", "multiclass"]:
         mi_scores = mutual_info_classif(
             X=df.drop(columns=[target]), y=df[target], **mut_params
@@ -852,12 +852,29 @@ def mutual_info_to_target(
 
     # Create a bar chart of the mutual information scores
     fig, ax = plt.subplots(figsize=(10, 6))
-    sns.barplot(x=mi_scores_sorted, y=sorted_features, order=sorted_features, ax=ax)
+    sns.barplot(x=mi_scores_sorted, y=sorted_features, ax=ax)
+
     ax.set_title("Mutual Information Scores with Target")
     ax.set_xlabel("Mutual Information Score")
     ax.set_ylabel("Features")
-    for i, v in enumerate(mi_scores_sorted):
-        ax.text(v + 0.01, i, str(round(v, 2)), color="blue", fontweight="bold")
+
+    # Adjust the x-axis limits to ensure space for annotations
+    ax.set_xlim([0, max(mi_scores_sorted) * 1.1])
+
+    # Add annotations with proper scaling
+    for i, (score, _feature) in enumerate(zip(mi_scores_sorted, sorted_features)):
+        ax.annotate(
+            f"{round(score, 2)}",
+            xy=(score, i),
+            xytext=(3, 0),
+            textcoords="offset points",
+            ha="left",
+            va="center",
+            color="blue",
+            fontweight="bold",
+        )
+
+    plt.tight_layout()  # Ensure the layout fits well
     plt.show()
 
 
