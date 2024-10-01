@@ -1,11 +1,3 @@
-"""
-Onehot encoding is a method to encode categorical features. It is an unsupervised encoding technique.
-It is not recommended for features with high cardinality.
-
-The onehot encoding technique is implemented in the category_encoders library. The library offers a variety of
-different encoding techniques. The onehot encoding technique is implemented in the OneHotEncoder class.
-"""
-
 import logging
 from typing import Dict, List, Union
 
@@ -57,11 +49,12 @@ class OneHotCategoryEncoder:
         self, x: pd.DataFrame, encoded_cats: pd.DataFrame
     ) -> pd.DataFrame:
         """Append encoded columns to the DataFrame."""
-        x[encoded_cats.columns.to_list()] = encoded_cats
-        x[encoded_cats.columns.to_list()] = x[encoded_cats.columns.to_list()].astype(
-            int
-        )
+        # Instead of assigning the columns one by one, we concatenate them all at once.
+        encoded_cats = encoded_cats.astype(int)  # Ensure all columns are integers
+        x_new = pd.concat([x, encoded_cats], axis=1)
+
         # Set all new columns to -1 where all values are 0
-        mask_all_zero = (x[encoded_cats.columns.to_list()] == 0).all(axis=1)
-        x.loc[mask_all_zero, encoded_cats.columns.to_list()] = -1
-        return x
+        mask_all_zero = (x_new[encoded_cats.columns.to_list()] == 0).all(axis=1)
+        x_new.loc[mask_all_zero, encoded_cats.columns.to_list()] = -1
+
+        return x_new
