@@ -329,10 +329,16 @@ def _BoostARoota(x, y, metric, clf, cutoff, iters, max_rounds, delta, silent):
                 silent=silent,
             )
 
+        if len(keep_vars) == 0:
+            keep_vars = x.columns.to_list()
+
         if crit | (i >= max_rounds):
             break  # exit and use keep_vars as final variables
         else:
-            new_x = new_x[keep_vars].copy()
+            if len(keep_vars) > 0:
+                new_x = new_x[keep_vars].copy()
+            else:
+                new_x = new_x.copy()
     if not silent:
         print("BoostARoota ran successfully! Algorithm went through ", i, " rounds.")
     return keep_vars
