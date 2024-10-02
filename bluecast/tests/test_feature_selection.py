@@ -27,6 +27,9 @@ def test_boostaroota_wrapper_multiclass():
         {
             "feature1": [i for i in range(300)],
             "feature2": [i for i in range(100, 400)],
+            "feature3": [0 for _i in range(100)]
+            + [1 for _i in range(100)]
+            + [2 for _i in range(100)],
         }
     )
     targets = pd.Series(
