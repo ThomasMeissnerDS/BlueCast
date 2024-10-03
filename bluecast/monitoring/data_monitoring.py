@@ -26,12 +26,14 @@ class DataDrift:
     This is suitable for batch models and not recommended for online models.
     """
 
-    def __init__(self, random_state=25):
+    def __init__(self, random_seed=20):
         self.kolmogorov_smirnov_flags: Dict[str, bool] = {}
         self.population_stability_index_values: Dict[str, float] = {}
         self.population_stability_index_flags: Dict[str, Any] = {}
         self.adversarial_auc_score: float = 0.0
-        self.random_state = random_state
+        self.adversarial_feature_importance = []
+        self.random_seed = random_seed
+        self.random_generator = np.random.default_rng(self.random_seed)
 
     def kolmogorov_smirnov_test(
         self,
@@ -223,37 +225,32 @@ class DataDrift:
         plt.close()
 
     def adversarial_validation(
-        self,
-        df: pd.DataFrame,
-        df_new: pd.DataFrame,
-        cat_columns: Optional[List],
-        sample_to_same_size: bool = True,
+        self, df: pd.DataFrame, df_new: pd.DataFrame, cat_columns: Optional[List]
     ) -> float:
         """
         Perform adversarial validation to check if the new data is similar to the training data.
         If the AUC score is close to 0.5, then the new data is similar to the training data. The further the AUC score is
         from 0.5, the more different the new data is from the training data and multivariate data drift can be assumed.
 
+        Additionally, computes feature importance to understand which features contributed the most to identifying
+        train and test rows.
+
         :param df: Baseline DataFrame that is the point of comparison.
         :param df_new: New DataFrame to compare against the baseline.
         :param cat_columns: (Optional) List with names of categorical columns.
-        :param sample_to_same_size: If any of the two DataFrames is larger, subsample it to not impact AUC score due
-            to imbalance.
-        :return: Auc score that indicates similarity.
+        :return: Auc score that indicates similarity and displays feature importance.
         """
-        if sample_to_same_size:
-            min_size = min(len(df.index), len(df_new.index))
-            df = df.sample(n=min_size, random_state=self.random_state)
-            df_new = df_new.sample(n=min_size, random_state=self.random_state)
-
         # add the train/test labels
         df["AV_label"] = 0
         df_new["AV_label"] = 1
 
         all_data = pd.concat([df, df_new], axis=0, ignore_index=True)
 
+        logging.info("Add random noise column.")
+        all_data["random_noise"] = self.random_generator.normal(0, 1, all_data.shape[0])
+
         # shuffle
-        all_data_shuffled = all_data.sample(frac=1, random_state=60)
+        all_data_shuffled = all_data.sample(frac=1, random_state=self.random_seed)
 
         if isinstance(cat_columns, list):
             all_data_shuffled[cat_columns] = all_data_shuffled[cat_columns].astype(
@@ -274,7 +271,14 @@ class DataDrift:
             "max_depth": 5,
         }
 
-        # perform cross validation with XGBoost
+        # Train the model
+        model = xgb.train(
+            params=params,
+            dtrain=xgb_data,
+            num_boost_round=200,
+        )
+
+        # Extract AUC score using cross-validation (as before)
         cross_val_results = xgb.cv(
             dtrain=xgb_data,
             params=params,
@@ -287,4 +291,21 @@ class DataDrift:
         self.adversarial_auc_score = (
             cross_val_results[["test-auc-mean"]].tail(1).values[0]
         )
+
+        # Get feature importance
+        feature_importance = model.get_score(importance_type="gain")
+
+        # Sort feature importance by value (descending)
+        sorted_importance = sorted(
+            feature_importance.items(), key=lambda x: x[1], reverse=True
+        )
+
+        # Display feature importance
+        print("\nFeature Importance (based on Gain):")
+        for feature, score in sorted_importance:
+            print(f"{feature}: {score:.4f}")
+
+        # Optionally, return the sorted feature importance if needed elsewhere
+        self.adversarial_feature_importance = sorted_importance
+
         return self.adversarial_auc_score
