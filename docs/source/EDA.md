@@ -15,6 +15,7 @@ of visualizations.
   * [Empirical cumulative density function (eCDF)](#empirical-cumulative-density-function-ecdf)
   * [Bivariate plots](#bivariate-plots)
   * [Count pairs](#count-pairs)
+  * [Plot distribution pairs](#plot-distribution-pairs)
   * [Classification target distribution in categorical features](#classification-target-distribution-in-categorical-features)
   * [Correlation to the target](#correlation-to-the-target)
   * [Correlation heatmap](#correlation-heatmap)
@@ -168,13 +169,30 @@ plot_count_pairs(
 
 ![Count pairs example](pair_countplot.png)
 
+## Plot distribution pairs
+
+To compare the distribution of numerical features between two
+datasets we can use the `plot_distribution_pairs` function.
+
+```python
+from bluecast.eda.analyse import plot_distribution_pairs
+
+plot_distribution_pairs(
+    train,
+    test,
+    feature='numerical_feature',
+      )
+```
+
+![Plot distribution pairs example](plot_distribution_pairs.png)
+
 ## Classification target distribution in categorical features
 
 We might also want to see how target classes are distributed
 within categorical features. This can be plotted with:
 
 ```python
-from bluecast.eda.analyse import plot_distribution_by_time
+from bluecast.eda.analyse import plot_classification_target_distribution_within_categories
 
 plot_classification_target_distribution_within_categories(
     train,

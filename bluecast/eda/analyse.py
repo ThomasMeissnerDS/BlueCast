@@ -1137,3 +1137,44 @@ def plot_andrews_curve(
     plt.xticks(fontsize=12)
     plt.yticks(fontsize=12)
     plt.show()
+
+
+def plot_distribution_pairs(
+    df1: pd.DataFrame,
+    df2: pd.DataFrame,
+    feature: str,
+    palette: Optional[List[str]] = None,
+) -> None:
+    """
+    Compare distributions of two datasets for a given feature.
+
+    Only the central 95% of the data is considered for the histogram.
+
+    :param df1: DataFrame containing the feature.
+    :param df2: Second DataFrame containing the feature for comparison.
+    :param feature: String indicating the feature name
+    :param palette: List of colors to use for the plots.
+    """
+    if not palette:
+        palette = ["#A5D7E8", "#576CBC", "#19376D", "#0B2447"]
+
+    hue = "set"
+    data_df = df1.copy()
+    data_df[hue] = "df1"
+    data_df = pd.concat([data_df, df2.copy()]).fillna("df2")
+
+    f, axes = plt.subplots(1, 2, figsize=(14, 6))
+    for i, s in enumerate(data_df[hue].unique()):
+        selection = data_df.loc[data_df[hue] == s, feature]
+        # Filter 'selection' to include only the central 95% of the data
+        q_025, q_975 = np.percentile(selection, [2.5, 97.5])
+        selection_filtered = selection[(selection >= q_025) & (selection <= q_975)]
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore", category=FutureWarning)
+            sns.histplot(selection_filtered, color=palette[i], ax=axes[0], label=s)
+            sns.boxplot(x=hue, y=feature, data=data_df, palette=palette, ax=axes[1])
+    axes[0].set_title(f"Paired distributions of {feature}")
+    axes[1].set_title(f"Paired boxplots of {feature}")
+    axes[0].legend()
+    axes[1].legend()
+    plt.show()
