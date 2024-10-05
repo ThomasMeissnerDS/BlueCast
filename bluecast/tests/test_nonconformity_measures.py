@@ -1,3 +1,4 @@
+from decimal import Decimal
 from typing import Tuple
 
 import numpy as np
@@ -60,3 +61,57 @@ def test_brier_score():
         brier_score(y_true_multiclass, synthetic_results_multiclass),
         np.asarray([0.09, 0.49, 1.0]),
     )
+
+
+def test_hinge_loss_value_error():
+    # Create synthetic data where conversion to float64 would raise a ValueError
+    y_true = pd.Series([0, 1, 0])
+    # Use Decimal objects that would cause an issue when converting to float64
+    y_hat = np.asarray(
+        [
+            [Decimal("0.7"), Decimal("0.3")],
+            [Decimal("0.3"), Decimal("0.7")],
+            [Decimal("0.0"), Decimal("1.0")],
+        ]
+    )
+
+    result = hinge_loss(y_true, y_hat)
+
+    # The result should not be float64 due to the ValueError, so we expect dtype 'object'
+    assert result.dtype == float
+
+
+def test_margin_nonconformity_measure_value_error():
+    # Create synthetic data where conversion to float64 would raise a ValueError
+    y_true = pd.Series([0, 1, 0])
+    # Use Decimal objects that would cause an issue when converting to float64
+    y_hat = np.asarray(
+        [
+            [Decimal("0.7"), Decimal("0.3")],
+            [Decimal("0.3"), Decimal("0.7")],
+            [Decimal("0.0"), Decimal("1.0")],
+        ]
+    )
+
+    result = margin_nonconformity_measure(y_true, y_hat)
+
+    # The result should not be float64 due to the ValueError, so we expect dtype 'object'
+    assert result.dtype == float
+
+
+def test_brier_score_value_error():
+    # Create synthetic data where conversion to float64 would raise a ValueError
+    y_true = pd.Series([0, 1, 0])
+    # Use Decimal objects that would cause an issue when converting to float64
+    y_hat = np.asarray(
+        [
+            [Decimal("0.7"), Decimal("0.3")],
+            [Decimal("0.3"), Decimal("0.7")],
+            [Decimal("0.0"), Decimal("1.0")],
+        ]
+    )
+
+    result = brier_score(y_true, y_hat)
+
+    # The result should not be float64 due to the ValueError, so we expect dtype 'object'
+    assert result.dtype == float
