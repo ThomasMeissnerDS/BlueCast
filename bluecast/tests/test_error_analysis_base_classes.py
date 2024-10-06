@@ -1,6 +1,10 @@
+from unittest.mock import patch
+
+import pandas as pd
 import polars as pl
 import pytest
 
+from bluecast.eda.analyse import plot_error_distributions
 from bluecast.evaluation.base_classes import (
     DataReader,
     ErrorAnalyser,
@@ -132,3 +136,91 @@ def test_error_distribution_plotter_not_implemented():
     analyser = ConcreteErrorDistributionPlotter()
     with pytest.raises(NotImplementedError):
         analyser.plot_error_distributions(pl.DataFrame(), "target_column")
+
+
+# Mock function to test the plot_error_distributions method
+def test_plot_error_distributions_with_splits():
+    # Create a test DataFrame with more than max_x_elements unique values in one column
+    test_df = pd.DataFrame(
+        {
+            "target": ["A", "A", "B", "B", "C", "C", "D", "D", "E", "E"],
+            "variable_with_many_values": list(range(10)),  # 10 unique values
+            "prediction_error": [1, 0.8, 0.9, 1.1, 1.2, 0.7, 1.3, 0.6, 1.4, 0.5],
+        }
+    )
+
+    # Set the number of max_x_elements to be less than the number of unique values (e.g., 5)
+    max_x_elements = 5
+    num_cols_grid = 1
+
+    # Mock sns.violinplot to prevent actual plotting during the test
+    with patch("seaborn.violinplot") as mock_violinplot:
+        # Call the function with the test data
+        plot_error_distributions(
+            df=test_df,
+            target="target",
+            prediction_error="prediction_error",
+            num_cols_grid=num_cols_grid,
+            max_x_elements=max_x_elements,
+        )
+
+        # Check that sns.violinplot was called multiple times (for each split)
+        assert (
+            mock_violinplot.call_count == 2
+        )  # Should be split into 2 plots because 10 > 5
+
+        # Verify the first call arguments for the first split
+        first_call_args = mock_violinplot.call_args_list[0][1]
+        assert first_call_args["x"] == "variable_with_many_values"
+        assert first_call_args["y"] == "prediction_error"
+        assert first_call_args["hue"] == "target"
+
+        # Verify the second call arguments for the second split
+        second_call_args = mock_violinplot.call_args_list[1][1]
+        assert second_call_args["x"] == "variable_with_many_values"
+        assert second_call_args["y"] == "prediction_error"
+        assert second_call_args["hue"] == "target"
+
+        # Check that the data in the subset only contains the correct range of unique values
+        assert sorted(first_call_args["order"]) == list(range(5))  # First split (0-4)
+        assert sorted(second_call_args["order"]) == list(
+            range(5, 10)
+        )  # Second split (5-9)
+
+
+def test_plot_error_distributions_no_split():
+    # Create a test DataFrame with fewer unique values than max_x_elements
+    test_df = pd.DataFrame(
+        {
+            "target": ["A", "A", "B", "B"],
+            "variable_with_few_values": [1, 2, 1, 2],
+            "prediction_error": [1.1, 0.8, 0.9, 1.0],
+        }
+    )
+
+    # Set the number of max_x_elements to be larger than the number of unique values (e.g., 5)
+    max_x_elements = 5
+    num_cols_grid = 1
+
+    # Mock sns.violinplot to prevent actual plotting during the test
+    with patch("seaborn.violinplot") as mock_violinplot:
+        # Call the function with the test data
+        plot_error_distributions(
+            df=test_df,
+            target="target",
+            prediction_error="prediction_error",
+            num_cols_grid=num_cols_grid,
+            max_x_elements=max_x_elements,
+        )
+
+        # Check that sns.violinplot was called only once (no split)
+        assert mock_violinplot.call_count == 1
+
+        # Verify the call arguments
+        call_args = mock_violinplot.call_args_list[0][1]
+        assert call_args["x"] == "variable_with_few_values"
+        assert call_args["y"] == "prediction_error"
+        assert call_args["hue"] == "target"
+
+        # Ensure the entire dataset was used without splitting
+        assert sorted(call_args["order"]) == [1, 2]  # No splitting occurred

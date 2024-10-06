@@ -6,6 +6,7 @@ from typing import List, Literal, Optional, Tuple
 import numpy as np
 import pandas as pd
 import xgboost as xgb
+from tqdm import tqdm
 
 from bluecast.preprocessing.custom import CustomPreprocessing
 
@@ -29,7 +30,7 @@ class BoostaRootaWrapper(CustomPreprocessing):
     ) -> Tuple[pd.DataFrame, Optional[pd.Series]]:
         if self.class_problem == "binary":
             model = xgb.XGBClassifier(
-                tree_method="approx",
+                tree_method="hist",
                 max_bin=255,
                 n_estimators=100,
                 random_state=self.random_state,
@@ -41,7 +42,7 @@ class BoostaRootaWrapper(CustomPreprocessing):
             br = BoostARoota(metric="mlogloss")
         else:
             model = xgb.XGBRegressor(
-                tree_method="approx",
+                tree_method="hist",
                 max_bin=255,
                 n_estimators=100,
                 random_state=self.random_state,
@@ -150,13 +151,27 @@ def _create_shadow(x_train):
     :param x_train: the dataframe to create shadow features on
     :return: dataframe 2x width and the names of the shadows for removing later
     """
+    random_generator = np.random.default_rng(200)
+    x_train = x_train.apply(
+        lambda col: col.astype("category") if col.dtypes == "object" else col
+    )
     x_shadow = x_train.copy()
-    for c in x_shadow.columns:
-        np.random.shuffle(x_shadow[c].values)
-    # rename the shadow
+
+    # Convert object columns to categorical
+    x_shadow = x_shadow.apply(
+        lambda col: col.astype("category") if col.dtypes == "object" else col
+    )
+
+    for c in tqdm(x_shadow.columns.to_list()):
+        x_shadow[c] = x_shadow[c].sample(frac=1, random_state=random_generator).values
+
+    # Rename the shadow
     shadow_names = ["ShadowVar" + str(i + 1) for i in range(x_train.shape[1])]
     x_shadow.columns = shadow_names
+
     # Combine to make one new dataframe
+    x_train.columns = x_train.columns.astype(str)
+    x_shadow.columns = x_shadow.columns.astype(str)
     new_x = pd.concat([x_train, x_shadow], axis=1)
     return new_x, shadow_names
 
@@ -183,6 +198,7 @@ def _reduce_vars_xgb(x, y, metric, this_round, cutoff, n_iterations, delta, sile
     for i in range(1, n_iterations + 1):
         # Create the shadow variables and run the model to obtain importances
         new_x, shadow_names = _create_shadow(x)
+        # Convert the object columns to category
         dtrain = xgb.DMatrix(new_x, label=y, enable_categorical=True)
         bst = xgb.train(param, dtrain, verbose_eval=False)
         if i == 1:
@@ -313,10 +329,16 @@ def _BoostARoota(x, y, metric, clf, cutoff, iters, max_rounds, delta, silent):
                 silent=silent,
             )
 
+        if len(keep_vars) == 0:
+            keep_vars = x.columns.to_list()
+
         if crit | (i >= max_rounds):
             break  # exit and use keep_vars as final variables
         else:
-            new_x = new_x[keep_vars].copy()
+            if len(keep_vars) > 0:
+                new_x = new_x[keep_vars].copy()
+            else:
+                new_x = new_x.copy()
     if not silent:
         print("BoostARoota ran successfully! Algorithm went through ", i, " rounds.")
     return keep_vars

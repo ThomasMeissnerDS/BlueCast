@@ -747,7 +747,12 @@ class BlueCast:
                     string_pred_sets.append(string_set)
                 return pd.DataFrame({"prediction_set": string_pred_sets})
             else:
-                return pd.DataFrame({"prediction_set": pred_sets})
+                string_pred_sets = []
+                for numerical_set in pred_sets:
+                    # Convert numerical labels to string labels
+                    string_set = {label for label in numerical_set}
+                    string_pred_sets.append(string_set)
+                return pd.DataFrame({"prediction_set": string_pred_sets})
         else:
             raise ValueError(
                 """This instance has not been calibrated yet. Make use of calibrate to fit the

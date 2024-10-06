@@ -2,6 +2,7 @@ import random
 from typing import Tuple
 from unittest.mock import patch
 
+import numpy as np
 import pandas as pd
 import pytest
 
@@ -16,6 +17,7 @@ from bluecast.eda.analyse import (
     plot_classification_target_distribution_within_categories,
     plot_count_pairs,
     plot_distribution_by_time,
+    plot_distribution_pairs,
     plot_ecdf,
     plot_null_percentage,
     plot_pca,
@@ -402,4 +404,31 @@ def test_plot_against_target_for_regression(synthetic_train_test_data_regression
     plot_against_target_for_regression(
         synthetic_train_test_data_regression[0], num_columns, "target"
     )
+    assert True
+
+
+@pytest.fixture
+def sample_dataframe_numeric():
+    # Generate sample data for two numeric dataframes
+    data1 = {
+        "numerical_feature": np.random.normal(0, 1, 1000),
+    }
+    data2 = {
+        "numerical_feature": np.random.normal(0.5, 1.5, 1000),
+    }
+    df1 = pd.DataFrame(data1)
+    df2 = pd.DataFrame(data2)
+    return df1, df2
+
+
+def test_plot_distribution_pairs(sample_dataframe_numeric):
+    df1, df2 = sample_dataframe_numeric
+
+    # Mock plt.show() to prevent actual plot display during testing
+    with patch("matplotlib.pyplot.show") as mock_show:
+        plot_distribution_pairs(df1, df2, "numerical_feature")
+
+        # Assert that plt.show() was called, which means the plots were generated
+        mock_show.assert_called_once()
+
     assert True

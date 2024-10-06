@@ -158,7 +158,7 @@ class ErrorAnalyserClassificationMixin(ErrorAnalyser):
                 error_df = (
                     df.select(
                         pl.col("target_class"),
-                        pl.col(col).rank("ordinal").qcut(quantiles),
+                        pl.col(col).rank("ordinal").qcut(quantiles).alias(col),
                         pl.col("prediction_error"),
                     )
                     .group_by([col, "target_class"])
@@ -201,7 +201,7 @@ class ErrorDistributionPlotterMixin(ErrorDistributionPlotter):
             res_df,
             target=target_column,
             prediction_error="prediction_error",
-            num_cols_grid=2,
+            num_cols_grid=1,
         )
 
 
@@ -262,7 +262,7 @@ class ErrorAnalyserClassification(
         )
 
         if isinstance(df, pd.DataFrame):
-            df = pl.from_dataframe(df)
+            df = pl.from_pandas(df)
 
         return df
 
@@ -340,7 +340,7 @@ class ErrorAnalyserClassificationCV(
         )
 
         if isinstance(df, pd.DataFrame):
-            df = pl.from_dataframe(df)
+            df = pl.from_pandas(df)
 
         return df
 

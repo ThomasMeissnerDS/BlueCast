@@ -282,7 +282,7 @@ def bi_variate_plots(df: pd.DataFrame, target: str, num_cols_grid: int = 4) -> N
 
     # Set the size of the figure
     fig, axes = plt.subplots(
-        num_rows, num_cols, figsize=(12, 4 * num_rows), squeeze=False
+        num_rows, num_cols, figsize=(12, 8 * num_rows), squeeze=False
     )
 
     # Define a color palette for the categories
@@ -830,11 +830,11 @@ def mutual_info_to_target(
     :param target: String indicating which column is the target column.
     :param class_problem: Any of ["binary", "multiclass", "regression"]
     :param mut_params: Dictionary passing additional arguments into sklearn's mutual_info_classif function.
-
-    To be used for classification only.
     """
     if target not in df.columns.to_list():
         raise ValueError("Target column must be part of the provided DataFrame")
+
+    # Compute the mutual information scores
     if class_problem in ["binary", "multiclass"]:
         mi_scores = mutual_info_classif(
             X=df.drop(columns=[target]), y=df[target], **mut_params
@@ -852,12 +852,29 @@ def mutual_info_to_target(
 
     # Create a bar chart of the mutual information scores
     fig, ax = plt.subplots(figsize=(10, 6))
-    sns.barplot(x=mi_scores_sorted, y=sorted_features, order=sorted_features, ax=ax)
+    sns.barplot(x=mi_scores_sorted, y=sorted_features, ax=ax)
+
     ax.set_title("Mutual Information Scores with Target")
     ax.set_xlabel("Mutual Information Score")
     ax.set_ylabel("Features")
-    for i, v in enumerate(mi_scores_sorted):
-        ax.text(v + 0.01, i, str(round(v, 2)), color="blue", fontweight="bold")
+
+    # Adjust the x-axis limits to ensure space for annotations
+    ax.set_xlim([0, max(mi_scores_sorted) * 1.1])
+
+    # Add annotations with proper scaling
+    for i, (score, _feature) in enumerate(zip(mi_scores_sorted, sorted_features)):
+        ax.annotate(
+            f"{round(score, 2)}",
+            xy=(score, i),
+            xytext=(3, 0),
+            textcoords="offset points",
+            ha="left",
+            va="center",
+            color="blue",
+            fontweight="bold",
+        )
+
+    plt.tight_layout()  # Ensure the layout fits well
     plt.show()
 
 
@@ -964,13 +981,18 @@ def plot_distribution_by_time(
 
 
 def plot_error_distributions(
-    df: pd.DataFrame, target: str, prediction_error: str, num_cols_grid: int = 4
+    df: pd.DataFrame,
+    target: str,
+    prediction_error: str,
+    num_cols_grid: int = 1,
+    max_x_elements: int = 5,
 ) -> None:
     """
     Plots bivariate plots for each column in the dataframe with respect to the target.
     Each subplot represents unique values of the target column.
     The 'prediction_error' is plotted using unique values of the target column as the hue.
     Param num_cols_grid specifies how many columns the grid shall have.
+    max_x_elements determines the maximum number of unique values on the x-axis per plot.
     """
     if target not in df.columns.to_list():
         raise ValueError("Target column must be part of the provided DataFrame")
@@ -986,18 +1008,6 @@ def plot_error_distributions(
         if col not in [target, prediction_error, "prediction", "predictions"]
     ]
 
-    # Define the grid layout based on the number of variables
-    num_variables = len(variables)
-    num_cols = num_cols_grid  # Number of columns in the grid
-    num_rows = (
-        num_variables + num_cols - 1
-    ) // num_cols  # Calculate the number of rows needed
-
-    # Set the size of the figure
-    fig, axes = plt.subplots(
-        num_rows, num_cols, figsize=(12, 4 * num_rows), squeeze=False
-    )
-
     # Define a color palette for the categories
     unique_categories = df[target].unique()
     palette = sns.color_palette("husl", len(unique_categories))
@@ -1007,36 +1017,83 @@ def plot_error_distributions(
     df[target] = df[target].astype(str)
 
     # Generate plots for each variable
-    for i, variable in enumerate(variables):
-        row = i // num_cols
-        col = i % num_cols
-        ax = axes[row][col]
+    for variable in variables:
+        unique_values = sorted(
+            df[variable].unique()
+        )  # Sort unique values of the variable
+        unique_values_count = len(unique_values)
 
-        sns.violinplot(
-            data=df,
-            x=variable,
-            y=prediction_error,
-            hue=target,
-            ax=ax,
-            palette=palette_dict,
-        )
-        ax.set_xlabel(variable)
-        ax.set_ylabel(prediction_error)
-        ax.set_title(f"Scatter Plot: {variable} vs {prediction_error}")
+        # Split the plot into multiple figures if x-axis elements exceed the threshold
+        if unique_values_count > max_x_elements:
+            num_splits = (
+                unique_values_count + max_x_elements - 1
+            ) // max_x_elements  # Number of plots needed
 
-        # Rotate x-axis labels by 90 degrees
-        ax.tick_params(axis="x", rotation=90)
+            for split_index in range(num_splits):
+                # Create a subset of the DataFrame for each split
+                subset_values = unique_values[
+                    split_index * max_x_elements : (split_index + 1) * max_x_elements
+                ]
+                df_subset = df[df[variable].isin(subset_values)]
 
-    # Remove any empty subplots
-    if num_variables < num_rows * num_cols:
-        for i in range(num_variables, num_rows * num_cols):
-            fig.delaxes(axes.flatten()[i])
+                # Create the grid layout for this subset
+                fig, axes = plt.subplots(
+                    1, num_cols_grid, figsize=(12, 4), squeeze=False
+                )
 
-    # Adjust the spacing between subplots
-    plt.tight_layout()
+                ax = axes[0][0]
 
-    # Show the plot
-    plt.show()
+                sns.violinplot(
+                    data=df_subset,
+                    x=variable,
+                    y=prediction_error,
+                    hue=target,
+                    ax=ax,
+                    palette=palette_dict,
+                    order=subset_values,  # Ensure x-axis values are in the correct order
+                )
+                ax.set_xlabel(variable)
+                ax.set_ylabel(prediction_error)
+                ax.set_title(
+                    f"Violin Plot: {variable} vs {prediction_error} (Split {split_index + 1})"
+                )
+
+                # Rotate x-axis labels by 90 degrees
+                ax.tick_params(axis="x", rotation=90)
+
+                # Adjust the spacing between subplots
+                plt.tight_layout()
+
+                # Show the plot for this split
+                plt.show()
+
+        else:
+            # If the number of unique values is within the limit, plot normally
+            fig, axes = plt.subplots(1, num_cols_grid, figsize=(12, 4), squeeze=False)
+
+            ax = axes[0][0]
+
+            sns.violinplot(
+                data=df,
+                x=variable,
+                y=prediction_error,
+                hue=target,
+                ax=ax,
+                palette=palette_dict,
+                order=unique_values,  # Ensure x-axis values are in the correct order
+            )
+            ax.set_xlabel(variable)
+            ax.set_ylabel(prediction_error)
+            ax.set_title(f"Violin Plot: {variable} vs {prediction_error}")
+
+            # Rotate x-axis labels by 90 degrees
+            ax.tick_params(axis="x", rotation=90)
+
+            # Adjust the spacing between subplots
+            plt.tight_layout()
+
+            # Show the plot
+            plt.show()
 
 
 def plot_andrews_curve(
@@ -1079,4 +1136,45 @@ def plot_andrews_curve(
     plt.grid(alpha=0.3)
     plt.xticks(fontsize=12)
     plt.yticks(fontsize=12)
+    plt.show()
+
+
+def plot_distribution_pairs(
+    df1: pd.DataFrame,
+    df2: pd.DataFrame,
+    feature: str,
+    palette: Optional[List[str]] = None,
+) -> None:
+    """
+    Compare distributions of two datasets for a given feature.
+
+    Only the central 95% of the data is considered for the histogram.
+
+    :param df1: DataFrame containing the feature.
+    :param df2: Second DataFrame containing the feature for comparison.
+    :param feature: String indicating the feature name
+    :param palette: List of colors to use for the plots.
+    """
+    if not palette:
+        palette = ["#A5D7E8", "#576CBC", "#19376D", "#0B2447"]
+
+    hue = "set"
+    data_df = df1.copy()
+    data_df[hue] = "df1"
+    data_df = pd.concat([data_df, df2.copy()]).fillna("df2")
+
+    f, axes = plt.subplots(1, 2, figsize=(14, 6))
+    for i, s in enumerate(data_df[hue].unique()):
+        selection = data_df.loc[data_df[hue] == s, feature]
+        # Filter 'selection' to include only the central 95% of the data
+        q_025, q_975 = np.percentile(selection, [2.5, 97.5])
+        selection_filtered = selection[(selection >= q_025) & (selection <= q_975)]
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore", category=FutureWarning)
+            sns.histplot(selection_filtered, color=palette[i], ax=axes[0], label=s)
+            sns.boxplot(x=hue, y=feature, data=data_df, palette=palette, ax=axes[1])
+    axes[0].set_title(f"Paired distributions of {feature}")
+    axes[1].set_title(f"Paired boxplots of {feature}")
+    axes[0].legend()
+    axes[1].legend()
     plt.show()

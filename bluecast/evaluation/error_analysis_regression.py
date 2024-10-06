@@ -176,7 +176,7 @@ class ErrorDistributionRegressionPlotterMixin(ErrorDistributionPlotter):
             res_df,
             target=target_column,
             prediction_error="prediction_error",
-            num_cols_grid=2,
+            num_cols_grid=1,
         )
 
 
@@ -224,11 +224,11 @@ class ErrorAnalyserRegression(
             df = df.to_pandas()
 
         df["prediction_error"] = np.abs(
-            df["target"].astype(float) - df["predictions"].astype(float)
+            df[self.target_column].astype(float) - df["predictions"].astype(float)
         )
 
         if isinstance(df, pd.DataFrame):
-            df = pl.from_dataframe(df)
+            df = pl.from_pandas(df)
 
         return df
 
@@ -295,11 +295,11 @@ class ErrorAnalyserRegressionCV(
             df = df.to_pandas()
 
         df["prediction_error"] = np.abs(
-            df["target"].astype(float) - df["predictions"].astype(float)
+            df[self.target_column].astype(float) - df["predictions"].astype(float)
         )
 
         if isinstance(df, pd.DataFrame):
-            df = pl.from_dataframe(df)
+            df = pl.from_pandas(df)
 
         return df
 

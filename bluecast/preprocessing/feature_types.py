@@ -5,11 +5,13 @@ This is a convenience class to detect and cast feature types in a DataFrame. It 
 categorical and datetime columns. It also casts columns to a specific type.
 """
 
+import decimal
 import logging
 import warnings
 from typing import Dict, List, Optional, Tuple, Union
 
 import pandas as pd
+import polars as pl
 
 warnings.filterwarnings("ignore", "Could not infer format")
 
@@ -49,13 +51,26 @@ class FeatureTypeDetector:
             "int16",
             "int32",
             "int64",
+            "int128",
             "Int8",
             "Int16",
             "Int32",
             "Int64",
+            "Int128",
+            "UInt8",
+            "UInt16",
+            "UInt32",
+            "UInt64",
+            "UInt128",
             "float16",
             "float32",
             "float64",
+            "Float8,",
+            "Float16",
+            "Float32",
+            "Float64",
+            "Float128",
+            "Decimal",
         ]
 
     def fit_transform_drop_all_null_columns(self, df: pd.DataFrame) -> pd.DataFrame:
@@ -126,7 +141,11 @@ class FeatureTypeDetector:
         """Check if column contains any floats or strings that can be cast to floats."""
 
         def is_float_or_castable(x):
-            if isinstance(x, float):
+            if (
+                isinstance(x, float)
+                or isinstance(x, pl.Decimal)
+                or isinstance(x, decimal.Decimal)
+            ):
                 return True
             if isinstance(x, str):
                 try:
@@ -144,7 +163,9 @@ class FeatureTypeDetector:
 
     def check_if_column_is_float(self, col: pd.Series) -> bool:
         """Check if column is float."""
-        return col.apply(lambda x: isinstance(x, float)).any()
+        return col.apply(
+            lambda x: isinstance(x, float) or isinstance(x, pl.Decimal)
+        ).any()
 
     def identify_num_columns(self, df: pd.DataFrame) -> pd.DataFrame:
         """Identify numerical columns based on already existing data type."""
@@ -153,14 +174,17 @@ class FeatureTypeDetector:
         if not self.num_columns:
 
             for vartype in self.num_dtypes:
-                num_cols = df.select_dtypes(include=[vartype]).columns
-                for col in num_cols:
-                    if col not in num_col_list:
-                        num_col_list.append(col)
+                try:
+                    num_cols = df.select_dtypes(include=[vartype]).columns
+                    for col in num_cols:
+                        if col not in num_col_list:
+                            num_col_list.append(col)
+                except Exception:
+                    pass
 
         for col in df.columns.to_list():
             max_length = df[col].astype(str).str.len().max()
-            if col not in num_col_list and max_length < 10:
+            if col not in num_col_list and max_length < 20:
                 try:
                     if self.check_if_column_is_float_from_string(df[col]):
                         df[col] = df[col].astype(float)
@@ -298,8 +322,11 @@ class FeatureTypeDetector:
         df_clean = df.copy()
         df_clean = self.transform_drop_all_null_columns(df_clean)
         df_clean = self.transform_drop_zero_variance_columns(df_clean)
+        if not isinstance(ignore_cols, list):
+            ignore_cols = []
+
         for key in self.detected_col_types:
-            if ignore_cols and key not in ignore_cols and key in df_clean.columns:
+            if key not in ignore_cols and key in df_clean.columns:
                 if self.detected_col_types[key] == "datetime[ns]":
                     df_clean[key] = pd.to_datetime(df_clean[key], yearfirst=True)
                 else:

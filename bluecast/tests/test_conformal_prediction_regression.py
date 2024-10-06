@@ -33,6 +33,9 @@ def test_calibrate():
     for score in wrapper.nonconformity_scores:
         assert isinstance(score, float)
 
+    # just plotting some scores
+    wrapper.plot_non_conformity_scores([0.1, 0.2, 0.3, 0.4, 0.5])
+
 
 def test_predict():
     # Generate some random data

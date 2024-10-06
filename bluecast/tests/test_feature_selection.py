@@ -27,6 +27,9 @@ def test_boostaroota_wrapper_multiclass():
         {
             "feature1": [i for i in range(300)],
             "feature2": [i for i in range(100, 400)],
+            "feature3": [0 for _i in range(100)]
+            + [1 for _i in range(100)]
+            + [2 for _i in range(100)],
         }
     )
     targets = pd.Series(
@@ -36,6 +39,7 @@ def test_boostaroota_wrapper_multiclass():
     boosta = BoostaRootaWrapper(class_problem="multiclass", random_state=45)
     # Fit the model
     trans_df, trans_targets = boosta.fit_transform(df, targets)
+    print(f"Final multiclass df is of shape: {trans_df.shape}")
 
     assert trans_targets.equals(targets)
 
