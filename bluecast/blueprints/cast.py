@@ -379,7 +379,8 @@ class BlueCast:
             and not self.conf_training.cat_encoding_via_ml_algorithm
         ):
             self.cat_encoder = BinaryClassTargetEncoder(
-                self.category_encoder_orchestrator.to_target_encode
+                self.category_encoder_orchestrator.to_target_encode,
+                random_state=self.conf_training.global_random_state,
             )
             x_train = self.cat_encoder.fit_target_encode_binary_class(x_train, y_train)
             x_test = self.cat_encoder.transform_target_encode_binary_class(x_test)
@@ -390,7 +391,9 @@ class BlueCast:
             and not self.conf_training.cat_encoding_via_ml_algorithm
         ):
             self.cat_encoder = MultiClassTargetEncoder(
-                self.category_encoder_orchestrator.to_target_encode, self.target_column
+                self.category_encoder_orchestrator.to_target_encode,
+                self.target_column,
+                random_state=self.conf_training.global_random_state,
             )
             x_train = self.cat_encoder.fit_target_encode_multiclass(
                 x_train.copy(), y_train

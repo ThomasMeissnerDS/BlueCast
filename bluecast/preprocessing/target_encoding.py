@@ -13,10 +13,13 @@ warnings.filterwarnings("ignore", "is_categorical_dtype")
 class BinaryClassTargetEncoder:
     """Target encode categorical features in the context of binary classification using NestedCVWrapper."""
 
-    def __init__(self, cat_columns: List[Union[str, float, int]]):
+    def __init__(
+        self, cat_columns: List[Union[str, float, int]], random_state: int = 200
+    ):
         self.encoders: Dict[str, NestedCVWrapper] = {}
         self.prediction_mode: bool = False
         self.cat_columns = cat_columns
+        self.random_state = random_state
 
     def fit_target_encode_binary_class(
         self, x: pd.DataFrame, y: pd.Series
@@ -32,6 +35,7 @@ class BinaryClassTargetEncoder:
                 smoothing=smoothing,
             ),
             cv=5,  # Specify number of folds for cross-validation
+            random_state=self.random_state,
         )
 
         x.loc[:, self.cat_columns] = enc.fit_transform(x[self.cat_columns], y)
@@ -55,12 +59,14 @@ class MultiClassTargetEncoder:
         self,
         cat_columns: List[Union[str, float, int]],
         target_col: Union[str, float, int],
+        random_state: int = 200,
     ):
         self.encoders: Dict[str, Union[NestedCVWrapper, OneHotEncoder]] = {}
         self.prediction_mode: bool = False
         self.cat_columns = cat_columns
         self.class_names: List[Optional[Union[str, float, int]]] = []
         self.target_col = target_col
+        self.random_state = random_state
 
     def fit_target_encode_multiclass(
         self, x: pd.DataFrame, y: pd.Series
@@ -89,6 +95,7 @@ class MultiClassTargetEncoder:
                     smoothing=smoothing,
                 ),
                 cv=5,  # Specify number of folds for cross-validation
+                random_state=self.random_state,
             )
             target_enc.fit(x_obj, y_onehot[class_])
             self.encoders[f"multiclass_target_encoder_all_cols_{class_}"] = target_enc
