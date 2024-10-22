@@ -1,16 +1,3 @@
-"""
-Target encoding is a method to encode categorical features. It is a supervised encoding technique, meaning it uses the
-target variable to encode the features. The target variable is used to calculate the mean of the target for each
-category and then replace the category variable with the mean value. This is a powerful technique that can be used to
-create new features from categorical variables. It is also a powerful technique to deal with high cardinality features
-as it reduces the dimensionality of the categorical features.
-
-The target encoding technique is implemented in the category_encoders library. The library offers a variety of
-different encoding techniques. The target encoding technique is implemented in the TargetEncoder class. For multiclass
-uses cases a special implementation is available as the category-encoders implementation is not suitable for
-multiclass.
-"""
-
 import logging
 import warnings
 from typing import Dict, List, Optional, Union
@@ -18,30 +5,35 @@ from typing import Dict, List, Optional, Union
 import numpy as np
 import pandas as pd
 from category_encoders import OneHotEncoder, TargetEncoder
+from category_encoders.wrapper import NestedCVWrapper
 
 warnings.filterwarnings("ignore", "is_categorical_dtype")
 
 
 class BinaryClassTargetEncoder:
-    """Target encode categorical features in the context of binary classification."""
+    """Target encode categorical features in the context of binary classification using NestedCVWrapper."""
 
     def __init__(self, cat_columns: List[Union[str, float, int]]):
-        self.encoders: Dict[str, TargetEncoder] = {}
+        self.encoders: Dict[str, NestedCVWrapper] = {}
         self.prediction_mode: bool = False
         self.cat_columns = cat_columns
 
     def fit_target_encode_binary_class(
         self, x: pd.DataFrame, y: pd.Series
     ) -> pd.DataFrame:
-        """Fit target encoder and transform column."""
-        logging.info("Start fitting binary target encoder.")
+        """Fit target encoder using NestedCVWrapper and transform columns."""
+        logging.info("Start fitting binary target encoder with NestedCVWrapper.")
         smoothing = np.max([np.log10(len(x.index)) * 5, 10])
-        enc = TargetEncoder(
-            cols=self.cat_columns,
-            smoothing=smoothing,
-            # drop_invariant=True,
-            # handle_unknown="ignore",
+
+        # Wrap TargetEncoder with NestedCVWrapper
+        enc = NestedCVWrapper(
+            TargetEncoder(
+                cols=self.cat_columns,
+                smoothing=smoothing,
+            ),
+            cv=5,  # Specify number of folds for cross-validation
         )
+
         x.loc[:, self.cat_columns] = enc.fit_transform(x[self.cat_columns], y)
         x[self.cat_columns] = x[self.cat_columns].astype(float)
         self.encoders["target_encoder_all_cols"] = enc
@@ -57,14 +49,14 @@ class BinaryClassTargetEncoder:
 
 
 class MultiClassTargetEncoder:
-    """Target encode categorical features in the context of multiclass classification."""
+    """Target encode categorical features in the context of multiclass classification using NestedCVWrapper."""
 
     def __init__(
         self,
         cat_columns: List[Union[str, float, int]],
         target_col: Union[str, float, int],
     ):
-        self.encoders: Dict[str, Union[TargetEncoder, OneHotEncoder]] = {}
+        self.encoders: Dict[str, Union[NestedCVWrapper, OneHotEncoder]] = {}
         self.prediction_mode: bool = False
         self.cat_columns = cat_columns
         self.class_names: List[Optional[Union[str, float, int]]] = []
@@ -73,8 +65,8 @@ class MultiClassTargetEncoder:
     def fit_target_encode_multiclass(
         self, x: pd.DataFrame, y: pd.Series
     ) -> pd.DataFrame:
-        """Fit target encoder and transform column."""
-        logging.info("Start fitting multiclass target encoder.")
+        """Fit target encoder using NestedCVWrapper and transform columns."""
+        logging.info("Start fitting multiclass target encoder with NestedCVWrapper.")
         algorithm = "multiclass_target_encoding_onehotter"
         enc = OneHotEncoder(
             # drop_invariant=True, handle_unknown="ignore"
@@ -89,16 +81,19 @@ class MultiClassTargetEncoder:
         x = x.loc[:, ~x.columns.isin(self.cat_columns)]
         for class_ in self.class_names:
             smoothing = np.max([np.log10(len(x.index)) * 5, 10])
-            target_enc = TargetEncoder(
-                cols=self.cat_columns,
-                smoothing=smoothing,
-                # drop_invariant=True,
-                # handle_unknown="ignore",
+
+            # Wrap TargetEncoder with NestedCVWrapper for each class
+            target_enc = NestedCVWrapper(
+                TargetEncoder(
+                    cols=self.cat_columns,
+                    smoothing=smoothing,
+                ),
+                cv=5,  # Specify number of folds for cross-validation
             )
             target_enc.fit(x_obj, y_onehot[class_])
             self.encoders[f"multiclass_target_encoder_all_cols_{class_}"] = target_enc
             temp = target_enc.transform(x_obj)
-            temp.columns = [str(x) + "_" + str(class_) for x in temp.columns]
+            temp.columns = [str(col) + "_" + str(class_) for col in temp.columns]
             x = pd.concat([x, temp], axis=1)
         self.encoders[f"{algorithm}_all_cols"] = enc
         return x
@@ -114,7 +109,7 @@ class MultiClassTargetEncoder:
         for class_ in self.class_names:
             target_enc = self.encoders[f"multiclass_target_encoder_all_cols_{class_}"]
             temp = target_enc.transform(x_obj)
-            temp.columns = [str(x) + "_" + str(class_) for x in temp.columns]
+            temp.columns = [str(col) + "_" + str(class_) for col in temp.columns]
             x = pd.concat([x, temp], axis=1)
         self.encoders[f"{algorithm}_all_cols"] = enc
         return x
