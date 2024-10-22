@@ -6,6 +6,7 @@ import numpy as np
 import pandas as pd
 from category_encoders import OneHotEncoder, TargetEncoder
 from category_encoders.wrapper import NestedCVWrapper
+from sklearn.preprocessing import LabelEncoder  # Import LabelEncoder
 
 warnings.filterwarnings("ignore", "is_categorical_dtype")
 
@@ -26,6 +27,15 @@ class BinaryClassTargetEncoder:
     ) -> pd.DataFrame:
         """Fit target encoder using NestedCVWrapper and transform columns."""
         logging.info("Start fitting binary target encoder with NestedCVWrapper.")
+
+        # Check and encode target if it is not numeric (i.e. string labels)
+        if y.dtype == "object" or y.dtype.name == "category":
+            logging.info(
+                "Encoding string targets temporarily for binary classification."
+            )
+            label_encoder = LabelEncoder()
+            y = label_encoder.fit_transform(y)
+
         smoothing = np.max([np.log10(len(x.index)) * 5, 10])
 
         # Wrap TargetEncoder with NestedCVWrapper
@@ -73,6 +83,15 @@ class MultiClassTargetEncoder:
     ) -> pd.DataFrame:
         """Fit target encoder using NestedCVWrapper and transform columns."""
         logging.info("Start fitting multiclass target encoder with NestedCVWrapper.")
+
+        # Check and encode target if it is not numeric (i.e. string labels)
+        if y.dtype == "object" or y.dtype.name == "category":
+            logging.info(
+                "Encoding string targets temporarily for multiclass classification."
+            )
+            label_encoder = LabelEncoder()
+            y = label_encoder.fit_transform(y)
+
         algorithm = "multiclass_target_encoding_onehotter"
         enc = OneHotEncoder(
             # drop_invariant=True, handle_unknown="ignore"
