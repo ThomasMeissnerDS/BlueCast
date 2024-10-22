@@ -35,6 +35,7 @@ class BinaryClassTargetEncoder:
             )
             label_encoder = LabelEncoder()
             y = label_encoder.fit_transform(y)
+            y.index = x.index
 
         smoothing = np.max([np.log10(len(x.index)) * 5, 10])
 
