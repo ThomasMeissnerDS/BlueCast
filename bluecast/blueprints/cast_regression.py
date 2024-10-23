@@ -44,10 +44,7 @@ from bluecast.preprocessing.infrequent_categories import InFrequentCategoryEncod
 from bluecast.preprocessing.nulls_and_infs import fill_infinite_values
 from bluecast.preprocessing.onehot_encoding import OneHotCategoryEncoder
 from bluecast.preprocessing.schema_checks import SchemaDetector
-from bluecast.preprocessing.target_encoding import (
-    BinaryClassTargetEncoder,
-    MultiClassTargetEncoder,
-)
+from bluecast.preprocessing.target_encoding import RegressionTargetEncoder
 from bluecast.preprocessing.train_test_split import train_test_split
 
 
@@ -116,9 +113,7 @@ class BlueCastRegression:
         self.conf_params_xgboost = conf_params_xgboost
         self.feat_type_detector: Optional[FeatureTypeDetector] = None
         self.infreq_cat_encoder: Optional[InFrequentCategoryEncoder] = None
-        self.cat_encoder: Optional[
-            Union[BinaryClassTargetEncoder, MultiClassTargetEncoder]
-        ] = None
+        self.cat_encoder: Optional[RegressionTargetEncoder] = None
         self.onehot_encoder: Optional[OneHotCategoryEncoder] = None
         self.category_encoder_orchestrator: Optional[CategoryEncoderOrchestrator] = None
         self.target_label_encoder: Optional[TargetLabelEncoder] = None
@@ -360,16 +355,14 @@ class BlueCastRegression:
             and self.category_encoder_orchestrator
             and not self.conf_training.cat_encoding_via_ml_algorithm
         ):
-            self.cat_encoder = BinaryClassTargetEncoder(
+            self.cat_encoder = RegressionTargetEncoder(
                 self.category_encoder_orchestrator.to_target_encode,
                 random_state=self.conf_training.global_random_state,
             )
-            x_train = self.cat_encoder.fit_target_encode_binary_class(
+            x_train = self.cat_encoder.fit_target_encode_regression(
                 x_train.copy(), y_train
             )
-            x_test = self.cat_encoder.transform_target_encode_binary_class(
-                x_test.copy()
-            )
+            x_test = self.cat_encoder.transform_target_encode_regression(x_test.copy())
         elif self.conf_training.cat_encoding_via_ml_algorithm:
             cat_cols = [col for col in self.cat_columns if col != self.target_column]
             x_train[cat_cols] = x_train[cat_cols].astype("category")
@@ -536,11 +529,11 @@ class BlueCastRegression:
             self.cat_columns
             and self.cat_encoder
             and self.class_problem == "regression"
-            and isinstance(self.cat_encoder, BinaryClassTargetEncoder)
+            and isinstance(self.cat_encoder, RegressionTargetEncoder)
             and self.category_encoder_orchestrator
             and not self.conf_training.cat_encoding_via_ml_algorithm
         ):
-            df = self.cat_encoder.transform_target_encode_binary_class(df.copy())
+            df = self.cat_encoder.transform_target_encode_regression(df.copy())
 
         if self.conf_training.cat_encoding_via_ml_algorithm:
             cat_cols = [col for col in self.cat_columns if col != self.target_column]
