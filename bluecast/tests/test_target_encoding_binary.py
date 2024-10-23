@@ -9,9 +9,9 @@ def sample_data():
     # Sample data for testing
     data = pd.DataFrame(
         {
-            "col1": ["A", "B", "C", "A", "B", "C"],
-            "col2": ["X", "Y", "Z", "X", "Y", "Z"],
-            "target": [0, 1, 0, 1, 0, 1],
+            "col1": ["A", "B", "C", "A", "B", "C", "A", "B", "C", "A", "B", "C"],
+            "col2": ["X", "Y", "Z", "X", "Y", "Z", "X", "Y", "Z", "X", "Y", "Z"],
+            "target": [0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1],
         }
     )
     return data
