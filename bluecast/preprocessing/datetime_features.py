@@ -3,79 +3,156 @@ Module for extracting date parts from datetime columns.
 """
 
 import logging
-from typing import List, Optional, Union
+from typing import Dict, List, Optional, Union
 
 import numpy as np
 import pandas as pd
 
 
-def date_converter(
-    df: pd.DataFrame,
-    date_columns: Optional[List[Union[str, int, float]]],
-    date_parts: Optional[List[str]],
-) -> pd.DataFrame:
+class DatePartExtractor:
     """
-    Takes in a df and loops through datetime columns to extract date parts and adds them as additional columns.
-    Additionally, creates cyclic features for time components if there is more than one unique value for the time unit.
-    :param date_columns: List of datetime columns.
-    :param df: Dataframe to be processed.
-    :param date_parts: List of date parts to be extracted.
-    :return: Returns modified df.
+    Class for extracting date parts from datetime columns and creating cyclic features.
     """
-    logging.info("Start date column conversion.")
-    if not date_columns:
+
+    def __init__(
+        self,
+        date_columns: Optional[List[Union[str, int, float]]] = None,
+        date_parts: Optional[List[str]] = None,
+    ):
+        """
+        Initializes the DatePartExtractor.
+        :param date_columns: List of datetime columns.
+        :param date_parts: List of date parts to be extracted.
+        """
+        self.date_columns = date_columns
+        if date_parts is None:
+            self.date_parts = [
+                "year",
+                "week_of_year",
+                "month",
+                "day",
+                "dayofweek",
+                "hour",
+            ]
+        else:
+            self.date_parts = date_parts
+        self.date_part_periods = {
+            "month": 12,
+            "week_of_year": 52,
+            "day": 31,
+            "dayofweek": 7,
+            "hour": 24,
+        }
+        self.included_date_parts: Dict[Union[str, int, float], List[str]] = (
+            {}
+        )  # To store date parts included for each date column
+        self.included_cyclic_features: Dict[Union[str, int, float], List[str]] = (
+            {}
+        )  # To store cyclic features included for each date column
+
+    def fit_transform(self, df: pd.DataFrame) -> pd.DataFrame:
+        """
+        Fits to the data and transforms it, extracting date parts and creating cyclic features.
+        :param df: Dataframe to be processed.
+        :return: Returns modified dataframe.
+        """
+        logging.info("Start date column conversion.")
+        if not self.date_columns:
+            return df
+
+        df = df.copy()  # To avoid modifying the original dataframe
+
+        for c in self.date_columns:
+            if c not in df.columns:
+                logging.warning(f"Date column {c} not found in dataframe.")
+                continue
+            self.included_date_parts[c] = []
+            self.included_cyclic_features[c] = []
+            for date_part in self.date_parts:
+                date_part_values = None
+                if date_part == "year":
+                    date_part_values = df[c].dt.year.astype(float)
+                elif date_part == "month":
+                    date_part_values = df[c].dt.month.astype(float)
+                elif date_part == "week_of_year":
+                    date_part_values = df[c].dt.isocalendar().week.astype(float)
+                elif date_part == "day":
+                    date_part_values = df[c].dt.day.astype(float)
+                elif date_part == "dayofweek":
+                    date_part_values = df[c].dt.dayofweek.astype(float)
+                elif date_part == "hour":
+                    date_part_values = df[c].dt.hour.astype(float)
+                else:
+                    continue  # Skip unknown date_parts
+
+                if date_part_values.nunique() > 1:
+                    df[f"{c}_{date_part}"] = date_part_values
+                    self.included_date_parts[c].append(date_part)
+
+                    if (
+                        date_part in self.date_part_periods
+                        and date_part_values.nunique() > 1
+                    ):
+                        period = self.date_part_periods[date_part]
+                        df[f"{c}_{date_part}_sin"] = np.sin(
+                            2 * np.pi * date_part_values / period
+                        )
+                        df[f"{c}_{date_part}_cos"] = np.cos(
+                            2 * np.pi * date_part_values / period
+                        )
+                        self.included_cyclic_features[c].append(date_part)
+            # Drop the original date column
+            df = df.drop(c, axis=1)
         return df
 
-    if not date_parts:
-        date_parts = ["year", "week_of_year", "month", "day", "dayofweek", "hour"]
+    def transform(self, df: pd.DataFrame) -> pd.DataFrame:
+        """
+        Transforms the data using the same transformations as fitted during fit_transform.
+        :param df: Dataframe to be transformed.
+        :return: Returns modified dataframe.
+        """
+        logging.info("Start date column conversion (transform).")
+        if not self.date_columns:
+            return df
 
-    date_part_periods = {
-        "month": 12,
-        "week_of_year": 52,
-        "day": 31,
-        "dayofweek": 7,
-        "hour": 24,
-    }
+        df = df.copy()  # To avoid modifying the original dataframe
 
-    for c in date_columns:
-        # create dummy variable such that the next part does not fail
-        date_part_values = pd.Series([0] * len(df))
-        for date_part in date_parts:
-            if date_part == "year" and df[c].dt.year.astype(float).nunique() > 1:
-                df[str(c) + "_year"] = df[c].dt.year.astype(float)
-            elif date_part == "month" and df[c].dt.month.astype(float).nunique() > 1:
-                date_part_values = df[c].dt.month.astype(float)
-                df[str(c) + "_month"] = date_part_values
-            elif (
-                date_part == "week_of_year"
-                and df[c].dt.isocalendar().week.astype(float).nunique() > 1
-            ):
-                date_part_values = df[c].dt.isocalendar().week.astype(float)
-                df[str(c) + "_week_of_year"] = date_part_values
-            elif date_part == "day" and df[c].dt.day.astype(float).nunique() > 1:
-                date_part_values = df[c].dt.day.astype(float)
-                df[str(c) + "_day"] = date_part_values
-            elif (
-                date_part == "dayofweek"
-                and df[c].dt.dayofweek.astype(float).nunique() > 1
-            ):
-                date_part_values = df[c].dt.dayofweek.astype(float)
-                df[str(c) + "_dayofweek"] = date_part_values
-            elif date_part == "hour" and df[c].dt.hour.astype(float).nunique() > 1:
-                date_part_values = df[c].dt.hour.astype(float)
-                df[str(c) + "_hour"] = date_part_values
-            else:
-                pass
-
-            # For date parts with a defined period, create cyclic features if there is more than one unique value
-            if date_part in date_part_periods and date_part_values.nunique() > 1:
-                period = date_part_periods[date_part]
-                df[str(c) + "_" + date_part + "_sin"] = np.sin(
-                    2 * np.pi * date_part_values / period
+        for c in self.date_columns:
+            if c not in df.columns:
+                logging.warning(f"Date column {c} not found in dataframe.")
+                continue
+            if c not in self.included_date_parts:
+                logging.warning(
+                    f"Date column {c} was not processed during fit_transform."
                 )
-                df[str(c) + "_" + date_part + "_cos"] = np.cos(
-                    2 * np.pi * date_part_values / period
-                )
-        # Drop the original date column
-        df = df.drop(c, axis=1)
-    return df
+                continue
+
+            for date_part in self.included_date_parts[c]:
+                if date_part == "year":
+                    date_part_values = df[c].dt.year.astype(float)
+                elif date_part == "month":
+                    date_part_values = df[c].dt.month.astype(float)
+                elif date_part == "week_of_year":
+                    date_part_values = df[c].dt.isocalendar().week.astype(float)
+                elif date_part == "day":
+                    date_part_values = df[c].dt.day.astype(float)
+                elif date_part == "dayofweek":
+                    date_part_values = df[c].dt.dayofweek.astype(float)
+                elif date_part == "hour":
+                    date_part_values = df[c].dt.hour.astype(float)
+                else:
+                    continue
+
+                df[f"{c}_{date_part}"] = date_part_values
+
+                if date_part in self.included_cyclic_features.get(c, []):
+                    period = self.date_part_periods[date_part]
+                    df[f"{c}_{date_part}_sin"] = np.sin(
+                        2 * np.pi * date_part_values / period
+                    )
+                    df[f"{c}_{date_part}_cos"] = np.cos(
+                        2 * np.pi * date_part_values / period
+                    )
+            # Drop the original date column
+            df = df.drop(c, axis=1)
+        return df

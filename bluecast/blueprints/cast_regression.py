@@ -36,7 +36,7 @@ from bluecast.preprocessing.category_encoder_orchestration import (
     CategoryEncoderOrchestrator,
 )
 from bluecast.preprocessing.custom import CustomPreprocessing
-from bluecast.preprocessing.datetime_features import date_converter
+from bluecast.preprocessing.datetime_features import DatePartExtractor
 from bluecast.preprocessing.encode_target_labels import TargetLabelEncoder
 from bluecast.preprocessing.feature_selection import BoostaRootaWrapper
 from bluecast.preprocessing.feature_types import FeatureTypeDetector
@@ -118,6 +118,7 @@ class BlueCastRegression:
         self.category_encoder_orchestrator: Optional[CategoryEncoderOrchestrator] = None
         self.target_label_encoder: Optional[TargetLabelEncoder] = None
         self.schema_detector: Optional[SchemaDetector] = None
+        self.date_part_extractor: Optional[DatePartExtractor] = None
         self.ml_model: Optional[XgboostModelRegression] = ml_model
         self.custom_in_fold_preprocessor = custom_in_fold_preprocessor
         self.custom_last_mile_computation = custom_last_mile_computation
@@ -303,15 +304,11 @@ class BlueCastRegression:
                 feat_type_detector.cat_columns.remove(target_col)
 
         x_train, x_test = fill_infinite_values(x_train), fill_infinite_values(x_test)
-        x_train, x_test = date_converter(
-            x_train,
-            self.date_columns,
-            date_parts=["year", "week_of_year", "month", "day", "dayofweek", "hour"],
-        ), date_converter(
-            x_test,
-            self.date_columns,
-            date_parts=["year", "week_of_year", "month", "day", "dayofweek", "hour"],
+        self.date_part_extractor = DatePartExtractor(
+            date_columns=self.date_columns, date_parts=None
         )
+        x_train = self.date_part_extractor.fit_transform(x_train)
+        x_test = self.date_part_extractor.transform(x_test)
 
         self.schema_detector = SchemaDetector()
         self.schema_detector.fit(x_train)
@@ -502,11 +499,9 @@ class BlueCastRegression:
             df = df.reset_index(drop=True)
 
         df = fill_infinite_values(df)
-        df = date_converter(
-            df,
-            self.date_columns,
-            date_parts=["year", "week_of_year", "month", "day", "dayofweek", "hour"],
-        )
+
+        if isinstance(self.date_part_extractor, DatePartExtractor):
+            df = self.date_part_extractor.transform(df)
 
         if self.schema_detector:
             df = self.schema_detector.transform(df)
