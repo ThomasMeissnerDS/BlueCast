@@ -35,7 +35,7 @@ from bluecast.preprocessing.category_encoder_orchestration import (
     CategoryEncoderOrchestrator,
 )
 from bluecast.preprocessing.custom import CustomPreprocessing
-from bluecast.preprocessing.datetime_features import date_converter
+from bluecast.preprocessing.datetime_features import DatePartExtractor
 from bluecast.preprocessing.encode_target_labels import (
     TargetLabelEncoder,
     cast_bool_to_int,
@@ -124,6 +124,7 @@ class BlueCast:
         self.category_encoder_orchestrator: Optional[CategoryEncoderOrchestrator] = None
         self.target_label_encoder: Optional[TargetLabelEncoder] = None
         self.schema_detector: Optional[SchemaDetector] = None
+        self.date_part_extractor: Optional[DatePartExtractor] = None
         self.ml_model: Optional[XgboostModel] = ml_model
         self.custom_in_fold_preprocessor = custom_in_fold_preprocessor
         self.custom_last_mile_computation = custom_last_mile_computation
@@ -326,15 +327,11 @@ class BlueCast:
                 feat_type_detector.cat_columns.remove(target_col)
 
         x_train, x_test = fill_infinite_values(x_train), fill_infinite_values(x_test)
-        x_train, x_test = date_converter(
-            x_train,
-            self.date_columns,
-            date_parts=["year", "week_of_year", "month", "day", "dayofweek", "hour"],
-        ), date_converter(
-            x_test,
-            self.date_columns,
-            date_parts=["year", "week_of_year", "month", "day", "dayofweek", "hour"],
+        self.date_part_extractor = DatePartExtractor(
+            date_columns=self.date_columns, date_parts=None
         )
+        x_train = self.date_part_extractor.fit_transform(x_train)
+        x_test = self.date_part_extractor.transform(x_test)
 
         self.schema_detector = SchemaDetector()
         self.schema_detector.fit(x_train)
@@ -379,7 +376,8 @@ class BlueCast:
             and not self.conf_training.cat_encoding_via_ml_algorithm
         ):
             self.cat_encoder = BinaryClassTargetEncoder(
-                self.category_encoder_orchestrator.to_target_encode
+                self.category_encoder_orchestrator.to_target_encode,
+                random_state=self.conf_training.global_random_state,
             )
             x_train = self.cat_encoder.fit_target_encode_binary_class(x_train, y_train)
             x_test = self.cat_encoder.transform_target_encode_binary_class(x_test)
@@ -390,7 +388,9 @@ class BlueCast:
             and not self.conf_training.cat_encoding_via_ml_algorithm
         ):
             self.cat_encoder = MultiClassTargetEncoder(
-                self.category_encoder_orchestrator.to_target_encode, self.target_column
+                self.category_encoder_orchestrator.to_target_encode,
+                self.target_column,
+                random_state=self.conf_training.global_random_state,
             )
             x_train = self.cat_encoder.fit_target_encode_multiclass(
                 x_train.copy(), y_train
@@ -550,11 +550,9 @@ class BlueCast:
             df = df.reset_index(drop=True)
 
         df = fill_infinite_values(df)
-        df = date_converter(
-            df,
-            self.date_columns,
-            date_parts=["year", "week_of_year", "month", "day", "dayofweek", "hour"],
-        )
+
+        if isinstance(self.date_part_extractor, DatePartExtractor):
+            df = self.date_part_extractor.transform(df)
 
         if self.schema_detector:
             df = self.schema_detector.transform(df)
@@ -690,6 +688,8 @@ class BlueCast:
             training.
         """
         x_calibration = self.transform_new_data(x_calibration)
+        if isinstance(y_calibration, np.ndarray):
+            y_calibration = pd.Series(y_calibration)
 
         if self.target_label_encoder:
             x_calibration[self.target_column] = y_calibration

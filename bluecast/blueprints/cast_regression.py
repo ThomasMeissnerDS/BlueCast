@@ -36,7 +36,7 @@ from bluecast.preprocessing.category_encoder_orchestration import (
     CategoryEncoderOrchestrator,
 )
 from bluecast.preprocessing.custom import CustomPreprocessing
-from bluecast.preprocessing.datetime_features import date_converter
+from bluecast.preprocessing.datetime_features import DatePartExtractor
 from bluecast.preprocessing.encode_target_labels import TargetLabelEncoder
 from bluecast.preprocessing.feature_selection import BoostaRootaWrapper
 from bluecast.preprocessing.feature_types import FeatureTypeDetector
@@ -44,10 +44,7 @@ from bluecast.preprocessing.infrequent_categories import InFrequentCategoryEncod
 from bluecast.preprocessing.nulls_and_infs import fill_infinite_values
 from bluecast.preprocessing.onehot_encoding import OneHotCategoryEncoder
 from bluecast.preprocessing.schema_checks import SchemaDetector
-from bluecast.preprocessing.target_encoding import (
-    BinaryClassTargetEncoder,
-    MultiClassTargetEncoder,
-)
+from bluecast.preprocessing.target_encoding import RegressionTargetEncoder
 from bluecast.preprocessing.train_test_split import train_test_split
 
 
@@ -116,13 +113,12 @@ class BlueCastRegression:
         self.conf_params_xgboost = conf_params_xgboost
         self.feat_type_detector: Optional[FeatureTypeDetector] = None
         self.infreq_cat_encoder: Optional[InFrequentCategoryEncoder] = None
-        self.cat_encoder: Optional[
-            Union[BinaryClassTargetEncoder, MultiClassTargetEncoder]
-        ] = None
+        self.cat_encoder: Optional[RegressionTargetEncoder] = None
         self.onehot_encoder: Optional[OneHotCategoryEncoder] = None
         self.category_encoder_orchestrator: Optional[CategoryEncoderOrchestrator] = None
         self.target_label_encoder: Optional[TargetLabelEncoder] = None
         self.schema_detector: Optional[SchemaDetector] = None
+        self.date_part_extractor: Optional[DatePartExtractor] = None
         self.ml_model: Optional[XgboostModelRegression] = ml_model
         self.custom_in_fold_preprocessor = custom_in_fold_preprocessor
         self.custom_last_mile_computation = custom_last_mile_computation
@@ -308,15 +304,11 @@ class BlueCastRegression:
                 feat_type_detector.cat_columns.remove(target_col)
 
         x_train, x_test = fill_infinite_values(x_train), fill_infinite_values(x_test)
-        x_train, x_test = date_converter(
-            x_train,
-            self.date_columns,
-            date_parts=["year", "week_of_year", "month", "day", "dayofweek", "hour"],
-        ), date_converter(
-            x_test,
-            self.date_columns,
-            date_parts=["year", "week_of_year", "month", "day", "dayofweek", "hour"],
+        self.date_part_extractor = DatePartExtractor(
+            date_columns=self.date_columns, date_parts=None
         )
+        x_train = self.date_part_extractor.fit_transform(x_train)
+        x_test = self.date_part_extractor.transform(x_test)
 
         self.schema_detector = SchemaDetector()
         self.schema_detector.fit(x_train)
@@ -360,15 +352,14 @@ class BlueCastRegression:
             and self.category_encoder_orchestrator
             and not self.conf_training.cat_encoding_via_ml_algorithm
         ):
-            self.cat_encoder = BinaryClassTargetEncoder(
-                self.category_encoder_orchestrator.to_target_encode
+            self.cat_encoder = RegressionTargetEncoder(
+                self.category_encoder_orchestrator.to_target_encode,
+                random_state=self.conf_training.global_random_state,
             )
-            x_train = self.cat_encoder.fit_target_encode_binary_class(
+            x_train = self.cat_encoder.fit_target_encode_regression(
                 x_train.copy(), y_train
             )
-            x_test = self.cat_encoder.transform_target_encode_binary_class(
-                x_test.copy()
-            )
+            x_test = self.cat_encoder.transform_target_encode_regression(x_test.copy())
         elif self.conf_training.cat_encoding_via_ml_algorithm:
             cat_cols = [col for col in self.cat_columns if col != self.target_column]
             x_train[cat_cols] = x_train[cat_cols].astype("category")
@@ -508,11 +499,9 @@ class BlueCastRegression:
             df = df.reset_index(drop=True)
 
         df = fill_infinite_values(df)
-        df = date_converter(
-            df,
-            self.date_columns,
-            date_parts=["year", "week_of_year", "month", "day", "dayofweek", "hour"],
-        )
+
+        if isinstance(self.date_part_extractor, DatePartExtractor):
+            df = self.date_part_extractor.transform(df)
 
         if self.schema_detector:
             df = self.schema_detector.transform(df)
@@ -535,11 +524,11 @@ class BlueCastRegression:
             self.cat_columns
             and self.cat_encoder
             and self.class_problem == "regression"
-            and isinstance(self.cat_encoder, BinaryClassTargetEncoder)
+            and isinstance(self.cat_encoder, RegressionTargetEncoder)
             and self.category_encoder_orchestrator
             and not self.conf_training.cat_encoding_via_ml_algorithm
         ):
-            df = self.cat_encoder.transform_target_encode_binary_class(df.copy())
+            df = self.cat_encoder.transform_target_encode_regression(df.copy())
 
         if self.conf_training.cat_encoding_via_ml_algorithm:
             cat_cols = [col for col in self.cat_columns if col != self.target_column]
@@ -600,6 +589,9 @@ class BlueCastRegression:
             training.
         """
         x_calibration = self.transform_new_data(x_calibration)
+        if isinstance(y_calibration, np.ndarray):
+            y_calibration = pd.Series(y_calibration)
+
         self.conformal_prediction_wrapper = ConformalPredictionRegressionWrapper(
             self.ml_model, **kwargs
         )

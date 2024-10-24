@@ -87,6 +87,10 @@ def test_blueprint_xgboost(synthetic_train_test_data, synthetic_calibration_data
     print("Predicting successful.")
     assert len(y_preds) == len(df_val.index)
 
+    # test conformal prediction by passing numpy array
+    automl.calibrate(
+        df_calibration.drop("target", axis=1), df_calibration["target"].values
+    )
     # test conformal prediction
     automl.calibrate(df_calibration.drop("target", axis=1), df_calibration["target"])
     pred_intervals = automl.predict_interval(
@@ -226,23 +230,23 @@ def test_bluecast_with_custom_model():
     # Create some sample data for testing
     x_train = pd.DataFrame(
         {
-            "feature1": [i for i in range(10)],
-            "feature2": [i for i in range(10)],
-            "feature3": [i for i in range(10)],
-            "feature4": [i for i in range(10)],
-            "feature5": [i for i in range(10)],
-            "feature6": [i for i in range(10)],
+            "feature1": [i for i in range(20)],
+            "feature2": [i for i in range(20)],
+            "feature3": [i for i in range(20)],
+            "feature4": [i for i in range(20)],
+            "feature5": [i for i in range(20)],
+            "feature6": [i for i in range(20)],
         }
     )
-    y_train = pd.Series([0, 1, 0, 1, 0, 1, 0, 1, 0, 1])
+    y_train = pd.Series([0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1])
     x_test = pd.DataFrame(
         {
-            "feature1": [i for i in range(10)],
-            "feature2": [i for i in range(10)],
-            "feature3": [i for i in range(10)],
-            "feature4": [i for i in range(10)],
-            "feature5": [i for i in range(10)],
-            "feature6": [i for i in range(10)],
+            "feature1": [i for i in range(20)],
+            "feature2": [i for i in range(20)],
+            "feature3": [i for i in range(20)],
+            "feature4": [i for i in range(20)],
+            "feature5": [i for i in range(20)],
+            "feature6": [i for i in range(20)],
         }
     )
 

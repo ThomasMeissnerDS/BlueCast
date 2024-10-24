@@ -410,6 +410,9 @@ class BlueCastCV:
         :param y_calibration: Pandas Series holding the target value, hat has not been seen by the model during
             training.
         """
+        if isinstance(y_calibration, np.ndarray):
+            y_calibration = pd.Series(y_calibration)
+
         if self.bluecast_models[0].target_label_encoder:
             x_calibration[self.bluecast_models[0].target_column] = y_calibration
             x_calibration = self.bluecast_models[

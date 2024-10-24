@@ -319,6 +319,9 @@ class BlueCastCVRegression:
         :param y_calibration: Pandas Series holding the target value, hat has not been seen by the model during
             training.
         """
+        if isinstance(y_calibration, np.ndarray):
+            y_calibration = pd.Series(y_calibration)
+
         self.conformal_prediction_wrapper = ConformalPredictionRegressionWrapper(
             self, **kwargs
         )
