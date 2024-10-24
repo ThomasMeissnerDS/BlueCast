@@ -87,6 +87,10 @@ def test_blueprint_xgboost(synthetic_train_test_data, synthetic_calibration_data
     print("Predicting successful.")
     assert len(y_preds) == len(df_val.index)
 
+    # test conformal prediction by passing numpy array
+    automl.calibrate(
+        df_calibration.drop("target", axis=1), df_calibration["target"].values
+    )
     # test conformal prediction
     automl.calibrate(df_calibration.drop("target", axis=1), df_calibration["target"])
     pred_intervals = automl.predict_interval(
