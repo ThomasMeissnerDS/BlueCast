@@ -589,6 +589,9 @@ class BlueCastRegression:
             training.
         """
         x_calibration = self.transform_new_data(x_calibration)
+        if isinstance(y_calibration, np.ndarray):
+            y_calibration = pd.Series(y_calibration)
+
         self.conformal_prediction_wrapper = ConformalPredictionRegressionWrapper(
             self.ml_model, **kwargs
         )

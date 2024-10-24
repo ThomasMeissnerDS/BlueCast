@@ -688,6 +688,8 @@ class BlueCast:
             training.
         """
         x_calibration = self.transform_new_data(x_calibration)
+        if isinstance(y_calibration, np.ndarray):
+            y_calibration = pd.Series(y_calibration)
 
         if self.target_label_encoder:
             x_calibration[self.target_column] = y_calibration
