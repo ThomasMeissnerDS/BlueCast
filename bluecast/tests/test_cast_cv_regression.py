@@ -97,6 +97,10 @@ def test_blueprint_cv_xgboost(synthetic_train_test_data, synthetic_calibration_d
     # Assert that the bluecast_models attribute is updated
     assert len(automl_cv.bluecast_models) == nb_models
 
+    # test cf with numpy array
+    automl_cv.calibrate(
+        df_calibration.drop("target", axis=1), df_calibration["target"].values
+    )
     # test conformal prediction
     automl_cv.calibrate(df_calibration.drop("target", axis=1), df_calibration["target"])
     pred_intervals = automl_cv.predict_interval(
