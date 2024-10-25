@@ -1,3 +1,4 @@
+import logging
 import numpy as np
 import pandas as pd
 import pytest
@@ -73,7 +74,7 @@ def test_date_part_extractor(sample_dataframe):
     expected_result = pd.DataFrame(expected_data)
 
     # Reorder columns to match the result DataFrame
-    expected_result = expected_result[result.columns]
+    expected_result = expected_result.reindex(columns=result.columns)
 
     # Assert that the result matches the expected result
     assert_frame_equal(
@@ -114,7 +115,7 @@ def test_date_part_extractor_single_unique_value():
     )
     result = extractor.fit_transform(df)
 
-    # Since there's only one unique month, no 'datetime_col_month' column should be added
+    # Since there's only one unique month, no 'datetime_col_month' or cyclic features should be added
     expected_result = pd.DataFrame(
         {
             "other_col": [1, 2],
@@ -127,3 +128,85 @@ def test_date_part_extractor_single_unique_value():
         check_like=True,
         check_dtype=False,
     )
+
+
+def test_date_part_extractor_missing_date_column(sample_dataframe, caplog):
+    # Create an instance of DatePartExtractor with a non-existent date column
+    extractor = DatePartExtractor(
+        date_columns=["non_existent_datetime_col"],
+        date_parts=["year"],
+    )
+
+    with caplog.at_level(logging.WARNING):
+        # Call fit_transform which should log a warning
+        result = extractor.fit_transform(sample_dataframe)
+
+    # Check that a warning was logged
+    assert any(
+        "Date column non_existent_datetime_col not found in dataframe." in message
+        for message in caplog.text.splitlines()
+    ), "Expected warning for missing date column was not logged."
+
+    # The result should be the same as the input dataframe with the original date column dropped
+    # Since the date column doesn't exist, the DataFrame remains unchanged except for the attempted drop
+    expected_result = sample_dataframe.copy()
+
+    # Assert that the result matches the expected result
+    assert_frame_equal(
+        result.reset_index(drop=True),
+        expected_result.reset_index(drop=True),
+        check_like=True,
+        check_dtype=False,
+    )
+
+
+def test_date_part_extractor_transform_missing_column(sample_dataframe, caplog):
+    # Create and fit the extractor
+    extractor = DatePartExtractor(
+        date_columns=["datetime_col"],
+        date_parts=["year"],
+    )
+    extractor.fit_transform(sample_dataframe)
+
+    # Modify the dataframe by dropping the date column
+    transformed_df = sample_dataframe.drop(columns=["datetime_col"])
+
+    with caplog.at_level(logging.WARNING):
+        # Attempt to transform the modified dataframe, which lacks the date column
+        result = extractor.transform(transformed_df)
+
+    # Check that a warning was logged
+    assert any(
+        "Date column datetime_col not found in dataframe." in message
+        for message in caplog.text.splitlines()
+    ), "Expected warning for missing date column during transform was not logged."
+
+    # The result should be the same as the input transformed_df with the date column already dropped
+    expected_result = transformed_df.copy()
+
+    # Assert that the result matches the expected result
+    assert_frame_equal(
+        result.reset_index(drop=True),
+        expected_result.reset_index(drop=True),
+        check_like=True,
+        check_dtype=False,
+    )
+
+
+def test_date_part_extractor_transform_unfitted_column(sample_dataframe, caplog):
+    # Create an extractor but do not fit it
+    extractor = DatePartExtractor(
+        date_columns=["datetime_col"],
+        date_parts=["year"],
+    )
+
+    with caplog.at_level(logging.WARNING):
+        # Attempt to transform without fitting
+        _result = extractor.transform(sample_dataframe)
+
+    # Since fit_transform was not called, included_date_parts should be empty
+    # A warning should be logged indicating that the column was not processed during fit_transform
+    assert any(
+        "Date column datetime_col was not processed during fit_transform." in message
+        for message in caplog.text.splitlines()
+    ), "Expected warning for unfitted date column during transform was not logged."
