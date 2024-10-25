@@ -1,4 +1,5 @@
 import logging
+
 import numpy as np
 import pandas as pd
 import pytest
@@ -202,7 +203,7 @@ def test_date_part_extractor_transform_unfitted_column(sample_dataframe, caplog)
 
     with caplog.at_level(logging.WARNING):
         # Attempt to transform without fitting
-        _result = extractor.transform(sample_dataframe)
+        extractor.transform(sample_dataframe)
 
     # Since fit_transform was not called, included_date_parts should be empty
     # A warning should be logged indicating that the column was not processed during fit_transform
