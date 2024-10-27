@@ -63,43 +63,43 @@ class ConformalPredictionWrapper(ConformalPredictionWrapperBaseClass):
         return self.model.predict_proba(x)
 
     def predict_interval(self, x: pd.DataFrame) -> np.ndarray:
+        # Get predictions and ensure preds is a numpy array
         preds = self.model.predict_proba(x)
-        if (
-            len(preds.shape) == 1
-        ):  # if a binary classifier only gives proba of target class
+        if len(preds.shape) == 1:  # binary classifier giving only target class proba
             preds = np.asarray([1 - preds, preds]).T
-
-        if isinstance(preds, pd.DataFrame):
+        elif isinstance(preds, pd.DataFrame):
             preds = preds.values
 
-        # calculate p-values (credibility intervals) for each label
-        p_values = []
-        # loop through all rows
-        for _, pred in enumerate(preds):
-            p_values_each_class = []
-            # within each row loop through each class score
-            for _class_idx, pred_j in enumerate(pred):
-                p_value = (
-                    np.sum(
-                        self.nonconformity_scores
-                        >= self.nonconformity_measure_scorer(
-                            np.asarray([1]), np.asarray([pred_j])
-                        )
-                    )
-                    # handle ties
-                    + self.random_generator.random()
-                    * np.sum(
-                        self.nonconformity_scores
-                        == self.nonconformity_measure_scorer(
-                            np.asarray([1]), np.asarray([pred_j])
-                        )
-                    )
-                    + 1
-                ) / (len(self.nonconformity_scores) + 1)
-                p_values_each_class.append(p_value)
-            p_values.append(p_values_each_class)
+        # Prepare for p-values calculation
+        n_samples = len(self.nonconformity_scores) + 1  # denominator for p-value calc
+        random_values = self.random_generator.random(len(preds) * preds.shape[1])
 
-        return np.asarray(p_values)
+        # Vectorize p-value calculations
+        p_values = np.empty_like(preds, dtype=float)
+
+        for i, pred in enumerate(preds):
+            # Compute the nonconformity measure for each class in the current row
+            nonconformity_measures = np.array(
+                [
+                    self.nonconformity_measure_scorer(np.array([1]), np.array([p]))
+                    for p in pred
+                ]
+            )
+
+            # Vectorize the p-value calculations per row
+            for j, score in enumerate(nonconformity_measures):
+                # Get counts for nonconformity score comparisons
+                greater_equal_count = np.sum(self.nonconformity_scores >= score)
+                equal_count = np.sum(self.nonconformity_scores == score)
+
+                # Compute p-value with random tie handling
+                p_values[i, j] = (
+                    greater_equal_count
+                    + random_values[i * len(pred) + j] * equal_count
+                    + 1
+                ) / n_samples
+
+        return p_values
 
     def predict_sets(self, x: pd.DataFrame, alpha: float = 0.05) -> np.ndarray:
         credible_intervals = self.predict_interval(x)
