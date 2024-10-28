@@ -38,7 +38,7 @@ class DatePartExtractor:
         else:
             self.date_parts = date_parts
         self.date_part_periods = {
-            "year": 1,
+            "year": 1,  # Year cyclicity is not meaningful, but kept for consistency
             "dayofyear": 365,
             "month": 12,
             "week_of_year": 52,
@@ -71,6 +71,8 @@ class DatePartExtractor:
                 date_part_values = None
                 if date_part == "year":
                     date_part_values = df[c].dt.year.astype(float)
+                elif date_part == "dayofyear":
+                    date_part_values = df[c].dt.dayofyear.astype(float)
                 elif date_part == "month":
                     date_part_values = df[c].dt.month.astype(float)
                 elif date_part == "week_of_year":
@@ -79,11 +81,10 @@ class DatePartExtractor:
                     date_part_values = df[c].dt.day.astype(float)
                 elif date_part == "dayofweek":
                     date_part_values = df[c].dt.dayofweek.astype(float)
-                elif date_part == "dayofyear":
-                    date_part_values = df[c].dt.dayofyear.astype(float)
                 elif date_part == "hour":
                     date_part_values = df[c].dt.hour.astype(float)
                 else:
+                    logging.warning(f"Unknown date part '{date_part}' specified.")
                     continue  # Skip unknown date_parts
 
                 if date_part_values.nunique() > 1:
@@ -109,6 +110,7 @@ class DatePartExtractor:
     def transform(self, df: pd.DataFrame) -> pd.DataFrame:
         """
         Transforms the data using the same transformations as fitted during fit_transform.
+        Always drops the original date columns to maintain consistency.
         :param df: Dataframe to be transformed.
         :return: Returns modified dataframe.
         """
@@ -121,16 +123,23 @@ class DatePartExtractor:
         for c in self.date_columns:
             if c not in df.columns:
                 logging.warning(f"Date column {c} not found in dataframe.")
+                # Even if the column is missing, attempt to drop it to maintain consistency
                 continue
+
             if c not in self.included_date_parts:
                 logging.warning(
                     f"Date column {c} was not processed during fit_transform."
                 )
+                # Drop the date column regardless of whether it was processed
+                df = df.drop(c, axis=1)
                 continue
 
             for date_part in self.included_date_parts[c]:
+                date_part_values = None
                 if date_part == "year":
                     date_part_values = df[c].dt.year.astype(float)
+                elif date_part == "dayofyear":
+                    date_part_values = df[c].dt.dayofyear.astype(float)
                 elif date_part == "month":
                     date_part_values = df[c].dt.month.astype(float)
                 elif date_part == "week_of_year":
@@ -139,12 +148,11 @@ class DatePartExtractor:
                     date_part_values = df[c].dt.day.astype(float)
                 elif date_part == "dayofweek":
                     date_part_values = df[c].dt.dayofweek.astype(float)
-                elif date_part == "dayofyear":
-                    date_part_values = df[c].dt.dayofyear.astype(float)
                 elif date_part == "hour":
                     date_part_values = df[c].dt.hour.astype(float)
                 else:
-                    continue
+                    logging.warning(f"Unknown date part '{date_part}' specified.")
+                    continue  # Skip unknown date_parts
 
                 df[f"{c}_{date_part}"] = date_part_values
 
