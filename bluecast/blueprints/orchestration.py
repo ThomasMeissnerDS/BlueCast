@@ -178,7 +178,7 @@ class OptunaWeights:
 
         :param y_preds : List of arrays containing model predictions.
         """
-        if self.weights is None:
+        if len(self.weights) == 0:
             raise ValueError("Model weights have not been optimized. Call `fit` first.")
 
         weighted_pred = np.average(np.array(y_preds), axis=0, weights=self.weights)

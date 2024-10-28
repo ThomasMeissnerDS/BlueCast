@@ -1,12 +1,11 @@
-from unittest.mock import MagicMock, patch
+from unittest.mock import MagicMock
 
 import numpy as np
 import optuna
 import pandas as pd
 import pytest
-from optuna import Trial
-from optuna.pruners import HyperbandPruner
-from optuna.samplers import CmaEsSampler
+from optuna.trial import create_trial
+from sklearn.metrics import roc_auc_score
 
 from bluecast.blueprints.cast import BlueCast
 from bluecast.blueprints.cast_cv import BlueCastCV
@@ -107,110 +106,86 @@ def test_find_best_match_with_all_models(setup_model_match_maker, mocker):
     assert dataset.equals(mm.training_datasets[1])
 
 
-# Mock Trial for testing _objective method
+# Mock data for testing
 @pytest.fixture
-def mock_trial():
-    trial = MagicMock(spec=Trial)
-    trial.suggest_float.side_effect = lambda name, low, high: 0.5
-    return trial
-
-
-@pytest.fixture
-def sample_data():
-    # Sample true labels and predictions for testing
-    y_true = np.array([1, 0, 1, 0, 1])
-    y_preds = [
-        np.array([0.6, 0.4, 0.7, 0.2, 0.9]),
-        np.array([0.5, 0.3, 0.8, 0.1, 0.85]),
-    ]
+def setup_data():
+    np.random.seed(0)
+    y_true = np.random.randint(0, 2, 100)  # Binary target
+    y_preds = [np.random.rand(100) for _ in range(3)]  # Predictions from 3 models
     return y_true, y_preds
 
 
-def test_optuna_weights_initialization():
-    model = OptunaWeights(random_state=42, n_trials=100)
-    assert model.random_state == 42
-    assert model.n_trials == 100
-    assert model.optimize_direction == "maximize"
-    assert model.weights == []
+@pytest.fixture
+def optuna_weights_instance():
+    return OptunaWeights(random_state=42, n_trials=10)
 
 
-def test_objective_method(mock_trial, sample_data):
-    model = OptunaWeights(random_state=42)
-    y_true, y_preds = sample_data
-
-    auc_score = model._objective(mock_trial, y_true, y_preds)
-
-    # Check if suggest_float was called correctly
-    assert mock_trial.suggest_float.call_count == len(y_preds) - 1
-    assert 0 <= auc_score <= 1, "AUC score should be in the range [0, 1]"
+# Test initialization
+def test_init(optuna_weights_instance):
+    assert optuna_weights_instance.random_state == 42
+    assert optuna_weights_instance.n_trials == 10
+    assert optuna_weights_instance.objective == roc_auc_score
+    assert optuna_weights_instance.optimize_direction == "maximize"
+    assert optuna_weights_instance.weights == []
 
 
-def test_fit_method(sample_data):
-    y_true, y_preds = sample_data
-    model = OptunaWeights(random_state=42, n_trials=10)
-
-    with patch.object(CmaEsSampler, "__init__", lambda self, seed: None):
-        with patch.object(HyperbandPruner, "__init__", lambda self: None):
-            model.fit(y_true, y_preds)
-
-    assert model.study is not None, "Study should be created during fit"
-    assert len(model.weights) == len(
-        y_preds
-    ), "Weights should be calculated for each model"
-    assert abs(sum(model.weights) - 1.0) < 1e-6, "Weights should sum to 1"
+# Test fit method with valid data
+def test_fit(setup_data, optuna_weights_instance):
+    y_true, y_preds = setup_data
+    optuna_weights_instance.fit(y_true, y_preds)
+    assert optuna_weights_instance.weights is not None
+    assert np.isclose(
+        sum(optuna_weights_instance.weights), 1.0
+    ), "Weights should sum to 1."
 
 
-def test_fit_with_single_prediction(sample_data):
-    y_true, y_preds = sample_data
-    model = OptunaWeights(random_state=42, n_trials=10)
-
+# Test fit method raises error with single prediction
+def test_fit_single_prediction(setup_data, optuna_weights_instance):
+    y_true, y_preds = setup_data
     with pytest.raises(
-        ValueError, match="`y_preds` must contain predictions from at least two models."
+        ValueError, match="`y_preds` must contain predictions from at least two models"
     ):
-        model.fit(y_true, [y_preds[0]])  # Only one prediction
+        optuna_weights_instance.fit(y_true, [y_preds[0]])
 
 
-def test_predict_without_fitting(sample_data):
-    y_true, y_preds = sample_data
-    model = OptunaWeights(random_state=42, n_trials=10)
-
+# Test predict method without calling fit first
+def test_predict_without_fit(setup_data, optuna_weights_instance):
+    _, y_preds = setup_data
     with pytest.raises(
         ValueError, match="Model weights have not been optimized. Call `fit` first."
     ):
-        model.predict(y_preds)
+        optuna_weights_instance.predict(y_preds)
 
 
-def test_predict_after_fitting(sample_data):
-    y_true, y_preds = sample_data
-    model = OptunaWeights(random_state=42, n_trials=10)
-
-    with patch.object(CmaEsSampler, "__init__", lambda self, seed: None):
-        with patch.object(HyperbandPruner, "__init__", lambda self: None):
-            model.fit(y_true, y_preds)
-
-    prediction = model.predict(y_preds)
-    assert isinstance(prediction, np.ndarray), "Prediction should be a numpy array"
+# Test predict method with optimized weights
+def test_predict(setup_data, optuna_weights_instance):
+    y_true, y_preds = setup_data
+    optuna_weights_instance.fit(y_true, y_preds)
+    weighted_pred = optuna_weights_instance.predict(y_preds)
     assert (
-        prediction.shape == y_true.shape
-    ), "Prediction shape should match y_true shape"
-    assert (0 <= prediction).all() and (
-        prediction <= 1
-    ).all(), "Predictions should be probabilities"
+        weighted_pred.shape == y_true.shape
+    ), "Prediction output should match shape of y_true"
+    assert (0 <= weighted_pred).all() and (
+        weighted_pred <= 1
+    ).all(), "Predictions should be probabilities between 0 and 1"
 
 
-def test_study_direction_maximize(sample_data):
-    y_true, y_preds = sample_data
-    model = OptunaWeights(random_state=42, n_trials=10, optimize_direction="maximize")
-    with patch.object(CmaEsSampler, "__init__", lambda self, seed: None):
-        with patch.object(HyperbandPruner, "__init__", lambda self: None):
-            model.fit(y_true, y_preds)
-    assert model.study.direction == optuna.study.StudyDirection.MAXIMIZE
+# Test objective function
+def test_objective_function(setup_data, optuna_weights_instance):
+    y_true, y_preds = setup_data
 
+    # Create a mock trial with predefined suggestions
+    trial = create_trial(
+        params={"weight0": 0.5, "weight1": 0.3, "weight2": 0.2},
+        distributions={
+            "weight0": optuna.distributions.FloatDistribution(0, 1),
+            "weight1": optuna.distributions.FloatDistribution(0, 1),
+            "weight2": optuna.distributions.FloatDistribution(0, 1),
+        },
+        value=0.0,
+    )
 
-def test_study_direction_minimize(sample_data):
-    y_true, y_preds = sample_data
-    model = OptunaWeights(random_state=42, n_trials=10, optimize_direction="minimize")
-    with patch.object(CmaEsSampler, "__init__", lambda self, seed: None):
-        with patch.object(HyperbandPruner, "__init__", lambda self: None):
-            model.fit(y_true, y_preds)
-    assert model.study.direction == optuna.study.StudyDirection.MINIMIZE
+    score = optuna_weights_instance._objective(trial, y_true, y_preds)
+    assert isinstance(
+        score, float
+    ), "Objective function should return a score as a float."

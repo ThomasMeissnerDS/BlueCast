@@ -28,6 +28,7 @@ class DatePartExtractor:
         if date_parts is None:
             self.date_parts = [
                 "year",
+                "dayofyear",
                 "week_of_year",
                 "month",
                 "day",
@@ -37,18 +38,16 @@ class DatePartExtractor:
         else:
             self.date_parts = date_parts
         self.date_part_periods = {
+            "year": 1,
+            "dayofyear": 365,
             "month": 12,
             "week_of_year": 52,
             "day": 31,
             "dayofweek": 7,
             "hour": 24,
         }
-        self.included_date_parts: Dict[Union[str, int, float], List[str]] = (
-            {}
-        )  # To store date parts included for each date column
-        self.included_cyclic_features: Dict[Union[str, int, float], List[str]] = (
-            {}
-        )  # To store cyclic features included for each date column
+        self.included_date_parts: Dict[Union[str, int, float], List[str]] = {}
+        self.included_cyclic_features: Dict[Union[str, int, float], List[str]] = {}
 
     def fit_transform(self, df: pd.DataFrame) -> pd.DataFrame:
         """
@@ -80,6 +79,8 @@ class DatePartExtractor:
                     date_part_values = df[c].dt.day.astype(float)
                 elif date_part == "dayofweek":
                     date_part_values = df[c].dt.dayofweek.astype(float)
+                elif date_part == "dayofyear":
+                    date_part_values = df[c].dt.dayofyear.astype(float)
                 elif date_part == "hour":
                     date_part_values = df[c].dt.hour.astype(float)
                 else:
@@ -138,6 +139,8 @@ class DatePartExtractor:
                     date_part_values = df[c].dt.day.astype(float)
                 elif date_part == "dayofweek":
                     date_part_values = df[c].dt.dayofweek.astype(float)
+                elif date_part == "dayofyear":
+                    date_part_values = df[c].dt.dayofyear.astype(float)
                 elif date_part == "hour":
                     date_part_values = df[c].dt.hour.astype(float)
                 else:
