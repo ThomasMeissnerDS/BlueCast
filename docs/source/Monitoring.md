@@ -106,7 +106,13 @@ model_matchmaker.append_model_and_dataset(
 )
 
 # retrieve best modela nd dataset based on best adversarial score
-automl, historic_df = model_matchmaker.find_best_match(new_dataset, numeric_cols, 0.1)
+automl, historic_df = model_matchmaker.find_best_match(
+    new_dataset,
+    numeric_cols,
+    cat_columns=[],
+    delta=0.1,
+    train_on_device='cpu'  # chose 'gpu' for additional speed
+)
 ```
 
 Please note that  `find_best_match` requires a list of column names

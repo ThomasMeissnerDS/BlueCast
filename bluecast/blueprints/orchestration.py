@@ -48,6 +48,7 @@ class ModelMatchMaker:
         use_cols: List[Union[int, float, str]],
         cat_columns: Optional[List],
         delta: float,
+        train_on_device: str = "cpu",
     ) -> Tuple[
         Optional[Union[BlueCast, BlueCastRegression, BlueCastCV, BlueCastCVRegression]],
         Optional[pd.DataFrame],
@@ -59,6 +60,7 @@ class ModelMatchMaker:
         :param delta: Maximum delta for the adversarial validation score to be away from 0.5. If no dataset reaches this
          delta, (None, None) is returned.
         :param cat_columns: (Optional) List with names of categorical columns.
+        :param train_on_device: Device to train the model on. Options are 'cpu' and 'gpu'. (Default is 'cpu')
         :return: If a match is found, the BlueCast instance and the dataset are returned. Otherwise, (None, None) is
             returned.
         """
@@ -71,6 +73,7 @@ class ModelMatchMaker:
                 self.training_datasets[idx].loc[:, use_cols],
                 df.loc[:, use_cols],
                 cat_columns,
+                train_on_device=train_on_device,
             )
             score_delta = np.abs(auc_score - 0.5)
             if score_delta < best_score and np.abs(auc_score - 0.5) <= delta:
