@@ -1,17 +1,14 @@
 from unittest.mock import MagicMock
 
 import numpy as np
-import optuna
 import pandas as pd
 import pytest
-from optuna.trial import create_trial
-from sklearn.metrics import roc_auc_score
 
 from bluecast.blueprints.cast import BlueCast
 from bluecast.blueprints.cast_cv import BlueCastCV
 from bluecast.blueprints.cast_cv_regression import BlueCastCVRegression
 from bluecast.blueprints.cast_regression import BlueCastRegression
-from bluecast.blueprints.orchestration import ModelMatchMaker, OptunaWeights
+from bluecast.blueprints.orchestration import ModelMatchMaker
 from bluecast.monitoring.data_monitoring import DataDrift
 
 
@@ -104,88 +101,3 @@ def test_find_best_match_with_all_models(setup_model_match_maker, mocker):
     # Verify the model with the best score is chosen
     assert model == model2
     assert dataset.equals(mm.training_datasets[1])
-
-
-# Mock data for testing
-@pytest.fixture
-def setup_data():
-    np.random.seed(0)
-    y_true = np.random.randint(0, 2, 100)  # Binary target
-    y_preds = [np.random.rand(100) for _ in range(3)]  # Predictions from 3 models
-    return y_true, y_preds
-
-
-@pytest.fixture
-def optuna_weights_instance():
-    return OptunaWeights(random_state=42, n_trials=10)
-
-
-# Test initialization
-def test_init(optuna_weights_instance):
-    assert optuna_weights_instance.random_state == 42
-    assert optuna_weights_instance.n_trials == 10
-    assert optuna_weights_instance.objective == roc_auc_score
-    assert optuna_weights_instance.optimize_direction == "maximize"
-    assert optuna_weights_instance.weights == []
-
-
-# Test fit method with valid data
-def test_fit(setup_data, optuna_weights_instance):
-    y_true, y_preds = setup_data
-    optuna_weights_instance.fit(y_true, y_preds)
-    assert optuna_weights_instance.weights is not None
-    assert np.isclose(
-        sum(optuna_weights_instance.weights), 1.0
-    ), "Weights should sum to 1."
-
-
-# Test fit method raises error with single prediction
-def test_fit_single_prediction(setup_data, optuna_weights_instance):
-    y_true, y_preds = setup_data
-    with pytest.raises(
-        ValueError, match="`y_preds` must contain predictions from at least two models"
-    ):
-        optuna_weights_instance.fit(y_true, [y_preds[0]])
-
-
-# Test predict method without calling fit first
-def test_predict_without_fit(setup_data, optuna_weights_instance):
-    _, y_preds = setup_data
-    with pytest.raises(
-        ValueError, match="Model weights have not been optimized. Call `fit` first."
-    ):
-        optuna_weights_instance.predict(y_preds)
-
-
-# Test predict method with optimized weights
-def test_predict(setup_data, optuna_weights_instance):
-    y_true, y_preds = setup_data
-    optuna_weights_instance.fit(y_true, y_preds)
-    weighted_pred = optuna_weights_instance.predict(y_preds)
-    assert (
-        weighted_pred.shape == y_true.shape
-    ), "Prediction output should match shape of y_true"
-    assert (0 <= weighted_pred).all() and (
-        weighted_pred <= 1
-    ).all(), "Predictions should be probabilities between 0 and 1"
-
-
-# Test objective function
-def test_objective_function(setup_data, optuna_weights_instance):
-    y_true, y_preds = setup_data
-
-    # Create a mock trial with predefined suggestions
-    trial = create_trial(
-        params={"weight0": 0.5, "weight1": 0.3, "weight2": 0.2},
-        distributions={
-            "weight0": optuna.distributions.FloatDistribution(0, 1),
-            "weight1": optuna.distributions.FloatDistribution(0, 1),
-            "weight2": optuna.distributions.FloatDistribution(0, 1),
-        },
-        value=0.0,
-    )
-
-    score = optuna_weights_instance._objective(trial, y_true, y_preds)
-    assert isinstance(
-        score, float
-    ), "Objective function should return a score as a float."

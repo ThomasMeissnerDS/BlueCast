@@ -1,14 +1,9 @@
 """Module containing model orchestration tools."""
 
-from functools import partial
-from typing import Callable, List, Literal, Optional, Tuple, Union
+from typing import List, Optional, Tuple, Union
 
 import numpy as np
-import optuna
 import pandas as pd
-from optuna.pruners import HyperbandPruner
-from optuna.samplers import CmaEsSampler
-from sklearn.metrics import roc_auc_score
 
 from bluecast.blueprints.cast import BlueCast
 from bluecast.blueprints.cast_cv import BlueCastCV
@@ -89,100 +84,3 @@ class ModelMatchMaker:
         else:
             print("No training dataset has reached the threshold criterium.")
             return None, None
-
-
-class OptunaWeights:
-    """
-    Optimize the weights of multiple models using Optuna.
-
-    :param random_state: Random state for reproducibility.
-    :param n_trials: Number of trials to run.
-    :param objective: Objective function to optimize.
-    :param optimize_direction: Direction to optimize in (either 'maximize' or 'minimize').
-    """
-
-    def __init__(
-        self,
-        random_state,
-        n_trials: int = 5000,
-        objective: Callable = roc_auc_score,
-        optimize_direction: Literal["minimize", "maximize"] = "maximize",
-    ):
-        self.study = None
-        self.weights: List[float] = []
-        self.random_state = random_state
-        self.n_trials = n_trials
-        self.objective = objective
-        self.optimize_direction = optimize_direction
-
-    def _objective(
-        self, trial: optuna.Trial, y_true: np.ndarray, y_preds: List[np.ndarray]
-    ) -> float:
-        """
-        Objective function for Optuna, defines the weighted prediction and computes the score.
-
-        Parameters
-        ----------
-        :param trial: Optuna trial object to suggest weight values.
-        :param y_true: Array of true target values.
-        :param y_preds: List of arrays containing model predictions.
-        """
-        weights = [
-            trial.suggest_float(f"weight{n}", 0, 1) for n in range(len(y_preds) - 1)
-        ]
-        weights.append(1 - sum(weights))  # Ensure weights sum to 1
-
-        weighted_pred = np.average(np.array(y_preds), axis=0, weights=weights)
-        auc_cv = self.objective(y_true, weighted_pred)
-        return auc_cv
-
-    def fit(self, y_true: np.ndarray, y_preds: List[np.ndarray]) -> None:
-        """
-        Optimize weights for each model's prediction based on the objective function.
-
-        :param y_true : Array of true target values.
-        :param y_preds : List of arrays containing model predictions from different models.
-        """
-        if len(y_preds) < 2:
-            raise ValueError(
-                "`y_preds` must contain predictions from at least two models."
-            )
-
-        optuna.logging.set_verbosity(optuna.logging.ERROR)
-        sampler = CmaEsSampler(seed=self.random_state)
-        pruner = HyperbandPruner()
-        self.study = optuna.create_study(
-            sampler=sampler,
-            pruner=pruner,
-            study_name="OptunaWeights",
-            direction=self.optimize_direction,
-        )
-
-        objective_partial = partial(self._objective, y_true=y_true, y_preds=y_preds)
-
-        if isinstance(self.study, optuna.study.Study):
-            self.study.optimize(
-                objective_partial, n_trials=self.n_trials, show_progress_bar=True
-            )
-        else:
-            raise ValueError(
-                "Optuna study has not been created. Please create a GitHub issue."
-            )
-
-        weights = [
-            self.study.best_params[f"weight{n}"] for n in range(len(y_preds) - 1)
-        ]
-        weights.append(1 - sum(weights))  # Ensure weights sum to 1
-        self.weights = weights
-
-    def predict(self, y_preds: List[np.ndarray]) -> np.ndarray:
-        """
-        Generate weighted prediction using the optimized weights.
-
-        :param y_preds : List of arrays containing model predictions.
-        """
-        if len(self.weights) == 0:
-            raise ValueError("Model weights have not been optimized. Call `fit` first.")
-
-        weighted_pred = np.average(np.array(y_preds), axis=0, weights=self.weights)
-        return weighted_pred

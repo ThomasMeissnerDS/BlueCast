@@ -19,7 +19,6 @@ packages = [
 
 [tool.poetry.dependencies]
 python = ">=3.9,<3.13"# lower not possible: https://github.com/python-poetry/poetry/issues/5628
-cmaes = ">=0.8.2"
 category_encoders = "^2.3.0"
 dill = "^0.3.3"
 # fastparquet = ">= 2023.1.0"
