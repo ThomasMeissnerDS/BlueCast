@@ -397,7 +397,7 @@ class XgboostModel(BaseClassMlModel):
             logging.info(
                 f"Hyperparameter tuning using random seed {self.conf_training.global_random_state + rst}"
             )
-            sampler = optuna.samplers.HEBOSampler(
+            sampler = optuna.samplers.TPESampler(
                 multivariate=True,
                 seed=self.conf_training.global_random_state + rst,
                 n_startup_trials=self.conf_training.optuna_sampler_n_startup_trials,
