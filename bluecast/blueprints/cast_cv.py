@@ -212,7 +212,14 @@ class BlueCastCV:
         if not self.conf_training:
             self.conf_training = TrainingConfig()
 
-        if not self.stratifier:
+        if not self.stratifier and self.class_problem == "multiclass":
+            self.stratifier = RepeatedStratifiedKFold(
+                n_splits=self.conf_training.bluecast_cv_train_n_model[0],
+                n_repeats=self.conf_training.bluecast_cv_train_n_model[1],
+                random_state=self.conf_training.global_random_state,
+            )
+
+        elif not self.stratifier:
             self.stratifier = RepeatedKFold(
                 n_splits=self.conf_training.bluecast_cv_train_n_model[0],
                 n_repeats=self.conf_training.bluecast_cv_train_n_model[1],
