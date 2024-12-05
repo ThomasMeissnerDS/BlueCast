@@ -4,7 +4,7 @@ from typing import Any, List, Literal, Optional, Tuple, Union
 
 import numpy as np
 import pandas as pd
-from sklearn.model_selection import RepeatedKFold, RepeatedStratifiedKFold
+from sklearn.model_selection import RepeatedStratifiedKFold
 
 from bluecast.blueprints.cast import BlueCast
 from bluecast.config.training_config import (
@@ -147,15 +147,8 @@ class BlueCastCV:
         if not self.conf_training:
             self.conf_training = TrainingConfig()
 
-        if not self.stratifier and self.class_problem == "multiclass":
+        if not self.stratifier:
             self.stratifier = RepeatedStratifiedKFold(
-                n_splits=self.conf_training.bluecast_cv_train_n_model[0],
-                n_repeats=self.conf_training.bluecast_cv_train_n_model[1],
-                random_state=self.conf_training.global_random_state,
-            )
-
-        elif not self.stratifier:
-            self.stratifier = RepeatedKFold(
                 n_splits=self.conf_training.bluecast_cv_train_n_model[0],
                 n_repeats=self.conf_training.bluecast_cv_train_n_model[1],
                 random_state=self.conf_training.global_random_state,
@@ -212,15 +205,8 @@ class BlueCastCV:
         if not self.conf_training:
             self.conf_training = TrainingConfig()
 
-        if not self.stratifier and self.class_problem == "multiclass":
+        if not self.stratifier:
             self.stratifier = RepeatedStratifiedKFold(
-                n_splits=self.conf_training.bluecast_cv_train_n_model[0],
-                n_repeats=self.conf_training.bluecast_cv_train_n_model[1],
-                random_state=self.conf_training.global_random_state,
-            )
-
-        elif not self.stratifier:
-            self.stratifier = RepeatedKFold(
                 n_splits=self.conf_training.bluecast_cv_train_n_model[0],
                 n_repeats=self.conf_training.bluecast_cv_train_n_model[1],
                 random_state=self.conf_training.global_random_state,
