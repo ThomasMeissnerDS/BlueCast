@@ -33,6 +33,7 @@ def test_shap_explanations():
     df_train = create_synthetic_dataframe(200, random_state=20)
     df_val = create_synthetic_dataframe(100, random_state=21)
     xgboost_param_config = XgboostTuneParamsConfig()
+    xgboost_param_config.steps_min = 2
     xgboost_param_config.steps_max = 100
     train_config = TrainingConfig()
     train_config.hyperparameter_tuning_rounds = 10
