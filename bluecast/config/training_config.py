@@ -141,7 +141,7 @@ class XgboostTuneParamsConfig(BaseModel):
     max_bin_max: int = 1024
     eta_min: float = 1e-3
     eta_max: float = 0.3
-    steps_min: int = 50
+    steps_min: int = 1000
     steps_max: int = 1000
     verbosity_during_hyperparameter_tuning: int = 0
     verbosity_during_final_model_training: int = 0
@@ -176,7 +176,7 @@ class XgboostTuneParamsRegressionConfig(BaseModel):
     max_bin_max: int = 1025
     eta_min: float = 1e-3
     eta_max: float = 0.3
-    steps_min: int = 50
+    steps_min: int = 1000
     steps_max: int = 1000
     verbosity_during_hyperparameter_tuning: int = 0
     verbosity_during_final_model_training: int = 0

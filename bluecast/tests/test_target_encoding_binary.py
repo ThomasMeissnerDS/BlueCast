@@ -9,9 +9,9 @@ def sample_data():
     # Sample data for testing
     data = pd.DataFrame(
         {
-            "col1": ["A", "B", "C", "A", "B", "C"],
-            "col2": ["X", "Y", "Z", "X", "Y", "Z"],
-            "target": [0, 1, 0, 1, 0, 1],
+            "col1": ["A", "B", "C", "A", "B", "C", "A", "B", "C", "A", "B", "C"],
+            "col2": ["X", "Y", "Z", "X", "Y", "Z", "X", "Y", "Z", "X", "Y", "Z"],
+            "target": [0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1],
         }
     )
     return data
@@ -37,6 +37,9 @@ def test_transform_target_encode_binary_class(sample_data):
 
     # Check if the transformed data values are as expected
     expected_values = pd.DataFrame(
-        {"col1": [0.5, 0.5, 0.5, 0.5, 0.5, 0.5], "col2": [0.5, 0.5, 0.5, 0.5, 0.5, 0.5]}
+        {
+            "col1": [0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5],
+            "col2": [0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5],
+        }
     )
     pd.testing.assert_frame_equal(transformed_data, expected_values)

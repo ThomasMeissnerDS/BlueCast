@@ -225,7 +225,11 @@ class DataDrift:
         plt.close()
 
     def adversarial_validation(
-        self, df: pd.DataFrame, df_new: pd.DataFrame, cat_columns: Optional[List]
+        self,
+        df: pd.DataFrame,
+        df_new: pd.DataFrame,
+        cat_columns: Optional[List],
+        train_on_device: str = "cpu",
     ) -> float:
         """
         Perform adversarial validation to check if the new data is similar to the training data.
@@ -238,6 +242,7 @@ class DataDrift:
         :param df: Baseline DataFrame that is the point of comparison.
         :param df_new: New DataFrame to compare against the baseline.
         :param cat_columns: (Optional) List with names of categorical columns.
+        :param train_on_device: Device to train the model on. Options are 'cpu' and 'gpu'. (Default is 'cpu')
         :return: Auc score that indicates similarity and displays feature importance.
         """
         # add the train/test labels
@@ -269,6 +274,7 @@ class DataDrift:
             "eval_metric": "logloss",
             "learning_rate": 0.05,
             "max_depth": 5,
+            "device": train_on_device,
         }
 
         # Train the model

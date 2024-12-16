@@ -408,7 +408,7 @@ class XgboostModel(BaseClassMlModel):
                 sampler=sampler,
                 study_name="xgboost tuning",
                 pruner=optuna.pruners.MedianPruner(
-                    n_startup_trials=20,
+                    n_startup_trials=10,
                     n_warmup_steps=20,
                 ),
             )
@@ -829,7 +829,7 @@ class XgboostModel(BaseClassMlModel):
         study = optuna.create_study(
             direction=self.conf_xgboost.xgboost_eval_metric_tune_direction,
             sampler=optuna.samplers.GridSampler(search_space),
-            pruner=optuna.pruners.MedianPruner(n_startup_trials=20, n_warmup_steps=50),
+            pruner=optuna.pruners.MedianPruner(n_startup_trials=10, n_warmup_steps=50),
         )
         study.optimize(
             objective,
