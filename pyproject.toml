@@ -31,7 +31,7 @@ plotly = "^5"
 polars = ">= 0.20.0, != 1.7.0"
 pyarrow = ">=10.0.0"  # former: "<0.17.0"
 seaborn = ">=0.10.0"
-scikit-learn = ">=1.6.1,<1.7"  # needs xgboost to be updated first: https://stackoverflow.com/questions/79290968/super-object-has-no-attribute-sklearn-tags
+scikit-learn = "<1.6.0"  # needs xgboost to be updated first: https://stackoverflow.com/questions/79290968/super-object-has-no-attribute-sklearn-tags
 shap = ">=0.44.1" # versions of 0.39 and less require numpy 1.23 and less, pined to 0.44.1 because otherwise Shap print dependence instead of summary plot
 s3fs = ">=2022.1.0"
 xgboost = "<2.2.0" # from here saving as binary is not default anymore
