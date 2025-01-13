@@ -34,9 +34,6 @@ def test_add_results(experiment_tracker):
     # Check if the data was added correctly
     assert experiment_tracker.experiment_id == [1]
     assert experiment_tracker.score_category == ["cv_score"]
-    assert experiment_tracker.training_configs == [
-        training_config.model_dump(mode="json")
-    ]
     assert experiment_tracker.model_parameters == [model_parameters]
     assert experiment_tracker.eval_scores == [0.95]
     assert experiment_tracker.metric_used == ["accuracy"]

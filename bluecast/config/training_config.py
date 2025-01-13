@@ -8,6 +8,8 @@ Default configurations can be loaded, adjusted and passed into the blueprints.
 
 from typing import Dict, List, Literal, Optional, Tuple
 
+from bluecast.config.base_classes import check_types_init
+
 
 class TrainingConfig:
     """Define general training parameters.
@@ -210,6 +212,7 @@ class XgboostTuneParamsConfig:
     :param xgboost_eval_metric_tune_direction: Direction to tune the evaluation metric. Defaults to "minimize".
     """
 
+    @check_types_init
     def __init__(
         self,
         max_depth_min: int = 1,
@@ -331,6 +334,7 @@ class XgboostTuneParamsRegressionConfig:
     :param xgboost_eval_metric_tune_direction: Direction to tune the evaluation metric. Defaults to "minimize".
     """
 
+    @check_types_init
     def __init__(
         self,
         max_depth_min: int = 1,
