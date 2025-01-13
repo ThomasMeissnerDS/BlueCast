@@ -78,10 +78,13 @@ def update_params_with_best_params(
 ) -> Dict[str, Any]:
     """Update parameters based on best parameters after tuning."""
 
+    # Convert best_params to a dictionary-like object
+    best_params_dict = best_params.dict()
+
     params_to_check = ["tree_method", "booster", "grow_policy", "max_bin"]
     for param_name in params_to_check:
-        if param_name in best_params:
-            param[param_name] = best_params[param_name]
+        if param_name in best_params_dict:
+            param[param_name] = best_params_dict[param_name]
     return param
 
 

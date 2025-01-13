@@ -8,12 +8,6 @@ Default configurations can be loaded, adjusted and passed into the blueprints.
 
 from typing import Dict, List, Literal, Optional, Tuple
 
-from pydantic.dataclasses import dataclass
-
-
-class Config:
-    arbitrary_types_allowed = True
-
 
 class TrainingConfig:
     """Define general training parameters.
@@ -99,7 +93,7 @@ class TrainingConfig:
         plot_hyperparameter_tuning_overview: bool = True,
         enable_feature_selection: bool = False,
         calculate_shap_values: bool = True,
-        shap_waterfall_indices: List[int] = [],
+        shap_waterfall_indices: Optional[List[Optional[int]]] = None,
         show_dependence_plots_of_top_n_features: int = 0,
         store_shap_values_in_instance: bool = False,
         train_size: float = 0.8,
@@ -142,7 +136,10 @@ class TrainingConfig:
         self.plot_hyperparameter_tuning_overview = plot_hyperparameter_tuning_overview
         self.enable_feature_selection = enable_feature_selection
         self.calculate_shap_values = calculate_shap_values
-        self.shap_waterfall_indices = shap_waterfall_indices
+
+        if self.shap_waterfall_indices is None:
+            self.shap_waterfall_indices: List[Optional[int]] = []
+
         self.show_dependence_plots_of_top_n_features = (
             show_dependence_plots_of_top_n_features
         )
@@ -179,7 +176,39 @@ class TrainingConfig:
 
 
 class XgboostTuneParamsConfig:
-    """Define hyperparameter tuning search space."""
+    """Define hyperparameter tuning search space.
+
+    :param max_depth_min: Minimum value for the maximum depth of the trees. Defaults to 1.
+    :param max_depth_max: Maximum value for the maximum depth of the trees. Defaults to 10.
+    :param alpha_min: Minimum value for L1 regularization term (alpha). Defaults to 1e-8.
+    :param alpha_max: Maximum value for L1 regularization term (alpha). Defaults to 100.
+    :param lambda_min: Minimum value for L2 regularization term (lambda). Defaults to 1.
+    :param lambda_max: Maximum value for L2 regularization term (lambda). Defaults to 100.
+    :param gamma_min: Minimum value for minimum loss reduction required to make a further partition on a leaf node of the tree (gamma). Defaults to 1e-8.
+    :param gamma_max: Maximum value for minimum loss reduction required to make a further partition on a leaf node of the tree (gamma). Defaults to 10.
+    :param min_child_weight_min: Minimum value for minimum sum of instance weight (hessian) needed in a child. Defaults to 1.
+    :param min_child_weight_max: Maximum value for minimum sum of instance weight (hessian) needed in a child. Defaults to 100.
+    :param sub_sample_min: Minimum value of subsample ratio of the training instances. Defaults to 0.1.
+    :param sub_sample_max: Maximum value of subsample ratio of the training instances. Defaults to 1.0.
+    :param col_sample_by_tree_min: Minimum value of subsample ratio of columns when constructing each tree. Defaults to 0.1.
+    :param col_sample_by_tree_max: Maximum value of subsample ratio of columns when constructing each tree. Defaults to 1.0.
+    :param col_sample_by_level_min: Minimum value of subsample columns for each split in each level. Defaults to 1.0.
+    :param col_sample_by_level_max: Maximum value of subsample columns for each split in each level. Defaults to 1.0.
+    :param max_bin_min: Minimum value for maximum number of bins. Defaults to 128.
+    :param max_bin_max: Maximum value for maximum number of bins. Defaults to 1024.
+    :param eta_min: Minimum value for learning rate (eta). Defaults to 1e-3.
+    :param eta_max: Maximum value for learning rate (eta). Defaults to 0.3.
+    :param steps_min: Minimum number of boosting rounds. Defaults to 1000.
+    :param steps_max: Maximum number of boosting rounds. Defaults to 1000.
+    :param verbosity_during_hyperparameter_tuning: Verbosity level during hyperparameter tuning. Defaults to 0.
+    :param verbosity_during_final_model_training: Verbosity level during final model training. Defaults to 0.
+    :param booster: List of booster types. Defaults to ["gbtree"].
+    :param grow_policy: List of grow policies. Defaults to ["depthwise", "lossguide"].
+    :param tree_method: List of tree building methods. Defaults to ["exact", "approx", "hist"].
+    :param xgboost_objective: XGBoost objective. Defaults to "multi:softprob".
+    :param xgboost_eval_metric: XGBoost evaluation metric. Defaults to "mlogloss".
+    :param xgboost_eval_metric_tune_direction: Direction to tune the evaluation metric. Defaults to "minimize".
+    """
 
     def __init__(
         self,
@@ -207,15 +236,22 @@ class XgboostTuneParamsConfig:
         steps_max: int = 1000,
         verbosity_during_hyperparameter_tuning: int = 0,
         verbosity_during_final_model_training: int = 0,
-        booster: List[str] = ["gbtree"],
-        grow_policy: List[str] = ["depthwise", "lossguide"],
-        tree_method: List[str] = ["exact", "approx", "hist"],
+        booster: Optional[List[str]] = None,
+        grow_policy: Optional[List[str]] = None,
+        tree_method: Optional[List[str]] = None,
         xgboost_objective: str = "multi:softprob",
         xgboost_eval_metric: str = "mlogloss",
         xgboost_eval_metric_tune_direction: Literal[
             "minimize", "maximize"
         ] = "minimize",
     ):
+        if booster is None:
+            booster = ["gbtree"]
+        if grow_policy is None:
+            grow_policy = ["depthwise", "lossguide"]
+        if tree_method is None:
+            tree_method = ["exact", "approx", "hist"]
+
         self.max_depth_min = max_depth_min
         self.max_depth_max = max_depth_max
         self.alpha_min = alpha_min
@@ -261,7 +297,39 @@ class XgboostTuneParamsConfig:
 
 
 class XgboostTuneParamsRegressionConfig:
-    """Define hyperparameter tuning search space."""
+    """Define hyperparameter tuning search space.
+
+    :param max_depth_min: Minimum value for the maximum depth of the trees. Defaults to 1.
+    :param max_depth_max: Maximum value for the maximum depth of the trees. Defaults to 10.
+    :param alpha_min: Minimum value for L1 regularization term (alpha). Defaults to 1e-8.
+    :param alpha_max: Maximum value for L1 regularization term (alpha). Defaults to 100.
+    :param lambda_min: Minimum value for L2 regularization term (lambda). Defaults to 1.
+    :param lambda_max: Maximum value for L2 regularization term (lambda). Defaults to 100.
+    :param gamma_min: Minimum value for minimum loss reduction required to make a further partition on a leaf node of the tree (gamma). Defaults to 1e-8.
+    :param gamma_max: Maximum value for minimum loss reduction required to make a further partition on a leaf node of the tree (gamma). Defaults to 10.
+    :param min_child_weight_min: Minimum value for minimum sum of instance weight (hessian) needed in a child. Defaults to 1.
+    :param min_child_weight_max: Maximum value for minimum sum of instance weight (hessian) needed in a child. Defaults to 100.
+    :param sub_sample_min: Minimum value of subsample ratio of the training instances. Defaults to 0.1.
+    :param sub_sample_max: Maximum value of subsample ratio of the training instances. Defaults to 1.0.
+    :param col_sample_by_tree_min: Minimum value of subsample ratio of columns when constructing each tree. Defaults to 0.1.
+    :param col_sample_by_tree_max: Maximum value of subsample ratio of columns when constructing each tree. Defaults to 1.0.
+    :param col_sample_by_level_min: Minimum value of subsample columns for each split in each level. Defaults to 1.0.
+    :param col_sample_by_level_max: Maximum value of subsample columns for each split in each level. Defaults to 1.0.
+    :param max_bin_min: Minimum value for maximum number of bins. Defaults to 128.
+    :param max_bin_max: Maximum value for maximum number of bins. Defaults to 1024.
+    :param eta_min: Minimum value for learning rate (eta). Defaults to 1e-3.
+    :param eta_max: Maximum value for learning rate (eta). Defaults to 0.3.
+    :param steps_min: Minimum number of boosting rounds. Defaults to 1000.
+    :param steps_max: Maximum number of boosting rounds. Defaults to 1000.
+    :param verbosity_during_hyperparameter_tuning: Verbosity level during hyperparameter tuning. Defaults to 0.
+    :param verbosity_during_final_model_training: Verbosity level during final model training. Defaults to 0.
+    :param booster: List of booster types. Defaults to ["gbtree"].
+    :param grow_policy: List of grow policies. Defaults to ["depthwise", "lossguide"].
+    :param tree_method: List of tree building methods. Defaults to ["exact", "approx", "hist"].
+    :param xgboost_objective: XGBoost objective. Defaults to "reg:squarederror".
+    :param xgboost_eval_metric: XGBoost evaluation metric. Defaults to "rmse".
+    :param xgboost_eval_metric_tune_direction: Direction to tune the evaluation metric. Defaults to "minimize".
+    """
 
     def __init__(
         self,
@@ -289,15 +357,22 @@ class XgboostTuneParamsRegressionConfig:
         steps_max: int = 1000,
         verbosity_during_hyperparameter_tuning: int = 0,
         verbosity_during_final_model_training: int = 0,
-        booster: List[str] = ["gbtree"],
-        grow_policy: List[str] = ["depthwise", "lossguide"],
-        tree_method: List[str] = ["exact", "approx", "hist"],
+        booster: Optional[List[str]] = None,
+        grow_policy: Optional[List[str]] = None,
+        tree_method: Optional[List[str]] = None,
         xgboost_objective: str = "reg:squarederror",
         xgboost_eval_metric: str = "rmse",
         xgboost_eval_metric_tune_direction: Literal[
             "minimize", "maximize"
         ] = "minimize",
     ):
+        if booster is None:
+            booster = ["gbtree"]
+        if grow_policy is None:
+            grow_policy = ["depthwise", "lossguide"]
+        if tree_method is None:
+            tree_method = ["exact", "approx", "hist"]
+
         self.max_depth_min = max_depth_min
         self.max_depth_max = max_depth_max
         self.alpha_min = alpha_min
@@ -342,7 +417,6 @@ class XgboostTuneParamsRegressionConfig:
         return vars(self)
 
 
-@dataclass
 class XgboostFinalParamConfig:
     """Define final hyper parameters."""
 
@@ -367,7 +441,6 @@ class XgboostFinalParamConfig:
     classification_threshold: float = 0.5
 
 
-@dataclass
 class XgboostRegressionFinalParamConfig:
     """Define final hyper parameters."""
 
