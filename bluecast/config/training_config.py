@@ -137,7 +137,7 @@ class TrainingConfig:
         self.enable_feature_selection = enable_feature_selection
         self.calculate_shap_values = calculate_shap_values
 
-        if self.shap_waterfall_indices is None:
+        if shap_waterfall_indices is None:
             self.shap_waterfall_indices: List[Optional[int]] = []
 
         self.show_dependence_plots_of_top_n_features = (
