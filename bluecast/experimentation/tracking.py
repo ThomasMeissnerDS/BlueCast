@@ -54,10 +54,7 @@ class ExperimentTracker(BaseClassExperimentTracker):
         """
         self.experiment_id.append(experiment_id)
         self.score_category.append(score_category)
-        try:
-            self.training_configs.append(training_config.model_dump(mode="json"))
-        except AttributeError:  # triggers for older Pydantic versions
-            self.training_configs.append(training_config.dict())
+        self.training_configs.append(training_config.dict())
         self.model_parameters.append(model_parameters)
         self.eval_scores.append(eval_scores)
         self.metric_used.append(metric_used)
