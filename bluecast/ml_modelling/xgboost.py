@@ -54,7 +54,12 @@ class XgboostModel(BaseClassMlModel):
         self.model: Optional[xgb.XGBClassifier] = None
         self.class_problem = class_problem
         self.conf_training = conf_training
-        self.conf_xgboost = conf_xgboost
+
+        if conf_xgboost is None:
+            self.conf_xgboost: XgboostTuneParamsConfig = XgboostTuneParamsConfig()
+        else:
+            self.conf_xgboost = conf_xgboost
+
         self.conf_params_xgboost = conf_params_xgboost
         self.experiment_tracker = experiment_tracker
         self.custom_in_fold_preprocessor = custom_in_fold_preprocessor
