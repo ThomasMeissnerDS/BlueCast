@@ -1,3 +1,5 @@
+"""Module to create Pydantic like validations."""
+
 import inspect
 from functools import wraps
 from typing import Union, get_args, get_origin, get_type_hints
