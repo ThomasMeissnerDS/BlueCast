@@ -60,15 +60,31 @@ class XgboostModelRegression(BaseClassMlRegressionModel):
     ):
         self.model: Optional[xgb.XGBRegressor] = None
         self.class_problem = class_problem
-        self.conf_training = conf_training
-        self.conf_params_xgboost = conf_params_xgboost
+
+        if conf_training is None:
+            logging.info("Load default TrainingConfig.")
+            self.conf_training = TrainingConfig()
+        else:
+            logging.info("Load default TrainingConfig.")
+            self.conf_training = conf_training
 
         if conf_xgboost is None:
+            logging.info("Load default XgboostTuneParamsConfig.")
             self.conf_xgboost: XgboostTuneParamsRegressionConfig = (
                 XgboostTuneParamsRegressionConfig()
             )
         else:
+            logging.info("Found provided XgboostTuneParamsConfig.")
             self.conf_xgboost = conf_xgboost
+
+        if conf_params_xgboost is None:
+            logging.info("Load default XgboostRegressionFinalParamConfig.")
+            self.conf_params_xgboost: XgboostRegressionFinalParamConfig = (
+                XgboostRegressionFinalParamConfig()
+            )
+        else:
+            logging.info("Found provided XgboostRegressionFinalParamConfig.")
+            self.conf_params_xgboost = conf_params_xgboost
 
         self.experiment_tracker = experiment_tracker
         self.custom_in_fold_preprocessor = custom_in_fold_preprocessor
@@ -91,27 +107,6 @@ class XgboostModelRegression(BaseClassMlRegressionModel):
                 **{"squared": False},
             )
 
-    def check_load_confs(self):
-        """Load multiple configs or load default configs instead."""
-        logging.info("Start loading existing or default config files..")
-        if not self.conf_training:
-            self.conf_training = TrainingConfig()
-            logging.info("Load default TrainingConfig.")
-        else:
-            logging.info("Found provided TrainingConfig.")
-
-        if not self.conf_xgboost:
-            self.conf_xgboost = XgboostTuneParamsRegressionConfig()
-            logging.info("Load default XgboostTuneParamsRegressionConfig.")
-        else:
-            logging.info("Found provided XgboostTuneParamsRegressionConfig.")
-
-        if not self.conf_params_xgboost:
-            self.conf_params_xgboost = XgboostRegressionFinalParamConfig()
-            logging.info("Load default XgboostRegressionFinalParamConfig.")
-        else:
-            logging.info("Found provided XgboostRegressionFinalParamConfig.")
-
     def fit(
         self,
         x_train: pd.DataFrame,
@@ -121,7 +116,6 @@ class XgboostModelRegression(BaseClassMlRegressionModel):
     ) -> xgb.Booster:
         """Train Xgboost model. Includes hyperparameter tuning on default."""
         logging.info("Start fitting Xgboost model.")
-        self.check_load_confs()
 
         if (
             not self.conf_params_xgboost
@@ -222,8 +216,6 @@ class XgboostModelRegression(BaseClassMlRegressionModel):
             raise ValueError(
                 "conf_params_xgboost, conf_training or experiment_tracker is None"
             )
-
-        self.check_load_confs()
 
         if (
             not self.conf_params_xgboost
@@ -541,12 +533,6 @@ class XgboostModelRegression(BaseClassMlRegressionModel):
     ):
         steps = tuned_params.pop("steps", 300)
 
-        if not self.conf_training:
-            self.conf_training = TrainingConfig()
-            logging.info(
-                "Could not find Training config. Falling back to default values"
-            )
-
         stratifier = KFold(
             n_splits=self.conf_training.hypertuning_cv_folds,
             shuffle=True,
@@ -591,24 +577,12 @@ class XgboostModelRegression(BaseClassMlRegressionModel):
                 enable_categorical=self.conf_training.cat_encoding_via_ml_algorithm,
             )
 
-            if not self.conf_params_xgboost:
-                self.conf_params_xgboost = XgboostRegressionFinalParamConfig()
-                logging.info(
-                    "Could not find XgboostRegressionFinalParamConfig. Falling back to default settings."
-                )
-
             d_train = xgb.DMatrix(
                 X_train_fold,
                 label=y_train_fold,
                 enable_categorical=self.conf_training.cat_encoding_via_ml_algorithm,
             )
             eval_set = [(d_test, "test")]
-
-            if not self.conf_xgboost:
-                self.conf_xgboost = XgboostTuneParamsRegressionConfig()
-                logging.info(
-                    "Could not find XgboostTuneParamsRegressionConfig. Falling back to defaults."
-                )
 
             model = xgb.train(
                 tuned_params,
@@ -776,7 +750,6 @@ class XgboostModelRegression(BaseClassMlRegressionModel):
 
                 return adjusted_score
 
-        self.check_load_confs()
         if (
             isinstance(self.conf_params_xgboost.params["min_child_weight"], float)
             and isinstance(self.conf_params_xgboost.params["lambda"], float)
