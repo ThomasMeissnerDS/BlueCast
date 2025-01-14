@@ -74,13 +74,13 @@ def get_params_based_on_device(
 
 def update_params_with_best_params(
     param: Dict[str, Any],
-    best_params: Union[XgboostTuneParamsConfig, XgboostTuneParamsRegressionConfig],
+    best_params: Dict[str, Any],
 ) -> Dict[str, Any]:
     """Update parameters based on best parameters after tuning."""
 
     params_to_check = ["tree_method", "booster", "grow_policy", "max_bin"]
     for param_name in params_to_check:
-        if param_name in best_params:
+        if param_name in best_params.keys():
             param[param_name] = best_params[param_name]
     return param
 

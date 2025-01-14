@@ -6,17 +6,12 @@ pipeline. Pydantic dataclasses are used to allow users a pythonic way to define 
 Default configurations can be loaded, adjusted and passed into the blueprints.
 """
 
-from typing import Dict, List, Literal, Optional, Tuple
+from typing import Dict, List, Optional, Tuple
 
-from pydantic import BaseModel
-from pydantic.dataclasses import dataclass
-
-
-class Config:
-    arbitrary_types_allowed = True
+from bluecast.config.config_validations import check_types_init
 
 
-class TrainingConfig(BaseModel):
+class TrainingConfig:
     """Define general training parameters.
 
     :param global_random_state: Global random state to use for reproducibility.
@@ -38,7 +33,7 @@ class TrainingConfig(BaseModel):
     :param early_stopping_rounds: Number of early stopping rounds during final training or when hyperparameter tuning
         follows a single train-test split. Not used when custom ML model is passed.
     :param autotune_model: Whether to autotune the model. Not used when custom ML model is passed.
-    :param autotune_on_device: Whether to autotune on CPU or GPU. Chose any of ["auto", "gpu", "cpu"].
+    :param autotune_on_device: Whether to autotune on CPU or GPU. Chose any of [F"gpu", "cpu"].
         Not used when custom ML model is passed.
     :param autotune_n_random_seeds: Number of random seeds to use for autotuning. This changes Optuna's random seed only.
         Will be updated back after every nth trial back again. Not used when custom ML model is passed.
@@ -80,115 +75,348 @@ class TrainingConfig(BaseModel):
         not be stored. Shall end with a slash. Only used when BlueCast instances are called with fit_eval method.
     """
 
-    global_random_state: int = 33
-    increase_random_state_in_bluecast_cv_by: int = 200
-    shuffle_during_training: bool = True
-    hyperparameter_tuning_rounds: int = 200
-    hyperparameter_tuning_max_runtime_secs: int = 3600
-    hypertuning_cv_folds: int = 5
-    hypertuning_cv_repeats: int = 1
-    sample_data_during_tuning: bool = False
-    sample_data_during_tuning_alpha: float = 2.0
-    precise_cv_tuning: bool = False
-    early_stopping_rounds: Optional[int] = 20
-    autotune_model: bool = True
-    autotune_on_device: Literal["auto", "gpu", "cpu"] = "auto"
-    autotune_n_random_seeds: int = 1
-    update_hyperparameter_search_space_after_nth_trial: int = 200
-    plot_hyperparameter_tuning_overview: bool = True
-    enable_feature_selection: bool = False
-    calculate_shap_values: bool = True
-    shap_waterfall_indices: List[int] = []
-    show_dependence_plots_of_top_n_features: int = 0
-    store_shap_values_in_instance: bool = False
-    train_size: float = 0.8
-    train_split_stratify: bool = True
-    use_full_data_for_final_model: bool = True
-    cardinality_threshold_for_onehot_encoding: int = 5
-    infrequent_categories_threshold: int = 5
-    cat_encoding_via_ml_algorithm: bool = False
-    show_detailed_tuning_logs: bool = False
-    optuna_sampler_n_startup_trials: int = 10
-    enable_grid_search_fine_tuning: bool = False
-    gridsearch_tuning_max_runtime_secs: int = 3600
-    gridsearch_nb_parameters_per_grid: int = 5
-    bluecast_cv_train_n_model: Tuple[int, int] = (5, 1)
-    logging_file_path: Optional[str] = None
-    experiment_name: str = "new experiment"
-    out_of_fold_dataset_store_path: Optional[str] = None
+    def __init__(
+        self,
+        global_random_state: int = 33,
+        increase_random_state_in_bluecast_cv_by: int = 200,
+        shuffle_during_training: bool = True,
+        hyperparameter_tuning_rounds: int = 200,
+        hyperparameter_tuning_max_runtime_secs: int = 3600,
+        hypertuning_cv_folds: int = 5,
+        hypertuning_cv_repeats: int = 1,
+        sample_data_during_tuning: bool = False,
+        sample_data_during_tuning_alpha: float = 2.0,
+        precise_cv_tuning: bool = False,
+        early_stopping_rounds: Optional[int] = 20,
+        autotune_model: bool = True,
+        autotune_on_device: str = "cpu",
+        autotune_n_random_seeds: int = 1,
+        update_hyperparameter_search_space_after_nth_trial: int = 200,
+        plot_hyperparameter_tuning_overview: bool = True,
+        enable_feature_selection: bool = False,
+        calculate_shap_values: bool = True,
+        shap_waterfall_indices: Optional[List[Optional[int]]] = None,
+        show_dependence_plots_of_top_n_features: int = 0,
+        store_shap_values_in_instance: bool = False,
+        train_size: float = 0.8,
+        train_split_stratify: bool = True,
+        use_full_data_for_final_model: bool = True,
+        cardinality_threshold_for_onehot_encoding: int = 5,
+        infrequent_categories_threshold: int = 5,
+        cat_encoding_via_ml_algorithm: bool = False,
+        show_detailed_tuning_logs: bool = False,
+        optuna_sampler_n_startup_trials: int = 10,
+        enable_grid_search_fine_tuning: bool = False,
+        gridsearch_tuning_max_runtime_secs: int = 3600,
+        gridsearch_nb_parameters_per_grid: int = 5,
+        bluecast_cv_train_n_model: Tuple[int, int] = (5, 1),
+        logging_file_path: Optional[str] = None,
+        experiment_name: str = "new experiment",
+        out_of_fold_dataset_store_path: Optional[str] = None,
+    ):
+        self.global_random_state = global_random_state
+        self.increase_random_state_in_bluecast_cv_by = (
+            increase_random_state_in_bluecast_cv_by
+        )
+        self.shuffle_during_training = shuffle_during_training
+        self.hyperparameter_tuning_rounds = hyperparameter_tuning_rounds
+        self.hyperparameter_tuning_max_runtime_secs = (
+            hyperparameter_tuning_max_runtime_secs
+        )
+        self.hypertuning_cv_folds = hypertuning_cv_folds
+        self.hypertuning_cv_repeats = hypertuning_cv_repeats
+        self.sample_data_during_tuning = sample_data_during_tuning
+        self.sample_data_during_tuning_alpha = sample_data_during_tuning_alpha
+        self.precise_cv_tuning = precise_cv_tuning
+        self.early_stopping_rounds = early_stopping_rounds
+        self.autotune_model = autotune_model
+        self.autotune_on_device = autotune_on_device
+        self.autotune_n_random_seeds = autotune_n_random_seeds
+        self.update_hyperparameter_search_space_after_nth_trial = (
+            update_hyperparameter_search_space_after_nth_trial
+        )
+        self.plot_hyperparameter_tuning_overview = plot_hyperparameter_tuning_overview
+        self.enable_feature_selection = enable_feature_selection
+        self.calculate_shap_values = calculate_shap_values
+
+        if shap_waterfall_indices is None:
+            self.shap_waterfall_indices: List[Optional[int]] = []
+
+        self.show_dependence_plots_of_top_n_features = (
+            show_dependence_plots_of_top_n_features
+        )
+        self.store_shap_values_in_instance = store_shap_values_in_instance
+        self.train_size = train_size
+        self.train_split_stratify = train_split_stratify
+        self.use_full_data_for_final_model = use_full_data_for_final_model
+        self.cardinality_threshold_for_onehot_encoding = (
+            cardinality_threshold_for_onehot_encoding
+        )
+        self.infrequent_categories_threshold = infrequent_categories_threshold
+        self.cat_encoding_via_ml_algorithm = cat_encoding_via_ml_algorithm
+        self.show_detailed_tuning_logs = show_detailed_tuning_logs
+        self.optuna_sampler_n_startup_trials = optuna_sampler_n_startup_trials
+        self.enable_grid_search_fine_tuning = enable_grid_search_fine_tuning
+        self.gridsearch_tuning_max_runtime_secs = gridsearch_tuning_max_runtime_secs
+        self.gridsearch_nb_parameters_per_grid = gridsearch_nb_parameters_per_grid
+        self.bluecast_cv_train_n_model = bluecast_cv_train_n_model
+        self.logging_file_path = logging_file_path
+        self.experiment_name = experiment_name
+        self.out_of_fold_dataset_store_path = out_of_fold_dataset_store_path
+
+    def dict(self):
+        """
+        Return dictionary with all class attributes.
+
+        The implementation keeps backwards compatibility as this class has been a Pydantic Basemodel before.
+        """
+        return vars(self)
 
 
-class XgboostTuneParamsConfig(BaseModel):
-    """Define hyperparameter tuning search space."""
-
-    max_depth_min: int = 1
-    max_depth_max: int = 10
-    alpha_min: float = 1e-8
-    alpha_max: float = 100
-    lambda_min: float = 1
-    lambda_max: float = 100
-    gamma_min: float = 1e-8
-    gamma_max: float = 10
-    min_child_weight_min: float = 1
-    min_child_weight_max: float = 100
-    sub_sample_min: float = 0.1
-    sub_sample_max: float = 1.0
-    col_sample_by_tree_min: float = 0.1
-    col_sample_by_tree_max: float = 1.0
-    col_sample_by_level_min: float = 1.0
-    col_sample_by_level_max: float = 1.0
-    max_bin_min: int = 128
-    max_bin_max: int = 1024
-    eta_min: float = 1e-3
-    eta_max: float = 0.3
-    steps_min: int = 1000
-    steps_max: int = 1000
-    verbosity_during_hyperparameter_tuning: int = 0
-    verbosity_during_final_model_training: int = 0
-    booster: List[str] = ["gbtree"]  # "gblinear"
-    grow_policy: List[str] = ["depthwise", "lossguide"]
-    tree_method: List[str] = ["exact", "approx", "hist"]
-    xgboost_objective: str = "multi:softprob"
-    xgboost_eval_metric: str = "mlogloss"
-    xgboost_eval_metric_tune_direction: Literal["minimize", "maximize"] = "minimize"
+# TODO: CREATE BASE CLASS WITH VALIDATIONS FOR ALL FIELD and to_dict func
+# TODO: MOVE LIST defaults into constructor
 
 
-class XgboostTuneParamsRegressionConfig(BaseModel):
-    """Define hyperparameter tuning search space."""
+class XgboostTuneParamsConfig:
+    """Define hyperparameter tuning search space.
 
-    max_depth_min: int = 1
-    max_depth_max: int = 10
-    alpha_min: float = 1e-8
-    alpha_max: float = 100
-    lambda_min: float = 1
-    lambda_max: float = 100
-    gamma_min: float = 1e-8
-    gamma_max: float = 10
-    min_child_weight_min: float = 1
-    min_child_weight_max: float = 100
-    sub_sample_min: float = 0.1
-    sub_sample_max: float = 1.0
-    col_sample_by_tree_min: float = 0.1
-    col_sample_by_tree_max: float = 1.0
-    col_sample_by_level_min: float = 1.0
-    col_sample_by_level_max: float = 1.0
-    max_bin_min: int = 128
-    max_bin_max: int = 1025
-    eta_min: float = 1e-3
-    eta_max: float = 0.3
-    steps_min: int = 1000
-    steps_max: int = 1000
-    verbosity_during_hyperparameter_tuning: int = 0
-    verbosity_during_final_model_training: int = 0
-    booster: List[str] = ["gbtree"]  # "gblinear"
-    grow_policy: List[str] = ["depthwise", "lossguide"]
-    tree_method: List[str] = ["exact", "approx", "hist"]
-    xgboost_objective: str = "reg:squarederror"
-    xgboost_eval_metric: str = "rmse"
-    xgboost_eval_metric_tune_direction: Literal["minimize", "maximize"] = "minimize"
+    :param max_depth_min: Minimum value for the maximum depth of the trees. Defaults to 1.
+    :param max_depth_max: Maximum value for the maximum depth of the trees. Defaults to 10.
+    :param alpha_min: Minimum value for L1 regularization term (alpha). Defaults to 1e-8.
+    :param alpha_max: Maximum value for L1 regularization term (alpha). Defaults to 100.
+    :param lambda_min: Minimum value for L2 regularization term (lambda). Defaults to 1.
+    :param lambda_max: Maximum value for L2 regularization term (lambda). Defaults to 100.
+    :param gamma_min: Minimum value for minimum loss reduction required to make a further partition on a leaf node of the tree (gamma). Defaults to 1e-8.
+    :param gamma_max: Maximum value for minimum loss reduction required to make a further partition on a leaf node of the tree (gamma). Defaults to 10.
+    :param min_child_weight_min: Minimum value for minimum sum of instance weight (hessian) needed in a child. Defaults to 1.
+    :param min_child_weight_max: Maximum value for minimum sum of instance weight (hessian) needed in a child. Defaults to 100.
+    :param sub_sample_min: Minimum value of subsample ratio of the training instances. Defaults to 0.1.
+    :param sub_sample_max: Maximum value of subsample ratio of the training instances. Defaults to 1.0.
+    :param col_sample_by_tree_min: Minimum value of subsample ratio of columns when constructing each tree. Defaults to 0.1.
+    :param col_sample_by_tree_max: Maximum value of subsample ratio of columns when constructing each tree. Defaults to 1.0.
+    :param col_sample_by_level_min: Minimum value of subsample columns for each split in each level. Defaults to 1.0.
+    :param col_sample_by_level_max: Maximum value of subsample columns for each split in each level. Defaults to 1.0.
+    :param max_bin_min: Minimum value for maximum number of bins. Defaults to 128.
+    :param max_bin_max: Maximum value for maximum number of bins. Defaults to 1024.
+    :param eta_min: Minimum value for learning rate (eta). Defaults to 1e-3.
+    :param eta_max: Maximum value for learning rate (eta). Defaults to 0.3.
+    :param steps_min: Minimum number of boosting rounds. Defaults to 1000.
+    :param steps_max: Maximum number of boosting rounds. Defaults to 1000.
+    :param verbosity_during_hyperparameter_tuning: Verbosity level during hyperparameter tuning. Defaults to 0.
+    :param verbosity_during_final_model_training: Verbosity level during final model training. Defaults to 0.
+    :param booster: List of booster types. Defaults to ["gbtree"].
+    :param grow_policy: List of grow policies. Defaults to ["depthwise", "lossguide"].
+    :param tree_method: List of tree building methods. Defaults to ["exact", "approx", "hist"].
+    :param xgboost_objective: XGBoost objective. Defaults to "multi:softprob".
+    :param xgboost_eval_metric: XGBoost evaluation metric. Defaults to "mlogloss".
+    :param xgboost_eval_metric_tune_direction: Direction to tune the evaluation metric. Defaults to "minimize". Must be any of ['minimize', 'maximize']
+    """
+
+    @check_types_init
+    def __init__(
+        self,
+        max_depth_min: int = 1,
+        max_depth_max: int = 10,
+        alpha_min: float = 1e-8,
+        alpha_max: float = 100.0,
+        lambda_min: float = 1.0,
+        lambda_max: float = 100.0,
+        gamma_min: float = 1e-8,
+        gamma_max: float = 10.0,
+        min_child_weight_min: float = 1.0,
+        min_child_weight_max: float = 100.0,
+        sub_sample_min: float = 0.1,
+        sub_sample_max: float = 1.0,
+        col_sample_by_tree_min: float = 0.1,
+        col_sample_by_tree_max: float = 1.0,
+        col_sample_by_level_min: float = 1.0,
+        col_sample_by_level_max: float = 1.0,
+        max_bin_min: int = 128,
+        max_bin_max: int = 1024,
+        eta_min: float = 1e-3,
+        eta_max: float = 0.3,
+        steps_min: int = 1000,
+        steps_max: int = 1000,
+        verbosity_during_hyperparameter_tuning: int = 0,
+        verbosity_during_final_model_training: int = 0,
+        booster: Optional[List[str]] = None,
+        grow_policy: Optional[List[str]] = None,
+        tree_method: Optional[List[str]] = None,
+        xgboost_objective: str = "multi:softprob",
+        xgboost_eval_metric: str = "mlogloss",
+        xgboost_eval_metric_tune_direction: str = "minimize",
+    ):
+        if booster is None:
+            booster = ["gbtree"]
+        if grow_policy is None:
+            grow_policy = ["depthwise", "lossguide"]
+        if tree_method is None:
+            tree_method = ["exact", "approx", "hist"]
+
+        self.max_depth_min = max_depth_min
+        self.max_depth_max = max_depth_max
+        self.alpha_min = alpha_min
+        self.alpha_max = alpha_max
+        self.lambda_min = lambda_min
+        self.lambda_max = lambda_max
+        self.gamma_min = gamma_min
+        self.gamma_max = gamma_max
+        self.min_child_weight_min = min_child_weight_min
+        self.min_child_weight_max = min_child_weight_max
+        self.sub_sample_min = sub_sample_min
+        self.sub_sample_max = sub_sample_max
+        self.col_sample_by_tree_min = col_sample_by_tree_min
+        self.col_sample_by_tree_max = col_sample_by_tree_max
+        self.col_sample_by_level_min = col_sample_by_level_min
+        self.col_sample_by_level_max = col_sample_by_level_max
+        self.max_bin_min = max_bin_min
+        self.max_bin_max = max_bin_max
+        self.eta_min = eta_min
+        self.eta_max = eta_max
+        self.steps_min = steps_min
+        self.steps_max = steps_max
+        self.verbosity_during_hyperparameter_tuning = (
+            verbosity_during_hyperparameter_tuning
+        )
+        self.verbosity_during_final_model_training = (
+            verbosity_during_final_model_training
+        )
+        self.booster = booster
+        self.grow_policy = grow_policy
+        self.tree_method = tree_method
+        self.xgboost_objective = xgboost_objective
+        self.xgboost_eval_metric = xgboost_eval_metric
+        self.xgboost_eval_metric_tune_direction = xgboost_eval_metric_tune_direction
+
+    def dict(self):
+        """
+        Return dictionary with all class attributes.
+
+        The implementation keeps backwards compatibility as this class has been a Pydantic Basemodel before.
+        """
+        return vars(self)
 
 
-@dataclass
+class XgboostTuneParamsRegressionConfig:
+    """Define hyperparameter tuning search space.
+
+    :param max_depth_min: Minimum value for the maximum depth of the trees. Defaults to 1.
+    :param max_depth_max: Maximum value for the maximum depth of the trees. Defaults to 10.
+    :param alpha_min: Minimum value for L1 regularization term (alpha). Defaults to 1e-8.
+    :param alpha_max: Maximum value for L1 regularization term (alpha). Defaults to 100.
+    :param lambda_min: Minimum value for L2 regularization term (lambda). Defaults to 1.
+    :param lambda_max: Maximum value for L2 regularization term (lambda). Defaults to 100.
+    :param gamma_min: Minimum value for minimum loss reduction required to make a further partition on a leaf node of the tree (gamma). Defaults to 1e-8.
+    :param gamma_max: Maximum value for minimum loss reduction required to make a further partition on a leaf node of the tree (gamma). Defaults to 10.
+    :param min_child_weight_min: Minimum value for minimum sum of instance weight (hessian) needed in a child. Defaults to 1.
+    :param min_child_weight_max: Maximum value for minimum sum of instance weight (hessian) needed in a child. Defaults to 100.
+    :param sub_sample_min: Minimum value of subsample ratio of the training instances. Defaults to 0.1.
+    :param sub_sample_max: Maximum value of subsample ratio of the training instances. Defaults to 1.0.
+    :param col_sample_by_tree_min: Minimum value of subsample ratio of columns when constructing each tree. Defaults to 0.1.
+    :param col_sample_by_tree_max: Maximum value of subsample ratio of columns when constructing each tree. Defaults to 1.0.
+    :param col_sample_by_level_min: Minimum value of subsample columns for each split in each level. Defaults to 1.0.
+    :param col_sample_by_level_max: Maximum value of subsample columns for each split in each level. Defaults to 1.0.
+    :param max_bin_min: Minimum value for maximum number of bins. Defaults to 128.
+    :param max_bin_max: Maximum value for maximum number of bins. Defaults to 1024.
+    :param eta_min: Minimum value for learning rate (eta). Defaults to 1e-3.
+    :param eta_max: Maximum value for learning rate (eta). Defaults to 0.3.
+    :param steps_min: Minimum number of boosting rounds. Defaults to 1000.
+    :param steps_max: Maximum number of boosting rounds. Defaults to 1000.
+    :param verbosity_during_hyperparameter_tuning: Verbosity level during hyperparameter tuning. Defaults to 0.
+    :param verbosity_during_final_model_training: Verbosity level during final model training. Defaults to 0.
+    :param booster: List of booster types. Defaults to ["gbtree"].
+    :param grow_policy: List of grow policies. Defaults to ["depthwise", "lossguide"].
+    :param tree_method: List of tree building methods. Defaults to ["exact", "approx", "hist"].
+    :param xgboost_objective: XGBoost objective. Defaults to "reg:squarederror".
+    :param xgboost_eval_metric: XGBoost evaluation metric. Defaults to "rmse".
+    :param xgboost_eval_metric_tune_direction: Direction to tune the evaluation metric. Defaults to "minimize". Must be any of ['minimize', 'maximize']
+    """
+
+    @check_types_init
+    def __init__(
+        self,
+        max_depth_min: int = 1,
+        max_depth_max: int = 10,
+        alpha_min: float = 1e-8,
+        alpha_max: float = 100.0,
+        lambda_min: float = 1.0,
+        lambda_max: float = 100.0,
+        gamma_min: float = 1e-8,
+        gamma_max: float = 10.0,
+        min_child_weight_min: float = 1.0,
+        min_child_weight_max: float = 100.0,
+        sub_sample_min: float = 0.1,
+        sub_sample_max: float = 1.0,
+        col_sample_by_tree_min: float = 0.1,
+        col_sample_by_tree_max: float = 1.0,
+        col_sample_by_level_min: float = 1.0,
+        col_sample_by_level_max: float = 1.0,
+        max_bin_min: int = 128,
+        max_bin_max: int = 1024,
+        eta_min: float = 1e-3,
+        eta_max: float = 0.3,
+        steps_min: int = 1000,
+        steps_max: int = 1000,
+        verbosity_during_hyperparameter_tuning: int = 0,
+        verbosity_during_final_model_training: int = 0,
+        booster: Optional[List[str]] = None,
+        grow_policy: Optional[List[str]] = None,
+        tree_method: Optional[List[str]] = None,
+        xgboost_objective: str = "reg:squarederror",
+        xgboost_eval_metric: str = "rmse",
+        xgboost_eval_metric_tune_direction: str = "minimize",
+    ):
+        if booster is None:
+            booster = ["gbtree"]
+        if grow_policy is None:
+            grow_policy = ["depthwise", "lossguide"]
+        if tree_method is None:
+            tree_method = ["exact", "approx", "hist"]
+
+        self.max_depth_min = max_depth_min
+        self.max_depth_max = max_depth_max
+        self.alpha_min = alpha_min
+        self.alpha_max = alpha_max
+        self.lambda_min = lambda_min
+        self.lambda_max = lambda_max
+        self.gamma_min = gamma_min
+        self.gamma_max = gamma_max
+        self.min_child_weight_min = min_child_weight_min
+        self.min_child_weight_max = min_child_weight_max
+        self.sub_sample_min = sub_sample_min
+        self.sub_sample_max = sub_sample_max
+        self.col_sample_by_tree_min = col_sample_by_tree_min
+        self.col_sample_by_tree_max = col_sample_by_tree_max
+        self.col_sample_by_level_min = col_sample_by_level_min
+        self.col_sample_by_level_max = col_sample_by_level_max
+        self.max_bin_min = max_bin_min
+        self.max_bin_max = max_bin_max
+        self.eta_min = eta_min
+        self.eta_max = eta_max
+        self.steps_min = steps_min
+        self.steps_max = steps_max
+        self.verbosity_during_hyperparameter_tuning = (
+            verbosity_during_hyperparameter_tuning
+        )
+        self.verbosity_during_final_model_training = (
+            verbosity_during_final_model_training
+        )
+        self.booster = booster
+        self.grow_policy = grow_policy
+        self.tree_method = tree_method
+        self.xgboost_objective = xgboost_objective
+        self.xgboost_eval_metric = xgboost_eval_metric
+        self.xgboost_eval_metric_tune_direction = xgboost_eval_metric_tune_direction
+
+    def dict(self):
+        """
+        Return dictionary with all class attributes.
+
+        The implementation keeps backwards compatibility as this class has been a Pydantic Basemodel before.
+        """
+        return vars(self)
+
+
 class XgboostFinalParamConfig:
     """Define final hyper parameters."""
 
@@ -213,7 +441,6 @@ class XgboostFinalParamConfig:
     classification_threshold: float = 0.5
 
 
-@dataclass
 class XgboostRegressionFinalParamConfig:
     """Define final hyper parameters."""
 
