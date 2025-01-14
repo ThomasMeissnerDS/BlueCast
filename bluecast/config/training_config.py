@@ -8,7 +8,7 @@ Default configurations can be loaded, adjusted and passed into the blueprints.
 
 from typing import Dict, List, Literal, Optional, Tuple
 
-from bluecast.config.base_classes import check_types_init
+from bluecast.config.config_validations import check_types_init
 
 
 class TrainingConfig:
