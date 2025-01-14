@@ -34,15 +34,47 @@ def check_types_init(init_method):
 
 def _matches_type(value, expected_type) -> bool:
     """Return True if 'value' matches the 'expected_type' annotation."""
-    origin = get_origin(expected_type)
-    args = get_args(expected_type)
+    origin = get_origin(
+        expected_type
+    )  # Extract the origin of the type (e.g., list for List[int])
+    args = get_args(
+        expected_type
+    )  # Extract the type parameters (e.g., int for List[int])
 
     if origin is None:
-        # expected_type is a regular (non-parameterized) type like int or float
+        # If there's no origin, it's a non-parameterized type like int or str
         return isinstance(value, expected_type)
     elif origin is Union:
-        # e.g. Union[str, int]
+        # Handle Union types (e.g., Union[str, int])
         return any(_matches_type(value, t) for t in args)
+    elif origin in {list, set, tuple}:
+        # Handle parameterized collections like List[int], Set[str], Tuple[int, int]
+        if not isinstance(value, origin):
+            return False
+        if args:
+            if origin is tuple:
+                # Special handling for tuples
+                if len(args) == 2 and args[1] is Ellipsis:
+                    # e.g., Tuple[int, ...] (variable-length tuple)
+                    return all(_matches_type(v, args[0]) for v in value)
+                if len(value) != len(args):
+                    # Fixed-length tuple: lengths must match
+                    return False
+                return all(_matches_type(v, t) for v, t in zip(value, args))
+            # For lists and sets, check all elements
+            return all(_matches_type(v, args[0]) for v in value)
+        return True
+    elif origin is dict:
+        # Handle parameterized dictionaries like Dict[str, int]
+        if not isinstance(value, dict):
+            return False
+        if args:
+            key_type, value_type = args
+            return all(
+                _matches_type(k, key_type) and _matches_type(v, value_type)
+                for k, v in value.items()
+            )
+        return True
     else:
-        # fallback to a direct isinstance check
-        return isinstance(value, expected_type)
+        # For other parameterized or unsupported types, return False
+        return False

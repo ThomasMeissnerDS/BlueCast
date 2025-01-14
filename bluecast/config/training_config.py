@@ -6,7 +6,7 @@ pipeline. Pydantic dataclasses are used to allow users a pythonic way to define 
 Default configurations can be loaded, adjusted and passed into the blueprints.
 """
 
-from typing import Dict, List, Literal, Optional, Tuple
+from typing import Dict, List, Optional, Tuple
 
 from bluecast.config.config_validations import check_types_init
 
@@ -33,7 +33,7 @@ class TrainingConfig:
     :param early_stopping_rounds: Number of early stopping rounds during final training or when hyperparameter tuning
         follows a single train-test split. Not used when custom ML model is passed.
     :param autotune_model: Whether to autotune the model. Not used when custom ML model is passed.
-    :param autotune_on_device: Whether to autotune on CPU or GPU. Chose any of ["auto", "gpu", "cpu"].
+    :param autotune_on_device: Whether to autotune on CPU or GPU. Chose any of [F"gpu", "cpu"].
         Not used when custom ML model is passed.
     :param autotune_n_random_seeds: Number of random seeds to use for autotuning. This changes Optuna's random seed only.
         Will be updated back after every nth trial back again. Not used when custom ML model is passed.
@@ -89,7 +89,7 @@ class TrainingConfig:
         precise_cv_tuning: bool = False,
         early_stopping_rounds: Optional[int] = 20,
         autotune_model: bool = True,
-        autotune_on_device: Literal["auto", "gpu", "cpu"] = "auto",
+        autotune_on_device: str = "cpu",
         autotune_n_random_seeds: int = 1,
         update_hyperparameter_search_space_after_nth_trial: int = 200,
         plot_hyperparameter_tuning_overview: bool = True,
@@ -209,7 +209,7 @@ class XgboostTuneParamsConfig:
     :param tree_method: List of tree building methods. Defaults to ["exact", "approx", "hist"].
     :param xgboost_objective: XGBoost objective. Defaults to "multi:softprob".
     :param xgboost_eval_metric: XGBoost evaluation metric. Defaults to "mlogloss".
-    :param xgboost_eval_metric_tune_direction: Direction to tune the evaluation metric. Defaults to "minimize".
+    :param xgboost_eval_metric_tune_direction: Direction to tune the evaluation metric. Defaults to "minimize". Must be any of ['minimize', 'maximize']
     """
 
     @check_types_init
@@ -244,9 +244,7 @@ class XgboostTuneParamsConfig:
         tree_method: Optional[List[str]] = None,
         xgboost_objective: str = "multi:softprob",
         xgboost_eval_metric: str = "mlogloss",
-        xgboost_eval_metric_tune_direction: Literal[
-            "minimize", "maximize"
-        ] = "minimize",
+        xgboost_eval_metric_tune_direction: str = "minimize",
     ):
         if booster is None:
             booster = ["gbtree"]
@@ -331,7 +329,7 @@ class XgboostTuneParamsRegressionConfig:
     :param tree_method: List of tree building methods. Defaults to ["exact", "approx", "hist"].
     :param xgboost_objective: XGBoost objective. Defaults to "reg:squarederror".
     :param xgboost_eval_metric: XGBoost evaluation metric. Defaults to "rmse".
-    :param xgboost_eval_metric_tune_direction: Direction to tune the evaluation metric. Defaults to "minimize".
+    :param xgboost_eval_metric_tune_direction: Direction to tune the evaluation metric. Defaults to "minimize". Must be any of ['minimize', 'maximize']
     """
 
     @check_types_init
@@ -366,9 +364,7 @@ class XgboostTuneParamsRegressionConfig:
         tree_method: Optional[List[str]] = None,
         xgboost_objective: str = "reg:squarederror",
         xgboost_eval_metric: str = "rmse",
-        xgboost_eval_metric_tune_direction: Literal[
-            "minimize", "maximize"
-        ] = "minimize",
+        xgboost_eval_metric_tune_direction: str = "minimize",
     ):
         if booster is None:
             booster = ["gbtree"]
