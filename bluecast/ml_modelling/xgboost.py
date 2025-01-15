@@ -93,16 +93,9 @@ class XgboostModel(XgboostBaseModel):
         """Train Xgboost model. Includes hyperparameter tuning on default."""
         logging.info("Start fitting Xgboost model.")
 
-        if not self.conf_training.show_detailed_tuning_logs:
-            optuna.logging.set_verbosity(optuna.logging.WARNING)
-
-        if self.conf_training.autotune_model:
-            self.autotune(x_train, x_test, y_train, y_test)
-            print("Finished hyperparameter tuning")
-
-        if self.conf_training.enable_grid_search_fine_tuning:
-            self.fine_tune(x_train, x_test, y_train, y_test)
-            print("Finished Grid search fine tuning")
+        self.orchestrate_hyperparameter_tuning(
+            x_train=x_train, y_train=y_train, x_test=x_test, y_test=y_test
+        )
 
         logging.info("Start final model training")
         if self.custom_in_fold_preprocessor:

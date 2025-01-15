@@ -7,6 +7,7 @@ from datetime import datetime
 from typing import Any, List, Literal, Optional, Tuple, TypeVar, Union
 
 import numpy as np
+import optuna
 import pandas as pd
 import xgboost as xgb
 
@@ -156,3 +157,52 @@ class XgboostBaseModel:
             x_train[self.cat_columns] = x_train[self.cat_columns].astype("category")
 
         return x_train, y_train
+
+    def autotune(
+        self,
+        *,
+        x_train: pd.DataFrame,
+        y_train: pd.Series,
+        x_test: pd.DataFrame,
+        y_test: pd.Series,
+    ):
+        raise NotImplementedError("Method autotune has not been defined.")
+
+    def fine_tune(
+        self,
+        *,
+        x_train: pd.DataFrame,
+        y_train: pd.Series,
+        x_test: pd.DataFrame,
+        y_test: pd.Series,
+    ):
+        raise NotImplementedError("Method fine_tune has not been defined.")
+
+    def orchestrate_hyperparameter_tuning(
+        self,
+        *,
+        x_train: pd.DataFrame,
+        y_train: pd.Series,
+        x_test: pd.DataFrame,
+        y_test: pd.Series,
+    ):
+        if not self.conf_training.show_detailed_tuning_logs:
+            optuna.logging.set_verbosity(optuna.logging.WARNING)
+
+        if self.conf_training.autotune_model:
+            self.autotune(
+                x_train=x_train,
+                y_train=y_train,
+                x_test=x_test,
+                y_test=y_test,
+            )
+            print("Finished hyperparameter tuning")
+
+        if self.conf_training.enable_grid_search_fine_tuning:
+            self.fine_tune(
+                x_train=x_train,
+                y_train=y_train,
+                x_test=x_test,
+                y_test=y_test,
+            )
+            print("Finished Grid search fine tuning")
