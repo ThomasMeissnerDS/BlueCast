@@ -86,7 +86,11 @@ class XgboostModelRegression(BaseClassMlRegressionModel):
             logging.info("Found provided XgboostRegressionFinalParamConfig.")
             self.conf_params_xgboost = conf_params_xgboost
 
-        self.experiment_tracker = experiment_tracker
+        if experiment_tracker is None:
+            raise ValueError("Experiment tracker not found.")
+        else:
+            self.experiment_tracker = experiment_tracker
+
         self.custom_in_fold_preprocessor = custom_in_fold_preprocessor
         if self.conf_training:
             self.random_generator = np.random.default_rng(
@@ -116,15 +120,6 @@ class XgboostModelRegression(BaseClassMlRegressionModel):
     ) -> xgb.Booster:
         """Train Xgboost model. Includes hyperparameter tuning on default."""
         logging.info("Start fitting Xgboost model.")
-
-        if (
-            not self.conf_params_xgboost
-            or not self.conf_training
-            or not self.experiment_tracker
-        ):
-            raise ValueError(
-                "conf_params_xgboost, conf_training or experiment_tracker is None"
-            )
 
         if not self.conf_training.show_detailed_tuning_logs:
             optuna.logging.set_verbosity(optuna.logging.WARNING)
@@ -208,24 +203,6 @@ class XgboostModelRegression(BaseClassMlRegressionModel):
         An alternative config can be provided to overwrite the hyperparameter search space.
         """
         logging.info("Start hyperparameter tuning of Xgboost model.")
-        if (
-            not self.conf_params_xgboost
-            or not self.conf_training
-            or not self.experiment_tracker
-        ):
-            raise ValueError(
-                "conf_params_xgboost, conf_training or experiment_tracker is None"
-            )
-
-        if (
-            not self.conf_params_xgboost
-            or not self.conf_training
-            or not self.conf_xgboost
-            or not self.experiment_tracker
-        ):
-            raise ValueError(
-                "At least one of the configs or experiment_tracker is None, which is not allowed"
-            )
 
         train_on = get_params_based_on_device(
             self.conf_training, self.conf_params_xgboost, self.conf_xgboost
@@ -634,15 +611,6 @@ class XgboostModelRegression(BaseClassMlRegressionModel):
         y_test: pd.Series,
     ) -> None:
         logging.info("Start grid search fine tuning of Xgboost model.")
-        if (
-            not self.conf_params_xgboost
-            or not self.conf_training
-            or not self.conf_xgboost
-            or not self.experiment_tracker
-        ):
-            raise ValueError(
-                "At least one of the configs or experiment_tracker is None, which is not allowed"
-            )
 
         def objective(trial):
             d_train, d_test = self.create_d_matrices(x_train, y_train, x_test, y_test)
@@ -836,8 +804,6 @@ class XgboostModelRegression(BaseClassMlRegressionModel):
     def predict(self, df: pd.DataFrame) -> np.ndarray:
         """Predict on unseen data."""
         logging.info("Start predicting on new data using Xgboost model.")
-        if not self.conf_xgboost or not self.conf_training:
-            raise ValueError("conf_params_xgboost or conf_training is None")
 
         if self.custom_in_fold_preprocessor:
             df, _ = self.custom_in_fold_preprocessor.transform(

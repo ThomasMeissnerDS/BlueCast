@@ -77,7 +77,11 @@ class XgboostModel(BaseClassMlModel):
             logging.info("Found provided XgboostFinalParamConfig.")
             self.conf_params_xgboost = conf_params_xgboost
 
-        self.experiment_tracker = experiment_tracker
+        if experiment_tracker is None:
+            raise ValueError("Experiment tracker not found.")
+        else:
+            self.experiment_tracker = experiment_tracker
+
         self.custom_in_fold_preprocessor = custom_in_fold_preprocessor
         self.single_fold_eval_metric_func = single_fold_eval_metric_func
         if self.conf_training:
@@ -92,13 +96,6 @@ class XgboostModel(BaseClassMlModel):
         if not self.single_fold_eval_metric_func:
             self.single_fold_eval_metric_func = ClassificationEvalWrapper()
 
-    def calculate_class_weights(self, y: pd.Series) -> Dict[str, float]:
-        """Calculate class weights of target column."""
-        classes_weights = class_weight.compute_sample_weight(
-            class_weight="balanced", y=y
-        )
-        return classes_weights
-
     def fit(
         self,
         x_train: pd.DataFrame,
@@ -108,15 +105,6 @@ class XgboostModel(BaseClassMlModel):
     ) -> xgb.Booster:
         """Train Xgboost model. Includes hyperparameter tuning on default."""
         logging.info("Start fitting Xgboost model.")
-
-        if (
-            not self.conf_params_xgboost
-            or not self.conf_training
-            or not self.experiment_tracker
-        ):
-            raise ValueError(
-                "conf_params_xgboost, conf_training or experiment_tracker is None"
-            )
 
         if not self.conf_training.show_detailed_tuning_logs:
             optuna.logging.set_verbosity(optuna.logging.WARNING)
@@ -199,24 +187,6 @@ class XgboostModel(BaseClassMlModel):
         An alternative config can be provided to overwrite the hyperparameter search space.
         """
         logging.info("Start hyperparameter tuning of Xgboost model.")
-        if (
-            not self.conf_params_xgboost
-            or not self.conf_training
-            or not self.experiment_tracker
-        ):
-            raise ValueError(
-                "conf_params_xgboost, conf_training or experiment_tracker is None"
-            )
-
-        if (
-            not self.conf_params_xgboost
-            or not self.conf_training
-            or not self.conf_xgboost
-            or not self.experiment_tracker
-        ):
-            raise ValueError(
-                "At least one of the configs or experiment_tracker is None, which is not allowed"
-            )
 
         train_on = get_params_based_on_device(
             self.conf_training, self.conf_params_xgboost, self.conf_xgboost
@@ -305,7 +275,9 @@ class XgboostModel(BaseClassMlModel):
             )
 
             if sample_weight:
-                classes_weights = self.calculate_class_weights(y_train)
+                classes_weights = class_weight.compute_sample_weight(
+                    class_weight="balanced", y=y_train
+                )
                 d_train = xgb.DMatrix(
                     x_train,
                     label=y_train,
@@ -470,7 +442,9 @@ class XgboostModel(BaseClassMlModel):
 
     def create_d_matrices(self, x_train, y_train, x_test, y_test):
         if self.conf_params_xgboost.sample_weight:
-            classes_weights = self.calculate_class_weights(y_train)
+            classes_weights = class_weight.compute_sample_weight(
+                class_weight="balanced", y=y_train
+            )
             d_train = xgb.DMatrix(
                 x_train,
                 label=y_train,
@@ -589,7 +563,9 @@ class XgboostModel(BaseClassMlModel):
             )
 
             if self.conf_params_xgboost.sample_weight:
-                classes_weights = self.calculate_class_weights(y_train_fold)
+                classes_weights = class_weight.compute_sample_weight(
+                    class_weight="balanced", y=y_train_fold
+                )
                 d_train = xgb.DMatrix(
                     X_train_fold,
                     label=y_train_fold,
@@ -655,15 +631,6 @@ class XgboostModel(BaseClassMlModel):
         y_test: pd.Series,
     ) -> None:
         logging.info("Start grid search fine tuning of Xgboost model.")
-        if (
-            not self.conf_params_xgboost
-            or not self.conf_training
-            or not self.conf_xgboost
-            or not self.experiment_tracker
-        ):
-            raise ValueError(
-                "At least one of the configs or experiment_tracker is None, which is not allowed"
-            )
 
         def objective(trial):
             d_train, d_test = self.create_d_matrices(x_train, y_train, x_test, y_test)
