@@ -24,7 +24,7 @@ from bluecast.config.training_config import (
 )
 from bluecast.evaluation.eval_metrics import ClassificationEvalWrapper
 from bluecast.experimentation.tracking import ExperimentTracker
-from bluecast.ml_modelling.base_classes import BaseClassMlModel
+from bluecast.ml_modelling.base_classes import XgboostBaseModel
 from bluecast.ml_modelling.parameter_tuning_utils import (
     get_params_based_on_device,
     sample_data,
@@ -37,7 +37,7 @@ from bluecast.preprocessing.custom import CustomPreprocessing
 warnings.filterwarnings("ignore", "is_sparse is deprecated")
 
 
-class XgboostModel(BaseClassMlModel):
+class XgboostModel(XgboostBaseModel):
     """Train and/or tune Xgboost classification model."""
 
     def __init__(
@@ -51,15 +51,16 @@ class XgboostModel(BaseClassMlModel):
         cat_columns: Optional[List[Union[str, float, int]]] = None,
         single_fold_eval_metric_func: Optional[ClassificationEvalWrapper] = None,
     ):
-        self.model: Optional[xgb.XGBClassifier] = None
-        self.class_problem = class_problem
-
-        if conf_training is None:
-            logging.info("Load default TrainingConfig.")
-            self.conf_training = TrainingConfig()
-        else:
-            logging.info("Load default TrainingConfig.")
-            self.conf_training = conf_training
+        super().__init__(
+            class_problem,
+            conf_training,
+            conf_xgboost,
+            conf_params_xgboost,
+            experiment_tracker,
+            custom_in_fold_preprocessor,
+            cat_columns,
+            single_fold_eval_metric_func,
+        )
 
         if conf_xgboost is None:
             logging.info("Load default XgboostTuneParamsConfig.")
@@ -77,24 +78,10 @@ class XgboostModel(BaseClassMlModel):
             logging.info("Found provided XgboostFinalParamConfig.")
             self.conf_params_xgboost = conf_params_xgboost
 
-        if experiment_tracker is None:
-            raise ValueError("Experiment tracker not found.")
-        else:
-            self.experiment_tracker = experiment_tracker
-
-        self.custom_in_fold_preprocessor = custom_in_fold_preprocessor
-        self.single_fold_eval_metric_func = single_fold_eval_metric_func
-        if self.conf_training:
-            self.random_generator = np.random.default_rng(
-                self.conf_training.global_random_state
-            )
-        else:
-            self.random_generator = np.random.default_rng(0)
-        self.cat_columns = cat_columns
-        self.best_score: float = np.inf
-
         if not self.single_fold_eval_metric_func:
-            self.single_fold_eval_metric_func = ClassificationEvalWrapper()
+            self.single_fold_eval_metric_func: ClassificationEvalWrapper = (
+                ClassificationEvalWrapper()
+            )
 
     def fit(
         self,
@@ -127,22 +114,19 @@ class XgboostModel(BaseClassMlModel):
             )
 
         if self.conf_training.use_full_data_for_final_model:
-            logging.info(
-                """Union train and test data for final model training based on TrainingConfig
-             param 'use_full_data_for_final_model'"""
+            x_train, y_train = self.concat_prepare_full_train_datasets(
+                x_train=x_train,
+                y_train=y_train,
+                x_test=x_test,
+                y_test=y_test,
             )
-            x_train = pd.concat([x_train, x_test]).reset_index(drop=True)
-            y_train = pd.concat([y_train, y_test]).reset_index(drop=True)
-
-            if self.cat_columns and self.conf_training.cat_encoding_via_ml_algorithm:
-                x_train[self.cat_columns] = x_train[self.cat_columns].astype("category")
 
         d_train, d_test = self.create_d_matrices(x_train, y_train, x_test, y_test)
         eval_set = [(d_test, "test")]
 
         steps = self.conf_params_xgboost.params.pop("steps", 300)
 
-        if self.conf_training.early_stopping_rounds and self.conf_xgboost:
+        if self.conf_training.early_stopping_rounds:
             early_stop = xgb.callback.EarlyStopping(
                 rounds=self.conf_training.early_stopping_rounds,
                 metric_name=self.conf_xgboost.xgboost_eval_metric,
@@ -153,7 +137,7 @@ class XgboostModel(BaseClassMlModel):
         else:
             callbacks = None
 
-        if self.conf_training.hypertuning_cv_folds == 1 and self.conf_xgboost:
+        if self.conf_training.hypertuning_cv_folds == 1:
             self.model = xgb.train(
                 self.conf_params_xgboost.params,
                 d_train,
