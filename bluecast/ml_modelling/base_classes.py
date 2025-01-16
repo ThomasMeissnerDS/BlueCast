@@ -107,6 +107,36 @@ class XgboostBaseModel:
         self.model: Optional[Union[xgb.XGBClassifier, xgb.XGBRegressor]] = None
         self.class_problem = class_problem
 
+        if conf_xgboost is None and self.class_problem in ["binary", "multiclass"]:
+            logging.info("Load default XgboostTuneParamsConfig.")
+            self.conf_xgboost: Union[
+                XgboostTuneParamsConfig, XgboostTuneParamsRegressionConfig
+            ] = XgboostTuneParamsConfig()
+        elif conf_xgboost is None and self.class_problem in ["regression"]:
+            logging.info("Load default XgboostTuneParamsRegressionConfig.")
+            self.conf_xgboost = XgboostTuneParamsRegressionConfig()
+        elif conf_xgboost is None:
+            raise ValueError
+        else:
+            logging.info("Found provided XgboostTuneParamsConfig.")
+            self.conf_xgboost = conf_xgboost
+
+        if conf_params_xgboost is None and self.class_problem in [
+            "binary",
+            "multiclass",
+        ]:
+            logging.info("Load default XgboostFinalParamConfig.")
+            self.conf_params_xgboost: Union[
+                XgboostFinalParamConfig, XgboostRegressionFinalParamConfig
+            ] = XgboostFinalParamConfig()
+        elif conf_params_xgboost is None and self.class_problem in ["regression"]:
+            self.conf_params_xgboost = XgboostRegressionFinalParamConfig()
+        elif conf_params_xgboost is None:
+            raise ValueError
+        else:
+            logging.info("Found provided XgboostFinalParamConfig.")
+            self.conf_params_xgboost = conf_params_xgboost
+
         if conf_training is None:
             logging.info("Load default TrainingConfig.")
             self.conf_training = TrainingConfig()
@@ -115,7 +145,7 @@ class XgboostBaseModel:
             self.conf_training = conf_training
 
         if experiment_tracker is None:
-            raise ValueError("Experiment tracker not found.")
+            self.experiment_tracker = ExperimentTracker()
         else:
             self.experiment_tracker = experiment_tracker
 
@@ -157,6 +187,20 @@ class XgboostBaseModel:
             x_train[self.cat_columns] = x_train[self.cat_columns].astype("category")
 
         return x_train, y_train
+
+    def get_early_stopping_callback(self) -> Optional[List[xgb.callback.EarlyStopping]]:
+        """Create early stopping callback if configured."""
+        if self.conf_training.early_stopping_rounds:
+            early_stop = xgb.callback.EarlyStopping(
+                rounds=self.conf_training.early_stopping_rounds,
+                metric_name=self.conf_xgboost.xgboost_eval_metric,
+                data_name="test",
+                save_best=self.conf_params_xgboost.params["booster"] != "gblinear",
+            )
+            callbacks = [early_stop]
+        else:
+            callbacks = None
+        return callbacks
 
     def autotune(
         self,

@@ -461,3 +461,5 @@ class XgboostRegressionFinalParamConfig:
         "tree_method": "hist",
         "device": "cpu",
     }
+    sample_weight: Optional[Dict[str, float]] = None
+    classification_threshold: float = 999

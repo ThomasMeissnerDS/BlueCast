@@ -68,24 +68,6 @@ class XgboostModelRegression(XgboostBaseModel):
             single_fold_eval_metric_func,
         )
 
-        if conf_xgboost is None:
-            logging.info("Load default XgboostTuneParamsConfig.")
-            self.conf_xgboost: XgboostTuneParamsRegressionConfig = (
-                XgboostTuneParamsRegressionConfig()
-            )
-        else:
-            logging.info("Found provided XgboostTuneParamsConfig.")
-            self.conf_xgboost = conf_xgboost
-
-        if conf_params_xgboost is None:
-            logging.info("Load default XgboostRegressionFinalParamConfig.")
-            self.conf_params_xgboost: XgboostRegressionFinalParamConfig = (
-                XgboostRegressionFinalParamConfig()
-            )
-        else:
-            logging.info("Found provided XgboostRegressionFinalParamConfig.")
-            self.conf_params_xgboost = conf_params_xgboost
-
         if not self.single_fold_eval_metric_func:
             self.single_fold_eval_metric_func: RegressionEvalWrapper = (
                 RegressionEvalWrapper(
@@ -132,17 +114,6 @@ class XgboostModelRegression(XgboostBaseModel):
 
         steps = self.conf_params_xgboost.params.pop("steps", 300)
 
-        if self.conf_training.early_stopping_rounds:
-            early_stop = xgb.callback.EarlyStopping(
-                rounds=self.conf_training.early_stopping_rounds,
-                metric_name=self.conf_xgboost.xgboost_eval_metric,
-                data_name="test",
-                save_best=self.conf_params_xgboost.params["booster"] != "gblinear",
-            )
-            callbacks = [early_stop]
-        else:
-            callbacks = None
-
         if self.conf_training.hypertuning_cv_folds == 1:
             self.model = xgb.train(
                 self.conf_params_xgboost.params,
@@ -151,7 +122,7 @@ class XgboostModelRegression(XgboostBaseModel):
                 early_stopping_rounds=self.conf_training.early_stopping_rounds,
                 evals=eval_set,
                 verbose_eval=self.conf_xgboost.verbosity_during_final_model_training,
-                callbacks=callbacks,
+                callbacks=self.get_early_stopping_callback(),
             )
         elif self.conf_xgboost:
             self.model = xgb.train(
@@ -161,7 +132,7 @@ class XgboostModelRegression(XgboostBaseModel):
                 early_stopping_rounds=self.conf_training.early_stopping_rounds,
                 evals=eval_set,
                 verbose_eval=self.conf_xgboost.verbosity_during_final_model_training,
-                callbacks=callbacks,
+                callbacks=self.get_early_stopping_callback(),
             )
         logging.info("Finished training")
         return self.model
@@ -435,23 +406,13 @@ class XgboostModelRegression(XgboostBaseModel):
         self, d_train, d_test, y_test, param, steps, pruning_callback
     ):
         eval_set = [(d_test, "test")]
-        if self.conf_training.early_stopping_rounds and self.conf_xgboost:
-            early_stop = xgb.callback.EarlyStopping(
-                rounds=self.conf_training.early_stopping_rounds,
-                metric_name=self.conf_xgboost.xgboost_eval_metric,
-                data_name="test",
-                save_best=param["booster"] != "gblinear",
-            )
-            callbacks = [early_stop]
-        else:
-            callbacks = None
 
         model = xgb.train(
             param,
             d_train,
             num_boost_round=steps,
             evals=eval_set,
-            callbacks=callbacks,
+            callbacks=self.get_early_stopping_callback(),
             verbose_eval=self.conf_xgboost.verbosity_during_hyperparameter_tuning,
         )
         preds = model.predict(d_test)
