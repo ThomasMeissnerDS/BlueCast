@@ -652,40 +652,7 @@ class XgboostModel(XgboostBaseModel):
 
                 return adjusted_score
 
-        if (
-            isinstance(self.conf_params_xgboost.params["min_child_weight"], float)
-            and isinstance(self.conf_params_xgboost.params["lambda"], float)
-            and isinstance(self.conf_params_xgboost.params["gamma"], float)
-            and isinstance(self.conf_params_xgboost.params["eta"], float)
-        ):
-            search_space = {
-                "min_child_weight": np.linspace(
-                    self.conf_params_xgboost.params["min_child_weight"] * 0.9,
-                    self.conf_params_xgboost.params["min_child_weight"] * 1.1,
-                    self.conf_training.gridsearch_nb_parameters_per_grid,
-                    dtype=float,
-                ),
-                "lambda": np.linspace(
-                    self.conf_params_xgboost.params["lambda"] * 0.9,
-                    self.conf_params_xgboost.params["lambda"] * 1.1,
-                    self.conf_training.gridsearch_nb_parameters_per_grid,
-                    dtype=float,
-                ),
-                "gamma": np.linspace(
-                    self.conf_params_xgboost.params["gamma"] * 0.9,
-                    self.conf_params_xgboost.params["gamma"] * 1.1,
-                    self.conf_training.gridsearch_nb_parameters_per_grid,
-                    dtype=float,
-                ),
-                "eta": np.linspace(
-                    self.conf_params_xgboost.params["eta"] * 0.9,
-                    self.conf_params_xgboost.params["eta"] * 1.1,
-                    self.conf_training.gridsearch_nb_parameters_per_grid,
-                    dtype=float,
-                ),
-            }
-        else:
-            ValueError("Some parameters are not floats or strings")
+        search_space = self.create_fine_tune_search_space()
 
         study = optuna.create_study(
             direction=self.conf_xgboost.xgboost_eval_metric_tune_direction,
