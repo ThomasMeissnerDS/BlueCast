@@ -107,6 +107,20 @@ class XgboostBaseModel:
         self.model: Optional[Union[xgb.XGBClassifier, xgb.XGBRegressor]] = None
         self.class_problem = class_problem
 
+        self._load_xgboost_training_config(conf_xgboost)
+        self._load_xgboost_final_params(conf_params_xgboost)
+        self._load_training_settings_config(conf_training)
+        self._load_experiment_tracker(experiment_tracker)
+
+        self.custom_in_fold_preprocessor = custom_in_fold_preprocessor
+        self.single_fold_eval_metric_func = single_fold_eval_metric_func
+        self.random_generator = np.random.default_rng(
+            self.conf_training.global_random_state
+        )
+        self.cat_columns = cat_columns
+        self.best_score: float = np.inf
+
+    def _load_xgboost_training_config(self, conf_xgboost) -> None:
         if conf_xgboost is None and self.class_problem in ["binary", "multiclass"]:
             logging.info("Load default XgboostTuneParamsConfig.")
             self.conf_xgboost: Union[
@@ -121,6 +135,7 @@ class XgboostBaseModel:
             logging.info("Found provided XgboostTuneParamsConfig.")
             self.conf_xgboost = conf_xgboost
 
+    def _load_xgboost_final_params(self, conf_params_xgboost) -> None:
         if conf_params_xgboost is None and self.class_problem in [
             "binary",
             "multiclass",
@@ -137,6 +152,7 @@ class XgboostBaseModel:
             logging.info("Found provided XgboostFinalParamConfig.")
             self.conf_params_xgboost = conf_params_xgboost
 
+    def _load_training_settings_config(self, conf_training) -> None:
         if conf_training is None:
             logging.info("Load default TrainingConfig.")
             self.conf_training = TrainingConfig()
@@ -144,18 +160,11 @@ class XgboostBaseModel:
             logging.info("Load default TrainingConfig.")
             self.conf_training = conf_training
 
+    def _load_experiment_tracker(self, experiment_tracker) -> None:
         if experiment_tracker is None:
             self.experiment_tracker = ExperimentTracker()
         else:
             self.experiment_tracker = experiment_tracker
-
-        self.custom_in_fold_preprocessor = custom_in_fold_preprocessor
-        self.single_fold_eval_metric_func = single_fold_eval_metric_func
-        self.random_generator = np.random.default_rng(
-            self.conf_training.global_random_state
-        )
-        self.cat_columns = cat_columns
-        self.best_score: float = np.inf
 
     def concat_prepare_full_train_datasets(
         self,
