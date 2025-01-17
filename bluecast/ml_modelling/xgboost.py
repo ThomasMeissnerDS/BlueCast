@@ -98,7 +98,7 @@ class XgboostModel(XgboostBaseModel):
                 y_test=y_test,
             )
 
-        d_train, d_test = self.create_d_matrices(x_train, y_train, x_test, y_test)
+        d_train, d_test = self._create_d_matrices(x_train, y_train, x_test, y_test)
         eval_set = [(d_test, "test")]
 
         steps = self.conf_params_xgboost.params.pop("steps", 300)
@@ -390,30 +390,6 @@ class XgboostModel(XgboostBaseModel):
                     "sample_weight"
                 ]
 
-    def create_d_matrices(self, x_train, y_train, x_test, y_test):
-        if self.conf_params_xgboost.sample_weight:
-            classes_weights = class_weight.compute_sample_weight(
-                class_weight="balanced", y=y_train
-            )
-            d_train = xgb.DMatrix(
-                x_train,
-                label=y_train,
-                weight=classes_weights,
-                enable_categorical=self.conf_training.cat_encoding_via_ml_algorithm,
-            )
-        else:
-            d_train = xgb.DMatrix(
-                x_train,
-                label=y_train,
-                enable_categorical=self.conf_training.cat_encoding_via_ml_algorithm,
-            )
-        d_test = xgb.DMatrix(
-            x_test,
-            label=y_test,
-            enable_categorical=self.conf_training.cat_encoding_via_ml_algorithm,
-        )
-        return d_train, d_test
-
     def train_single_fold_model(
         self, d_train, d_test, y_test, param, steps, pruning_callback
     ):
@@ -573,7 +549,7 @@ class XgboostModel(XgboostBaseModel):
         logging.info("Start grid search fine tuning of Xgboost model.")
 
         def objective(trial):
-            d_train, d_test = self.create_d_matrices(x_train, y_train, x_test, y_test)
+            d_train, d_test = self._create_d_matrices(x_train, y_train, x_test, y_test)
 
             pruning_callback = optuna.integration.XGBoostPruningCallback(
                 trial, f"test-{self.conf_xgboost.xgboost_eval_metric}"

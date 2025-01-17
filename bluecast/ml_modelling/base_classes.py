@@ -10,6 +10,7 @@ import numpy as np
 import optuna
 import pandas as pd
 import xgboost as xgb
+from sklearn.utils import class_weight
 
 from bluecast.config.training_config import (
     TrainingConfig,
@@ -165,6 +166,33 @@ class XgboostBaseModel:
             self.experiment_tracker = ExperimentTracker()
         else:
             self.experiment_tracker = experiment_tracker
+
+    def _create_d_matrices(self, x_train, y_train, x_test, y_test):
+        if self.conf_params_xgboost.sample_weight and self.class_problem in [
+            "binary",
+            "multiclass",
+        ]:
+            classes_weights = class_weight.compute_sample_weight(
+                class_weight="balanced", y=y_train
+            )
+            d_train = xgb.DMatrix(
+                x_train,
+                label=y_train,
+                weight=classes_weights,
+                enable_categorical=self.conf_training.cat_encoding_via_ml_algorithm,
+            )
+        else:
+            d_train = xgb.DMatrix(
+                x_train,
+                label=y_train,
+                enable_categorical=self.conf_training.cat_encoding_via_ml_algorithm,
+            )
+        d_test = xgb.DMatrix(
+            x_test,
+            label=y_test,
+            enable_categorical=self.conf_training.cat_encoding_via_ml_algorithm,
+        )
+        return d_train, d_test
 
     def concat_prepare_full_train_datasets(
         self,
