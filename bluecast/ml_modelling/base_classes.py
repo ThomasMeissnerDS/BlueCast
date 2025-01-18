@@ -3,8 +3,9 @@
 import logging
 import warnings
 from abc import ABC, abstractmethod
+from copy import deepcopy
 from datetime import datetime
-from typing import Any, Dict, List, Literal, Optional, Tuple, TypeVar, Union
+from typing import Any, Callable, Dict, List, Literal, Optional, Tuple, TypeVar, Union
 
 import numpy as np
 import optuna
@@ -294,7 +295,102 @@ class XgboostBaseModel:
             }
             return search_space
         else:
-            raise ValueError("Some parameters are not floats or strings")
+            raise ValueError("Some parameters are not floats or integers")
+
+    def _get_param_space_fpr_grid_search(
+        self, trial: optuna.trial
+    ) -> Dict[str, np.array]:
+        if (
+            isinstance(self.conf_params_xgboost.params["min_child_weight"], float)
+            and isinstance(self.conf_params_xgboost.params["lambda"], float)
+            and isinstance(self.conf_params_xgboost.params["gamma"], float)
+            and isinstance(self.conf_params_xgboost.params["eta"], float)
+        ):
+            # copy best params to not overwrite them
+            tuned_params = deepcopy(self.conf_params_xgboost.params)
+            min_child_weight_space = trial.suggest_float(
+                "min_child_weight",
+                self.conf_params_xgboost.params["min_child_weight"] * 0.9,
+                self.conf_params_xgboost.params["min_child_weight"] * 1.1,
+                log=False,
+            )
+            lambda_space = trial.suggest_float(
+                "lambda",
+                self.conf_params_xgboost.params["lambda"] * 0.9,
+                self.conf_params_xgboost.params["lambda"] * 1.1,
+                log=False,
+            )
+            gamma_space = trial.suggest_float(
+                "gamma",
+                self.conf_params_xgboost.params["gamma"] * 0.9,
+                self.conf_params_xgboost.params["gamma"] * 1.1,
+                log=False,
+            )
+            eta_space = trial.suggest_float(
+                "eta",
+                self.conf_params_xgboost.params["eta"] * 0.9,
+                self.conf_params_xgboost.params["eta"] * 1.1,
+                log=False,
+            )
+
+            tuned_params["lambda"] = lambda_space
+            tuned_params["min_child_weight"] = min_child_weight_space
+            tuned_params["gamma"] = gamma_space
+            tuned_params["eta"] = eta_space
+            return tuned_params
+        else:
+            raise ValueError("Some parameters are not floats or integers")
+
+    def _optimize_and_plot_grid_search_study(
+        self, objective: Callable, search_space: Dict[str, np.array]
+    ) -> None:
+        study = optuna.create_study(
+            direction=self.conf_xgboost.xgboost_eval_metric_tune_direction,
+            sampler=optuna.samplers.GridSampler(search_space),
+            pruner=optuna.pruners.MedianPruner(n_startup_trials=10, n_warmup_steps=50),
+        )
+        study.optimize(
+            objective,
+            n_trials=self.conf_training.gridsearch_nb_parameters_per_grid
+            ** len(search_space.keys()),
+            timeout=self.conf_training.gridsearch_tuning_max_runtime_secs,
+            gc_after_trial=True,
+            show_progress_bar=True,
+        )
+
+        if self.conf_training.plot_hyperparameter_tuning_overview:
+            try:
+                fig = optuna.visualization.plot_optimization_history(study)
+                fig.show()
+                fig = optuna.visualization.plot_param_importances(
+                    study  # , evaluator=FanovaImportanceEvaluator()
+                )
+                fig.show()
+            except (ZeroDivisionError, RuntimeError, ValueError):
+                pass
+
+        best_score_cv = self.best_score
+
+        if study.best_value < self.best_score or not self.conf_training.autotune_model:
+            self.best_score = study.best_value
+            xgboost_grid_best_param = study.best_trial.params
+            self.conf_params_xgboost.params["min_child_weight"] = (
+                xgboost_grid_best_param["min_child_weight"]
+            )
+            self.conf_params_xgboost.params["lambda"] = xgboost_grid_best_param[
+                "lambda"
+            ]
+            self.conf_params_xgboost.params["gamma"] = xgboost_grid_best_param["gamma"]
+            self.conf_params_xgboost.params["eta"] = xgboost_grid_best_param["eta"]
+            logging.info(
+                f"Grid search improved eval metric from {best_score_cv} to {self.best_score}."
+            )
+            logging.info(f"Best params: {self.conf_params_xgboost.params}")
+            print(f"Best params: {self.conf_params_xgboost.params}")
+        else:
+            logging.info(
+                f"Grid search could not improve eval metric of {best_score_cv}. Best score reached was {study.best_value}"
+            )
 
     def orchestrate_hyperparameter_tuning(
         self,
