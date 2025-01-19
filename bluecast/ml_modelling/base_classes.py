@@ -11,9 +11,14 @@ import numpy as np
 import optuna
 import pandas as pd
 import xgboost as xgb
+from catboost import CatBoostClassifier, CatBoostRegressor, Pool
 from sklearn.utils import class_weight
 
 from bluecast.config.training_config import (
+    CatboostFinalParamConfig,
+    CatboostRegressionFinalParamConfig,
+    CatboostTuneParamsConfig,
+    CatboostTuneParamsRegressionConfig,
     TrainingConfig,
     XgboostFinalParamConfig,
     XgboostRegressionFinalParamConfig,
@@ -400,6 +405,387 @@ class XgboostBaseModel:
         x_test: pd.DataFrame,
         y_test: pd.Series,
     ):
+        if not self.conf_training.show_detailed_tuning_logs:
+            optuna.logging.set_verbosity(optuna.logging.WARNING)
+
+        if self.conf_training.autotune_model:
+            self.autotune(
+                x_train=x_train,
+                y_train=y_train,
+                x_test=x_test,
+                y_test=y_test,
+            )
+            print("Finished hyperparameter tuning")
+
+        if self.conf_training.enable_grid_search_fine_tuning:
+            self.fine_tune(
+                x_train=x_train,
+                y_train=y_train,
+                x_test=x_test,
+                y_test=y_test,
+            )
+            print("Finished Grid search fine tuning")
+
+
+# Catboost specific base class
+class CatboostBaseModel:
+    """
+    Example base model class for CatBoost, replicating the structure and logic
+    of your XgboostBaseModel.
+    """
+
+    def __init__(
+        self,
+        class_problem: Union[Literal["binary", "multiclass"], Literal["regression"]],
+        conf_training: Optional["TrainingConfig"] = None,
+        conf_catboost: Optional[
+            Union["CatboostTuneParamsConfig", "CatboostTuneParamsRegressionConfig"]
+        ] = None,
+        conf_params_catboost: Optional[
+            Union["CatboostFinalParamConfig", "CatboostRegressionFinalParamConfig"]
+        ] = None,
+        experiment_tracker: Optional["ExperimentTracker"] = None,
+        custom_in_fold_preprocessor: Optional["CustomPreprocessing"] = None,
+        cat_columns: Optional[List[Union[str, float, int]]] = None,
+        single_fold_eval_metric_func: Optional[
+            Union["ClassificationEvalWrapper", "RegressionEvalWrapper"]
+        ] = None,
+    ):
+        # CatBoost model references
+        self.model: Optional[Union[CatBoostClassifier, CatBoostRegressor]] = None
+
+        self.class_problem = class_problem
+
+        # Load configurations
+        self._load_catboost_training_config(conf_catboost)
+        self._load_catboost_final_params(conf_params_catboost)
+        self._load_training_settings_config(conf_training)
+        self._load_experiment_tracker(experiment_tracker)
+
+        # Additional references (preprocessor, columns, random generator, etc.)
+        self.custom_in_fold_preprocessor = custom_in_fold_preprocessor
+        self.single_fold_eval_metric_func = single_fold_eval_metric_func
+        self.random_generator = np.random.default_rng(
+            self.conf_training.global_random_state
+        )
+        self.cat_columns = cat_columns
+
+        # Track the best score from hyperparameter searches
+        self.best_score: float = np.inf
+
+    def _load_catboost_training_config(self, conf_catboost) -> None:
+        """
+        Loads CatBoost tuning configuration. If none is provided, uses
+        either the classification or the regression default class.
+        """
+        if conf_catboost is None and self.class_problem in ["binary", "multiclass"]:
+            logging.info("Load default CatboostTuneParamsConfig.")
+            self.conf_catboost = CatboostTuneParamsConfig()
+        elif conf_catboost is None and self.class_problem in ["regression"]:
+            logging.info("Load default CatboostTuneParamsRegressionConfig.")
+            self.conf_catboost = CatboostTuneParamsRegressionConfig()
+        elif conf_catboost is None:
+            raise ValueError(
+                "No CatBoost config provided and class_problem not recognized."
+            )
+        else:
+            logging.info("Found provided CatboostTuneParamsConfig/RegressionConfig.")
+            self.conf_catboost = conf_catboost
+
+    def _load_catboost_final_params(self, conf_params_catboost) -> None:
+        """
+        Loads CatBoost final parameters. If none is provided, uses
+        either the classification or the regression default class.
+        """
+        if conf_params_catboost is None and self.class_problem in [
+            "binary",
+            "multiclass",
+        ]:
+            logging.info("Load default CatboostFinalParamConfig.")
+            self.conf_params_catboost = CatboostFinalParamConfig()
+        elif conf_params_catboost is None and self.class_problem in ["regression"]:
+            logging.info("Load default CatboostRegressionFinalParamConfig.")
+            self.conf_params_catboost = CatboostRegressionFinalParamConfig()
+        elif conf_params_catboost is None:
+            raise ValueError(
+                "No CatBoost final config provided and class_problem not recognized."
+            )
+        else:
+            logging.info(
+                "Found provided CatboostFinalParamConfig/RegressionFinalParamConfig."
+            )
+            self.conf_params_catboost = conf_params_catboost
+
+    def _load_training_settings_config(self, conf_training) -> None:
+        """
+        Loads or creates a default TrainingConfig.
+        """
+        if conf_training is None:
+            logging.info("Load default TrainingConfig.")
+            self.conf_training = TrainingConfig()
+        else:
+            logging.info("Load custom TrainingConfig.")
+            self.conf_training = conf_training
+
+    def _load_experiment_tracker(self, experiment_tracker) -> None:
+        """
+        Loads or creates a default ExperimentTracker.
+        """
+        if experiment_tracker is None:
+            self.experiment_tracker = ExperimentTracker()
+        else:
+            self.experiment_tracker = experiment_tracker
+
+    def _create_pools(
+        self,
+        x_train: pd.DataFrame,
+        y_train: pd.Series,
+        x_test: pd.DataFrame,
+        y_test: pd.Series,
+    ):
+        """
+        Creates CatBoost Pools for training and testing.
+        Potentially uses sample weights if available.
+        Also sets cat_features if self.cat_columns is provided.
+        """
+        if self.conf_params_catboost.sample_weight:
+            # Just as an example, for classification we might compute balanced sample weights
+            if self.class_problem in ["binary", "multiclass"]:
+                classes_weights = class_weight.compute_sample_weight(
+                    class_weight="balanced", y=y_train
+                )
+                train_pool = Pool(
+                    data=x_train,
+                    label=y_train,
+                    weight=classes_weights,
+                    cat_features=self.cat_columns,
+                )
+            else:
+                # For regression or if no special weighting is needed:
+                train_pool = Pool(
+                    data=x_train, label=y_train, cat_features=self.cat_columns
+                )
+        else:
+            # No sample weighting
+            train_pool = Pool(
+                data=x_train, label=y_train, cat_features=self.cat_columns
+            )
+
+        test_pool = Pool(data=x_test, label=y_test, cat_features=self.cat_columns)
+        return train_pool, test_pool
+
+    def concat_prepare_full_train_datasets(
+        self,
+        *,
+        x_train: pd.DataFrame,
+        y_train: pd.Series,
+        x_test: pd.DataFrame,
+        y_test: pd.Series,
+    ):
+        """
+        Prepare training dataset and optionally concatenate with test data for final model training,
+        if your approach is to train on all data at once (like in the XGBoost base class).
+        """
+        logging.info(
+            "Union train and test data for final model training based on TrainingConfig param "
+            "'use_full_data_for_final_model'"
+        )
+        x_train = pd.concat([x_train, x_test]).reset_index(drop=True)
+        y_train = pd.concat([y_train, y_test]).reset_index(drop=True)
+
+        if self.cat_columns and self.conf_training.cat_encoding_via_ml_algorithm:
+            # Convert columns to 'category' dtype if desired
+            x_train[self.cat_columns] = x_train[self.cat_columns].astype("category")
+
+        return x_train, y_train
+
+    def get_early_stopping_callback(self):
+        """
+        In CatBoost, early stopping is handled by setting `od_type` (overfitting detector)
+        and `od_wait` (similar to early_stopping_rounds). Example:
+
+        If you want to replicate the 'EarlyStopping' from XGBoost, you can just set:
+
+        model = CatBoostClassifier(
+            iterations=...,
+            od_type='Iter',
+            od_wait=self.conf_training.early_stopping_rounds,
+            ...
+        )
+
+        For consistency with your structure, we return None or a dictionary of parameters.
+        """
+        if self.conf_training.early_stopping_rounds:
+            # We'll return something that can be used in `fit()` as 'params' or handle differently.
+            return {
+                "od_type": "Iter",
+                "od_wait": self.conf_training.early_stopping_rounds,
+            }
+        else:
+            return None
+
+    def autotune(
+        self,
+        *,
+        x_train: pd.DataFrame,
+        y_train: pd.Series,
+        x_test: pd.DataFrame,
+        y_test: pd.Series,
+    ):
+        raise NotImplementedError("Method autotune has not been defined for CatBoost.")
+
+    def fine_tune(
+        self,
+        *,
+        x_train: pd.DataFrame,
+        y_train: pd.Series,
+        x_test: pd.DataFrame,
+        y_test: pd.Series,
+    ):
+        raise NotImplementedError("Method fine_tune has not been defined for CatBoost.")
+
+    def create_fine_tune_search_space(self) -> Dict[str, np.array]:
+        """
+        Mimics the XGBoost method that creates a small search space around
+        the best parameters found so far. You could adapt this to CatBoost
+        parameters, e.g.:
+
+        - 'learning_rate'
+        - 'depth'
+        - 'l2_leaf_reg'
+        - 'bagging_temperature'
+        - 'random_strength'
+        etc.
+
+        Below is an example for 'l2_leaf_reg' and 'learning_rate' only,
+        but you can add or remove as needed.
+        """
+        # Example: we expect these to be float or int
+        if isinstance(
+            self.conf_params_catboost.params.get("l2_leaf_reg"), float
+        ) and isinstance(self.conf_params_catboost.params.get("learning_rate"), float):
+            return {
+                "l2_leaf_reg": np.linspace(
+                    self.conf_params_catboost.params["l2_leaf_reg"] * 0.9,
+                    self.conf_params_catboost.params["l2_leaf_reg"] * 1.1,
+                    self.conf_training.gridsearch_nb_parameters_per_grid,
+                    dtype=float,
+                ),
+                "learning_rate": np.linspace(
+                    self.conf_params_catboost.params["learning_rate"] * 0.9,
+                    self.conf_params_catboost.params["learning_rate"] * 1.1,
+                    self.conf_training.gridsearch_nb_parameters_per_grid,
+                    dtype=float,
+                ),
+            }
+        else:
+            raise ValueError("Some parameters are not floats or not found in params.")
+
+    def _get_param_space_fpr_grid_search(
+        self, trial: optuna.trial.FrozenTrial
+    ) -> Dict[str, float]:
+        """
+        Similar to XGBoost method for an Optuna-based grid or random search.
+        For CatBoost, adjust to whichever parameters you want to tweak.
+        """
+        if isinstance(
+            self.conf_params_catboost.params.get("l2_leaf_reg"), float
+        ) and isinstance(self.conf_params_catboost.params.get("learning_rate"), float):
+            tuned_params = deepcopy(self.conf_params_catboost.params)
+
+            l2_leaf_reg_space = trial.suggest_float(
+                "l2_leaf_reg",
+                tuned_params["l2_leaf_reg"] * 0.9,
+                tuned_params["l2_leaf_reg"] * 1.1,
+                log=False,
+            )
+            learning_rate_space = trial.suggest_float(
+                "learning_rate",
+                tuned_params["learning_rate"] * 0.9,
+                tuned_params["learning_rate"] * 1.1,
+                log=False,
+            )
+
+            tuned_params["l2_leaf_reg"] = l2_leaf_reg_space
+            tuned_params["learning_rate"] = learning_rate_space
+
+            return tuned_params
+        else:
+            raise ValueError("Some parameters are not floats or not found in params.")
+
+    def _optimize_and_plot_grid_search_study(
+        self, objective: Callable, search_space: Dict[str, np.array]
+    ) -> None:
+        """
+        Similar to the XGBoost method.
+        We create an Optuna study with a GridSampler (or any other sampler),
+        run it, and track the best score. We then update self.conf_params_catboost
+        accordingly if improvements are found.
+        """
+        study = optuna.create_study(
+            direction=self.conf_catboost.catboost_eval_metric_tune_direction,
+            sampler=optuna.samplers.GridSampler(search_space),
+            pruner=optuna.pruners.MedianPruner(n_startup_trials=10, n_warmup_steps=50),
+        )
+        study.optimize(
+            objective,
+            n_trials=self.conf_training.gridsearch_nb_parameters_per_grid
+            ** len(search_space.keys()),
+            timeout=self.conf_training.gridsearch_tuning_max_runtime_secs,
+            gc_after_trial=True,
+            show_progress_bar=True,
+        )
+
+        # Optionally visualize
+        if self.conf_training.plot_hyperparameter_tuning_overview:
+            try:
+                fig = optuna.visualization.plot_optimization_history(study)
+                fig.show()
+                fig = optuna.visualization.plot_param_importances(study)
+                fig.show()
+            except (ZeroDivisionError, RuntimeError, ValueError):
+                pass
+
+        best_score_cv = self.best_score
+
+        # Since direction could be 'minimize' or 'maximize', compare accordingly
+        if (
+            self.conf_catboost.catboost_eval_metric_tune_direction == "minimize"
+            and study.best_value < self.best_score
+        ) or (
+            self.conf_catboost.catboost_eval_metric_tune_direction == "maximize"
+            and study.best_value > self.best_score
+        ):
+            self.best_score = study.best_value
+            catboost_grid_best_param = study.best_trial.params
+            self.conf_params_catboost.params["l2_leaf_reg"] = catboost_grid_best_param[
+                "l2_leaf_reg"
+            ]
+            self.conf_params_catboost.params["learning_rate"] = (
+                catboost_grid_best_param["learning_rate"]
+            )
+            logging.info(
+                f"Grid search improved eval metric from {best_score_cv} to {self.best_score}."
+            )
+            logging.info(f"Best params: {self.conf_params_catboost.params}")
+            print(f"Best params: {self.conf_params_catboost.params}")
+        else:
+            logging.info(
+                f"Grid search could not improve eval metric of {best_score_cv}. "
+                f"Best score reached was {study.best_value}"
+            )
+
+    def orchestrate_hyperparameter_tuning(
+        self,
+        *,
+        x_train: pd.DataFrame,
+        y_train: pd.Series,
+        x_test: pd.DataFrame,
+        y_test: pd.Series,
+    ):
+        """
+        Mirrors the XGBoost orchestrate_hyperparameter_tuning approach.
+        """
         if not self.conf_training.show_detailed_tuning_logs:
             optuna.logging.set_verbosity(optuna.logging.WARNING)
 

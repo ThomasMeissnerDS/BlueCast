@@ -173,10 +173,7 @@ class TrainingConfig:
         return vars(self)
 
 
-# TODO: CREATE BASE CLASS WITH VALIDATIONS FOR ALL FIELD and to_dict func
-# TODO: MOVE LIST defaults into constructor
-
-
+# Xgboost
 class XgboostTuneParamsConfig:
     """Define hyperparameter tuning search space.
 
@@ -463,3 +460,239 @@ class XgboostRegressionFinalParamConfig:
     }
     sample_weight: Optional[Dict[str, float]] = None
     classification_threshold: float = 999
+
+    # Catboost
+
+
+class CatboostTuneParamsConfig:
+    """Define hyperparameter tuning search space for CatBoost (classification or multiclass).
+
+    :param depth_min: Minimum value for the depth of the trees. Defaults to 1.
+    :param depth_max: Maximum value for the depth of the trees. Defaults to 10.
+    :param l2_leaf_reg_min: Minimum value for L2 regularization term (l2_leaf_reg). Defaults to 1e-8.
+    :param l2_leaf_reg_max: Maximum value for L2 regularization term (l2_leaf_reg). Defaults to 100.
+    :param bagging_temperature_min: Minimum value for bagging temperature when bootstrap_type='Bayesian'. Defaults to 0.0.
+    :param bagging_temperature_max: Maximum value for bagging temperature when bootstrap_type='Bayesian'. Defaults to 10.0.
+    :param random_strength_min: Minimum value for the random strength. Defaults to 0.0.
+    :param random_strength_max: Maximum value for the random strength. Defaults to 10.0.
+    :param subsample_min: Minimum value of subsample ratio of the training instances. Defaults to 0.1.
+    :param subsample_max: Maximum value of subsample ratio of the training instances. Defaults to 1.0.
+    :param border_count_min: Minimum value for the number of splits for numerical features. Defaults to 32.
+    :param border_count_max: Maximum value for the number of splits for numerical features. Defaults to 255.
+    :param learning_rate_min: Minimum value for learning rate. Defaults to 1e-3.
+    :param learning_rate_max: Maximum value for learning rate. Defaults to 0.3.
+    :param iterations_min: Minimum number of boosting rounds (iterations). Defaults to 1000.
+    :param iterations_max: Maximum number of boosting rounds (iterations). Defaults to 1000.
+    :param verbosity_during_hyperparameter_tuning: Verbosity level during hyperparameter tuning. Defaults to 0.
+    :param verbosity_during_final_model_training: Verbosity level during final model training. Defaults to 0.
+    :param bootstrap_type: List of bootstrap types to consider. Defaults to ["Bayesian", "Poisson", "MVS", "No"].
+    :param grow_policy: List of grow policies. Defaults to ["SymmetricTree"].
+    :param catboost_objective: CatBoost objective. Defaults to "MultiClass".
+    :param catboost_eval_metric: CatBoost evaluation metric. Defaults to "MultiClass".
+    :param catboost_eval_metric_tune_direction: Direction to tune the evaluation metric. Defaults to "minimize".
+                                                Must be any of ['minimize', 'maximize']
+    """
+
+    @check_types_init
+    def __init__(
+        self,
+        depth_min: int = 1,
+        depth_max: int = 10,
+        l2_leaf_reg_min: float = 1e-8,
+        l2_leaf_reg_max: float = 100.0,
+        bagging_temperature_min: float = 0.0,
+        bagging_temperature_max: float = 10.0,
+        random_strength_min: float = 0.0,
+        random_strength_max: float = 10.0,
+        subsample_min: float = 0.1,
+        subsample_max: float = 1.0,
+        border_count_min: int = 32,
+        border_count_max: int = 255,
+        learning_rate_min: float = 1e-3,
+        learning_rate_max: float = 0.3,
+        iterations_min: int = 1000,
+        iterations_max: int = 1000,
+        verbosity_during_hyperparameter_tuning: int = 0,
+        verbosity_during_final_model_training: int = 0,
+        bootstrap_type: Optional[List[str]] = None,
+        grow_policy: Optional[List[str]] = None,
+        catboost_objective: str = "MultiClass",
+        catboost_eval_metric: str = "MultiClass",
+        catboost_eval_metric_tune_direction: str = "minimize",
+    ):
+        if bootstrap_type is None:
+            bootstrap_type = ["Bayesian", "Poisson", "MVS", "No"]
+        if grow_policy is None:
+            grow_policy = ["SymmetricTree"]
+
+        self.depth_min = depth_min
+        self.depth_max = depth_max
+        self.l2_leaf_reg_min = l2_leaf_reg_min
+        self.l2_leaf_reg_max = l2_leaf_reg_max
+        self.bagging_temperature_min = bagging_temperature_min
+        self.bagging_temperature_max = bagging_temperature_max
+        self.random_strength_min = random_strength_min
+        self.random_strength_max = random_strength_max
+        self.subsample_min = subsample_min
+        self.subsample_max = subsample_max
+        self.border_count_min = border_count_min
+        self.border_count_max = border_count_max
+        self.learning_rate_min = learning_rate_min
+        self.learning_rate_max = learning_rate_max
+        self.iterations_min = iterations_min
+        self.iterations_max = iterations_max
+        self.verbosity_during_hyperparameter_tuning = (
+            verbosity_during_hyperparameter_tuning
+        )
+        self.verbosity_during_final_model_training = (
+            verbosity_during_final_model_training
+        )
+        self.bootstrap_type = bootstrap_type
+        self.grow_policy = grow_policy
+        self.catboost_objective = catboost_objective
+        self.catboost_eval_metric = catboost_eval_metric
+        self.catboost_eval_metric_tune_direction = catboost_eval_metric_tune_direction
+
+    def dict(self):
+        """
+        Return dictionary with all class attributes.
+
+        The implementation keeps backwards compatibility as this class mimics a Pydantic BaseModel.
+        """
+        return vars(self)
+
+
+class CatboostTuneParamsRegressionConfig:
+    """Define hyperparameter tuning search space for CatBoost (regression).
+
+    :param depth_min: Minimum value for the depth of the trees. Defaults to 1.
+    :param depth_max: Maximum value for the depth of the trees. Defaults to 10.
+    :param l2_leaf_reg_min: Minimum value for L2 regularization term (l2_leaf_reg). Defaults to 1e-8.
+    :param l2_leaf_reg_max: Maximum value for L2 regularization term (l2_leaf_reg). Defaults to 100.
+    :param bagging_temperature_min: Minimum value for bagging temperature when bootstrap_type='Bayesian'. Defaults to 0.0.
+    :param bagging_temperature_max: Maximum value for bagging temperature when bootstrap_type='Bayesian'. Defaults to 10.0.
+    :param random_strength_min: Minimum value for the random strength. Defaults to 0.0.
+    :param random_strength_max: Maximum value for the random strength. Defaults to 10.0.
+    :param subsample_min: Minimum value of subsample ratio of the training instances. Defaults to 0.1.
+    :param subsample_max: Maximum value of subsample ratio of the training instances. Defaults to 1.0.
+    :param border_count_min: Minimum value for the number of splits for numerical features. Defaults to 32.
+    :param border_count_max: Maximum value for the number of splits for numerical features. Defaults to 255.
+    :param learning_rate_min: Minimum value for learning rate. Defaults to 1e-3.
+    :param learning_rate_max: Maximum value for learning rate. Defaults to 0.3.
+    :param iterations_min: Minimum number of boosting rounds (iterations). Defaults to 1000.
+    :param iterations_max: Maximum number of boosting rounds (iterations). Defaults to 1000.
+    :param verbosity_during_hyperparameter_tuning: Verbosity level during hyperparameter tuning. Defaults to 0.
+    :param verbosity_during_final_model_training: Verbosity level during final model training. Defaults to 0.
+    :param bootstrap_type: List of bootstrap types to consider. Defaults to ["Bayesian", "Poisson", "MVS", "No"].
+    :param grow_policy: List of grow policies. Defaults to ["SymmetricTree"].
+    :param catboost_objective: CatBoost objective. Defaults to "RMSE".
+    :param catboost_eval_metric: CatBoost evaluation metric. Defaults to "RMSE".
+    :param catboost_eval_metric_tune_direction: Direction to tune the evaluation metric. Defaults to "minimize".
+                                                Must be any of ['minimize', 'maximize']
+    """
+
+    @check_types_init
+    def __init__(
+        self,
+        depth_min: int = 1,
+        depth_max: int = 10,
+        l2_leaf_reg_min: float = 1e-8,
+        l2_leaf_reg_max: float = 100.0,
+        bagging_temperature_min: float = 0.0,
+        bagging_temperature_max: float = 10.0,
+        random_strength_min: float = 0.0,
+        random_strength_max: float = 10.0,
+        subsample_min: float = 0.1,
+        subsample_max: float = 1.0,
+        border_count_min: int = 32,
+        border_count_max: int = 255,
+        learning_rate_min: float = 1e-3,
+        learning_rate_max: float = 0.3,
+        iterations_min: int = 1000,
+        iterations_max: int = 1000,
+        verbosity_during_hyperparameter_tuning: int = 0,
+        verbosity_during_final_model_training: int = 0,
+        bootstrap_type: Optional[List[str]] = None,
+        grow_policy: Optional[List[str]] = None,
+        catboost_objective: str = "RMSE",
+        catboost_eval_metric: str = "RMSE",
+        catboost_eval_metric_tune_direction: str = "minimize",
+    ):
+        if bootstrap_type is None:
+            bootstrap_type = ["Bayesian", "Poisson", "MVS", "No"]
+        if grow_policy is None:
+            grow_policy = ["SymmetricTree"]
+
+        self.depth_min = depth_min
+        self.depth_max = depth_max
+        self.l2_leaf_reg_min = l2_leaf_reg_min
+        self.l2_leaf_reg_max = l2_leaf_reg_max
+        self.bagging_temperature_min = bagging_temperature_min
+        self.bagging_temperature_max = bagging_temperature_max
+        self.random_strength_min = random_strength_min
+        self.random_strength_max = random_strength_max
+        self.subsample_min = subsample_min
+        self.subsample_max = subsample_max
+        self.border_count_min = border_count_min
+        self.border_count_max = border_count_max
+        self.learning_rate_min = learning_rate_min
+        self.learning_rate_max = learning_rate_max
+        self.iterations_min = iterations_min
+        self.iterations_max = iterations_max
+        self.verbosity_during_hyperparameter_tuning = (
+            verbosity_during_hyperparameter_tuning
+        )
+        self.verbosity_during_final_model_training = (
+            verbosity_during_final_model_training
+        )
+        self.bootstrap_type = bootstrap_type
+        self.grow_policy = grow_policy
+        self.catboost_objective = catboost_objective
+        self.catboost_eval_metric = catboost_eval_metric
+        self.catboost_eval_metric_tune_direction = catboost_eval_metric_tune_direction
+
+    def dict(self):
+        """
+        Return dictionary with all class attributes.
+
+        The implementation keeps backwards compatibility as this class mimics a Pydantic BaseModel.
+        """
+        return vars(self)
+
+
+class CatboostFinalParamConfig:
+    """Define final hyperparameters for CatBoost (classification or multiclass) using CatBoost defaults."""
+
+    params = {
+        "iterations": 1000,  # default can vary in CatBoost, using 1000 for consistency
+        "depth": 6,  # CatBoost default depth
+        "learning_rate": 0.03,  # CatBoost default
+        "l2_leaf_reg": 3.0,  # CatBoost default
+        "eval_metric": "MultiClass",
+        "loss_function": "MultiClass",
+        "random_seed": 0,  # example default seed
+        "logging_level": "Silent",
+        # Other CatBoost parameters can be added here as needed.
+    }
+    sample_weight: Optional[Dict[str, float]] = None
+    classification_threshold: float = 0.5
+
+
+class CatboostRegressionFinalParamConfig:
+    """Define final hyperparameters for CatBoost (regression) using CatBoost defaults."""
+
+    params = {
+        "iterations": 1000,  # default can vary in CatBoost, using 1000 for consistency
+        "depth": 6,  # CatBoost default depth
+        "learning_rate": 0.03,  # CatBoost default
+        "l2_leaf_reg": 3.0,  # CatBoost default
+        "eval_metric": "RMSE",
+        "loss_function": "RMSE",
+        "random_seed": 0,
+        "logging_level": "Silent",
+        # Other CatBoost parameters can be added here as needed.
+    }
+    sample_weight: Optional[Dict[str, float]] = None
+    classification_threshold: float = (
+        999  # Not typically used in regression but kept for compatibility
+    )
