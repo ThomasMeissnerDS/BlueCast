@@ -15,6 +15,8 @@ import numpy as np
 import pandas as pd
 
 from bluecast.config.training_config import (
+    CatboostFinalParamConfig,
+    CatboostTuneParamsConfig,
     TrainingConfig,
     XgboostFinalParamConfig,
     XgboostTuneParamsConfig,
@@ -97,8 +99,12 @@ class BlueCast:
             Union[BoostaRootaWrapper, CustomPreprocessing]
         ] = None,
         conf_training: Optional[TrainingConfig] = None,
-        conf_xgboost: Optional[XgboostTuneParamsConfig] = None,
-        conf_params_xgboost: Optional[XgboostFinalParamConfig] = None,
+        conf_xgboost: Optional[
+            Union[XgboostTuneParamsConfig, CatboostTuneParamsConfig]
+        ] = None,
+        conf_params_xgboost: Optional[
+            Union[XgboostFinalParamConfig, CatboostFinalParamConfig]
+        ] = None,
         experiment_tracker: Optional[ExperimentTracker] = None,
         single_fold_eval_metric_func: Optional[ClassificationEvalWrapper] = None,
     ):

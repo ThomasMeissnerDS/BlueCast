@@ -10,6 +10,8 @@ from sklearn.preprocessing import LabelEncoder
 
 from bluecast.blueprints.cast_regression import BlueCastRegression
 from bluecast.config.training_config import (
+    CatboostRegressionFinalParamConfig,
+    CatboostTuneParamsRegressionConfig,
     TrainingConfig,
     XgboostRegressionFinalParamConfig,
     XgboostTuneParamsRegressionConfig,
@@ -61,8 +63,12 @@ class BlueCastCVRegression:
         cat_columns: Optional[List[Union[str, float, int]]] = None,
         stratifier: Optional[Any] = None,
         conf_training: Optional[TrainingConfig] = None,
-        conf_xgboost: Optional[XgboostTuneParamsRegressionConfig] = None,
-        conf_params_xgboost: Optional[XgboostRegressionFinalParamConfig] = None,
+        conf_xgboost: Optional[
+            Union[XgboostTuneParamsRegressionConfig, CatboostTuneParamsRegressionConfig]
+        ] = None,
+        conf_params_xgboost: Optional[
+            Union[XgboostRegressionFinalParamConfig, CatboostRegressionFinalParamConfig]
+        ] = None,
         experiment_tracker: Optional[ExperimentTracker] = None,
         custom_in_fold_preprocessor: Optional[CustomPreprocessing] = None,
         custom_last_mile_computation: Optional[CustomPreprocessing] = None,

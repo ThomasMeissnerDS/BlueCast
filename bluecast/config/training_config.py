@@ -516,7 +516,8 @@ class CatboostTuneParamsConfig:
     ):
         if bootstrap_type is None:
             bootstrap_type = [
-                "Bayesian"
+                "Bayesian",
+                "No",
             ]  # Poisson not possible on CPU, "MVS" requires min samples
         if grow_policy is None:
             grow_policy = ["SymmetricTree"]
@@ -615,7 +616,7 @@ class CatboostTuneParamsRegressionConfig:
         catboost_eval_metric_tune_direction: str = "minimize",
     ):
         if bootstrap_type is None:
-            bootstrap_type = ["Bayesian", "Poisson", "MVS"]
+            bootstrap_type = ["Bayesian", "No"]  # "Poisson", "MVS"
         if grow_policy is None:
             grow_policy = ["SymmetricTree"]
 

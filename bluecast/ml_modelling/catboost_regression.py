@@ -223,7 +223,7 @@ class CatboostModelRegression(CatboostBaseModel):
                 ),
             }
 
-            if params["bootstrap_type"] == "Bayesian":
+            if params["bootstrap_type"] in ["Bayesian", "No"]:
                 params["bagging_temperature"] = None
                 params["subsample"] = None
 
@@ -359,7 +359,7 @@ class CatboostModelRegression(CatboostBaseModel):
                 # Merge device or other settings
                 final_best_params = {**final_best_params, **train_on}
 
-                if final_best_params["bootstrap_type"] == "Bayesian":
+                if final_best_params["bootstrap_type"] in ["Bayesian", "No"]:
                     final_best_params.pop("subsample", None)
                     final_best_params.pop("bagging_temperature", None)
 

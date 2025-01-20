@@ -16,6 +16,8 @@ import pandas as pd
 from sklearn.metrics import mean_squared_error
 
 from bluecast.config.training_config import (
+    CatboostRegressionFinalParamConfig,
+    CatboostTuneParamsRegressionConfig,
     TrainingConfig,
     XgboostRegressionFinalParamConfig,
     XgboostTuneParamsRegressionConfig,
@@ -93,8 +95,12 @@ class BlueCastRegression:
             Union[BoostaRootaWrapper, CustomPreprocessing]
         ] = None,
         conf_training: Optional[TrainingConfig] = None,
-        conf_xgboost: Optional[XgboostTuneParamsRegressionConfig] = None,
-        conf_params_xgboost: Optional[XgboostRegressionFinalParamConfig] = None,
+        conf_xgboost: Optional[
+            Union[XgboostTuneParamsRegressionConfig, CatboostTuneParamsRegressionConfig]
+        ] = None,
+        conf_params_xgboost: Optional[
+            Union[XgboostRegressionFinalParamConfig, CatboostRegressionFinalParamConfig]
+        ] = None,
         experiment_tracker: Optional[ExperimentTracker] = None,
         single_fold_eval_metric_func: Optional[RegressionEvalWrapper] = None,
     ):
