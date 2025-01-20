@@ -31,9 +31,8 @@ from bluecast.evaluation.eval_metrics import RegressionEvalWrapper
 from bluecast.experimentation.tracking import ExperimentTracker
 from bluecast.ml_modelling.base_classes import XgboostBaseModel
 from bluecast.ml_modelling.parameter_tuning_utils import (
-    get_params_based_on_device,
+    get_params_based_on_device_xgboost,
     sample_data,
-    update_hyperparam_space_after_nth_trial,
     update_params_based_on_tree_method,
     update_params_with_best_params,
 )
@@ -149,7 +148,7 @@ class XgboostModelRegression(XgboostBaseModel):
         """
         logging.info("Start hyperparameter tuning of Xgboost model.")
 
-        train_on = get_params_based_on_device(
+        train_on = get_params_based_on_device_xgboost(
             self.conf_training, self.conf_params_xgboost, self.conf_xgboost
         )
 
@@ -158,12 +157,6 @@ class XgboostModelRegression(XgboostBaseModel):
         )
 
         def objective(trial):
-            self.conf_xgboost = update_hyperparam_space_after_nth_trial(
-                trial,
-                self.conf_xgboost,
-                self.conf_training.update_hyperparameter_search_space_after_nth_trial,
-            )
-
             param = {
                 "validate_parameters": False,
                 "objective": self.conf_xgboost.xgboost_objective,

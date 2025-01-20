@@ -37,8 +37,6 @@ class TrainingConfig:
         Not used when custom ML model is passed.
     :param autotune_n_random_seeds: Number of random seeds to use for autotuning. This changes Optuna's random seed only.
         Will be updated back after every nth trial back again. Not used when custom ML model is passed.
-    :param update_hyperparameter_search_space_after_nth_trial: Update the hyperparameter search space after the nth trial.
-        Not used when custom ML model is passed.
     :param plot_hyperparameter_tuning_overview: Whether to plot the hyperparameter tuning overview. Not used when custom
         ML model is passed.
     :param enable_feature_selection: Whether to enable recursive feature selection.
@@ -91,7 +89,6 @@ class TrainingConfig:
         autotune_model: bool = True,
         autotune_on_device: str = "cpu",
         autotune_n_random_seeds: int = 1,
-        update_hyperparameter_search_space_after_nth_trial: int = 200,
         plot_hyperparameter_tuning_overview: bool = True,
         enable_feature_selection: bool = False,
         calculate_shap_values: bool = True,
@@ -132,9 +129,6 @@ class TrainingConfig:
         self.autotune_model = autotune_model
         self.autotune_on_device = autotune_on_device
         self.autotune_n_random_seeds = autotune_n_random_seeds
-        self.update_hyperparameter_search_space_after_nth_trial = (
-            update_hyperparameter_search_space_after_nth_trial
-        )
         self.plot_hyperparameter_tuning_overview = plot_hyperparameter_tuning_overview
         self.enable_feature_selection = enable_feature_selection
         self.calculate_shap_values = calculate_shap_values

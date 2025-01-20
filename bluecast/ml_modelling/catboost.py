@@ -19,9 +19,8 @@ from bluecast.evaluation.eval_metrics import ClassificationEvalWrapper
 from bluecast.experimentation.tracking import ExperimentTracker
 from bluecast.ml_modelling.base_classes import CatboostBaseModel
 from bluecast.ml_modelling.parameter_tuning_utils import (
-    get_params_based_on_device,
+    get_params_based_on_device_catboost,
     sample_data,
-    update_hyperparam_space_after_nth_trial,
     update_params_with_best_params,
 )
 from bluecast.preprocessing.custom import CustomPreprocessing
@@ -158,7 +157,7 @@ class CatboostModel(CatboostBaseModel):
         logging.info("Start hyperparameter tuning of CatBoost model.")
 
         # If you have some function that merges device-based or other settings:
-        train_on = get_params_based_on_device(
+        train_on = get_params_based_on_device_catboost(
             self.conf_training, self.conf_params_catboost, self.conf_catboost
         )
 
@@ -167,13 +166,6 @@ class CatboostModel(CatboostBaseModel):
         )
 
         def objective(trial):
-            # Optionally update search space as in your XgBoost approach
-            self.conf_catboost = update_hyperparam_space_after_nth_trial(  # TODO: Replace with Catboost equivalent
-                trial,
-                self.conf_catboost,
-                self.conf_training.update_hyperparameter_search_space_after_nth_trial,
-            )
-
             # Example: Build CatBoost param dictionary from conf_catboost
             params = {
                 "objective": self.conf_catboost.catboost_objective,

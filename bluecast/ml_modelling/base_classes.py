@@ -480,7 +480,9 @@ class CatboostBaseModel:
         """
         if conf_catboost is None and self.class_problem in ["binary", "multiclass"]:
             logging.info("Load default CatboostTuneParamsConfig.")
-            self.conf_catboost = CatboostTuneParamsConfig()
+            self.conf_catboost: Union[
+                CatboostTuneParamsConfig, CatboostTuneParamsRegressionConfig
+            ] = CatboostTuneParamsConfig()
         elif conf_catboost is None and self.class_problem in ["regression"]:
             logging.info("Load default CatboostTuneParamsRegressionConfig.")
             self.conf_catboost = CatboostTuneParamsRegressionConfig()
@@ -502,7 +504,9 @@ class CatboostBaseModel:
             "multiclass",
         ]:
             logging.info("Load default CatboostFinalParamConfig.")
-            self.conf_params_catboost = CatboostFinalParamConfig()
+            self.conf_params_catboost: Union[
+                CatboostFinalParamConfig, CatboostRegressionFinalParamConfig
+            ] = CatboostFinalParamConfig()
         elif conf_params_catboost is None and self.class_problem in ["regression"]:
             logging.info("Load default CatboostRegressionFinalParamConfig.")
             self.conf_params_catboost = CatboostRegressionFinalParamConfig()
@@ -645,35 +649,25 @@ class CatboostBaseModel:
         raise NotImplementedError("Method fine_tune has not been defined for CatBoost.")
 
     def create_fine_tune_search_space(self) -> Dict[str, np.array]:
-        """
-        Mimics the XGBoost method that creates a small search space around
-        the best parameters found so far. You could adapt this to CatBoost
-        parameters, e.g.:
+        l2_leaf_reg = self.conf_params_catboost.params.get("l2_leaf_reg")
+        learning_rate = self.conf_params_catboost.params.get("learning_rate")
 
-        - 'learning_rate'
-        - 'depth'
-        - 'l2_leaf_reg'
-        - 'bagging_temperature'
-        - 'random_strength'
-        etc.
+        if isinstance(l2_leaf_reg, (float, int)) and isinstance(
+            learning_rate, (float, int)
+        ):
+            l2_leaf_reg = float(l2_leaf_reg)
+            learning_rate = float(learning_rate)
 
-        Below is an example for 'l2_leaf_reg' and 'learning_rate' only,
-        but you can add or remove as needed.
-        """
-        # Example: we expect these to be float or int
-        if isinstance(
-            self.conf_params_catboost.params.get("l2_leaf_reg"), float
-        ) and isinstance(self.conf_params_catboost.params.get("learning_rate"), float):
             return {
                 "l2_leaf_reg": np.linspace(
-                    self.conf_params_catboost.params["l2_leaf_reg"] * 0.9,
-                    self.conf_params_catboost.params["l2_leaf_reg"] * 1.1,
+                    l2_leaf_reg * 0.9,
+                    l2_leaf_reg * 1.1,
                     self.conf_training.gridsearch_nb_parameters_per_grid,
                     dtype=float,
                 ),
                 "learning_rate": np.linspace(
-                    self.conf_params_catboost.params["learning_rate"] * 0.9,
-                    self.conf_params_catboost.params["learning_rate"] * 1.1,
+                    learning_rate * 0.9,
+                    learning_rate * 1.1,
                     self.conf_training.gridsearch_nb_parameters_per_grid,
                     dtype=float,
                 ),
@@ -681,28 +675,31 @@ class CatboostBaseModel:
         else:
             raise ValueError("Some parameters are not floats or not found in params.")
 
-    def _get_param_space_fpr_grid_search(
-        self, trial: optuna.trial.FrozenTrial
-    ) -> Dict[str, float]:
+    def _get_param_space_fpr_grid_search(self, trial: optuna.trial) -> Dict[str, Any]:
         """
         Similar to XGBoost method for an Optuna-based grid or random search.
         For CatBoost, adjust to whichever parameters you want to tweak.
         """
-        if isinstance(
-            self.conf_params_catboost.params.get("l2_leaf_reg"), float
-        ) and isinstance(self.conf_params_catboost.params.get("learning_rate"), float):
-            tuned_params = deepcopy(self.conf_params_catboost.params)
+        l2_leaf_reg = self.conf_params_catboost.params.get("l2_leaf_reg")
+        learning_rate = self.conf_params_catboost.params.get("learning_rate")
+        tuned_params = deepcopy(self.conf_params_catboost.params)
+
+        if isinstance(l2_leaf_reg, (float, int)) and isinstance(
+            learning_rate, (float, int)
+        ):
+            l2_leaf_reg = float(l2_leaf_reg)
+            learning_rate = float(learning_rate)
 
             l2_leaf_reg_space = trial.suggest_float(
                 "l2_leaf_reg",
-                tuned_params["l2_leaf_reg"] * 0.9,
-                tuned_params["l2_leaf_reg"] * 1.1,
+                l2_leaf_reg * 0.9,
+                l2_leaf_reg * 1.1,
                 log=False,
             )
             learning_rate_space = trial.suggest_float(
                 "learning_rate",
-                tuned_params["learning_rate"] * 0.9,
-                tuned_params["learning_rate"] * 1.1,
+                learning_rate * 0.9,
+                learning_rate * 1.1,
                 log=False,
             )
 

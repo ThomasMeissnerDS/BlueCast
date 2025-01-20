@@ -14,7 +14,6 @@ except ImportError:
     from sklearn.metrics import mean_squared_error
 
 from sklearn.model_selection import KFold, RepeatedStratifiedKFold
-from sklearn.preprocessing import LabelEncoder  # TODO: Check why not used
 
 from bluecast.config.training_config import (
     CatboostRegressionFinalParamConfig,
@@ -25,9 +24,8 @@ from bluecast.evaluation.eval_metrics import RegressionEvalWrapper
 from bluecast.experimentation.tracking import ExperimentTracker
 from bluecast.ml_modelling.base_classes import CatboostBaseModel
 from bluecast.ml_modelling.parameter_tuning_utils import (
-    get_params_based_on_device,
+    get_params_based_on_device_catboost,
     sample_data,
-    update_hyperparam_space_after_nth_trial,
     update_params_with_best_params,
 )
 from bluecast.preprocessing.custom import CustomPreprocessing
@@ -155,7 +153,7 @@ class CatboostModelRegression(CatboostBaseModel):
         logging.info("Start hyperparameter tuning of CatBoost regression model.")
 
         # Merge device or other global settings
-        train_on = get_params_based_on_device(
+        train_on = get_params_based_on_device_catboost(
             self.conf_training,
             self.conf_params_catboost,
             self.conf_catboost,
@@ -167,13 +165,6 @@ class CatboostModelRegression(CatboostBaseModel):
         )
 
         def objective(trial):
-            # Optionally adapt search space after nth trial
-            self.conf_catboost = update_hyperparam_space_after_nth_trial(  # TODO: Build catboost counterpart
-                trial,
-                self.conf_catboost,
-                self.conf_training.update_hyperparameter_search_space_after_nth_trial,
-            )
-
             # Typical CatBoost regression params
             params = {
                 "objective": self.conf_catboost.catboost_objective,
@@ -416,8 +407,6 @@ class CatboostModelRegression(CatboostBaseModel):
         x_test: pd.DataFrame,
         y_test: pd.Series,
     ) -> float:
-        steps = tuned_params.pop("iterations", 1000)  # TODO: Check if this is correct
-
         kf = KFold(
             n_splits=self.conf_training.hypertuning_cv_folds,
             shuffle=True,
