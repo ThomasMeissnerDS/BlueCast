@@ -658,15 +658,14 @@ class CatboostFinalParamConfig:
     """Define final hyperparameters for CatBoost (classification or multiclass) using CatBoost defaults."""
 
     params = {
-        "iterations": 1000,  # default can vary in CatBoost, using 1000 for consistency
-        "depth": 6,  # CatBoost default depth
-        "learning_rate": 0.03,  # CatBoost default
-        "l2_leaf_reg": 3.0,  # CatBoost default
+        "iterations": 1000,
+        "depth": 6,
+        "learning_rate": 0.03,
+        "l2_leaf_reg": 3.0,
         "eval_metric": "MultiClass",
         "loss_function": "MultiClass",
-        "random_seed": 0,  # example default seed
+        "random_seed": 0,
         "logging_level": "Silent",
-        # Other CatBoost parameters can be added here as needed.
     }
     sample_weight: Optional[Dict[str, float]] = None
     classification_threshold: float = 0.5
@@ -676,15 +675,14 @@ class CatboostRegressionFinalParamConfig:
     """Define final hyperparameters for CatBoost (regression) using CatBoost defaults."""
 
     params = {
-        "iterations": 1000,  # default can vary in CatBoost, using 1000 for consistency
-        "depth": 6,  # CatBoost default depth
-        "learning_rate": 0.03,  # CatBoost default
-        "l2_leaf_reg": 3.0,  # CatBoost default
+        "iterations": 1000,
+        "depth": 6,
+        "learning_rate": 0.03,
+        "l2_leaf_reg": 3.0,
         "eval_metric": "RMSE",
         "loss_function": "RMSE",
         "random_seed": 0,
         "logging_level": "Silent",
-        # Other CatBoost parameters can be added here as needed.
     }
     sample_weight: Optional[Dict[str, float]] = None
     classification_threshold: float = (
