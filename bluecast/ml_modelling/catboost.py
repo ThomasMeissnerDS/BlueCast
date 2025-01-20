@@ -171,7 +171,6 @@ class CatboostModel(CatboostBaseModel):
                 "objective": self.conf_catboost.catboost_objective,
                 "eval_metric": self.conf_catboost.catboost_eval_metric,
                 "random_seed": self.conf_training.global_random_state,
-                # Some typical CatBoost hyperparameters:
                 "learning_rate": trial.suggest_float(
                     "learning_rate",
                     self.conf_catboost.learning_rate_min,
@@ -228,6 +227,10 @@ class CatboostModel(CatboostBaseModel):
                     log=True,
                 ),
             }
+            if params["bootstrap_type"] == "Bayesian":
+                params["bagging_temperature"] = None
+                params["subsample"] = None
+
             params = {**params, **train_on}
 
             sample_weight_choice = trial.suggest_categorical(
@@ -379,6 +382,10 @@ class CatboostModel(CatboostBaseModel):
                     "iterations": best_param["iterations"],
                 }
                 final_best_params = {**final_best_params, **train_on}
+
+                if final_best_params["bootstrap_type"] == "Bayesian":
+                    final_best_params.pop("subsample", None)
+                    final_best_params.pop("bagging_temperature", None)
 
                 final_best_params = update_params_with_best_params(
                     final_best_params, best_param
