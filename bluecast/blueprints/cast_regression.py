@@ -398,8 +398,18 @@ class BlueCastRegression:
             self.ml_model = XgboostModelRegression(
                 self.class_problem,
                 conf_training=self.conf_training,
-                conf_xgboost=self.conf_xgboost,
-                conf_params_xgboost=self.conf_params_xgboost,
+                conf_xgboost=(
+                    self.conf_xgboost
+                    if isinstance(self.conf_xgboost, XgboostTuneParamsRegressionConfig)
+                    else XgboostTuneParamsRegressionConfig()
+                ),
+                conf_params_xgboost=(
+                    self.conf_params_xgboost
+                    if isinstance(
+                        self.conf_params_xgboost, XgboostRegressionFinalParamConfig
+                    )
+                    else XgboostRegressionFinalParamConfig()
+                ),
                 experiment_tracker=self.experiment_tracker,
                 custom_in_fold_preprocessor=self.custom_in_fold_preprocessor,
                 cat_columns=self.cat_columns,

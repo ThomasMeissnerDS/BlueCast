@@ -434,8 +434,16 @@ class BlueCast:
             self.ml_model = XgboostModel(
                 self.class_problem,
                 conf_training=self.conf_training,
-                conf_xgboost=self.conf_xgboost,
-                conf_params_xgboost=self.conf_params_xgboost,
+                conf_xgboost=(
+                    self.conf_xgboost
+                    if isinstance(self.conf_xgboost, XgboostTuneParamsConfig)
+                    else XgboostTuneParamsConfig()
+                ),
+                conf_params_xgboost=(
+                    self.conf_params_xgboost
+                    if isinstance(self.conf_params_xgboost, XgboostFinalParamConfig)
+                    else XgboostFinalParamConfig()
+                ),
                 experiment_tracker=self.experiment_tracker,
                 custom_in_fold_preprocessor=self.custom_in_fold_preprocessor,
                 cat_columns=self.cat_columns,
