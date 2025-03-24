@@ -58,11 +58,10 @@ def test_BlueCastRegression_without_hyperparam_tuning():
     bluecast.fit(x_train, "target")
 
     # Predict on the test data using the custom model
-    predicted_probas, predicted_classes = bluecast.predict(x_test)
+    predicted_values = bluecast.predict(x_test)
 
     # Assert the expected results
-    assert isinstance(predicted_probas, np.ndarray)
-    assert isinstance(predicted_classes, np.ndarray)
+    assert isinstance(predicted_values, np.ndarray)
     print(bluecast.experiment_tracker.experiment_id)
     assert (
         len(bluecast.experiment_tracker.experiment_id) == 0
@@ -118,11 +117,10 @@ def test_BlueCastRegression_with_hyperparam_tuning():
     bluecast.fit(x_train, "target")
 
     # Predict on the test data using the custom model
-    predicted_probas, predicted_classes = bluecast.predict(x_test)
+    predicted_values = bluecast.predict(x_test)
 
     # Assert the expected results
-    assert isinstance(predicted_probas, np.ndarray)
-    assert isinstance(predicted_classes, np.ndarray)
+    assert isinstance(predicted_values, np.ndarray)
     print(bluecast.experiment_tracker.experiment_id)
     assert (
         len(bluecast.experiment_tracker.experiment_id) == 0

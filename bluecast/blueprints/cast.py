@@ -261,7 +261,7 @@ class BlueCast:
             unique target classes have been found. Did you mean 'binary' instead?"""
             warnings.warn(message, UserWarning, stacklevel=2)
 
-        if self.conf_xgboost:
+        if self.conf_xgboost and isinstance(self.conf_xgboost, XgboostTuneParamsConfig):
             if (
                 self.conf_training.cat_encoding_via_ml_algorithm
                 and "exact" in self.conf_xgboost.tree_method

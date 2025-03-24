@@ -157,7 +157,6 @@ class BlueCastRegression:
                 higher_is_better=False,
                 metric_func=mean_squared_error,
                 metric_name="Mean squared error",
-                **{"squared": False},
             )
 
         logging.basicConfig(
@@ -253,7 +252,9 @@ class BlueCastRegression:
             or higher or disable precise_cv_tuning."""
             warnings.warn(message, UserWarning, stacklevel=2)
 
-        if self.conf_xgboost:
+        if self.conf_xgboost and isinstance(
+            self.conf_xgboost, XgboostTuneParamsRegressionConfig
+        ):
             if (
                 self.conf_training.cat_encoding_via_ml_algorithm
                 and "exact" in self.conf_xgboost.tree_method

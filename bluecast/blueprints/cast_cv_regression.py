@@ -117,7 +117,6 @@ class BlueCastCVRegression:
                 higher_is_better=False,
                 metric_func=mean_squared_error,
                 metric_name="Mean squared error",
-                **{"squared": False},
             )
 
     def prepare_data(

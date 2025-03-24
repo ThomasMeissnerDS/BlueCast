@@ -64,7 +64,6 @@ class CatboostModelRegression(CatboostBaseModel):
                     higher_is_better=False,
                     metric_func=mean_squared_error,  # Will measure RMSE if squared=False
                     metric_name="Root Mean Squared Error",
-                    squared=False,
                 )
             )
 
