@@ -56,6 +56,7 @@ def test_bluecast_without_hyperparam_tuning():
 
     # Predict on the test data using the custom model
     predicted_probas, predicted_classes = bluecast.predict(x_test)
+    _ = bluecast.predict_proba(x_test)
 
     # Assert the expected results
     assert isinstance(predicted_probas, np.ndarray)
@@ -117,6 +118,7 @@ def test_bluecast_with_hyperparam_tuning():
 
     # Predict on the test data using the custom model
     predicted_probas, predicted_classes = bluecast.predict(x_test)
+    _ = bluecast.predict_proba(x_test)
 
     # Assert the expected results
     assert isinstance(predicted_probas, np.ndarray)
@@ -151,6 +153,7 @@ def test_bluecast_with_hyperparam_tuning():
 
     # Predict on the test data using the custom model
     predicted_probas, predicted_classes = bluecast.predict(x_test)
+    _ = bluecast.predict_proba(x_test)
 
     # Assert the expected results
     assert isinstance(predicted_probas, np.ndarray)
@@ -212,6 +215,7 @@ def test_bluecast_with_fine_tune_hyperparam_tuning():
 
     # Predict on the test data using the custom model
     predicted_probas, predicted_classes = bluecast.predict(x_test)
+    _ = bluecast.predict_proba(x_test)
 
     # Assert the expected results
     assert isinstance(predicted_probas, np.ndarray)
