@@ -71,6 +71,7 @@ def test_bluecast_with_hyperparam_tuning():
     train_config.hyperparameter_tuning_rounds = 10
     train_config.hypertuning_cv_folds = 2
     train_config.autotune_model = True
+    train_config.plot_hyperparameter_tuning_overview = False
 
     catboost_pram_config = CatboostTuneParamsConfig()
 
@@ -110,6 +111,40 @@ def test_bluecast_with_hyperparam_tuning():
     )
 
     x_train["target"] = y_train
+
+    # Fit the BlueCast model using the custom model
+    bluecast.fit(x_train, "target")
+
+    # Predict on the test data using the custom model
+    predicted_probas, predicted_classes = bluecast.predict(x_test)
+
+    # Assert the expected results
+    assert isinstance(predicted_probas, np.ndarray)
+    assert isinstance(predicted_classes, np.ndarray)
+    print(bluecast.experiment_tracker.experiment_id)
+    assert (
+        len(bluecast.experiment_tracker.experiment_id) == 0
+    )  # due to custom model and fit method
+
+    # TEST with 1 fold
+    train_config = TrainingConfig()
+    train_config.hyperparameter_tuning_rounds = 10
+    train_config.hypertuning_cv_folds = 1
+    train_config.autotune_model = True
+
+    catboost_pram_config = CatboostTuneParamsConfig()
+
+    # Create an instance of the BlueCast class with the custom model
+    bluecast = BlueCast(
+        class_problem="binary",
+        ml_model=CatboostModel(
+            class_problem="binary",
+            conf_training=train_config,
+            conf_catboost=catboost_pram_config,
+        ),
+        conf_xgboost=catboost_pram_config,
+        conf_training=train_config,
+    )
 
     # Fit the BlueCast model using the custom model
     bluecast.fit(x_train, "target")
