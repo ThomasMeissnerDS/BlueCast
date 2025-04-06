@@ -15,7 +15,7 @@ def test_catboost_no_catboost_config_warnings():
     expected_message = re.escape("conf_catboost or conf_training is None")
 
     catboost_model = CatboostModel(class_problem="binary")
-    del catboost_model.conf_catboost
+    # del catboost_model.conf_catboost
 
     dummy_df = pd.DataFrame({"A": [1, 2, 3], "B": [7, 8, 9]})
 
@@ -27,7 +27,7 @@ def test_catboost_no_conf_training_warnings():
     expected_message = re.escape("conf_catboost or conf_training is None")
 
     catboost_model = CatboostModel(class_problem="binary")
-    del catboost_model.conf_training
+    # del catboost_model.conf_training
 
     dummy_df = pd.DataFrame({"A": [1, 2, 3], "B": [7, 8, 9]})
 
@@ -39,7 +39,7 @@ def test_catboost_no_model_warnings():
     expected_message = re.escape("No trained CatBoost model found.")
 
     catboost_model = CatboostModel(class_problem="binary")
-    del catboost_model.model
+    # del catboost_model.model
 
     dummy_df = pd.DataFrame({"A": [1, 2, 3], "B": [7, 8, 9]})
 
@@ -51,7 +51,7 @@ def test_catboost_no_conf_params_catboost_warnings():
     expected_message = re.escape("No CatBoost model configuration found.")
 
     catboost_model = CatboostModel(class_problem="binary")
-    del catboost_model.conf_params_catboost
+    # del catboost_model.conf_params_catboost
 
     dummy_df = pd.DataFrame({"A": [1, 2, 3], "B": [7, 8, 9]})
 
