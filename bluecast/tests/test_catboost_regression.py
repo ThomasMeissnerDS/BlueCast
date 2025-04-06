@@ -1,3 +1,5 @@
+from typing import Optional, Tuple
+
 import numpy as np
 import pandas as pd
 
@@ -7,6 +9,7 @@ from bluecast.config.training_config import (
     TrainingConfig,
 )
 from bluecast.ml_modelling.catboost_regression import CatboostModelRegression
+from bluecast.preprocessing.custom import CustomPreprocessing
 
 
 def test_BlueCastRegression_without_hyperparam_tuning():
@@ -17,9 +20,29 @@ def test_BlueCastRegression_without_hyperparam_tuning():
 
     catboost_pram_config = CatboostTuneParamsRegressionConfig()
 
+    class MyCustomLastMilePreprocessing(CustomPreprocessing):
+        def custom_function(self, df: pd.DataFrame) -> pd.DataFrame:
+            df["custom_col"] = 5
+            return df
+
+        def fit_transform(
+            self, df: pd.DataFrame, target: pd.Series
+        ) -> Tuple[pd.DataFrame, pd.Series]:
+            df = self.custom_function(df)
+            return df, target
+
+        def transform(
+            self,
+            df: pd.DataFrame,
+            target: Optional[pd.Series] = None,
+            predicton_mode: bool = False,
+        ) -> Tuple[pd.DataFrame, Optional[pd.Series]]:
+            df = self.custom_function(df)
+            return df, target
+
     # Create an instance of the BlueCastRegression class with the custom model
     bluecast = BlueCastRegression(
-        class_problem="binary",
+        class_problem="regression",
         ml_model=CatboostModelRegression(
             class_problem="regression",
             conf_training=train_config,
@@ -27,6 +50,7 @@ def test_BlueCastRegression_without_hyperparam_tuning():
         ),
         conf_xgboost=catboost_pram_config,
         conf_training=train_config,
+        custom_last_mile_computation=MyCustomLastMilePreprocessing(),
     )
 
     # Create some sample data for testing

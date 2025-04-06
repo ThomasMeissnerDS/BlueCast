@@ -1,9 +1,62 @@
+import re
+from typing import Optional, Tuple
+
 import numpy as np
 import pandas as pd
+import pytest
 
 from bluecast.blueprints.cast import BlueCast
 from bluecast.config.training_config import CatboostTuneParamsConfig, TrainingConfig
 from bluecast.ml_modelling.catboost import CatboostModel
+from bluecast.preprocessing.custom import CustomPreprocessing
+
+
+def test_catboost_no_catboost_config_warnings():
+    expected_message = re.escape("conf_catboost or conf_training is None")
+
+    catboost_model = CatboostModel(class_problem="binary")
+    del catboost_model.conf_catboost
+
+    dummy_df = pd.DataFrame({"A": [1, 2, 3], "B": [7, 8, 9]})
+
+    with pytest.warns(UserWarning, match=expected_message):
+        catboost_model.predict_proba(dummy_df)
+
+
+def test_catboost_no_conf_training_warnings():
+    expected_message = re.escape("conf_catboost or conf_training is None")
+
+    catboost_model = CatboostModel(class_problem="binary")
+    del catboost_model.conf_training
+
+    dummy_df = pd.DataFrame({"A": [1, 2, 3], "B": [7, 8, 9]})
+
+    with pytest.warns(UserWarning, match=expected_message):
+        catboost_model.predict_proba(dummy_df)
+
+
+def test_catboost_no_model_warnings():
+    expected_message = re.escape("No trained CatBoost model found.")
+
+    catboost_model = CatboostModel(class_problem="binary")
+    del catboost_model.model
+
+    dummy_df = pd.DataFrame({"A": [1, 2, 3], "B": [7, 8, 9]})
+
+    with pytest.warns(UserWarning, match=expected_message):
+        catboost_model.predict_proba(dummy_df)
+
+
+def test_catboost_no_conf_params_catboost_warnings():
+    expected_message = re.escape("No CatBoost model configuration found.")
+
+    catboost_model = CatboostModel(class_problem="binary")
+    del catboost_model.conf_params_catboost
+
+    dummy_df = pd.DataFrame({"A": [1, 2, 3], "B": [7, 8, 9]})
+
+    with pytest.warns(UserWarning, match=expected_message):
+        catboost_model.predict_proba(dummy_df)
 
 
 def test_bluecast_without_hyperparam_tuning():
@@ -13,6 +66,26 @@ def test_bluecast_without_hyperparam_tuning():
     train_config.autotune_model = False
 
     catboost_pram_config = CatboostTuneParamsConfig()
+
+    class MyCustomLastMilePreprocessing(CustomPreprocessing):
+        def custom_function(self, df: pd.DataFrame) -> pd.DataFrame:
+            df["custom_col"] = 5
+            return df
+
+        def fit_transform(
+            self, df: pd.DataFrame, target: pd.Series
+        ) -> Tuple[pd.DataFrame, pd.Series]:
+            df = self.custom_function(df)
+            return df, target
+
+        def transform(
+            self,
+            df: pd.DataFrame,
+            target: Optional[pd.Series] = None,
+            predicton_mode: bool = False,
+        ) -> Tuple[pd.DataFrame, Optional[pd.Series]]:
+            df = self.custom_function(df)
+            return df, target
 
     # Create an instance of the BlueCast class with the custom model
     bluecast = BlueCast(
@@ -24,6 +97,7 @@ def test_bluecast_without_hyperparam_tuning():
         ),
         conf_xgboost=catboost_pram_config,
         conf_training=train_config,
+        custom_last_mile_computation=MyCustomLastMilePreprocessing(),
     )
 
     # Create some sample data for testing
