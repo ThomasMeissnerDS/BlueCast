@@ -673,6 +673,9 @@ def test_catboost_no_model_fixed():
 def test_catboost_no_conf_params_catboost_fixed():
     """Test that predict_proba raises Exception when conf_params_catboost is None."""
     catboost_model = CatboostModel(class_problem="binary")
+    # Create a mock model to avoid the "No trained CatBoost model found" exception
+    from catboost import CatBoostClassifier
+    catboost_model.model = CatBoostClassifier()
     catboost_model.conf_params_catboost = None
     dummy_df = pd.DataFrame({"A": [1, 2, 3], "B": [7, 8, 9]})
 
