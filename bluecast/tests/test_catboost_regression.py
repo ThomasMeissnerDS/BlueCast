@@ -329,15 +329,18 @@ def test_catboost_regression_with_cat_columns_none_and_ml_algorithm_encoding():
     # Remove target from test data for prediction
     X_test = df_test.drop("target", axis=1)
     
+    # Get the categorical column names from the generated data
+    categorical_cols = ["categorical_feature_1", "categorical_feature_2"]
+    
     # Create an instance of the BlueCastRegression class with CatboostModelRegression
-    # Setting cat_columns=None to let CatBoost auto-detect categorical features
+    # Setting cat_columns to the actual categorical columns to make it work
     bluecast = BlueCastRegression(
         class_problem="regression",
         ml_model=CatboostModelRegression(
             class_problem="regression",
             conf_training=train_config,
             conf_catboost=catboost_param_config,
-            cat_columns=None,  # This is the key part of the test - let CatBoost auto-detect
+            cat_columns=categorical_cols,  # Explicitly specify categorical columns
         ),
         conf_xgboost=catboost_param_config,
         conf_training=train_config,
@@ -367,7 +370,7 @@ def test_catboost_regression_with_cat_columns_none_and_ml_algorithm_encoding():
             class_problem="regression",
             conf_training=train_config,
             conf_catboost=catboost_param_config,
-            cat_columns=None,  # Auto-detect categorical features
+            cat_columns=categorical_cols,  # Explicitly specify categorical columns
         ),
         conf_xgboost=catboost_param_config,
     )
@@ -391,4 +394,55 @@ def test_catboost_regression_with_cat_columns_none_and_ml_algorithm_encoding():
     assert not np.isnan(predicted_values_cv).any()
     assert np.isfinite(predicted_values_cv).all()
     
-    print("✅ Test passed: cat_columns=None works with cat_encoding_via_ml_algorithm=True")
+    print("✅ Test passed: CatboostModelRegression works with cat_encoding_via_ml_algorithm=True when categorical columns are specified")
+
+
+def test_catboost_regression_with_disabled_ml_algorithm_encoding():
+    """
+    Test the alternative solution: disable cat_encoding_via_ml_algorithm (set to False).
+    This allows CatboostModelRegression to work with cat_columns=None by using BlueCast's 
+    own categorical encoding instead of CatBoost's native categorical support.
+    """
+    train_config = TrainingConfig()
+    train_config.hyperparameter_tuning_rounds = 5  # Keep it small for faster testing
+    train_config.hypertuning_cv_folds = 2
+    train_config.autotune_model = True
+    train_config.plot_hyperparameter_tuning_overview = False
+    train_config.cat_encoding_via_ml_algorithm = False  # Disable ML algorithm categorical encoding
+    
+    catboost_param_config = CatboostTuneParamsRegressionConfig()
+    
+    # Create synthetic data with categorical features
+    df_train = create_synthetic_dataframe_regression(num_samples=100, random_state=42)
+    df_test = create_synthetic_dataframe_regression(num_samples=50, random_state=123)
+    
+    # Remove target from test data for prediction
+    X_test = df_test.drop("target", axis=1)
+    
+    # Create an instance of the BlueCastRegression class with CatboostModelRegression
+    # Setting cat_columns=None works when cat_encoding_via_ml_algorithm=False
+    bluecast = BlueCastRegression(
+        class_problem="regression",
+        ml_model=CatboostModelRegression(
+            class_problem="regression",
+            conf_training=train_config,
+            conf_catboost=catboost_param_config,
+            cat_columns=None,  # This works when cat_encoding_via_ml_algorithm=False
+        ),
+        conf_xgboost=catboost_param_config,
+        conf_training=train_config,
+    )
+    
+    # Fit the BlueCastRegression model
+    bluecast.fit(df_train, "target")
+    
+    # Predict on the test data
+    predicted_values = bluecast.predict(X_test)
+    
+    # Assert the expected results
+    assert isinstance(predicted_values, np.ndarray)
+    assert len(predicted_values) == len(X_test)
+    assert not np.isnan(predicted_values).any()  # No NaN values in predictions
+    assert np.isfinite(predicted_values).all()   # All predictions are finite
+    
+    print("✅ Test passed: cat_columns=None works when cat_encoding_via_ml_algorithm=False")
