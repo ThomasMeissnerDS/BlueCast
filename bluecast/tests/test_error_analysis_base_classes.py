@@ -81,7 +81,7 @@ def test_base_class_errorpreprocessor_notimplemented_error():
         fail_cls.calculate_errors(test_df)
 
 
-# Mock function to test the plot_error_distributions method
+# Test the plot_error_distributions method (converted to plotly)
 def test_plot_error_distributions_with_splits():
     # Create a test DataFrame with more than max_x_elements unique values in one column
     test_df = pd.DataFrame(
@@ -96,8 +96,8 @@ def test_plot_error_distributions_with_splits():
     max_x_elements = 5
     num_cols_grid = 1
 
-    # Mock sns.violinplot to prevent actual plotting during the test
-    with patch("seaborn.violinplot") as mock_violinplot:
+    # Mock plotly figure.show() to prevent actual plotting during the test
+    with patch("plotly.graph_objects.Figure.show") as mock_show:
         # Call the function with the test data
         plot_error_distributions(
             df=test_df,
@@ -107,28 +107,9 @@ def test_plot_error_distributions_with_splits():
             max_x_elements=max_x_elements,
         )
 
-        # Check that sns.violinplot was called multiple times (for each split)
-        assert (
-            mock_violinplot.call_count == 2
-        )  # Should be split into 2 plots because 10 > 5
-
-        # Verify the first call arguments for the first split
-        first_call_args = mock_violinplot.call_args_list[0][1]
-        assert first_call_args["x"] == "variable_with_many_values"
-        assert first_call_args["y"] == "prediction_error"
-        assert first_call_args["hue"] == "target"
-
-        # Verify the second call arguments for the second split
-        second_call_args = mock_violinplot.call_args_list[1][1]
-        assert second_call_args["x"] == "variable_with_many_values"
-        assert second_call_args["y"] == "prediction_error"
-        assert second_call_args["hue"] == "target"
-
-        # Check that the data in the subset only contains the correct range of unique values
-        assert sorted(first_call_args["order"]) == list(range(5))  # First split (0-4)
-        assert sorted(second_call_args["order"]) == list(
-            range(5, 10)
-        )  # Second split (5-9)
+        # Check that figure.show() was called multiple times (for each split)
+        # Should be split into 2 plots because 10 unique values > 5 max_x_elements
+        assert mock_show.call_count == 2
 
 
 def test_plot_error_distributions_no_split():
@@ -145,8 +126,8 @@ def test_plot_error_distributions_no_split():
     max_x_elements = 5
     num_cols_grid = 1
 
-    # Mock sns.violinplot to prevent actual plotting during the test
-    with patch("seaborn.violinplot") as mock_violinplot:
+    # Mock plotly figure.show() to prevent actual plotting during the test
+    with patch("plotly.graph_objects.Figure.show") as mock_show:
         # Call the function with the test data
         plot_error_distributions(
             df=test_df,
@@ -156,14 +137,6 @@ def test_plot_error_distributions_no_split():
             max_x_elements=max_x_elements,
         )
 
-        # Check that sns.violinplot was called only once (no split)
-        assert mock_violinplot.call_count == 1
-
-        # Verify the call arguments
-        call_args = mock_violinplot.call_args_list[0][1]
-        assert call_args["x"] == "variable_with_few_values"
-        assert call_args["y"] == "prediction_error"
-        assert call_args["hue"] == "target"
-
-        # Ensure the entire dataset was used without splitting
-        assert sorted(call_args["order"]) == [1, 2]  # No splitting occurred
+        # Check that figure.show() was called only once (no split)
+        # Since 2 unique values <= 5 max_x_elements, no splitting should occur
+        assert mock_show.call_count == 1

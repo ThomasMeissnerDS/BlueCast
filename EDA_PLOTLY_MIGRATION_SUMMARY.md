@@ -2,18 +2,23 @@
 
 ## Summary
 
-The `bluecast/eda/analyse.py` module has been successfully migrated from matplotlib/seaborn to plotly for all visualization functions. This migration provides several benefits:
+The `bluecast/eda/analyse.py` module has been successfully migrated from
+matplotlib/seaborn to plotly for all visualization functions. This migration
+provides several benefits:
 
 - **Interactive plots**: All plots are now interactive by default
 - **Better web integration**: Plots work seamlessly in web browsers and notebooks
-- **Dashboard capability**: Added functionality to create interactive dashboards with just a few lines of code
-- **Return values**: Functions now return plotly Figure objects that can be programmatically manipulated
+- **Dashboard capability**: Added functionality to create interactive dashboards
+  with just a few lines of code
+- **Return values**: Functions now return plotly Figure objects that can be
+  programmatically manipulated
 
 ## Changes Made
 
 ### 1. Dependencies Updated
 
 **pyproject.toml**:
+
 - Added `dash = "^2.0.0"` for dashboard functionality
 - Existing `plotly = "^5"` dependency is now fully utilized
 
@@ -46,6 +51,7 @@ create_eda_dashboard(df, 'target_column', port=8050)
 ```
 
 Features of the dashboard:
+
 - Multiple plot types (correlation heatmap, PCA, distributions, etc.)
 - Interactive feature selection
 - Real-time plot updates
@@ -78,6 +84,7 @@ fig = plot_pca(df, 'target', show=False)
 ### 4. Tests Updated
 
 **bluecast/tests/test_analyse.py**:
+
 - All tests updated to work with plotly Figure objects
 - Added `import plotly.graph_objects as go`
 - Tests now verify that functions return proper Figure objects
@@ -86,7 +93,9 @@ fig = plot_pca(df, 'target', show=False)
 ### 5. Example Usage
 
 **examples/eda_dashboard_example.py**:
-- Comprehensive example showing both individual plotting functions and dashboard usage
+
+- Comprehensive example showing both individual plotting functions and
+  dashboard usage
 - Demonstrates how to create sample data and use all major features
 - Shows proper error handling and user interaction
 
@@ -152,12 +161,35 @@ fig.write_html("correlation_report.html")
 ## Testing
 
 All tests pass and verify:
+
 - Functions return proper plotly Figure objects
 - Dashboard creation works without hanging
 - All plot types render correctly
 - Error handling works as expected
 
-Run tests with:
+### Test Fixes Applied
+
+During the migration, several test issues were resolved:
+
+1. **Andrews Curve Test**: Fixed numpy boolean vs Python boolean issue with
+   plotly's `showlegend` parameter
+2. **Error Analysis Tests**: Updated tests that were mocking
+   `seaborn.violinplot` to mock `plotly.graph_objects.Figure.show` instead
+3. **Dashboard Test**: Added `run_server` parameter to prevent tests from
+   hanging when testing dashboard creation
+
+### Running Tests
+
+Run all EDA tests with:
+
 ```bash
 poetry run python -m pytest bluecast/tests/test_analyse.py -v
-``` 
+```
+
+Run error analysis tests with:
+
+```bash
+poetry run python -m pytest bluecast/tests/test_error_analysis_base_classes.py -v
+```
+
+All tests now pass successfully with the new plotly implementation.

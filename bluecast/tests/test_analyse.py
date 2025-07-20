@@ -1,22 +1,21 @@
 import random
 from typing import Tuple
-from unittest.mock import patch
 
 import numpy as np
 import pandas as pd
-import pytest
 import plotly.graph_objects as go
+import pytest
 
 from bluecast.eda.analyse import (
     bi_variate_plots,
     check_unique_values,
     correlation_heatmap,
     correlation_to_target,
+    create_eda_dashboard,
     mutual_info_to_target,
     plot_against_target_for_regression,
     plot_andrews_curve,
     plot_classification_target_distribution_within_categories,
-    plot_count_pairs,
     plot_distribution_by_time,
     plot_distribution_pairs,
     plot_ecdf,
@@ -28,7 +27,6 @@ from bluecast.eda.analyse import (
     plot_theil_u_heatmap,
     plot_tsne,
     univariate_plots,
-    create_eda_dashboard,
 )
 from bluecast.tests.make_data.create_data import (
     create_synthetic_dataframe,
@@ -250,7 +248,7 @@ def test_plot_pca_cumulative_variance(synthetic_train_test_data):
         show=False,
     )
     assert isinstance(fig, go.Figure)
-    
+
     fig = plot_pca_cumulative_variance(
         synthetic_train_test_data[0].loc[
             :,
@@ -270,7 +268,8 @@ def test_plot_pca_cumulative_variance(synthetic_train_test_data):
 
 def test_plot_tsne(synthetic_train_test_data):
     fig = plot_tsne(
-        synthetic_train_test_data[0].loc[
+        synthetic_train_test_data[0]
+        .loc[
             :,
             [
                 "numerical_feature_1",
@@ -278,7 +277,8 @@ def test_plot_tsne(synthetic_train_test_data):
                 "numerical_feature_3",
                 "target",
             ],
-        ].head(100),  # Limit data for faster testing
+        ]
+        .head(100),  # Limit data for faster testing
         "target",
         perplexity=5,  # Lower perplexity for small dataset
         show=False,
@@ -360,7 +360,7 @@ def test_plot_distribution_by_time(synthetic_train_test_data):
     # Create a copy with datetime column
     df = synthetic_train_test_data[0].copy()
     df["date_col"] = pd.date_range("2020-01-01", periods=len(df), freq="D")
-    
+
     fig = plot_distribution_by_time(
         df,
         "numerical_feature_1",
@@ -373,7 +373,9 @@ def test_plot_distribution_by_time(synthetic_train_test_data):
 
 def test_plot_distribution_pairs(synthetic_train_test_data):
     fig = plot_distribution_pairs(
-        synthetic_train_test_data[0].loc[:100, ["numerical_feature_1"]],  # Smaller dataset
+        synthetic_train_test_data[0].loc[
+            :100, ["numerical_feature_1"]
+        ],  # Smaller dataset
         synthetic_train_test_data[1].loc[:100, ["numerical_feature_1"]],
         "numerical_feature_1",
         show=False,
@@ -383,7 +385,8 @@ def test_plot_distribution_pairs(synthetic_train_test_data):
 
 def test_plot_andrews_curve(synthetic_train_test_data):
     fig = plot_andrews_curve(
-        synthetic_train_test_data[0].loc[
+        synthetic_train_test_data[0]
+        .loc[
             :,
             [
                 "numerical_feature_1",
@@ -391,7 +394,8 @@ def test_plot_andrews_curve(synthetic_train_test_data):
                 "numerical_feature_3",
                 "target",
             ],
-        ].head(50),  # Smaller dataset for faster testing
+        ]
+        .head(50),  # Smaller dataset for faster testing
         "target",
         n_samples=20,
         show=False,
@@ -401,17 +405,19 @@ def test_plot_andrews_curve(synthetic_train_test_data):
 
 def test_create_eda_dashboard():
     # Create simple test data
-    test_df = pd.DataFrame({
-        'numeric_col1': np.random.randn(100),
-        'numeric_col2': np.random.randn(100),
-        'categorical_col': np.random.choice(['A', 'B', 'C'], 100),
-        'target': np.random.choice([0, 1], 100)
-    })
-    
+    test_df = pd.DataFrame(
+        {
+            "numeric_col1": np.random.randn(100),
+            "numeric_col2": np.random.randn(100),
+            "categorical_col": np.random.choice(["A", "B", "C"], 100),
+            "target": np.random.choice([0, 1], 100),
+        }
+    )
+
     # Test that the function can be called without error (don't start the server)
-    app = create_eda_dashboard(test_df, 'target', port=8051, run_server=False)
-    
+    app = create_eda_dashboard(test_df, "target", port=8051, run_server=False)
+
     # Verify that we got a Dash app object
     assert app is not None
-    assert hasattr(app, 'layout')
-    assert hasattr(app, 'callback')
+    assert hasattr(app, "layout")
+    assert hasattr(app, "callback")
