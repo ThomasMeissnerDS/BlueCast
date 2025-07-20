@@ -1,6 +1,8 @@
 # Optuna Database Backend for BlueCast
 
-This feature allows you to store Optuna hyperparameter tuning progress in a persistent SQLite database, enabling you to resume tuning if it fails or gets interrupted.
+This feature allows you to store Optuna hyperparameter tuning progress in a
+persistent SQLite database, enabling you to resume tuning if it fails or gets
+interrupted.
 
 ## Quick Start
 
@@ -27,16 +29,21 @@ automl.fit(df, target_col="target")
 ## How it Works
 
 ### Database Storage
-- When `optuna_db_backend_path` is set to a string path, BlueCast uses SQLite to store all trial data
+
+- When `optuna_db_backend_path` is set to a string path, BlueCast uses SQLite
+  to store all trial data
 - If the database file doesn't exist, it will be created automatically
 - If the database exists, BlueCast will resume from the existing study
 
 ### Sampler State Preservation
-- The sampler state is automatically saved as a pickle file alongside the database
+
+- The sampler state is automatically saved as a pickle file alongside the
+  database
 - This ensures reproducible results when resuming studies
 - File location: `{database_path}_sampler.pkl`
 
 ### Study Names
+
 - Each model type and random seed gets a unique study name:
   - XGBoost: `xgboost_tuning_seed_{random_state}`
   - CatBoost: `catboost_tuning_seed_{random_state}`
@@ -106,4 +113,4 @@ train_config.optuna_db_backend_path = None  # In-memory storage
 - Works with both classification and regression tasks
 - Compatible with cross-validation and grid search fine-tuning
 - No performance impact when using database storage
-- Database files are portable and can be shared between machines 
+- Database files are portable and can be shared between machines

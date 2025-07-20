@@ -1,4 +1,3 @@
-import re
 from typing import Optional, Tuple
 
 import numpy as np
@@ -7,11 +6,7 @@ import pytest
 from catboost import CatBoostClassifier
 
 from bluecast.blueprints.cast import BlueCast
-from bluecast.config.training_config import (
-    CatboostFinalParamConfig,
-    CatboostTuneParamsConfig,
-    TrainingConfig,
-)
+from bluecast.config.training_config import CatboostTuneParamsConfig, TrainingConfig
 from bluecast.ml_modelling.catboost import CatboostModel
 from bluecast.preprocessing.custom import CustomPreprocessing
 
@@ -44,8 +39,6 @@ def test_catboost_predict_proba_exceptions():
     # Test with no conf_params_catboost (but with a model)
     catboost_model = CatboostModel(class_problem="binary")
     # Create a mock model to avoid the "No trained CatBoost model found" exception
-    from catboost import CatBoostClassifier
-
     catboost_model.model = CatBoostClassifier()
     catboost_model.conf_params_catboost = None
 
@@ -74,8 +67,6 @@ def test_catboost_predict_exceptions():
     # Test with no conf_params_catboost (but with a model)
     catboost_model = CatboostModel(class_problem="binary")
     # Create a mock model to avoid the "No trained CatBoost model found" exception
-    from catboost import CatBoostClassifier
-
     catboost_model.model = CatBoostClassifier()
     catboost_model.conf_params_catboost = None
 
@@ -658,8 +649,6 @@ def test_catboost_no_conf_params_catboost_fixed():
     """Test that predict_proba raises Exception when conf_params_catboost is None."""
     catboost_model = CatboostModel(class_problem="binary")
     # Create a mock model to avoid the "No trained CatBoost model found" exception
-    from catboost import CatBoostClassifier
-
     catboost_model.model = CatBoostClassifier()
     catboost_model.conf_params_catboost = None
     dummy_df = pd.DataFrame({"A": [1, 2, 3], "B": [7, 8, 9]})

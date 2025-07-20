@@ -60,7 +60,7 @@ def prediction_interval_spans(
     for alpha in alphas:
         interval_spans[alpha] = np.mean(
             (
-                prediction_intervals[f"{1-alpha}_high"]
+                prediction_intervals[f"{1 - alpha}_high"]
                 - prediction_intervals[f"{alpha}_low"]
             )
         )

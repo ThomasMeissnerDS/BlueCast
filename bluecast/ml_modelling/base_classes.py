@@ -1,13 +1,12 @@
 """Base classes for all ML models."""
 
 import logging
+import pickle
 import warnings
 from abc import ABC, abstractmethod
 from copy import deepcopy
 from datetime import datetime
 from typing import Any, Callable, Dict, List, Literal, Optional, Tuple, TypeVar, Union
-import os
-import pickle
 
 import numpy as np
 import optuna
@@ -438,42 +437,43 @@ class XgboostBaseModel:
     ) -> optuna.Study:
         """
         Create an Optuna study with optional database backend support.
-        
+
         :param direction: Direction to optimize ('minimize' or 'maximize')
         :param sampler: Optuna sampler to use
         :param study_name: Name of the study
         :param pruner: Optuna pruner to use
         :return: Configured Optuna study
         """
-        study_kwargs = {
+        study_kwargs: Dict[str, Any] = {
             "direction": direction,
             "study_name": study_name,
         }
-        
+
         if sampler is not None:
             study_kwargs["sampler"] = sampler
         if pruner is not None:
             study_kwargs["pruner"] = pruner
-            
+
         # Add database backend if configured
-        if (
-            self.conf_training.optuna_db_backend_path is not None
-            and isinstance(self.conf_training.optuna_db_backend_path, str)
+        if self.conf_training.optuna_db_backend_path is not None and isinstance(
+            self.conf_training.optuna_db_backend_path, str
         ):
             storage_name = f"sqlite:///{self.conf_training.optuna_db_backend_path}"
             study_kwargs["storage"] = storage_name
             study_kwargs["load_if_exists"] = True
-            
+
             # Save the sampler state for resumption if database backend is used
-            if sampler is not None and hasattr(sampler, 'seed'):
-                sampler_path = self.conf_training.optuna_db_backend_path.replace('.db', '_sampler.pkl')
+            if sampler is not None and hasattr(sampler, "seed"):
+                sampler_path = self.conf_training.optuna_db_backend_path.replace(
+                    ".db", "_sampler.pkl"
+                )
                 try:
                     with open(sampler_path, "wb") as fout:
                         pickle.dump(sampler, fout)
                     logging.info(f"Saved sampler state to {sampler_path}")
                 except Exception as e:
                     logging.warning(f"Could not save sampler state: {e}")
-        
+
         return optuna.create_study(**study_kwargs)
 
 
@@ -867,40 +867,41 @@ class CatboostBaseModel:
     ) -> optuna.Study:
         """
         Create an Optuna study with optional database backend support for CatBoost.
-        
+
         :param direction: Direction to optimize ('minimize' or 'maximize')
         :param sampler: Optuna sampler to use
         :param study_name: Name of the study
         :param pruner: Optuna pruner to use
         :return: Configured Optuna study
         """
-        study_kwargs = {
+        study_kwargs: Dict[str, Any] = {
             "direction": direction,
             "study_name": study_name,
         }
-        
+
         if sampler is not None:
             study_kwargs["sampler"] = sampler
         if pruner is not None:
             study_kwargs["pruner"] = pruner
-            
+
         # Add database backend if configured
-        if (
-            self.conf_training.optuna_db_backend_path is not None
-            and isinstance(self.conf_training.optuna_db_backend_path, str)
+        if self.conf_training.optuna_db_backend_path is not None and isinstance(
+            self.conf_training.optuna_db_backend_path, str
         ):
             storage_name = f"sqlite:///{self.conf_training.optuna_db_backend_path}"
             study_kwargs["storage"] = storage_name
             study_kwargs["load_if_exists"] = True
-            
+
             # Save the sampler state for resumption if database backend is used
-            if sampler is not None and hasattr(sampler, 'seed'):
-                sampler_path = self.conf_training.optuna_db_backend_path.replace('.db', '_sampler.pkl')
+            if sampler is not None and hasattr(sampler, "seed"):
+                sampler_path = self.conf_training.optuna_db_backend_path.replace(
+                    ".db", "_sampler.pkl"
+                )
                 try:
                     with open(sampler_path, "wb") as fout:
                         pickle.dump(sampler, fout)
                     logging.info(f"Saved sampler state to {sampler_path}")
                 except Exception as e:
                     logging.warning(f"Could not save sampler state: {e}")
-        
+
         return optuna.create_study(**study_kwargs)
