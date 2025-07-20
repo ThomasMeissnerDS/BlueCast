@@ -14,6 +14,7 @@ from bluecast.ml_modelling.base_classes import (
 from bluecast.ml_modelling.base_classes import BaseClassMlModel
 
 
+# Linear Regression and Logistic Regression
 class LogisticRegressionModel(BaseClassMlModel):
     def __init__(self, max_iter=100000, random_state=300):
         self.logistic_regression_model: LogisticRegression = LogisticRegression(
@@ -111,3 +112,6 @@ class LinearRegressionModel(BaseClassMlModel):
             return preds
         else:
             raise ValueError("No fitted model has been found.")
+
+
+# Catboost

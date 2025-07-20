@@ -16,6 +16,8 @@ import pandas as pd
 from sklearn.metrics import mean_squared_error
 
 from bluecast.config.training_config import (
+    CatboostRegressionFinalParamConfig,
+    CatboostTuneParamsRegressionConfig,
     TrainingConfig,
     XgboostRegressionFinalParamConfig,
     XgboostTuneParamsRegressionConfig,
@@ -93,8 +95,12 @@ class BlueCastRegression:
             Union[BoostaRootaWrapper, CustomPreprocessing]
         ] = None,
         conf_training: Optional[TrainingConfig] = None,
-        conf_xgboost: Optional[XgboostTuneParamsRegressionConfig] = None,
-        conf_params_xgboost: Optional[XgboostRegressionFinalParamConfig] = None,
+        conf_xgboost: Optional[
+            Union[XgboostTuneParamsRegressionConfig, CatboostTuneParamsRegressionConfig]
+        ] = None,
+        conf_params_xgboost: Optional[
+            Union[XgboostRegressionFinalParamConfig, CatboostRegressionFinalParamConfig]
+        ] = None,
         experiment_tracker: Optional[ExperimentTracker] = None,
         single_fold_eval_metric_func: Optional[RegressionEvalWrapper] = None,
     ):
@@ -151,7 +157,6 @@ class BlueCastRegression:
                 higher_is_better=False,
                 metric_func=mean_squared_error,
                 metric_name="Mean squared error",
-                **{"squared": False},
             )
 
         logging.basicConfig(
@@ -247,7 +252,9 @@ class BlueCastRegression:
             or higher or disable precise_cv_tuning."""
             warnings.warn(message, UserWarning, stacklevel=2)
 
-        if self.conf_xgboost:
+        if self.conf_xgboost and isinstance(
+            self.conf_xgboost, XgboostTuneParamsRegressionConfig
+        ):
             if (
                 self.conf_training.cat_encoding_via_ml_algorithm
                 and "exact" in self.conf_xgboost.tree_method
@@ -294,12 +301,12 @@ class BlueCastRegression:
                 cat_columns=[], num_columns=[], date_columns=[]
             )
             _ = feat_type_detector.fit_transform_feature_types(x_train)
-            x_train, y_train = x_train.reset_index(drop=True), y_train.reset_index(
-                drop=True
-            )
-            x_test, y_test = x_test.reset_index(drop=True), y_test.reset_index(
-                drop=True
-            )
+            x_train = x_train.reset_index(drop=True)
+            x_test = x_test.reset_index(drop=True)
+            if y_train is not None:
+                y_train = y_train.reset_index(drop=True)
+            if y_test is not None:
+                y_test = y_test.reset_index(drop=True)
             if target_col in feat_type_detector.cat_columns:
                 feat_type_detector.cat_columns.remove(target_col)
 
@@ -391,8 +398,18 @@ class BlueCastRegression:
             self.ml_model = XgboostModelRegression(
                 self.class_problem,
                 conf_training=self.conf_training,
-                conf_xgboost=self.conf_xgboost,
-                conf_params_xgboost=self.conf_params_xgboost,
+                conf_xgboost=(
+                    self.conf_xgboost
+                    if isinstance(self.conf_xgboost, XgboostTuneParamsRegressionConfig)
+                    else XgboostTuneParamsRegressionConfig()
+                ),
+                conf_params_xgboost=(
+                    self.conf_params_xgboost
+                    if isinstance(
+                        self.conf_params_xgboost, XgboostRegressionFinalParamConfig
+                    )
+                    else XgboostRegressionFinalParamConfig()
+                ),
                 experiment_tracker=self.experiment_tracker,
                 custom_in_fold_preprocessor=self.custom_in_fold_preprocessor,
                 cat_columns=self.cat_columns,

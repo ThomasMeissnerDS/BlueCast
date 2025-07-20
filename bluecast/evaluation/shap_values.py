@@ -4,7 +4,7 @@ The implementation is flexible and can be used for almost any ML model. The impl
 """
 
 import logging
-from typing import List, Literal, Tuple
+from typing import List, Literal, Optional, Tuple
 
 import numpy as np
 import pandas as pd
@@ -52,7 +52,7 @@ def shap_explanations(model, df: pd.DataFrame) -> Tuple[np.ndarray, shap.Explain
 
 def shap_waterfall_plot(
     explainer: shap.Explainer,
-    indices: List[int],
+    indices: List[Optional[int]],
     class_problem: Literal["binary", "multiclass", "regression"],
 ) -> None:
     """

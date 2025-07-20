@@ -70,7 +70,7 @@ class ConformalPredictionRegressionWrapper(ConformalPredictionWrapperBaseClass):
         for i, q in enumerate(quantiles):
             prediction_bands[:, :, i] = np.stack([y_hat - q, y_hat + q], axis=1)
             lower_band_cols.append(f"{alphas[i]}_low")
-            higher_band_cols.append(f"{1-alphas[i]}_high")
+            higher_band_cols.append(f"{1 - alphas[i]}_high")
 
         lower_preds = pd.DataFrame(prediction_bands[:, 0, :], columns=lower_band_cols)
         upper_preds = pd.DataFrame(prediction_bands[:, 1, :], columns=higher_band_cols)

@@ -547,11 +547,11 @@ def plot_pca_cumulative_variance(
         plt.text(
             bar.get_x() + bar.get_width() / 2,
             bar.get_height(),
-            f"{individual_variances[i]*100:.1f}%",
+            f"{individual_variances[i] * 100:.1f}%",
             ha="center",
             va="bottom",
         )
-        plt.text(i + 1, cum_val, f"{cum_val*100:.1f}%", ha="center", va="bottom")
+        plt.text(i + 1, cum_val, f"{cum_val * 100:.1f}%", ha="center", va="bottom")
 
     # Aesthetics for the plot
     plt.xlabel("Principal Components")

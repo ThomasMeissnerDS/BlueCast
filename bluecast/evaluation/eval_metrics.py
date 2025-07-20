@@ -10,12 +10,6 @@ from typing import Any, Dict, Literal, Union
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
-
-try:
-    from sklearn.metrics import root_mean_squared_error
-except ImportError:
-    from sklearn.metrics import mean_squared_error as root_mean_squared_error
-
 from sklearn.metrics import (
     accuracy_score,
     classification_report,
@@ -30,6 +24,7 @@ from sklearn.metrics import (
     recall_score,
     roc_auc_score,
     roc_curve,
+    root_mean_squared_error,
 )
 
 
@@ -228,22 +223,13 @@ def eval_classifier(
 
 
 def mean_squared_error_diff_sklearn_versions(y_true, y_preds):
-    try:
-        mean_squared_error_score = mean_squared_error(y_true, y_preds)
-        print(f"The MSE score is {mean_squared_error_score}")
-    except Exception:
-        mean_squared_error_score = mean_squared_error(y_true, y_preds, squared=True)
-        print(f"The MSE score is {mean_squared_error_score}")
+    mean_squared_error_score = mean_squared_error(y_true, y_preds)
+    print(f"The MSE score is {mean_squared_error_score}")
     return mean_squared_error_score
 
 
 def root_mean_squared_error_diff_sklearn_versions(y_true, y_preds):
-    try:
-        root_mean_squared_error_score = root_mean_squared_error(y_true, y_preds)
-    except Exception:
-        root_mean_squared_error_score = mean_squared_error(
-            y_true, y_preds, squared=False
-        )
+    root_mean_squared_error_score = root_mean_squared_error(y_true, y_preds)
     print(f"The RMSE score is {root_mean_squared_error_score}")
     return root_mean_squared_error_score
 
@@ -365,11 +351,7 @@ class RegressionEvalWrapper:
         if metric_func:
             self.metric_func = metric_func
         else:
-            try:
-                self.metric_func = root_mean_squared_error
-            except Exception:
-                self.metric_func = mean_squared_error
-                self.metric_func_args = {"squared": True}
+            self.metric_func = root_mean_squared_error
         self.metric_name = metric_name
         self.metric_func_args = metric_func_args
 

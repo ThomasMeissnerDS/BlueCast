@@ -304,18 +304,6 @@ def test_root_mean_squared_error_diff_sklearn_versions_correct():
     assert np.isclose(result, expected_rmse), f"Expected {expected_rmse}, got {result}"
 
 
-def test_root_mean_squared_error_diff_sklearn_versions_fallback(monkeypatch):
-    monkeypatch.setattr(
-        "bluecast.evaluation.eval_metrics.root_mean_squared_error",
-        mock_root_mean_squared_error,
-    )
-    y_true = [1, 2, 3, 4, 5]
-    y_preds = [1, 2, 3, 4, 6]
-    expected_rmse = mean_squared_error(y_true, y_preds, squared=False)
-    result = root_mean_squared_error_diff_sklearn_versions(y_true, y_preds)
-    assert np.isclose(result, expected_rmse), f"Expected {expected_rmse}, got {result}"
-
-
 def test_root_mean_squared_error_diff_sklearn_versions_empty():
     y_true = []
     y_preds = []

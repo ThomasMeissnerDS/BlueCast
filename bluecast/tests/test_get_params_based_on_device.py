@@ -5,10 +5,12 @@ from bluecast.config.training_config import (
     XgboostFinalParamConfig,
     XgboostTuneParamsConfig,
 )
-from bluecast.ml_modelling.parameter_tuning_utils import get_params_based_on_device
+from bluecast.ml_modelling.parameter_tuning_utils import (
+    get_params_based_on_device_xgboost,
+)
 
 
-def test_get_params_based_on_device_auto_gpu():
+def test_get_params_based_on_device_xgboost_auto_gpu():
     conf_training = TrainingConfig(autotune_on_device="auto")
     conf_params_xgboost = XgboostFinalParamConfig()
     conf_xgboost = XgboostTuneParamsConfig(tree_method=["exact"])
@@ -19,20 +21,20 @@ def test_get_params_based_on_device_auto_gpu():
         "bluecast.general_utils.general_utils.check_gpu_support",
         return_value=mock_gpu_support,
     ):
-        result = get_params_based_on_device(
+        result = get_params_based_on_device_xgboost(
             conf_training, conf_params_xgboost, conf_xgboost
         )
 
     assert not result.get("device", None)
 
 
-def test_get_params_based_on_device_cpu():
+def test_get_params_based_on_device_xgboost_cpu():
     conf_training = TrainingConfig(autotune_on_device="cpu")
     conf_params_xgboost = XgboostFinalParamConfig()
     conf_xgboost = XgboostTuneParamsConfig(tree_method=["exact"])
 
     with patch("bluecast.general_utils.general_utils.check_gpu_support"):
-        result = get_params_based_on_device(
+        result = get_params_based_on_device_xgboost(
             conf_training, conf_params_xgboost, conf_xgboost
         )
 
@@ -41,7 +43,7 @@ def test_get_params_based_on_device_cpu():
     assert "exact" in conf_xgboost.tree_method
 
 
-def test_get_params_based_on_device_gpu_with_exact_tree_method():
+def test_get_params_based_on_device_xgboost_gpu_with_exact_tree_method():
     conf_training = TrainingConfig(autotune_on_device="gpu")
     conf_params_xgboost = XgboostFinalParamConfig()
     conf_xgboost = XgboostTuneParamsConfig(tree_method=["exact", "hist"])
@@ -52,14 +54,14 @@ def test_get_params_based_on_device_gpu_with_exact_tree_method():
         "bluecast.general_utils.general_utils.check_gpu_support",
         return_value=mock_gpu_support,
     ):
-        result = get_params_based_on_device(
+        result = get_params_based_on_device_xgboost(
             conf_training, conf_params_xgboost, conf_xgboost
         )
 
     assert result["device"] == "cuda"
 
 
-def test_get_params_based_on_device_gpu_without_exact_tree_method():
+def test_get_params_based_on_device_xgboost_gpu_without_exact_tree_method():
     conf_training = TrainingConfig(autotune_on_device="gpu")
     conf_params_xgboost = XgboostFinalParamConfig()
     conf_xgboost = XgboostTuneParamsConfig(tree_method=["hist"])
@@ -70,7 +72,7 @@ def test_get_params_based_on_device_gpu_without_exact_tree_method():
         "bluecast.general_utils.general_utils.check_gpu_support",
         return_value=mock_gpu_support,
     ):
-        result = get_params_based_on_device(
+        result = get_params_based_on_device_xgboost(
             conf_training, conf_params_xgboost, conf_xgboost
         )
 

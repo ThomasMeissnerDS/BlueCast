@@ -49,7 +49,7 @@ def prediction_interval_coverage(
             np.where(
                 (
                     (prediction_intervals[f"{alpha}_low"] <= y_true)
-                    & (prediction_intervals[f"{1-alpha}_high"] >= y_true)
+                    & (prediction_intervals[f"{1 - alpha}_high"] >= y_true)
                 ),
                 1,
                 0,
