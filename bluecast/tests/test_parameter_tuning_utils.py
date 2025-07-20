@@ -1,10 +1,9 @@
-from unittest.mock import MagicMock, Mock
+from unittest.mock import Mock
 
 import optuna
 
 from bluecast.config.training_config import XgboostTuneParamsConfig
 from bluecast.ml_modelling.parameter_tuning_utils import (
-    update_hyperparam_space_after_nth_trial,
     update_params_based_on_tree_method,
 )
 
@@ -78,43 +77,3 @@ def test_update_params_based_on_tree_method_gblinear():
     assert "colsample_bytree" not in updated_param
     assert "colsample_bylevel" not in updated_param
     assert "gamma" not in updated_param
-
-
-def test_update_hyperparam_space_after_nth_trial():
-    # Create a config object
-    conf_xgboost = XgboostTuneParamsConfig()
-
-    trial_data = [
-        (1, 0.001, 0.3, 0.1, 100.0),
-        (25, 0.05, 0.25, 1.0, 10.0),
-        (50, 0.001, 0.3, 0.1, 100.0),
-        (75, 0.05, 0.25, 1.0, 10.0),
-        (100, 0.001, 0.3, 0.1, 100.0),
-    ]
-
-    for (
-        trial_number,
-        expected_eta_min,
-        expected_eta_max,
-        expected_sub_sample_min,
-        expected_min_child_weight_max,
-    ) in trial_data:
-        trial = MagicMock()
-        trial.number = trial_number
-        # Call the function
-        conf_xgboost = update_hyperparam_space_after_nth_trial(
-            trial, conf_xgboost, nth_trial=25
-        )
-        print(
-            trial_number,
-            trial_number % 25 * 2,
-            trial_number % 25,
-            conf_xgboost.eta_min,
-            expected_eta_min,
-        )
-
-        # Assertions
-        assert conf_xgboost.eta_min == expected_eta_min
-        assert conf_xgboost.eta_max == expected_eta_max
-        assert conf_xgboost.sub_sample_min == expected_sub_sample_min
-        assert conf_xgboost.min_child_weight_max == expected_min_child_weight_max

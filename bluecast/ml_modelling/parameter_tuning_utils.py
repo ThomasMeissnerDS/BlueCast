@@ -1,10 +1,15 @@
 import logging
+import warnings
 from typing import Any, Dict, Tuple, Union
 
 import optuna
 import pandas as pd
 
 from bluecast.config.training_config import (
+    CatboostFinalParamConfig,
+    CatboostRegressionFinalParamConfig,
+    CatboostTuneParamsConfig,
+    CatboostTuneParamsRegressionConfig,
     TrainingConfig,
     XgboostFinalParamConfig,
     XgboostRegressionFinalParamConfig,
@@ -48,7 +53,7 @@ def update_params_based_on_tree_method(
     return param
 
 
-def get_params_based_on_device(
+def get_params_based_on_device_xgboost(
     conf_training: TrainingConfig,
     conf_params_xgboost: Union[
         XgboostFinalParamConfig, XgboostRegressionFinalParamConfig
@@ -72,6 +77,27 @@ def get_params_based_on_device(
     return train_on
 
 
+def get_params_based_on_device_catboost(
+    conf_training: TrainingConfig,
+    conf_params_catboost: Union[
+        CatboostFinalParamConfig, CatboostRegressionFinalParamConfig
+    ],
+    conf_catboost: Union[CatboostTuneParamsConfig, CatboostTuneParamsRegressionConfig],
+) -> Dict[str, Any]:
+    """Get parameters based on available or chosen device."""
+    if conf_training.autotune_on_device in ["auto"]:
+        warnings.warn(
+            """Automatic GPU detection is not supported yet. Falling back to CPU. If a GPU is available, please set autotune_on_device = 'gpu'""",
+            stacklevel=2,
+        )
+        train_on = {"task_type": "CPU"}
+    elif conf_training.autotune_on_device == "gpu":
+        train_on = {"task_type": "GPU"}
+    else:
+        train_on = {"task_type": "CPU"}
+    return train_on
+
+
 def update_params_with_best_params(
     param: Dict[str, Any],
     best_params: Dict[str, Any],
@@ -83,29 +109,6 @@ def update_params_with_best_params(
         if param_name in best_params.keys():
             param[param_name] = best_params[param_name]
     return param
-
-
-def update_hyperparam_space_after_nth_trial(
-    trial: optuna.Trial,
-    conf_xgboost: Union[XgboostTuneParamsConfig, XgboostTuneParamsRegressionConfig],
-    nth_trial: int = 25,
-) -> Union[XgboostTuneParamsConfig, XgboostTuneParamsRegressionConfig]:
-    eta_min_before = conf_xgboost.eta_min
-
-    if trial.number % nth_trial * 2 == 0 and eta_min_before == 5e-2:
-        conf_xgboost.eta_min = 1e-3
-        conf_xgboost.eta_max = 0.3
-        conf_xgboost.sub_sample_min = 0.1
-        conf_xgboost.min_child_weight_max = 100.0
-
-    if trial.number % nth_trial == 0 and eta_min_before == 1e-3:
-        conf_xgboost.eta_min = 5e-2
-        conf_xgboost.eta_max = 0.25
-        conf_xgboost.sub_sample_min = 1.0
-        conf_xgboost.min_child_weight_max = 10.0
-        conf_xgboost.col_sample_by_level_min = 0.5
-
-    return conf_xgboost
 
 
 def sample_data(

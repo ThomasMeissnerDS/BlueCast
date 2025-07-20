@@ -8,6 +8,8 @@ from sklearn.model_selection import RepeatedStratifiedKFold
 
 from bluecast.blueprints.cast import BlueCast
 from bluecast.config.training_config import (
+    CatboostFinalParamConfig,
+    CatboostTuneParamsConfig,
     TrainingConfig,
     XgboostFinalParamConfig,
     XgboostTuneParamsConfig,
@@ -58,8 +60,12 @@ class BlueCastCV:
         cat_columns: Optional[List[Union[str, float, int]]] = None,
         stratifier: Optional[Any] = None,
         conf_training: Optional[TrainingConfig] = None,
-        conf_xgboost: Optional[XgboostTuneParamsConfig] = None,
-        conf_params_xgboost: Optional[XgboostFinalParamConfig] = None,
+        conf_xgboost: Optional[
+            Union[XgboostTuneParamsConfig, CatboostTuneParamsConfig]
+        ] = None,
+        conf_params_xgboost: Optional[
+            Union[XgboostFinalParamConfig, CatboostFinalParamConfig]
+        ] = None,
         experiment_tracker: Optional[ExperimentTracker] = None,
         custom_in_fold_preprocessor: Optional[CustomPreprocessing] = None,
         custom_last_mile_computation: Optional[CustomPreprocessing] = None,

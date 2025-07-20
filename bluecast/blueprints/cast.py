@@ -15,6 +15,8 @@ import numpy as np
 import pandas as pd
 
 from bluecast.config.training_config import (
+    CatboostFinalParamConfig,
+    CatboostTuneParamsConfig,
     TrainingConfig,
     XgboostFinalParamConfig,
     XgboostTuneParamsConfig,
@@ -97,8 +99,12 @@ class BlueCast:
             Union[BoostaRootaWrapper, CustomPreprocessing]
         ] = None,
         conf_training: Optional[TrainingConfig] = None,
-        conf_xgboost: Optional[XgboostTuneParamsConfig] = None,
-        conf_params_xgboost: Optional[XgboostFinalParamConfig] = None,
+        conf_xgboost: Optional[
+            Union[XgboostTuneParamsConfig, CatboostTuneParamsConfig]
+        ] = None,
+        conf_params_xgboost: Optional[
+            Union[XgboostFinalParamConfig, CatboostFinalParamConfig]
+        ] = None,
         experiment_tracker: Optional[ExperimentTracker] = None,
         single_fold_eval_metric_func: Optional[ClassificationEvalWrapper] = None,
     ):
@@ -255,7 +261,7 @@ class BlueCast:
             unique target classes have been found. Did you mean 'binary' instead?"""
             warnings.warn(message, UserWarning, stacklevel=2)
 
-        if self.conf_xgboost:
+        if self.conf_xgboost and isinstance(self.conf_xgboost, XgboostTuneParamsConfig):
             if (
                 self.conf_training.cat_encoding_via_ml_algorithm
                 and "exact" in self.conf_xgboost.tree_method
@@ -428,8 +434,16 @@ class BlueCast:
             self.ml_model = XgboostModel(
                 self.class_problem,
                 conf_training=self.conf_training,
-                conf_xgboost=self.conf_xgboost,
-                conf_params_xgboost=self.conf_params_xgboost,
+                conf_xgboost=(
+                    self.conf_xgboost
+                    if isinstance(self.conf_xgboost, XgboostTuneParamsConfig)
+                    else XgboostTuneParamsConfig()
+                ),
+                conf_params_xgboost=(
+                    self.conf_params_xgboost
+                    if isinstance(self.conf_params_xgboost, XgboostFinalParamConfig)
+                    else XgboostFinalParamConfig()
+                ),
                 experiment_tracker=self.experiment_tracker,
                 custom_in_fold_preprocessor=self.custom_in_fold_preprocessor,
                 cat_columns=self.cat_columns,
