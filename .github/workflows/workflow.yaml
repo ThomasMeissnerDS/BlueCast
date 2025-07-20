@@ -60,4 +60,4 @@ jobs:
         #env:
         #  CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
       - name: Run pre-commit
-        uses: pre-commit/action@v3
+        uses: pre-commit/action@v3.0.1
