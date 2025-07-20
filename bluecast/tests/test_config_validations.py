@@ -2,7 +2,7 @@ from typing import Dict, List, Optional, Set, Tuple, Union
 
 import pytest
 
-from bluecast.config.config_validations import check_types_init, _matches_type
+from bluecast.config.config_validations import _matches_type, check_types_init
 
 
 # Sample class to test the decorator
@@ -46,7 +46,7 @@ class TestMatchesType:
         assert _matches_type("hello", str) is True
         assert _matches_type(3.14, float) is True
         assert _matches_type(True, bool) is True
-        
+
         # Wrong types
         assert _matches_type("hello", int) is False
         assert _matches_type(5, str) is False
@@ -55,7 +55,7 @@ class TestMatchesType:
     def test_union_types(self):
         """Test Union type validation."""
         union_type = Union[str, int]
-        
+
         assert _matches_type("hello", union_type) is True
         assert _matches_type(42, union_type) is True
         assert _matches_type(3.14, union_type) is False
@@ -64,7 +64,7 @@ class TestMatchesType:
     def test_optional_types(self):
         """Test Optional type validation (which is Union[T, None])."""
         optional_int = Optional[int]
-        
+
         assert _matches_type(42, optional_int) is True
         assert _matches_type(None, optional_int) is True
         assert _matches_type("hello", optional_int) is False
@@ -75,11 +75,11 @@ class TestMatchesType:
         assert _matches_type([1, 2, 3], List[int]) is True
         assert _matches_type(["a", "b", "c"], List[str]) is True
         assert _matches_type([], List[int]) is True  # Empty list is valid
-        
+
         # Invalid element types
         assert _matches_type([1, "2", 3], List[int]) is False
         assert _matches_type(["a", 2, "c"], List[str]) is False
-        
+
         # Not a list
         assert _matches_type((1, 2, 3), List[int]) is False
         assert _matches_type({1, 2, 3}, List[int]) is False
@@ -91,11 +91,11 @@ class TestMatchesType:
         assert _matches_type({1, 2, 3}, Set[int]) is True
         assert _matches_type({"a", "b", "c"}, Set[str]) is True
         assert _matches_type(set(), Set[int]) is True  # Empty set is valid
-        
+
         # Invalid element types
         assert _matches_type({1, "2", 3}, Set[int]) is False
         assert _matches_type({"a", 2, "c"}, Set[str]) is False
-        
+
         # Not a set
         assert _matches_type([1, 2, 3], Set[int]) is False
         assert _matches_type((1, 2, 3), Set[int]) is False
@@ -107,16 +107,16 @@ class TestMatchesType:
         assert _matches_type((1, 2, 3), Tuple[int, int, int]) is True
         # Test empty tuple with basic tuple type
         assert _matches_type((), tuple) is True
-        
+
         # Wrong length
         assert _matches_type((1,), Tuple[int, str]) is False
         assert _matches_type((1, "hello", 3), Tuple[int, str]) is False
         assert _matches_type((1, 2), Tuple[int, int, int]) is False
-        
+
         # Wrong types in correct positions
         assert _matches_type(("hello", 1), Tuple[int, str]) is False
         assert _matches_type((1, 2, "3"), Tuple[int, int, int]) is False
-        
+
         # Not a tuple
         assert _matches_type([1, "hello"], Tuple[int, str]) is False
 
@@ -127,11 +127,11 @@ class TestMatchesType:
         assert _matches_type((1,), Tuple[int, ...]) is True
         assert _matches_type((), Tuple[int, ...]) is True  # Empty tuple
         assert _matches_type(("a", "b", "c"), Tuple[str, ...]) is True
-        
+
         # Invalid element types
         assert _matches_type((1, "2", 3), Tuple[int, ...]) is False
         assert _matches_type(("a", 2, "c"), Tuple[str, ...]) is False
-        
+
         # Not a tuple
         assert _matches_type([1, 2, 3], Tuple[int, ...]) is False
 
@@ -141,15 +141,15 @@ class TestMatchesType:
         assert _matches_type({"a": 1, "b": 2}, Dict[str, int]) is True
         assert _matches_type({1: "a", 2: "b"}, Dict[int, str]) is True
         assert _matches_type({}, Dict[str, int]) is True  # Empty dict is valid
-        
+
         # Invalid key types
         assert _matches_type({1: 1, "b": 2}, Dict[str, int]) is False
         assert _matches_type({"a": 1, 2: 2}, Dict[str, int]) is False
-        
+
         # Invalid value types
         assert _matches_type({"a": 1, "b": "2"}, Dict[str, int]) is False
         assert _matches_type({"a": "1", "b": 2}, Dict[str, int]) is False
-        
+
         # Not a dictionary
         assert _matches_type([("a", 1), ("b", 2)], Dict[str, int]) is False
         assert _matches_type("hello", Dict[str, int]) is False
@@ -159,14 +159,21 @@ class TestMatchesType:
         # List of lists
         assert _matches_type([[1, 2], [3, 4]], List[List[int]]) is True
         assert _matches_type([[1, "2"], [3, 4]], List[List[int]]) is False
-        
+
         # Dict with list values
         assert _matches_type({"a": [1, 2], "b": [3, 4]}, Dict[str, List[int]]) is True
-        assert _matches_type({"a": [1, "2"], "b": [3, 4]}, Dict[str, List[int]]) is False
-        
+        assert (
+            _matches_type({"a": [1, "2"], "b": [3, 4]}, Dict[str, List[int]]) is False
+        )
+
         # Tuple of different types
-        assert _matches_type(([1, 2], {"a": 1}), Tuple[List[int], Dict[str, int]]) is True
-        assert _matches_type(([1, "2"], {"a": 1}), Tuple[List[int], Dict[str, int]]) is False
+        assert (
+            _matches_type(([1, 2], {"a": 1}), Tuple[List[int], Dict[str, int]]) is True
+        )
+        assert (
+            _matches_type(([1, "2"], {"a": 1}), Tuple[List[int], Dict[str, int]])
+            is False
+        )
 
     def test_unparameterized_collections(self):
         """Test collections without type parameters."""
@@ -181,7 +188,7 @@ class TestMatchesType:
         # This tests the final else clause in _matches_type
         # We need to create a mock type with an origin that's not handled
         from typing import Callable
-        
+
         # Callable is an example of a parameterized type not explicitly handled
         assert _matches_type(lambda x: x, Callable[[int], int]) is False
 
@@ -199,7 +206,7 @@ class TestCheckTypesInit:
         """Test that invalid basic types raise TypeError."""
         with pytest.raises(TypeError, match="Argument 'a' must be of type"):
             SampleClass("not_an_int", "hello", [1, 2, 3])
-        
+
         with pytest.raises(TypeError, match="Argument 'b' must be of type"):
             SampleClass(1, 123, [1, 2, 3])
 
@@ -207,7 +214,7 @@ class TestCheckTypesInit:
         """Test that invalid list element types raise TypeError."""
         with pytest.raises(TypeError, match="Argument 'c' must be of type"):
             SampleClass(1, "hello", [1, "not_an_int", 3])
-        
+
         with pytest.raises(TypeError, match="Argument 'c' must be of type"):
             SampleClass(1, "hello", "not_a_list")
 
@@ -215,7 +222,7 @@ class TestCheckTypesInit:
         """Test that invalid optional dict types raise TypeError."""
         with pytest.raises(TypeError, match="Argument 'd' must be of type"):
             SampleClass(1, "hello", [1, 2, 3], {"key": "not_a_float"})
-        
+
         with pytest.raises(TypeError, match="Argument 'd' must be of type"):
             SampleClass(1, "hello", [1, 2, 3], {123: 1.0})  # Wrong key type
 
@@ -223,7 +230,7 @@ class TestCheckTypesInit:
         """Test that invalid tuple types raise TypeError."""
         with pytest.raises(TypeError, match="Argument 'e' must be of type"):
             SampleClass(1, "hello", [1, 2, 3], None, (1, 2))  # Wrong element type
-        
+
         with pytest.raises(TypeError, match="Argument 'e' must be of type"):
             SampleClass(1, "hello", [1, 2, 3], None, ("a", "b", "c"))  # Wrong length
 
@@ -264,10 +271,10 @@ class TestComplexScenarios:
             fixed_tuple=(1, "hello", 3.14),
             var_tuple=(1, 2, 3, 4, 5),
             dict_param={"key1": [1, 2], "key2": [3, 4]},
-            union_param="string_value"
+            union_param="string_value",
         )
         assert instance.list_param == ["a", "b", "c"]
-        
+
         # Test union with list
         instance2 = self.ComplexTestClass(
             list_param=["a", "b"],
@@ -275,7 +282,7 @@ class TestComplexScenarios:
             fixed_tuple=(1, "hello", 3.14),
             var_tuple=(1,),
             dict_param={"key": [1]},
-            union_param=[1, 2, 3]  # List variant of union
+            union_param=[1, 2, 3],  # List variant of union
         )
         assert instance2.union_param == [1, 2, 3]
 
@@ -289,9 +296,9 @@ class TestComplexScenarios:
                 fixed_tuple=(1, "hello", 3.14),
                 var_tuple=(1, 2),
                 dict_param={"key": [1]},
-                union_param="test"
+                union_param="test",
             )
-        
+
         # Invalid set elements
         with pytest.raises(TypeError):
             self.ComplexTestClass(
@@ -300,9 +307,9 @@ class TestComplexScenarios:
                 fixed_tuple=(1, "hello", 3.14),
                 var_tuple=(1, 2),
                 dict_param={"key": [1]},
-                union_param="test"
+                union_param="test",
             )
-        
+
         # Invalid fixed tuple length
         with pytest.raises(TypeError):
             self.ComplexTestClass(
@@ -311,9 +318,9 @@ class TestComplexScenarios:
                 fixed_tuple=(1, "hello"),  # Too short
                 var_tuple=(1, 2),
                 dict_param={"key": [1]},
-                union_param="test"
+                union_param="test",
             )
-        
+
         # Invalid variable tuple elements
         with pytest.raises(TypeError):
             self.ComplexTestClass(
@@ -322,9 +329,9 @@ class TestComplexScenarios:
                 fixed_tuple=(1, "hello", 3.14),
                 var_tuple=(1, "not_int", 3),  # Mixed types
                 dict_param={"key": [1]},
-                union_param="test"
+                union_param="test",
             )
-        
+
         # Invalid dict value types
         with pytest.raises(TypeError):
             self.ComplexTestClass(
@@ -333,9 +340,9 @@ class TestComplexScenarios:
                 fixed_tuple=(1, "hello", 3.14),
                 var_tuple=(1, 2),
                 dict_param={"key": ["not", "int", "list"]},  # Wrong value type
-                union_param="test"
+                union_param="test",
             )
-        
+
         # Invalid union type
         with pytest.raises(TypeError):
             self.ComplexTestClass(
@@ -344,5 +351,5 @@ class TestComplexScenarios:
                 fixed_tuple=(1, "hello", 3.14),
                 var_tuple=(1, 2),
                 dict_param={"key": [1]},
-                union_param=3.14  # Neither str nor List[int]
+                union_param=3.14,  # Neither str nor List[int]
             )

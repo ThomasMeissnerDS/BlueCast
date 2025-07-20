@@ -323,12 +323,12 @@ class BlueCast:
                 cat_columns=[], num_columns=[], date_columns=[]
             )
             _ = feat_type_detector.fit_transform_feature_types(x_train)
-            x_train, y_train = x_train.reset_index(drop=True), y_train.reset_index(
-                drop=True
-            )
-            x_test, y_test = x_test.reset_index(drop=True), y_test.reset_index(
-                drop=True
-            )
+            x_train = x_train.reset_index(drop=True)
+            x_test = x_test.reset_index(drop=True)
+            if y_train is not None:
+                y_train = y_train.reset_index(drop=True)
+            if y_test is not None:
+                y_test = y_test.reset_index(drop=True)
             if target_col in feat_type_detector.cat_columns:
                 feat_type_detector.cat_columns.remove(target_col)
 

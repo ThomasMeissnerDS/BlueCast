@@ -24,7 +24,7 @@ needed for Xgboost). This allows for a much faster development
 cycle and a much more stable codebase while also having as few dependencies
 as possible for the library. Despite being lightweight in its core BlueCast
 offers high customization options for advanced users. Find
-the full documentation [here](https://bluecast.readthedocs.io/en/latest/).
+the full documentation [on Read the Docs](https://bluecast.readthedocs.io/en/latest/).
 
 Here you can see our test coverage in more detail:
 

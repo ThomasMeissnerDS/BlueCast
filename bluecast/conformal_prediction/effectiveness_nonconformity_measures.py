@@ -5,7 +5,7 @@ import pandas as pd
 
 
 def convert_expected_effectiveness_nonconformity_input_types(
-    y_hat: Union[np.ndarray, pd.Series, pd.DataFrame]
+    y_hat: Union[np.ndarray, pd.Series, pd.DataFrame],
 ) -> np.ndarray:
     if isinstance(y_hat, pd.Series):
         y_hat = y_hat.values
