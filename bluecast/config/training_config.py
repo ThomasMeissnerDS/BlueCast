@@ -71,6 +71,9 @@ class TrainingConfig:
         instead.
     :param out_of_fold_dataset_store_path: Path to store the out of fold dataset. If None, the out of fold dataset will
         not be stored. Shall end with a slash. Only used when BlueCast instances are called with fit_eval method.
+    :param optuna_db_backend_path: Path to the Optuna database backend file. If provided as a string, Optuna will use
+        a persistent SQLite database to store hyperparameter tuning progress, allowing resumption if tuning fails.
+        If None (default), Optuna will use in-memory storage. Example: "/path/to/optuna_study.db"
     """
 
     def __init__(
@@ -110,6 +113,7 @@ class TrainingConfig:
         logging_file_path: Optional[str] = None,
         experiment_name: str = "new experiment",
         out_of_fold_dataset_store_path: Optional[str] = None,
+        optuna_db_backend_path: Optional[str] = None,
     ):
         self.global_random_state = global_random_state
         self.increase_random_state_in_bluecast_cv_by = (
@@ -157,6 +161,7 @@ class TrainingConfig:
         self.logging_file_path = logging_file_path
         self.experiment_name = experiment_name
         self.out_of_fold_dataset_store_path = out_of_fold_dataset_store_path
+        self.optuna_db_backend_path = optuna_db_backend_path
 
     def dict(self):
         """

@@ -301,10 +301,10 @@ class CatboostModelRegression(CatboostBaseModel):
                 n_startup_trials=self.conf_training.optuna_sampler_n_startup_trials,
                 warn_independent_sampling=False,
             )
-            study = optuna.create_study(
+            study = self._create_optuna_study(
                 direction=self.conf_catboost.catboost_eval_metric_tune_direction,
                 sampler=sampler,
-                study_name="catboost regression tuning",
+                study_name=f"catboost_regression_tuning_seed_{self.conf_training.global_random_state + rst}",
                 pruner=optuna.pruners.MedianPruner(
                     n_startup_trials=10, n_warmup_steps=20
                 ),

@@ -6,6 +6,8 @@ from abc import ABC, abstractmethod
 from copy import deepcopy
 from datetime import datetime
 from typing import Any, Callable, Dict, List, Literal, Optional, Tuple, TypeVar, Union
+import os
+import pickle
 
 import numpy as np
 import optuna
@@ -349,9 +351,10 @@ class XgboostBaseModel:
     def _optimize_and_plot_grid_search_study(
         self, objective: Callable, search_space: Dict[str, np.array]
     ) -> None:
-        study = optuna.create_study(
+        study = self._create_optuna_study(
             direction=self.conf_xgboost.xgboost_eval_metric_tune_direction,
             sampler=optuna.samplers.GridSampler(search_space),
+            study_name="xgboost_grid_search",
             pruner=optuna.pruners.MedianPruner(n_startup_trials=10, n_warmup_steps=50),
         )
         study.optimize(
@@ -425,6 +428,53 @@ class XgboostBaseModel:
                 y_test=y_test,
             )
             print("Finished Grid search fine tuning")
+
+    def _create_optuna_study(
+        self,
+        direction: str,
+        sampler: Optional[optuna.samplers.BaseSampler] = None,
+        study_name: str = "hyperparameter_tuning",
+        pruner: Optional[optuna.pruners.BasePruner] = None,
+    ) -> optuna.Study:
+        """
+        Create an Optuna study with optional database backend support.
+        
+        :param direction: Direction to optimize ('minimize' or 'maximize')
+        :param sampler: Optuna sampler to use
+        :param study_name: Name of the study
+        :param pruner: Optuna pruner to use
+        :return: Configured Optuna study
+        """
+        study_kwargs = {
+            "direction": direction,
+            "study_name": study_name,
+        }
+        
+        if sampler is not None:
+            study_kwargs["sampler"] = sampler
+        if pruner is not None:
+            study_kwargs["pruner"] = pruner
+            
+        # Add database backend if configured
+        if (
+            self.conf_training.optuna_db_backend_path is not None
+            and isinstance(self.conf_training.optuna_db_backend_path, str)
+        ):
+            storage_name = f"sqlite:///{self.conf_training.optuna_db_backend_path}"
+            study_kwargs["storage"] = storage_name
+            study_kwargs["load_if_exists"] = True
+            
+            # Save the sampler state for resumption if database backend is used
+            if sampler is not None and hasattr(sampler, 'seed'):
+                sampler_path = self.conf_training.optuna_db_backend_path.replace('.db', '_sampler.pkl')
+                try:
+                    with open(sampler_path, "wb") as fout:
+                        pickle.dump(sampler, fout)
+                    logging.info(f"Saved sampler state to {sampler_path}")
+                except Exception as e:
+                    logging.warning(f"Could not save sampler state: {e}")
+        
+        return optuna.create_study(**study_kwargs)
 
 
 # Catboost specific base class
@@ -722,9 +772,10 @@ class CatboostBaseModel:
         run it, and track the best score. We then update self.conf_params_catboost
         accordingly if improvements are found.
         """
-        study = optuna.create_study(
+        study = self._create_optuna_study(
             direction=self.conf_catboost.catboost_eval_metric_tune_direction,
             sampler=optuna.samplers.GridSampler(search_space),
+            study_name="catboost_grid_search",
             pruner=optuna.pruners.MedianPruner(n_startup_trials=10, n_warmup_steps=50),
         )
         study.optimize(
@@ -806,3 +857,50 @@ class CatboostBaseModel:
                 y_test=y_test,
             )
             print("Finished Grid search fine tuning")
+
+    def _create_optuna_study(
+        self,
+        direction: str,
+        sampler: Optional[optuna.samplers.BaseSampler] = None,
+        study_name: str = "catboost_hyperparameter_tuning",
+        pruner: Optional[optuna.pruners.BasePruner] = None,
+    ) -> optuna.Study:
+        """
+        Create an Optuna study with optional database backend support for CatBoost.
+        
+        :param direction: Direction to optimize ('minimize' or 'maximize')
+        :param sampler: Optuna sampler to use
+        :param study_name: Name of the study
+        :param pruner: Optuna pruner to use
+        :return: Configured Optuna study
+        """
+        study_kwargs = {
+            "direction": direction,
+            "study_name": study_name,
+        }
+        
+        if sampler is not None:
+            study_kwargs["sampler"] = sampler
+        if pruner is not None:
+            study_kwargs["pruner"] = pruner
+            
+        # Add database backend if configured
+        if (
+            self.conf_training.optuna_db_backend_path is not None
+            and isinstance(self.conf_training.optuna_db_backend_path, str)
+        ):
+            storage_name = f"sqlite:///{self.conf_training.optuna_db_backend_path}"
+            study_kwargs["storage"] = storage_name
+            study_kwargs["load_if_exists"] = True
+            
+            # Save the sampler state for resumption if database backend is used
+            if sampler is not None and hasattr(sampler, 'seed'):
+                sampler_path = self.conf_training.optuna_db_backend_path.replace('.db', '_sampler.pkl')
+                try:
+                    with open(sampler_path, "wb") as fout:
+                        pickle.dump(sampler, fout)
+                    logging.info(f"Saved sampler state to {sampler_path}")
+                except Exception as e:
+                    logging.warning(f"Could not save sampler state: {e}")
+        
+        return optuna.create_study(**study_kwargs)
