@@ -99,6 +99,7 @@ def main():
 
     try:
         # Note: run_server=True is the default, explicitly shown here for clarity
+        # In Dash 3.x, this uses app.run() instead of the deprecated app.run_server()
         create_eda_dashboard(df, "target", port=8050, run_server=True)
     except KeyboardInterrupt:
         print("\nDashboard stopped by user.")

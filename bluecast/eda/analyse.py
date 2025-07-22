@@ -1483,6 +1483,6 @@ def create_eda_dashboard(
 
     if run_server:
         print(f"Starting dashboard on http://localhost:{port}")
-        app.run_server(debug=True, port=port)
+        app.run(debug=True, port=port)
 
     return app

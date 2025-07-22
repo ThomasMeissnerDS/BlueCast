@@ -646,16 +646,16 @@ def test_dashboard_server_startup():
         }
     )
 
-    # Mock the app.run_server method to avoid actually starting a server
+    # Mock the app.run method to avoid actually starting a server
     import unittest.mock
 
     try:
-        with unittest.mock.patch("dash.Dash.run_server") as mock_run_server:
+        with unittest.mock.patch("dash.Dash.run") as mock_run:
             # Test the run_server=True path
             app = create_eda_dashboard(test_df, "target", port=8053, run_server=True)
 
-            # Verify that run_server was called with the expected parameters
-            mock_run_server.assert_called_once_with(debug=True, port=8053)
+            # Verify that run was called with the expected parameters
+            mock_run.assert_called_once_with(debug=True, port=8053)
 
             # Verify we still get an app object
             assert app is not None
