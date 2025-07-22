@@ -13,7 +13,17 @@ import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 import xgboost as xgb
-from scipy.stats import ks_2samp
+
+# Try to import scipy.stats, but provide fallback if import fails due to compatibility issues
+try:
+    from scipy.stats import ks_2samp
+
+    HAS_SCIPY_STATS = True
+except (ImportError, ValueError) as e:
+    HAS_SCIPY_STATS = False
+    print(
+        f"Warning: scipy.stats could not be imported ({e}). Kolmogorov-Smirnov test functionality will be unavailable."
+    )
 
 warnings.filterwarnings("ignore", "is_sparse is deprecated")
 
@@ -44,14 +54,22 @@ class DataDrift:
         """
         Checks for data drift in new data based on K-S test.
 
-        OThe K-S test is a nonparametric test that compares the cumulative distributions of two numerical data sets.
+        The K-S test is a nonparametric test that compares the cumulative distributions of two numerical data sets.
         Only columns falling under pd.api.types.is_numeric_dtype will be considered.
+
+        Requires scipy.stats to be available. If scipy is not installed, this method will raise an ImportError.
 
         :param data: Pandas DataFrame with the original data
         :param new_data: Pandas DataFrame containing new data to compare against
         :param threshold: Threshold for the Kolmogorov-Smirnov test (default is 0.05)
         :return drift_flags: Dictionary containing flags indicating data drift for each column
         """
+        if not HAS_SCIPY_STATS:
+            raise ImportError(
+                "scipy.stats is required for Kolmogorov-Smirnov test. "
+                "Please install scipy or fix scipy import issues to use this functionality."
+            )
+
         logging.info("Start checking for data drift via Kolmogorov-Smirnov test.")
 
         for column in new_data.columns:

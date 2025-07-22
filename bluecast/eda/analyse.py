@@ -7,16 +7,50 @@ import numpy as np
 import pandas as pd
 import plotly.express as px
 import plotly.graph_objects as go
-import scipy.stats as ss
-import statsmodels.api as sm
 from plotly.subplots import make_subplots
 from sklearn.decomposition import PCA
 from sklearn.feature_selection import mutual_info_classif, mutual_info_regression
 from sklearn.manifold import TSNE
 from sklearn.preprocessing import StandardScaler
 
+# Try to import scipy.stats, but provide fallback if import fails due to compatibility issues
+try:
+    import scipy.stats as ss
+
+    HAS_SCIPY = True
+except (ImportError, ValueError) as e:
+    HAS_SCIPY = False
+    print(
+        f"Warning: scipy.stats could not be imported ({e}). Using fallback implementation for entropy calculations."
+    )
+
+# Try to import statsmodels, but provide fallback if import fails due to compatibility issues
+try:
+    import statsmodels.api as sm
+
+    HAS_STATSMODELS = True
+except (ImportError, ValueError) as e:
+    HAS_STATSMODELS = False
+    print(
+        f"Warning: statsmodels could not be imported ({e}). Regression analysis will use simplified fallback implementation."
+    )
+
 warnings.filterwarnings("ignore", "is_categorical_dtype")
 warnings.filterwarnings("ignore", "use_inf_as_na")
+
+
+def _entropy_fallback(p_x):
+    """
+    Fallback implementation for entropy calculation when scipy is not available.
+    Uses natural logarithm to match scipy.stats.entropy behavior.
+
+    :param p_x: List of probabilities
+    :return: Shannon entropy (using natural logarithm)
+    """
+    p_x = np.array(p_x)
+    # Remove zero probabilities to avoid log(0)
+    p_x = p_x[p_x > 0]
+    return -np.sum(p_x * np.log(p_x))
 
 
 def find_bind_with_with_freedman_diaconis(data: np.ndarray):
@@ -395,7 +429,10 @@ def plot_against_target_for_regression(
 ) -> go.Figure:
     """
     Creates scatter plots for each column in num_columns against the target_col.
-    Draws a regression line and shows the p-value for the regression line.
+    Draws a regression line and shows statistical information.
+
+    If statsmodels is available: Uses OLS regression and shows p-values.
+    If statsmodels is unavailable: Uses numpy linear regression and shows correlation coefficients.
 
     Parameters:
     - df: pd.DataFrame -> The input dataframe containing the data.
@@ -441,9 +478,34 @@ def plot_against_target_for_regression(
         )
 
         # Fit a regression line
-        X = sm.add_constant(x)  # Adds a constant term to the predictor
-        model = sm.OLS(y, X).fit()
-        prediction = model.predict(X)
+        if HAS_STATSMODELS:
+            # Use statsmodels for full OLS regression with p-values
+            X = sm.add_constant(x)  # Adds a constant term to the predictor
+            model = sm.OLS(y, X).fit()
+            prediction = model.predict(X)
+            p_value = model.pvalues[1]
+            stats_text = f"p-value: {p_value:.4f}"
+        else:
+            # Use numpy fallback for simple linear regression
+            # Remove NaN values for regression
+            valid_mask = ~(np.isnan(x) | np.isnan(y))
+            x_clean = x[valid_mask]
+            y_clean = y[valid_mask]
+
+            if len(x_clean) > 1:
+                # Fit linear regression: y = mx + b
+                slope, intercept = np.polyfit(x_clean, y_clean, 1)
+                prediction = slope * x + intercept
+
+                # Calculate correlation coefficient as a measure of relationship strength
+                correlation = (
+                    np.corrcoef(x_clean, y_clean)[0, 1] if len(x_clean) > 1 else 0
+                )
+                stats_text = f"r: {correlation:.4f}"
+            else:
+                # Not enough data for regression
+                prediction = np.full_like(x, np.mean(y) if len(y) > 0 else 0)
+                stats_text = "insufficient data"
 
         # Plot the regression line
         sorted_indices = np.argsort(x)
@@ -460,10 +522,9 @@ def plot_against_target_for_regression(
             col=col,
         )
 
-        # Calculate and show the p-value
-        p_value = model.pvalues[1]
+        # Add statistical annotation
         fig.add_annotation(
-            text=f"p-value: {p_value:.4f}",
+            text=stats_text,
             xref=f"x{i + 1}",
             yref=f"y{i + 1}",
             x=0.05,
@@ -768,7 +829,13 @@ def theil_u(x, y):
     x_counter = Counter(x)
     total_occurrences = sum(x_counter.values())
     p_x = list(map(lambda n: n / total_occurrences, x_counter.values()))
-    s_x = ss.entropy(p_x)
+
+    # Use scipy entropy if available, otherwise use fallback implementation
+    if HAS_SCIPY:
+        s_x = ss.entropy(p_x)
+    else:
+        s_x = _entropy_fallback(p_x)
+
     if s_x == 0:
         return 1
     else:
