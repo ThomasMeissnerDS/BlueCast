@@ -1457,7 +1457,7 @@ def _dashboard_update_summary(
     selected_feature: str, df: pd.DataFrame, numeric_cols: List[str]
 ):
     """
-    Helper function for dashboard summary updates.
+    Helper function for dashboard summary updates with dark theme styling.
 
     :param selected_feature: Selected feature for the summary
     :param df: DataFrame containing the data
@@ -1476,19 +1476,73 @@ def _dashboard_update_summary(
             stats = df[selected_feature].describe()
             return html.Table(
                 [
-                    html.Tr([html.Td(stat), html.Td(f"{value:.2f}")])
+                    html.Tr(
+                        [
+                            html.Td(
+                                stat.title(),
+                                style={
+                                    "padding": "12px 16px",
+                                    "backgroundColor": "#3a3a3a",
+                                    "color": "#e0e0e0",
+                                    "fontWeight": "500",
+                                },
+                            ),
+                            html.Td(
+                                f"{value:.3f}",
+                                style={
+                                    "padding": "12px 16px",
+                                    "backgroundColor": "#2d2d2d",
+                                    "color": "#ffffff",
+                                    "fontFamily": "monospace",
+                                },
+                            ),
+                        ],
+                        style={"borderBottom": "1px solid #4a4a4a"},
+                    )
                     for stat, value in stats.items()
-                ]
+                ],
+                style={"width": "100%", "borderCollapse": "collapse"},
             )
         else:
             value_counts = df[selected_feature].value_counts()
             return html.Table(
                 [
-                    html.Tr([html.Td(value), html.Td(count)])
+                    html.Tr(
+                        [
+                            html.Td(
+                                str(value),
+                                style={
+                                    "padding": "12px 16px",
+                                    "backgroundColor": "#3a3a3a",
+                                    "color": "#e0e0e0",
+                                    "fontWeight": "500",
+                                },
+                            ),
+                            html.Td(
+                                str(count),
+                                style={
+                                    "padding": "12px 16px",
+                                    "backgroundColor": "#2d2d2d",
+                                    "color": "#ffffff",
+                                    "fontFamily": "monospace",
+                                },
+                            ),
+                        ],
+                        style={"borderBottom": "1px solid #4a4a4a"},
+                    )
                     for value, count in value_counts.head(10).items()
-                ]
+                ],
+                style={"width": "100%", "borderCollapse": "collapse"},
             )
-    return "Select a feature to see summary statistics"
+    return html.Div(
+        "🎯 Select a feature to see summary statistics",
+        style={
+            "textAlign": "center",
+            "padding": "20px",
+            "color": "#999",
+            "fontStyle": "italic",
+        },
+    )
 
 
 def _dashboard_update_regression_plot(
@@ -1500,7 +1554,7 @@ def _dashboard_update_regression_plot(
     target_col: str,
 ):
     """
-    Helper function for regression dashboard plot updates.
+    Helper function for regression dashboard plot updates with dark theme styling.
     """
     try:
         from sklearn.linear_model import LinearRegression
@@ -1508,19 +1562,76 @@ def _dashboard_update_regression_plot(
     except ImportError:
         raise ImportError("scikit-learn is required for regression functionality")
 
+    # Dark theme template
+    dark_theme_layout = {
+        "paper_bgcolor": "rgba(0,0,0,0)",
+        "plot_bgcolor": "rgba(0,0,0,0)",
+        "font": {"color": "#ffffff", "family": "Segoe UI"},
+        "xaxis": {
+            "gridcolor": "#404040",
+            "zerolinecolor": "#404040",
+            "tickfont": {"color": "#ffffff"},
+        },
+        "yaxis": {
+            "gridcolor": "#404040",
+            "zerolinecolor": "#404040",
+            "tickfont": {"color": "#ffffff"},
+        },
+        "margin": {"t": 60, "b": 60, "l": 60, "r": 60},
+    }
+
     if plot_type == "correlation" and len(numeric_cols) > 1:
-        return correlation_heatmap(df[numeric_cols + [target_col]], show=False)
+        fig = correlation_heatmap(df[numeric_cols + [target_col]], show=False)
+        fig.update_layout(**dark_theme_layout)
+        fig.update_layout(
+            title={
+                "text": "🔗 Correlation Heatmap",
+                "font": {"color": "#ffffff", "size": 18},
+            }
+        )
+        return fig
     elif plot_type == "distribution" and selected_feature_x:
         fig = go.Figure()
-        fig.add_trace(go.Histogram(x=df[selected_feature_x], name=selected_feature_x))
-        fig.update_layout(title=f"Distribution of {selected_feature_x}")
+        fig.add_trace(
+            go.Histogram(
+                x=df[selected_feature_x],
+                name=selected_feature_x,
+                marker_color="#667eea",
+                opacity=0.8,
+            )
+        )
+        fig.update_layout(**dark_theme_layout)
+        fig.update_layout(
+            title={
+                "text": f"📈 Distribution of {selected_feature_x}",
+                "font": {"color": "#ffffff", "size": 18},
+            }
+        )
         return fig
     elif plot_type == "pca" and len(numeric_cols) > 1:
-        return plot_pca(df[numeric_cols + [target_col]], target_col, show=False)
+        fig = plot_pca(df[numeric_cols + [target_col]], target_col, show=False)
+        fig.update_layout(**dark_theme_layout)
+        fig.update_layout(
+            title={"text": "🎯 PCA Analysis", "font": {"color": "#ffffff", "size": 18}}
+        )
+        return fig
     elif plot_type == "boxplot" and selected_feature_x:
         fig = go.Figure()
-        fig.add_trace(go.Box(y=df[selected_feature_x], name=selected_feature_x))
-        fig.update_layout(title=f"Box Plot of {selected_feature_x}")
+        fig.add_trace(
+            go.Box(
+                y=df[selected_feature_x],
+                name=selected_feature_x,
+                marker_color="#667eea",
+                line_color="#667eea",
+            )
+        )
+        fig.update_layout(**dark_theme_layout)
+        fig.update_layout(
+            title={
+                "text": f"📦 Box Plot of {selected_feature_x}",
+                "font": {"color": "#ffffff", "size": 18},
+            }
+        )
         return fig
     elif (
         plot_type == "scatter_with_regression"
@@ -1552,37 +1663,50 @@ def _dashboard_update_regression_plot(
                     go.Scatter(
                         x=X_train.squeeze(),
                         y=y_train,
-                        name="Train",
+                        name="🔵 Train",
                         mode="markers",
-                        marker=dict(color="blue"),
+                        marker=dict(color="#4a90e2", size=8, opacity=0.7),
                     ),
                     go.Scatter(
                         x=X_test.squeeze(),
                         y=y_test,
-                        name="Test",
+                        name="🔴 Test",
                         mode="markers",
-                        marker=dict(color="red"),
+                        marker=dict(color="#e74c3c", size=8, opacity=0.7),
                     ),
                     go.Scatter(
                         x=x_range,
                         y=y_range,
-                        name="Regression Line",
+                        name="📈 Regression Line",
                         mode="lines",
-                        line=dict(color="green"),
+                        line=dict(color="#2ecc71", width=3),
                     ),
                 ]
             )
 
             r2_score = model.score(X_test, y_test)
+            fig.update_layout(**dark_theme_layout)
             fig.update_layout(
-                title=f"Regression: {selected_feature_x} vs {selected_feature_y} (R² = {r2_score:.3f})",
+                title={
+                    "text": f"📊 Regression: {selected_feature_x} vs {selected_feature_y} (R² = {r2_score:.3f})",
+                    "font": {"color": "#ffffff", "size": 18},
+                },
                 xaxis_title=selected_feature_x,
                 yaxis_title=selected_feature_y,
             )
         else:
-            fig = px.scatter(df, x=selected_feature_x, y=selected_feature_y)
+            fig = px.scatter(
+                df,
+                x=selected_feature_x,
+                y=selected_feature_y,
+                color_discrete_sequence=["#667eea"],
+            )
+            fig.update_layout(**dark_theme_layout)
             fig.update_layout(
-                title=f"Scatter: {selected_feature_x} vs {selected_feature_y}"
+                title={
+                    "text": f"📊 Scatter: {selected_feature_x} vs {selected_feature_y}",
+                    "font": {"color": "#ffffff", "size": 18},
+                }
             )
         return fig
     elif plot_type == "coefficients" and len(numeric_cols) > 1:
@@ -1599,15 +1723,27 @@ def _dashboard_update_regression_plot(
             x=X.columns,
             y=model.coef_,
             color=colors,
-            color_discrete_sequence=["red", "blue"],
+            color_discrete_sequence=["#e74c3c", "#2ecc71"],
             labels=dict(x="Feature", y="Linear coefficient"),
-            title=f"Feature Coefficients for Predicting {target_col}",
+        )
+        fig.update_layout(**dark_theme_layout)
+        fig.update_layout(
+            title={
+                "text": f"⚖️ Feature Coefficients for Predicting {target_col}",
+                "font": {"color": "#ffffff", "size": 18},
+            }
         )
         return fig
     else:
         # Default empty plot
         fig = go.Figure()
-        fig.update_layout(title="Select valid options to display plot")
+        fig.update_layout(**dark_theme_layout)
+        fig.update_layout(
+            title={
+                "text": "🎯 Select valid options to display plot",
+                "font": {"color": "#ffffff", "size": 18},
+            }
+        )
         return fig
 
 
@@ -1621,37 +1757,136 @@ def _dashboard_update_classification_plot(
     target_col: str,
 ):
     """
-    Helper function for classification dashboard plot updates.
+    Helper function for classification dashboard plot updates with dark theme styling.
     """
+    # Dark theme template
+    dark_theme_layout = {
+        "paper_bgcolor": "rgba(0,0,0,0)",
+        "plot_bgcolor": "rgba(0,0,0,0)",
+        "font": {"color": "#ffffff", "family": "Segoe UI"},
+        "xaxis": {
+            "gridcolor": "#404040",
+            "zerolinecolor": "#404040",
+            "tickfont": {"color": "#ffffff"},
+        },
+        "yaxis": {
+            "gridcolor": "#404040",
+            "zerolinecolor": "#404040",
+            "tickfont": {"color": "#ffffff"},
+        },
+        "margin": {"t": 60, "b": 60, "l": 60, "r": 60},
+    }
+
+    # Professional color palette for classification
+    class_colors = [
+        "#667eea",
+        "#f093fb",
+        "#4facfe",
+        "#43e97b",
+        "#fa709a",
+        "#fad0c4",
+        "#a8edea",
+        "#fed6e3",
+    ]
+
     if plot_type == "correlation" and len(numeric_cols) > 1:
-        return correlation_heatmap(df[numeric_cols + [target_col]], show=False)
+        fig = correlation_heatmap(df[numeric_cols + [target_col]], show=False)
+        fig.update_layout(**dark_theme_layout)
+        fig.update_layout(
+            title={
+                "text": "🔗 Correlation Heatmap",
+                "font": {"color": "#ffffff", "size": 18},
+            }
+        )
+        return fig
     elif plot_type == "distribution" and selected_feature_x:
         fig = go.Figure()
-        fig.add_trace(go.Histogram(x=df[selected_feature_x], name=selected_feature_x))
-        fig.update_layout(title=f"Distribution of {selected_feature_x}")
+        fig.add_trace(
+            go.Histogram(
+                x=df[selected_feature_x],
+                name=selected_feature_x,
+                marker_color="#667eea",
+                opacity=0.8,
+            )
+        )
+        fig.update_layout(**dark_theme_layout)
+        fig.update_layout(
+            title={
+                "text": f"📈 Distribution of {selected_feature_x}",
+                "font": {"color": "#ffffff", "size": 18},
+            }
+        )
         return fig
     elif plot_type == "pca" and len(numeric_cols) > 1:
-        return plot_pca(df[numeric_cols + [target_col]], target_col, show=False)
+        fig = plot_pca(df[numeric_cols + [target_col]], target_col, show=False)
+        fig.update_layout(**dark_theme_layout)
+        fig.update_layout(
+            title={"text": "🎯 PCA Analysis", "font": {"color": "#ffffff", "size": 18}}
+        )
+        return fig
     elif plot_type == "boxplot" and selected_feature_x:
         if selected_feature_x in numeric_cols:
-            fig = px.box(df, y=selected_feature_x, color=target_col)
-            fig.update_layout(title=f"Box Plot of {selected_feature_x} by {target_col}")
+            fig = px.box(
+                df,
+                y=selected_feature_x,
+                color=target_col,
+                color_discrete_sequence=class_colors,
+            )
+            fig.update_layout(**dark_theme_layout)
+            fig.update_layout(
+                title={
+                    "text": f"📦 Box Plot of {selected_feature_x} by {target_col}",
+                    "font": {"color": "#ffffff", "size": 18},
+                }
+            )
         else:
             fig = go.Figure()
-            fig.add_trace(go.Box(y=df[selected_feature_x], name=selected_feature_x))
-            fig.update_layout(title=f"Box Plot of {selected_feature_x}")
+            fig.add_trace(
+                go.Box(
+                    y=df[selected_feature_x],
+                    name=selected_feature_x,
+                    marker_color="#667eea",
+                )
+            )
+            fig.update_layout(**dark_theme_layout)
+            fig.update_layout(
+                title={
+                    "text": f"📦 Box Plot of {selected_feature_x}",
+                    "font": {"color": "#ffffff", "size": 18},
+                }
+            )
         return fig
     elif plot_type == "scatter_by_class" and selected_feature_x and selected_feature_y:
         fig = px.scatter(
-            df, x=selected_feature_x, y=selected_feature_y, color=target_col
+            df,
+            x=selected_feature_x,
+            y=selected_feature_y,
+            color=target_col,
+            color_discrete_sequence=class_colors,
         )
+        fig.update_layout(**dark_theme_layout)
         fig.update_layout(
-            title=f"Scatter: {selected_feature_x} vs {selected_feature_y} by {target_col}"
+            title={
+                "text": f"🎨 Scatter: {selected_feature_x} vs {selected_feature_y} by {target_col}",
+                "font": {"color": "#ffffff", "size": 18},
+            }
         )
         return fig
     elif plot_type == "target_distribution":
-        # Show target class distribution
-        fig = px.histogram(df, x=target_col, title=f"Distribution of {target_col}")
+        # Show target class distribution with different colors for each class
+        fig = px.histogram(
+            df,
+            x=target_col,
+            color=target_col,  # Color by target to distinguish classes
+            color_discrete_sequence=class_colors,
+        )
+        fig.update_layout(**dark_theme_layout)
+        fig.update_layout(
+            title={
+                "text": f"🎯 Distribution of {target_col}",
+                "font": {"color": "#ffffff", "size": 18},
+            }
+        )
         return fig
     elif plot_type == "feature_by_target" and selected_feature_x:
         # Show feature distribution by target class
@@ -1662,7 +1897,7 @@ def _dashboard_update_classification_plot(
             )
 
             fig = go.Figure()
-            for target_class in contingency_table.columns:
+            for i, target_class in enumerate(contingency_table.columns):
                 fig.add_trace(
                     go.Bar(
                         x=contingency_table.index,
@@ -1670,26 +1905,46 @@ def _dashboard_update_classification_plot(
                         name=f"Class {target_class}",
                         text=contingency_table[target_class].round(2),
                         textposition="auto",
+                        marker_color=class_colors[i % len(class_colors)],
                     )
                 )
 
+            fig.update_layout(**dark_theme_layout)
             fig.update_layout(
-                title=f"Distribution of {target_col} across {selected_feature_x}",
+                title={
+                    "text": f"📊 Distribution of {target_col} across {selected_feature_x}",
+                    "font": {"color": "#ffffff", "size": 18},
+                },
                 xaxis_title=selected_feature_x,
                 yaxis_title="Proportion",
                 barmode="stack",
             )
         else:
             # Violin plot for numeric features
-            fig = px.violin(df, x=target_col, y=selected_feature_x)
+            fig = px.violin(
+                df,
+                x=target_col,
+                y=selected_feature_x,
+                color_discrete_sequence=class_colors,
+            )
+            fig.update_layout(**dark_theme_layout)
             fig.update_layout(
-                title=f"Distribution of {selected_feature_x} by {target_col}"
+                title={
+                    "text": f"🎻 Distribution of {selected_feature_x} by {target_col}",
+                    "font": {"color": "#ffffff", "size": 18},
+                }
             )
         return fig
     else:
         # Default empty plot
         fig = go.Figure()
-        fig.update_layout(title="Select valid options to display plot")
+        fig.update_layout(**dark_theme_layout)
+        fig.update_layout(
+            title={
+                "text": "🎯 Select valid options to display plot",
+                "font": {"color": "#ffffff", "size": 18},
+            }
+        )
         return fig
 
 
@@ -1715,6 +1970,171 @@ def create_eda_dashboard_regression(
 
     app = dash.Dash(__name__)
 
+    # Custom CSS for dark theme and professional styling
+    app.index_string = """
+    <!DOCTYPE html>
+    <html>
+        <head>
+            {%metas%}
+            <title>{%title%}</title>
+            {%favicon%}
+            {%css%}
+            <style>
+                body {
+                    background-color: #1e1e1e;
+                    color: #ffffff;
+                    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+                    margin: 0;
+                    padding: 0;
+                }
+                .main-container {
+                    max-width: 1400px;
+                    margin: 0 auto;
+                    padding: 20px;
+                }
+                .header {
+                    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+                    padding: 30px;
+                    border-radius: 15px;
+                    margin-bottom: 30px;
+                    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+                }
+                .header h1 {
+                    margin: 0;
+                    color: white;
+                    font-size: 2.5rem;
+                    font-weight: 300;
+                    text-align: center;
+                }
+                .controls-container {
+                    background-color: #2d2d2d;
+                    padding: 25px;
+                    border-radius: 15px;
+                    margin-bottom: 30px;
+                    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.2);
+                }
+                .control-group {
+                    background-color: #3a3a3a;
+                    padding: 20px;
+                    border-radius: 10px;
+                    margin: 10px;
+                }
+                .control-group label {
+                    display: block;
+                    margin-bottom: 8px;
+                    font-weight: 500;
+                    color: #e0e0e0;
+                    font-size: 0.95rem;
+                }
+                .Select-control {
+                    background-color: #4a4a4a !important;
+                    border: 1px solid #666 !important;
+                    border-radius: 8px !important;
+                    color: #ffffff !important;
+                }
+                .Select-menu-outer {
+                    background-color: #4a4a4a !important;
+                    border: 1px solid #666 !important;
+                    border-radius: 8px !important;
+                }
+                .Select-option {
+                    background-color: #4a4a4a !important;
+                    color: #ffffff !important;
+                    padding: 8px 12px !important;
+                }
+                .Select-option:hover {
+                    background-color: #667eea !important;
+                    color: #ffffff !important;
+                }
+                .Select-option.is-selected {
+                    background-color: #667eea !important;
+                    color: #ffffff !important;
+                }
+                .Select-option.is-focused {
+                    background-color: #5a6fd8 !important;
+                    color: #ffffff !important;
+                }
+                .Select-value-label {
+                    color: #ffffff !important;
+                }
+                .Select-placeholder {
+                    color: #cccccc !important;
+                }
+                .Select-input input {
+                    color: #ffffff !important;
+                }
+                .Select-arrow-zone {
+                    color: #ffffff !important;
+                }
+                .Select-clear-zone {
+                    color: #ffffff !important;
+                }
+                /* Dash dropdown specific styles */
+                .dash-dropdown .Select-control {
+                    background-color: #4a4a4a !important;
+                    border-color: #666 !important;
+                }
+                .dash-dropdown .Select-menu {
+                    background-color: #4a4a4a !important;
+                }
+                .dash-dropdown .Select-option {
+                    background-color: #4a4a4a !important;
+                    color: #ffffff !important;
+                }
+                .dash-dropdown .Select-option:hover {
+                    background-color: #667eea !important;
+                }
+                .dash-dropdown .Select-value {
+                    color: #ffffff !important;
+                }
+                .graph-container {
+                    background-color: #2d2d2d;
+                    padding: 20px;
+                    border-radius: 15px;
+                    margin-bottom: 30px;
+                    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.2);
+                }
+                .summary-container {
+                    background-color: #2d2d2d;
+                    padding: 25px;
+                    border-radius: 15px;
+                    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.2);
+                }
+                .summary-container h3 {
+                    color: #667eea;
+                    margin-top: 0;
+                    font-size: 1.5rem;
+                    font-weight: 400;
+                }
+                .summary-table {
+                    background-color: #3a3a3a;
+                    border-radius: 8px;
+                    overflow: hidden;
+                }
+                .summary-table td {
+                    padding: 12px 16px;
+                    border-bottom: 1px solid #4a4a4a;
+                }
+                .data-info {
+                    background: linear-gradient(135deg, #2d2d2d 0%, #3a3a3a 100%);
+                    padding: 15px 25px;
+                    border-radius: 10px;
+                    margin-bottom: 20px;
+                    border-left: 4px solid #667eea;
+                }
+            </style>
+        </head>
+        <body>
+            {%app_entry%}
+            <footer>
+                {%config%}
+                {%scripts%}
+                {%renderer%}
+            </footer>
+        </body>
+    </html>
+    """
+
     # Get numeric and categorical columns
     numeric_cols = df.select_dtypes(include=[np.number]).columns.tolist()
     categorical_cols = df.select_dtypes(include=["object", "category"]).columns.tolist()
@@ -1725,83 +2145,141 @@ def create_eda_dashboard_regression(
         categorical_cols.remove(target_col)
 
     app.layout = html.Div(
-        [
-            html.H1(
-                "EDA Dashboard - Regression Analysis", style={"textAlign": "center"}
-            ),
+        className="main-container",
+        children=[
+            # Header
             html.Div(
-                [
+                className="header",
+                children=[
+                    html.H1("🔬 EDA Dashboard - Regression Analysis"),
                     html.Div(
-                        [
-                            html.Label("Select Plot Type:"),
-                            dcc.Dropdown(
-                                id="plot-type",
-                                options=[
-                                    {
-                                        "label": "Correlation Heatmap",
-                                        "value": "correlation",
-                                    },
-                                    {
-                                        "label": "Distribution Plot",
-                                        "value": "distribution",
-                                    },
-                                    {"label": "PCA Analysis", "value": "pca"},
-                                    {"label": "Box Plot", "value": "boxplot"},
-                                    {
-                                        "label": "Scatter with Regression",
-                                        "value": "scatter_with_regression",
-                                    },
-                                    {
-                                        "label": "Feature Coefficients",
-                                        "value": "coefficients",
-                                    },
-                                ],
-                                value="correlation",
+                        className="data-info",
+                        children=[
+                            html.P(
+                                f"📊 Dataset: {df.shape[0]:,} rows × {df.shape[1]} columns"
+                            ),
+                            html.P(
+                                f"🎯 Target: {target_col} (Range: {df[target_col].min():.2f} - {df[target_col].max():.2f})"
+                            ),
+                            html.P(
+                                f"📈 Features: {len(numeric_cols)} numeric, {len(categorical_cols)} categorical"
                             ),
                         ],
-                        style={"width": "32%", "display": "inline-block"},
+                        style={"margin": "20px 0 0 0", "fontSize": "1rem"},
                     ),
-                    html.Div(
-                        [
-                            html.Label("Select Feature X:"),
-                            dcc.Dropdown(
-                                id="feature-x-dropdown",
-                                options=[
-                                    {"label": col, "value": col}
-                                    for col in numeric_cols + categorical_cols
-                                ],
-                                value=numeric_cols[0] if numeric_cols else None,
-                            ),
-                        ],
-                        style={
-                            "width": "32%",
-                            "display": "inline-block",
-                            "marginLeft": "2%",
-                        },
-                    ),
-                    html.Div(
-                        [
-                            html.Label("Select Feature Y:"),
-                            dcc.Dropdown(
-                                id="feature-y-dropdown",
-                                options=[
-                                    {"label": col, "value": col}
-                                    for col in numeric_cols + [target_col]
-                                ],
-                                value=target_col,
-                            ),
-                        ],
-                        style={
-                            "width": "32%",
-                            "display": "inline-block",
-                            "marginLeft": "2%",
-                        },
-                    ),
-                ]
+                ],
             ),
-            dcc.Graph(id="main-plot"),
-            html.Div([html.H3("Dataset Summary"), html.Div(id="summary-stats")]),
-        ]
+            # Controls
+            html.Div(
+                className="controls-container",
+                children=[
+                    html.Div(
+                        style={"display": "flex", "gap": "20px", "flexWrap": "wrap"},
+                        children=[
+                            html.Div(
+                                className="control-group",
+                                style={"flex": "1", "minWidth": "300px"},
+                                children=[
+                                    html.Label("📊 Select Plot Type:"),
+                                    dcc.Dropdown(
+                                        id="plot-type",
+                                        options=[
+                                            {
+                                                "label": "🔗 Correlation Heatmap",
+                                                "value": "correlation",
+                                            },
+                                            {
+                                                "label": "📈 Distribution Plot",
+                                                "value": "distribution",
+                                            },
+                                            {
+                                                "label": "🎯 PCA Analysis",
+                                                "value": "pca",
+                                            },
+                                            {
+                                                "label": "📦 Box Plot",
+                                                "value": "boxplot",
+                                            },
+                                            {
+                                                "label": "📊 Scatter with Regression",
+                                                "value": "scatter_with_regression",
+                                            },
+                                            {
+                                                "label": "⚖️ Feature Coefficients",
+                                                "value": "coefficients",
+                                            },
+                                        ],
+                                        value="correlation",
+                                        className="dash-dropdown",
+                                    ),
+                                ],
+                            ),
+                            html.Div(
+                                className="control-group",
+                                style={"flex": "1", "minWidth": "250px"},
+                                children=[
+                                    html.Label("📐 Select Feature X:"),
+                                    dcc.Dropdown(
+                                        id="feature-x-dropdown",
+                                        options=[
+                                            {"label": f"📊 {col}", "value": col}
+                                            for col in numeric_cols + categorical_cols
+                                        ],
+                                        value=numeric_cols[0] if numeric_cols else None,
+                                        className="dash-dropdown",
+                                    ),
+                                ],
+                            ),
+                            html.Div(
+                                className="control-group",
+                                style={"flex": "1", "minWidth": "250px"},
+                                children=[
+                                    html.Label("📏 Select Feature Y:"),
+                                    dcc.Dropdown(
+                                        id="feature-y-dropdown",
+                                        options=[
+                                            {
+                                                "label": (
+                                                    f"🎯 {col}"
+                                                    if col == target_col
+                                                    else f"📊 {col}"
+                                                ),
+                                                "value": col,
+                                            }
+                                            for col in numeric_cols + [target_col]
+                                        ],
+                                        value=target_col,
+                                        className="dash-dropdown",
+                                    ),
+                                ],
+                            ),
+                        ],
+                    )
+                ],
+            ),
+            # Graph
+            html.Div(
+                className="graph-container",
+                children=[
+                    dcc.Graph(
+                        id="main-plot",
+                        config={
+                            "displayModeBar": True,
+                            "displaylogo": False,
+                            "modeBarButtonsToRemove": ["pan2d", "lasso2d", "select2d"],
+                        },
+                    )
+                ],
+            ),
+            # Summary
+            html.Div(
+                className="summary-container",
+                children=[
+                    html.H3("📋 Dataset Summary"),
+                    html.Div(id="summary-stats", className="summary-table"),
+                ],
+            ),
+        ],
     )
 
     @app.callback(
@@ -1856,6 +2334,162 @@ def create_eda_dashboard_classification(
 
     app = dash.Dash(__name__)
 
+    # Custom CSS for dark theme and professional styling
+    app.index_string = """
+    <!DOCTYPE html>
+    <html>
+        <head>
+            {%metas%}
+            <title>{%title%}</title>
+            {%favicon%}
+            {%css%}
+            <style>
+                body {
+                    background-color: #1e1e1e;
+                    color: #ffffff;
+                    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+                    margin: 0;
+                    padding: 0;
+                }
+                .main-container {
+                    max-width: 1400px;
+                    margin: 0 auto;
+                    padding: 20px;
+                }
+                .header {
+                    background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+                    padding: 30px;
+                    border-radius: 15px;
+                    margin-bottom: 30px;
+                    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+                }
+                .header h1 {
+                    margin: 0;
+                    color: white;
+                    font-size: 2.5rem;
+                    font-weight: 300;
+                    text-align: center;
+                }
+                .controls-container {
+                    background-color: #2d2d2d;
+                    padding: 25px;
+                    border-radius: 15px;
+                    margin-bottom: 30px;
+                    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.2);
+                }
+                .control-group {
+                    background-color: #3a3a3a;
+                    padding: 20px;
+                    border-radius: 10px;
+                    margin: 10px;
+                }
+                                 .control-group label {
+                     display: block;
+                     margin-bottom: 8px;
+                     font-weight: 500;
+                     color: #e0e0e0;
+                     font-size: 0.95rem;
+                 }
+                 .Select-control {
+                     background-color: #4a4a4a !important;
+                     border: 1px solid #666 !important;
+                     border-radius: 8px !important;
+                     color: #ffffff !important;
+                 }
+                 .Select-menu-outer {
+                     background-color: #4a4a4a !important;
+                     border: 1px solid #666 !important;
+                     border-radius: 8px !important;
+                 }
+                 .Select-option {
+                     background-color: #4a4a4a !important;
+                     color: #ffffff !important;
+                     padding: 8px 12px !important;
+                 }
+                 .Select-option:hover {
+                     background-color: #f093fb !important;
+                     color: #ffffff !important;
+                 }
+                 .Select-option.is-selected {
+                     background-color: #f093fb !important;
+                     color: #ffffff !important;
+                 }
+                 .Select-option.is-focused {
+                     background-color: #e082f0 !important;
+                     color: #ffffff !important;
+                 }
+                 .Select-value-label {
+                     color: #ffffff !important;
+                 }
+                 .Select-placeholder {
+                     color: #cccccc !important;
+                 }
+                 .Select-input input {
+                     color: #ffffff !important;
+                 }
+                 .Select-arrow-zone {
+                     color: #ffffff !important;
+                 }
+                 .Select-clear-zone {
+                     color: #ffffff !important;
+                 }
+                 /* Dash dropdown specific styles */
+                 .dash-dropdown .Select-control {
+                     background-color: #4a4a4a !important;
+                     border-color: #666 !important;
+                 }
+                 .dash-dropdown .Select-menu {
+                     background-color: #4a4a4a !important;
+                 }
+                 .dash-dropdown .Select-option {
+                     background-color: #4a4a4a !important;
+                     color: #ffffff !important;
+                 }
+                 .dash-dropdown .Select-option:hover {
+                     background-color: #f093fb !important;
+                 }
+                 .dash-dropdown .Select-value {
+                     color: #ffffff !important;
+                 }
+                 .graph-container {
+                    background-color: #2d2d2d;
+                    padding: 20px;
+                    border-radius: 15px;
+                    margin-bottom: 30px;
+                    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.2);
+                }
+                .summary-container {
+                    background-color: #2d2d2d;
+                    padding: 25px;
+                    border-radius: 15px;
+                    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.2);
+                }
+                .summary-container h3 {
+                    color: #f093fb;
+                    margin-top: 0;
+                    font-size: 1.5rem;
+                    font-weight: 400;
+                }
+                .data-info {
+                    background: linear-gradient(135deg, #2d2d2d 0%, #3a3a3a 100%);
+                    padding: 15px 25px;
+                    border-radius: 10px;
+                    margin-bottom: 20px;
+                    border-left: 4px solid #f093fb;
+                }
+            </style>
+        </head>
+        <body>
+            {%app_entry%}
+            <footer>
+                {%config%}
+                {%scripts%}
+                {%renderer%}
+            </footer>
+        </body>
+    </html>
+    """
+
     # Get numeric and categorical columns
     numeric_cols = df.select_dtypes(include=[np.number]).columns.tolist()
     categorical_cols = df.select_dtypes(include=["object", "category"]).columns.tolist()
@@ -1866,89 +2500,142 @@ def create_eda_dashboard_classification(
         categorical_cols.remove(target_col)
 
     app.layout = html.Div(
-        [
-            html.H1(
-                "EDA Dashboard - Classification Analysis", style={"textAlign": "center"}
-            ),
+        className="main-container",
+        children=[
+            # Header
             html.Div(
-                [
+                className="header",
+                children=[
+                    html.H1("🎨 EDA Dashboard - Classification Analysis"),
                     html.Div(
-                        [
-                            html.Label("Select Plot Type:"),
-                            dcc.Dropdown(
-                                id="plot-type",
-                                options=[
-                                    {
-                                        "label": "Correlation Heatmap",
-                                        "value": "correlation",
-                                    },
-                                    {
-                                        "label": "Distribution Plot",
-                                        "value": "distribution",
-                                    },
-                                    {"label": "PCA Analysis", "value": "pca"},
-                                    {"label": "Box Plot by Class", "value": "boxplot"},
-                                    {
-                                        "label": "Scatter by Class",
-                                        "value": "scatter_by_class",
-                                    },
-                                    {
-                                        "label": "Target Distribution",
-                                        "value": "target_distribution",
-                                    },
-                                    {
-                                        "label": "Feature by Target",
-                                        "value": "feature_by_target",
-                                    },
-                                ],
-                                value="target_distribution",
+                        className="data-info",
+                        children=[
+                            html.P(
+                                f"📊 Dataset: {df.shape[0]:,} rows × {df.shape[1]} columns"
+                            ),
+                            html.P(
+                                f"🎯 Target: {target_col} (Classes: {', '.join(map(str, sorted(df[target_col].unique())))})"
+                            ),
+                            html.P(
+                                f"📈 Features: {len(numeric_cols)} numeric, {len(categorical_cols)} categorical"
                             ),
                         ],
-                        style={"width": "32%", "display": "inline-block"},
+                        style={"margin": "20px 0 0 0", "fontSize": "1rem"},
                     ),
-                    html.Div(
-                        [
-                            html.Label("Select Feature X:"),
-                            dcc.Dropdown(
-                                id="feature-x-dropdown",
-                                options=[
-                                    {"label": col, "value": col}
-                                    for col in numeric_cols + categorical_cols
-                                ],
-                                value=numeric_cols[0] if numeric_cols else None,
-                            ),
-                        ],
-                        style={
-                            "width": "32%",
-                            "display": "inline-block",
-                            "marginLeft": "2%",
-                        },
-                    ),
-                    html.Div(
-                        [
-                            html.Label("Select Feature Y:"),
-                            dcc.Dropdown(
-                                id="feature-y-dropdown",
-                                options=[
-                                    {"label": col, "value": col}
-                                    for col in numeric_cols + categorical_cols
-                                ],
-                                value=(
-                                    numeric_cols[1] if len(numeric_cols) > 1 else None
-                                ),
-                            ),
-                        ],
-                        style={
-                            "width": "32%",
-                            "display": "inline-block",
-                            "marginLeft": "2%",
-                        },
-                    ),
-                ]
+                ],
             ),
-            dcc.Graph(id="main-plot"),
-            html.Div([html.H3("Dataset Summary"), html.Div(id="summary-stats")]),
-        ]
+            # Controls
+            html.Div(
+                className="controls-container",
+                children=[
+                    html.Div(
+                        style={"display": "flex", "gap": "20px", "flexWrap": "wrap"},
+                        children=[
+                            html.Div(
+                                className="control-group",
+                                style={"flex": "1", "minWidth": "300px"},
+                                children=[
+                                    html.Label("🎨 Select Plot Type:"),
+                                    dcc.Dropdown(
+                                        id="plot-type",
+                                        options=[
+                                            {
+                                                "label": "🔗 Correlation Heatmap",
+                                                "value": "correlation",
+                                            },
+                                            {
+                                                "label": "📈 Distribution Plot",
+                                                "value": "distribution",
+                                            },
+                                            {
+                                                "label": "🎯 PCA Analysis",
+                                                "value": "pca",
+                                            },
+                                            {
+                                                "label": "📦 Box Plot by Class",
+                                                "value": "boxplot",
+                                            },
+                                            {
+                                                "label": "🎨 Scatter by Class",
+                                                "value": "scatter_by_class",
+                                            },
+                                            {
+                                                "label": "🎯 Target Distribution",
+                                                "value": "target_distribution",
+                                            },
+                                            {
+                                                "label": "📊 Feature by Target",
+                                                "value": "feature_by_target",
+                                            },
+                                        ],
+                                        value="target_distribution",
+                                        className="dash-dropdown",
+                                    ),
+                                ],
+                            ),
+                            html.Div(
+                                className="control-group",
+                                style={"flex": "1", "minWidth": "250px"},
+                                children=[
+                                    html.Label("📐 Select Feature X:"),
+                                    dcc.Dropdown(
+                                        id="feature-x-dropdown",
+                                        options=[
+                                            {"label": f"📊 {col}", "value": col}
+                                            for col in numeric_cols + categorical_cols
+                                        ],
+                                        value=numeric_cols[0] if numeric_cols else None,
+                                        className="dash-dropdown",
+                                    ),
+                                ],
+                            ),
+                            html.Div(
+                                className="control-group",
+                                style={"flex": "1", "minWidth": "250px"},
+                                children=[
+                                    html.Label("📏 Select Feature Y:"),
+                                    dcc.Dropdown(
+                                        id="feature-y-dropdown",
+                                        options=[
+                                            {"label": f"📊 {col}", "value": col}
+                                            for col in numeric_cols + categorical_cols
+                                        ],
+                                        value=(
+                                            numeric_cols[1]
+                                            if len(numeric_cols) > 1
+                                            else None
+                                        ),
+                                        className="dash-dropdown",
+                                    ),
+                                ],
+                            ),
+                        ],
+                    )
+                ],
+            ),
+            # Graph
+            html.Div(
+                className="graph-container",
+                children=[
+                    dcc.Graph(
+                        id="main-plot",
+                        config={
+                            "displayModeBar": True,
+                            "displaylogo": False,
+                            "modeBarButtonsToRemove": ["pan2d", "lasso2d", "select2d"],
+                        },
+                    )
+                ],
+            ),
+            # Summary
+            html.Div(
+                className="summary-container",
+                children=[
+                    html.H3("📋 Dataset Summary"),
+                    html.Div(id="summary-stats", className="summary-table"),
+                ],
+            ),
+        ],
     )
 
     @app.callback(
