@@ -464,8 +464,8 @@ def plot_against_target_for_regression(
         p_value = model.pvalues[1]
         fig.add_annotation(
             text=f"p-value: {p_value:.4f}",
-            xref=f"x{i+1}",
-            yref=f"y{i+1}",
+            xref=f"x{i + 1}",
+            yref=f"y{i + 1}",
             x=0.05,
             y=0.95,
             showarrow=False,
@@ -581,7 +581,7 @@ def plot_pca_cumulative_variance(
             name="Individual Explained Variance",
             marker_color="lightblue",
             opacity=0.7,
-            text=[f"{var*100:.1f}%" for var in individual_variances],
+            text=[f"{var * 100:.1f}%" for var in individual_variances],
             textposition="outside",
         )
     )
@@ -594,7 +594,7 @@ def plot_pca_cumulative_variance(
             mode="lines+markers",
             name="Cumulative Explained Variance",
             line=dict(color="red"),
-            text=[f"{var*100:.1f}%" for var in cumulative_variances],
+            text=[f"{var * 100:.1f}%" for var in cumulative_variances],
             textposition="top center",
         )
     )

@@ -683,23 +683,39 @@ def test_show_parameter_coverage():
         plot_pie_chart(test_df, "cat1", show=True)
         correlation_heatmap(test_df[["num1", "num2", "target"]], show=True)
         correlation_to_target(test_df[["num1", "num2", "target"]], "target", show=True)
-        plot_pca(test_df[["num1", "num2", "target"]], "target", show=True)  # Only numeric columns
-        plot_pca_cumulative_variance(test_df[["num1", "num2"]], n_components=2, show=True)
-        plot_pca_biplot(test_df[["num1", "num2", "target"]], "target", show=True)  # Only numeric columns
-        plot_tsne(test_df[["num1", "num2", "target"]], "target", perplexity=5, show=True)  # Only numeric columns
+        plot_pca(
+            test_df[["num1", "num2", "target"]], "target", show=True
+        )  # Only numeric columns
+        plot_pca_cumulative_variance(
+            test_df[["num1", "num2"]], n_components=2, show=True
+        )
+        plot_pca_biplot(
+            test_df[["num1", "num2", "target"]], "target", show=True
+        )  # Only numeric columns
+        plot_tsne(
+            test_df[["num1", "num2", "target"]], "target", perplexity=5, show=True
+        )  # Only numeric columns
         plot_theil_u_heatmap(test_df[["cat1"]], ["cat1"], show=True)
         plot_null_percentage(test_df, show=True)
-        mutual_info_to_target(test_df[["num1", "num2", "target"]], "target", "binary", show=True)
-        plot_against_target_for_regression(test_df, ["num1", "num2"], "target", show=True)
+        mutual_info_to_target(
+            test_df[["num1", "num2", "target"]], "target", "binary", show=True
+        )
+        plot_against_target_for_regression(
+            test_df, ["num1", "num2"], "target", show=True
+        )
         plot_ecdf(test_df, ["num1", "num2"], plot_all_at_once=True, show=True)
         plot_ecdf(test_df, ["num1", "num2"], plot_all_at_once=False, show=True)
-        
+
         # Test time-based plot
-        test_df["date_col"] = pd.date_range("2020-01-01", periods=len(test_df), freq="D")
+        test_df["date_col"] = pd.date_range(
+            "2020-01-01", periods=len(test_df), freq="D"
+        )
         plot_distribution_by_time(test_df, "num1", "date_col", show=True)
-        
+
         plot_distribution_pairs(test_df[["num1"]], test_df[["num1"]], "num1", show=True)
-        plot_andrews_curve(test_df[["num1", "num2", "target"]], "target", n_samples=20, show=True)  # Only numeric columns
+        plot_andrews_curve(
+            test_df[["num1", "num2", "target"]], "target", n_samples=20, show=True
+        )  # Only numeric columns
         plot_count_pair(test_df, test_df, ["train", "test"], "cat1", show=True)
 
     assert True
@@ -707,9 +723,8 @@ def test_show_parameter_coverage():
 
 def test_dashboard_import_error():
     """Test ImportError handling when dash is not available."""
-    import unittest.mock
     import sys
-    import importlib
+    import unittest.mock
 
     # Create test data
     test_df = pd.DataFrame(
@@ -722,19 +737,24 @@ def test_dashboard_import_error():
     # Store original dash modules if they exist
     dash_modules = {}
     for module_name in list(sys.modules.keys()):
-        if module_name.startswith('dash'):
+        if module_name.startswith("dash"):
             dash_modules[module_name] = sys.modules[module_name]
             del sys.modules[module_name]
-    
+
     try:
         # Set dash modules to None to trigger ImportError
-        with unittest.mock.patch.dict('sys.modules', {
-            'dash': None,
-            'dash.dependencies': None,
-            'dash.html': None,
-            'dash.dcc': None,
-        }):
-            with pytest.raises(ImportError, match="Dash is required for dashboard functionality"):
+        with unittest.mock.patch.dict(
+            "sys.modules",
+            {
+                "dash": None,
+                "dash.dependencies": None,
+                "dash.html": None,
+                "dash.dcc": None,
+            },
+        ):
+            with pytest.raises(
+                ImportError, match="Dash is required for dashboard functionality"
+            ):
                 create_eda_dashboard(test_df, "target", run_server=False)
     finally:
         # Restore original modules
@@ -764,9 +784,7 @@ def test_dashboard_categorical_target_removal():
 
 def test_dashboard_update_plot_all_branches():
     """Test all branches of the update_plot function in dashboard."""
-    import unittest.mock
     import plotly.express as px
-    from dash import html
 
     # Create test data
     test_df = pd.DataFrame(
@@ -779,7 +797,6 @@ def test_dashboard_update_plot_all_branches():
     )
 
     numeric_cols = ["numeric_col1", "numeric_col2"]
-    categorical_cols = ["categorical_col"]
     target_col = "target"
 
     # Simulate the exact update_plot function from the dashboard
@@ -788,11 +805,15 @@ def test_dashboard_update_plot_all_branches():
             return correlation_heatmap(test_df[numeric_cols + [target_col]], show=False)
         elif plot_type == "distribution" and selected_feature:
             fig = go.Figure()
-            fig.add_trace(go.Histogram(x=test_df[selected_feature], name=selected_feature))
+            fig.add_trace(
+                go.Histogram(x=test_df[selected_feature], name=selected_feature)
+            )
             fig.update_layout(title=f"Distribution of {selected_feature}")
             return fig
         elif plot_type == "pca" and len(numeric_cols) > 1:
-            return plot_pca(test_df[numeric_cols + [target_col]], target_col, show=False)
+            return plot_pca(
+                test_df[numeric_cols + [target_col]], target_col, show=False
+            )
         elif plot_type == "boxplot" and selected_feature:
             fig = go.Figure()
             fig.add_trace(go.Box(y=test_df[selected_feature], name=selected_feature))
@@ -834,11 +855,13 @@ def test_dashboard_update_plot_all_branches():
 
     # Test when only one numeric column (correlation and scatter won't work)
     single_numeric_cols = ["numeric_col1"]
-    
+
     def simulate_single_col_plot(plot_type, selected_feature):
         if plot_type == "correlation" and len(single_numeric_cols) > 1:  # False
             return "not reached"
-        elif plot_type == "scatter" and selected_feature and len(single_numeric_cols) > 1:  # False
+        elif (
+            plot_type == "scatter" and selected_feature and len(single_numeric_cols) > 1
+        ):  # False
             return "not reached"
         else:
             fig = go.Figure()
@@ -866,7 +889,6 @@ def test_dashboard_update_summary_all_branches():
     )
 
     numeric_cols = ["numeric_col1"]
-    categorical_cols = ["categorical_col"]
 
     # Simulate the exact update_summary function from the dashboard
     def simulate_update_summary(selected_feature):
