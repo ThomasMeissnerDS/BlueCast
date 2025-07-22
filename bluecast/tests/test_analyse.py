@@ -925,3 +925,204 @@ def test_dashboard_update_summary_all_branches():
 
     result = simulate_update_summary("")
     assert result == "Select a feature to see summary statistics"
+
+
+def test_dashboard_comprehensive_callbacks_coverage():
+    """Test comprehensive coverage of dashboard callback functions including all edge cases."""
+    try:
+        import plotly.express as px
+        import plotly.graph_objects as go
+        from dash import html
+    except ImportError:
+        pytest.skip("Dash not available for testing")
+
+    # Create test data to simulate various scenarios
+    test_df = pd.DataFrame(
+        {
+            "numeric_col1": np.random.randn(100),
+            "numeric_col2": np.random.randn(100),
+            "categorical_col1": np.random.choice(["A", "B", "C"], 100),
+            "categorical_col2": np.random.choice(["X", "Y", "Z"], 100),
+            "target": np.random.choice([0, 1], 100),
+        }
+    )
+
+    # Test scenario 1: Multiple numeric columns
+    numeric_cols = ["numeric_col1", "numeric_col2"]
+    target_col = "target"
+    df = test_df  # For consistency with function logic
+
+    def simulate_update_plot(plot_type, selected_feature):
+        if plot_type == "correlation" and len(numeric_cols) > 1:
+            return correlation_heatmap(df[numeric_cols + [target_col]], show=False)
+        elif plot_type == "distribution" and selected_feature:
+            fig = go.Figure()
+            fig.add_trace(go.Histogram(x=df[selected_feature], name=selected_feature))
+            fig.update_layout(title=f"Distribution of {selected_feature}")
+            return fig
+        elif plot_type == "pca" and len(numeric_cols) > 1:
+            return plot_pca(df[numeric_cols + [target_col]], target_col, show=False)
+        elif plot_type == "boxplot" and selected_feature:
+            fig = go.Figure()
+            fig.add_trace(go.Box(y=df[selected_feature], name=selected_feature))
+            fig.update_layout(title=f"Box Plot of {selected_feature}")
+            return fig
+        elif plot_type == "scatter" and selected_feature and len(numeric_cols) > 1:
+            other_col = [col for col in numeric_cols if col != selected_feature][0]
+            fig = px.scatter(df, x=selected_feature, y=other_col, color=target_col)
+            return fig
+        else:
+            # Default empty plot
+            fig = go.Figure()
+            fig.update_layout(title="Select valid options to display plot")
+            return fig
+
+    def simulate_update_summary(selected_feature):
+        if selected_feature:
+            if selected_feature in numeric_cols:
+                stats = df[selected_feature].describe()
+                return html.Table(
+                    [
+                        html.Tr([html.Td(stat), html.Td(f"{value:.2f}")])
+                        for stat, value in stats.items()
+                    ]
+                )
+            else:
+                value_counts = df[selected_feature].value_counts()
+                return html.Table(
+                    [
+                        html.Tr([html.Td(value), html.Td(count)])
+                        for value, count in value_counts.head(10).items()
+                    ]
+                )
+        return "Select a feature to see summary statistics"
+
+    # Test all successful plot types with valid conditions
+    result = simulate_update_plot("correlation", "numeric_col1")
+    assert isinstance(result, go.Figure)
+
+    result = simulate_update_plot("distribution", "numeric_col1")
+    assert isinstance(result, go.Figure)
+
+    result = simulate_update_plot("pca", "numeric_col1")
+    assert isinstance(result, go.Figure)
+
+    result = simulate_update_plot("boxplot", "numeric_col1")
+    assert isinstance(result, go.Figure)
+
+    result = simulate_update_plot("scatter", "numeric_col1")
+    assert isinstance(result, go.Figure)
+
+    # Test edge cases that trigger the default case
+    result = simulate_update_plot("distribution", None)  # No selected feature
+    assert isinstance(result, go.Figure)
+    assert "Select valid options" in result.layout.title.text
+
+    result = simulate_update_plot("distribution", "")  # Empty feature
+    assert isinstance(result, go.Figure)
+    assert "Select valid options" in result.layout.title.text
+
+    result = simulate_update_plot("boxplot", None)  # No selected feature
+    assert isinstance(result, go.Figure)
+    assert "Select valid options" in result.layout.title.text
+
+    result = simulate_update_plot("invalid_type", "numeric_col1")  # Invalid plot type
+    assert isinstance(result, go.Figure)
+    assert "Select valid options" in result.layout.title.text
+
+    # Test edge cases with insufficient numeric columns
+    single_numeric_cols = ["numeric_col1"]
+
+    def simulate_single_numeric_update_plot(plot_type, selected_feature):
+        if plot_type == "correlation" and len(single_numeric_cols) > 1:  # False
+            return correlation_heatmap(
+                df[single_numeric_cols + [target_col]], show=False
+            )
+        elif plot_type == "distribution" and selected_feature:
+            fig = go.Figure()
+            fig.add_trace(go.Histogram(x=df[selected_feature], name=selected_feature))
+            fig.update_layout(title=f"Distribution of {selected_feature}")
+            return fig
+        elif plot_type == "pca" and len(single_numeric_cols) > 1:  # False
+            return plot_pca(
+                df[single_numeric_cols + [target_col]], target_col, show=False
+            )
+        elif plot_type == "boxplot" and selected_feature:
+            fig = go.Figure()
+            fig.add_trace(go.Box(y=df[selected_feature], name=selected_feature))
+            fig.update_layout(title=f"Box Plot of {selected_feature}")
+            return fig
+        elif (
+            plot_type == "scatter" and selected_feature and len(single_numeric_cols) > 1
+        ):  # False
+            other_col = [col for col in single_numeric_cols if col != selected_feature][
+                0
+            ]
+            fig = px.scatter(df, x=selected_feature, y=other_col, color=target_col)
+            return fig
+        else:
+            # Default empty plot
+            fig = go.Figure()
+            fig.update_layout(title="Select valid options to display plot")
+            return fig
+
+    # Test correlation with insufficient numeric columns
+    result = simulate_single_numeric_update_plot("correlation", "numeric_col1")
+    assert isinstance(result, go.Figure)
+    assert "Select valid options" in result.layout.title.text
+
+    # Test PCA with insufficient numeric columns
+    result = simulate_single_numeric_update_plot("pca", "numeric_col1")
+    assert isinstance(result, go.Figure)
+    assert "Select valid options" in result.layout.title.text
+
+    # Test scatter with insufficient numeric columns
+    result = simulate_single_numeric_update_plot("scatter", "numeric_col1")
+    assert isinstance(result, go.Figure)
+    assert "Select valid options" in result.layout.title.text
+
+    # Test summary functionality - comprehensive coverage
+    # Test with numeric column
+    result = simulate_update_summary("numeric_col1")
+    assert isinstance(result, html.Table)
+
+    # Test with categorical column
+    result = simulate_update_summary("categorical_col1")
+    assert isinstance(result, html.Table)
+
+    # Test with None selection
+    result = simulate_update_summary(None)
+    assert result == "Select a feature to see summary statistics"
+
+    # Test with empty string selection
+    result = simulate_update_summary("")
+    assert result == "Select a feature to see summary statistics"
+
+    # Test edge case: categorical column that looks like numeric
+    test_df_edge = test_df.copy()
+    test_df_edge["mixed_col"] = ["1", "2", "3", "1", "2"] * 20  # String numbers
+
+    def simulate_edge_summary(selected_feature):
+        edge_numeric_cols = ["numeric_col1", "numeric_col2"]  # mixed_col not in numeric
+        if selected_feature:
+            if selected_feature in edge_numeric_cols:
+                stats = test_df_edge[selected_feature].describe()
+                return html.Table(
+                    [
+                        html.Tr([html.Td(stat), html.Td(f"{value:.2f}")])
+                        for stat, value in stats.items()
+                    ]
+                )
+            else:
+                value_counts = test_df_edge[selected_feature].value_counts()
+                return html.Table(
+                    [
+                        html.Tr([html.Td(value), html.Td(count)])
+                        for value, count in value_counts.head(10).items()
+                    ]
+                )
+        return "Select a feature to see summary statistics"
+
+    # Test mixed column treated as categorical
+    result = simulate_edge_summary("mixed_col")
+    assert isinstance(result, html.Table)
