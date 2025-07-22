@@ -1491,7 +1491,499 @@ def _dashboard_update_summary(
     return "Select a feature to see summary statistics"
 
 
-# Dashboard functionality
+def _dashboard_update_regression_plot(
+    plot_type: str,
+    selected_feature_x: str,
+    selected_feature_y: str,
+    df: pd.DataFrame,
+    numeric_cols: List[str],
+    target_col: str,
+):
+    """
+    Helper function for regression dashboard plot updates.
+    """
+    try:
+        from sklearn.linear_model import LinearRegression
+        from sklearn.model_selection import train_test_split
+    except ImportError:
+        raise ImportError("scikit-learn is required for regression functionality")
+
+    if plot_type == "correlation" and len(numeric_cols) > 1:
+        return correlation_heatmap(df[numeric_cols + [target_col]], show=False)
+    elif plot_type == "distribution" and selected_feature_x:
+        fig = go.Figure()
+        fig.add_trace(go.Histogram(x=df[selected_feature_x], name=selected_feature_x))
+        fig.update_layout(title=f"Distribution of {selected_feature_x}")
+        return fig
+    elif plot_type == "pca" and len(numeric_cols) > 1:
+        return plot_pca(df[numeric_cols + [target_col]], target_col, show=False)
+    elif plot_type == "boxplot" and selected_feature_x:
+        fig = go.Figure()
+        fig.add_trace(go.Box(y=df[selected_feature_x], name=selected_feature_x))
+        fig.update_layout(title=f"Box Plot of {selected_feature_x}")
+        return fig
+    elif (
+        plot_type == "scatter_with_regression"
+        and selected_feature_x
+        and selected_feature_y
+    ):
+        # Create scatter plot with regression line and train/test split
+        X = df[selected_feature_x].to_numpy()[:, None]
+        y = df[selected_feature_y].to_numpy()
+
+        # Remove NaN values
+        valid_mask = ~(np.isnan(X.flatten()) | np.isnan(y))
+        X_clean = X[valid_mask]
+        y_clean = y[valid_mask]
+
+        if len(X_clean) > 10:  # Need enough data for train/test split
+            X_train, X_test, y_train, y_test = train_test_split(
+                X_clean, y_clean, test_size=0.3, random_state=42
+            )
+
+            model = LinearRegression()
+            model.fit(X_train, y_train)
+
+            x_range = np.linspace(X_clean.min(), X_clean.max(), 100)
+            y_range = model.predict(x_range.reshape(-1, 1))
+
+            fig = go.Figure(
+                [
+                    go.Scatter(
+                        x=X_train.squeeze(),
+                        y=y_train,
+                        name="Train",
+                        mode="markers",
+                        marker=dict(color="blue"),
+                    ),
+                    go.Scatter(
+                        x=X_test.squeeze(),
+                        y=y_test,
+                        name="Test",
+                        mode="markers",
+                        marker=dict(color="red"),
+                    ),
+                    go.Scatter(
+                        x=x_range,
+                        y=y_range,
+                        name="Regression Line",
+                        mode="lines",
+                        line=dict(color="green"),
+                    ),
+                ]
+            )
+
+            r2_score = model.score(X_test, y_test)
+            fig.update_layout(
+                title=f"Regression: {selected_feature_x} vs {selected_feature_y} (R² = {r2_score:.3f})",
+                xaxis_title=selected_feature_x,
+                yaxis_title=selected_feature_y,
+            )
+        else:
+            fig = px.scatter(df, x=selected_feature_x, y=selected_feature_y)
+            fig.update_layout(
+                title=f"Scatter: {selected_feature_x} vs {selected_feature_y}"
+            )
+        return fig
+    elif plot_type == "coefficients" and len(numeric_cols) > 1:
+        # Multiple Linear Regression coefficients
+        X = df[numeric_cols].fillna(0)
+        y = df[target_col].fillna(0)
+
+        model = LinearRegression()
+        model.fit(X, y)
+
+        colors = ["Positive" if c > 0 else "Negative" for c in model.coef_]
+
+        fig = px.bar(
+            x=X.columns,
+            y=model.coef_,
+            color=colors,
+            color_discrete_sequence=["red", "blue"],
+            labels=dict(x="Feature", y="Linear coefficient"),
+            title=f"Feature Coefficients for Predicting {target_col}",
+        )
+        return fig
+    else:
+        # Default empty plot
+        fig = go.Figure()
+        fig.update_layout(title="Select valid options to display plot")
+        return fig
+
+
+def _dashboard_update_classification_plot(
+    plot_type: str,
+    selected_feature_x: str,
+    selected_feature_y: str,
+    df: pd.DataFrame,
+    numeric_cols: List[str],
+    categorical_cols: List[str],
+    target_col: str,
+):
+    """
+    Helper function for classification dashboard plot updates.
+    """
+    if plot_type == "correlation" and len(numeric_cols) > 1:
+        return correlation_heatmap(df[numeric_cols + [target_col]], show=False)
+    elif plot_type == "distribution" and selected_feature_x:
+        fig = go.Figure()
+        fig.add_trace(go.Histogram(x=df[selected_feature_x], name=selected_feature_x))
+        fig.update_layout(title=f"Distribution of {selected_feature_x}")
+        return fig
+    elif plot_type == "pca" and len(numeric_cols) > 1:
+        return plot_pca(df[numeric_cols + [target_col]], target_col, show=False)
+    elif plot_type == "boxplot" and selected_feature_x:
+        if selected_feature_x in numeric_cols:
+            fig = px.box(df, y=selected_feature_x, color=target_col)
+            fig.update_layout(title=f"Box Plot of {selected_feature_x} by {target_col}")
+        else:
+            fig = go.Figure()
+            fig.add_trace(go.Box(y=df[selected_feature_x], name=selected_feature_x))
+            fig.update_layout(title=f"Box Plot of {selected_feature_x}")
+        return fig
+    elif plot_type == "scatter_by_class" and selected_feature_x and selected_feature_y:
+        fig = px.scatter(
+            df, x=selected_feature_x, y=selected_feature_y, color=target_col
+        )
+        fig.update_layout(
+            title=f"Scatter: {selected_feature_x} vs {selected_feature_y} by {target_col}"
+        )
+        return fig
+    elif plot_type == "target_distribution":
+        # Show target class distribution
+        fig = px.histogram(df, x=target_col, title=f"Distribution of {target_col}")
+        return fig
+    elif plot_type == "feature_by_target" and selected_feature_x:
+        # Show feature distribution by target class
+        if selected_feature_x in categorical_cols:
+            # Cross-tabulation for categorical features
+            contingency_table = pd.crosstab(
+                df[selected_feature_x], df[target_col], normalize="index"
+            )
+
+            fig = go.Figure()
+            for target_class in contingency_table.columns:
+                fig.add_trace(
+                    go.Bar(
+                        x=contingency_table.index,
+                        y=contingency_table[target_class],
+                        name=f"Class {target_class}",
+                        text=contingency_table[target_class].round(2),
+                        textposition="auto",
+                    )
+                )
+
+            fig.update_layout(
+                title=f"Distribution of {target_col} across {selected_feature_x}",
+                xaxis_title=selected_feature_x,
+                yaxis_title="Proportion",
+                barmode="stack",
+            )
+        else:
+            # Violin plot for numeric features
+            fig = px.violin(df, x=target_col, y=selected_feature_x)
+            fig.update_layout(
+                title=f"Distribution of {selected_feature_x} by {target_col}"
+            )
+        return fig
+    else:
+        # Default empty plot
+        fig = go.Figure()
+        fig.update_layout(title="Select valid options to display plot")
+        return fig
+
+
+# Enhanced Dashboard functionality
+def create_eda_dashboard_regression(
+    df: pd.DataFrame, target_col: str, port: int = 8050, run_server: bool = True
+):
+    """
+    Create a Dash dashboard for regression analysis with enhanced features.
+
+    :param df: DataFrame to analyze
+    :param target_col: Target column name (should be numeric for regression)
+    :param port: Port number for the dashboard
+    :param run_server: Whether to start the server (set to False for testing)
+    """
+    try:
+        import dash
+        from dash import Input, Output, dcc, html
+    except ImportError:
+        raise ImportError(
+            "Dash is required for dashboard functionality. Install with: pip install dash"
+        )
+
+    app = dash.Dash(__name__)
+
+    # Get numeric and categorical columns
+    numeric_cols = df.select_dtypes(include=[np.number]).columns.tolist()
+    categorical_cols = df.select_dtypes(include=["object", "category"]).columns.tolist()
+
+    if target_col in numeric_cols:
+        numeric_cols.remove(target_col)
+    if target_col in categorical_cols:
+        categorical_cols.remove(target_col)
+
+    app.layout = html.Div(
+        [
+            html.H1(
+                "EDA Dashboard - Regression Analysis", style={"textAlign": "center"}
+            ),
+            html.Div(
+                [
+                    html.Div(
+                        [
+                            html.Label("Select Plot Type:"),
+                            dcc.Dropdown(
+                                id="plot-type",
+                                options=[
+                                    {
+                                        "label": "Correlation Heatmap",
+                                        "value": "correlation",
+                                    },
+                                    {
+                                        "label": "Distribution Plot",
+                                        "value": "distribution",
+                                    },
+                                    {"label": "PCA Analysis", "value": "pca"},
+                                    {"label": "Box Plot", "value": "boxplot"},
+                                    {
+                                        "label": "Scatter with Regression",
+                                        "value": "scatter_with_regression",
+                                    },
+                                    {
+                                        "label": "Feature Coefficients",
+                                        "value": "coefficients",
+                                    },
+                                ],
+                                value="correlation",
+                            ),
+                        ],
+                        style={"width": "32%", "display": "inline-block"},
+                    ),
+                    html.Div(
+                        [
+                            html.Label("Select Feature X:"),
+                            dcc.Dropdown(
+                                id="feature-x-dropdown",
+                                options=[
+                                    {"label": col, "value": col}
+                                    for col in numeric_cols + categorical_cols
+                                ],
+                                value=numeric_cols[0] if numeric_cols else None,
+                            ),
+                        ],
+                        style={
+                            "width": "32%",
+                            "display": "inline-block",
+                            "marginLeft": "2%",
+                        },
+                    ),
+                    html.Div(
+                        [
+                            html.Label("Select Feature Y:"),
+                            dcc.Dropdown(
+                                id="feature-y-dropdown",
+                                options=[
+                                    {"label": col, "value": col}
+                                    for col in numeric_cols + [target_col]
+                                ],
+                                value=target_col,
+                            ),
+                        ],
+                        style={
+                            "width": "32%",
+                            "display": "inline-block",
+                            "marginLeft": "2%",
+                        },
+                    ),
+                ]
+            ),
+            dcc.Graph(id="main-plot"),
+            html.Div([html.H3("Dataset Summary"), html.Div(id="summary-stats")]),
+        ]
+    )
+
+    @app.callback(
+        Output("main-plot", "figure"),
+        [
+            Input("plot-type", "value"),
+            Input("feature-x-dropdown", "value"),
+            Input("feature-y-dropdown", "value"),
+        ],
+    )
+    def update_plot(plot_type, selected_feature_x, selected_feature_y):
+        return _dashboard_update_regression_plot(
+            plot_type,
+            selected_feature_x,
+            selected_feature_y,
+            df,
+            numeric_cols,
+            target_col,
+        )
+
+    @app.callback(
+        Output("summary-stats", "children"), [Input("feature-x-dropdown", "value")]
+    )
+    def update_summary(selected_feature):
+        return _dashboard_update_summary(selected_feature, df, numeric_cols)
+
+    if run_server:
+        print(f"Starting regression dashboard on http://localhost:{port}")
+        app.run(debug=True, port=port)
+
+    return app
+
+
+def create_eda_dashboard_classification(
+    df: pd.DataFrame, target_col: str, port: int = 8050, run_server: bool = True
+):
+    """
+    Create a Dash dashboard for classification analysis with enhanced features.
+
+    :param df: DataFrame to analyze
+    :param target_col: Target column name (should be categorical for classification)
+    :param port: Port number for the dashboard
+    :param run_server: Whether to start the server (set to False for testing)
+    """
+    try:
+        import dash
+        from dash import Input, Output, dcc, html
+    except ImportError:
+        raise ImportError(
+            "Dash is required for dashboard functionality. Install with: pip install dash"
+        )
+
+    app = dash.Dash(__name__)
+
+    # Get numeric and categorical columns
+    numeric_cols = df.select_dtypes(include=[np.number]).columns.tolist()
+    categorical_cols = df.select_dtypes(include=["object", "category"]).columns.tolist()
+
+    if target_col in numeric_cols:
+        numeric_cols.remove(target_col)
+    if target_col in categorical_cols:
+        categorical_cols.remove(target_col)
+
+    app.layout = html.Div(
+        [
+            html.H1(
+                "EDA Dashboard - Classification Analysis", style={"textAlign": "center"}
+            ),
+            html.Div(
+                [
+                    html.Div(
+                        [
+                            html.Label("Select Plot Type:"),
+                            dcc.Dropdown(
+                                id="plot-type",
+                                options=[
+                                    {
+                                        "label": "Correlation Heatmap",
+                                        "value": "correlation",
+                                    },
+                                    {
+                                        "label": "Distribution Plot",
+                                        "value": "distribution",
+                                    },
+                                    {"label": "PCA Analysis", "value": "pca"},
+                                    {"label": "Box Plot by Class", "value": "boxplot"},
+                                    {
+                                        "label": "Scatter by Class",
+                                        "value": "scatter_by_class",
+                                    },
+                                    {
+                                        "label": "Target Distribution",
+                                        "value": "target_distribution",
+                                    },
+                                    {
+                                        "label": "Feature by Target",
+                                        "value": "feature_by_target",
+                                    },
+                                ],
+                                value="target_distribution",
+                            ),
+                        ],
+                        style={"width": "32%", "display": "inline-block"},
+                    ),
+                    html.Div(
+                        [
+                            html.Label("Select Feature X:"),
+                            dcc.Dropdown(
+                                id="feature-x-dropdown",
+                                options=[
+                                    {"label": col, "value": col}
+                                    for col in numeric_cols + categorical_cols
+                                ],
+                                value=numeric_cols[0] if numeric_cols else None,
+                            ),
+                        ],
+                        style={
+                            "width": "32%",
+                            "display": "inline-block",
+                            "marginLeft": "2%",
+                        },
+                    ),
+                    html.Div(
+                        [
+                            html.Label("Select Feature Y:"),
+                            dcc.Dropdown(
+                                id="feature-y-dropdown",
+                                options=[
+                                    {"label": col, "value": col}
+                                    for col in numeric_cols + categorical_cols
+                                ],
+                                value=(
+                                    numeric_cols[1] if len(numeric_cols) > 1 else None
+                                ),
+                            ),
+                        ],
+                        style={
+                            "width": "32%",
+                            "display": "inline-block",
+                            "marginLeft": "2%",
+                        },
+                    ),
+                ]
+            ),
+            dcc.Graph(id="main-plot"),
+            html.Div([html.H3("Dataset Summary"), html.Div(id="summary-stats")]),
+        ]
+    )
+
+    @app.callback(
+        Output("main-plot", "figure"),
+        [
+            Input("plot-type", "value"),
+            Input("feature-x-dropdown", "value"),
+            Input("feature-y-dropdown", "value"),
+        ],
+    )
+    def update_plot(plot_type, selected_feature_x, selected_feature_y):
+        return _dashboard_update_classification_plot(
+            plot_type,
+            selected_feature_x,
+            selected_feature_y,
+            df,
+            numeric_cols,
+            categorical_cols,
+            target_col,
+        )
+
+    @app.callback(
+        Output("summary-stats", "children"), [Input("feature-x-dropdown", "value")]
+    )
+    def update_summary(selected_feature):
+        return _dashboard_update_summary(selected_feature, df, numeric_cols)
+
+    if run_server:
+        print(f"Starting classification dashboard on http://localhost:{port}")
+        app.run(debug=True, port=port)
+
+    return app
+
+
+# Dashboard functionality (keep original for backward compatibility)
 def create_eda_dashboard(
     df: pd.DataFrame, target_col: str, port: int = 8050, run_server: bool = True
 ):
