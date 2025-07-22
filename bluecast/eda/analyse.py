@@ -1343,6 +1343,87 @@ def plot_distribution_pairs(
     return fig
 
 
+# Dashboard helper functions
+def _dashboard_update_plot(
+    plot_type: str,
+    selected_feature: str,
+    df: pd.DataFrame,
+    numeric_cols: List[str],
+    target_col: str,
+):
+    """
+    Helper function for dashboard plot updates.
+
+    :param plot_type: Type of plot to create
+    :param selected_feature: Selected feature for the plot
+    :param df: DataFrame containing the data
+    :param numeric_cols: List of numeric column names
+    :param target_col: Target column name
+    :return: Plotly figure object
+    """
+    if plot_type == "correlation" and len(numeric_cols) > 1:
+        return correlation_heatmap(df[numeric_cols + [target_col]], show=False)
+    elif plot_type == "distribution" and selected_feature:
+        fig = go.Figure()
+        fig.add_trace(go.Histogram(x=df[selected_feature], name=selected_feature))
+        fig.update_layout(title=f"Distribution of {selected_feature}")
+        return fig
+    elif plot_type == "pca" and len(numeric_cols) > 1:
+        return plot_pca(df[numeric_cols + [target_col]], target_col, show=False)
+    elif plot_type == "boxplot" and selected_feature:
+        fig = go.Figure()
+        fig.add_trace(go.Box(y=df[selected_feature], name=selected_feature))
+        fig.update_layout(title=f"Box Plot of {selected_feature}")
+        return fig
+    elif plot_type == "scatter" and selected_feature and len(numeric_cols) > 1:
+        other_col = [col for col in numeric_cols if col != selected_feature][0]
+        fig = px.scatter(df, x=selected_feature, y=other_col, color=target_col)
+        return fig
+    else:
+        # Default empty plot
+        fig = go.Figure()
+        fig.update_layout(title="Select valid options to display plot")
+        return fig
+
+
+def _dashboard_update_summary(
+    selected_feature: str, df: pd.DataFrame, numeric_cols: List[str]
+):
+    """
+    Helper function for dashboard summary updates.
+
+    :param selected_feature: Selected feature for the summary
+    :param df: DataFrame containing the data
+    :param numeric_cols: List of numeric column names
+    :return: HTML table or string message
+    """
+    try:
+        from dash import html
+    except ImportError:
+        raise ImportError(
+            "Dash is required for dashboard functionality. Install with: pip install dash"
+        )
+
+    if selected_feature:
+        if selected_feature in numeric_cols:
+            stats = df[selected_feature].describe()
+            return html.Table(
+                [
+                    html.Tr([html.Td(stat), html.Td(f"{value:.2f}")])
+                    for stat, value in stats.items()
+                ]
+            )
+        else:
+            value_counts = df[selected_feature].value_counts()
+            return html.Table(
+                [
+                    html.Tr([html.Td(value), html.Td(count)])
+                    for value, count in value_counts.head(10).items()
+                ]
+            )
+    return "Select a feature to see summary statistics"
+
+
 # Dashboard functionality
 def create_eda_dashboard(
     df: pd.DataFrame, target_col: str, port: int = 8050, run_server: bool = True
@@ -1434,52 +1515,15 @@ def create_eda_dashboard(
         [Input("plot-type", "value"), Input("feature-dropdown", "value")],
     )
     def update_plot(plot_type, selected_feature):
-        if plot_type == "correlation" and len(numeric_cols) > 1:
-            return correlation_heatmap(df[numeric_cols + [target_col]], show=False)
-        elif plot_type == "distribution" and selected_feature:
-            fig = go.Figure()
-            fig.add_trace(go.Histogram(x=df[selected_feature], name=selected_feature))
-            fig.update_layout(title=f"Distribution of {selected_feature}")
-            return fig
-        elif plot_type == "pca" and len(numeric_cols) > 1:
-            return plot_pca(df[numeric_cols + [target_col]], target_col, show=False)
-        elif plot_type == "boxplot" and selected_feature:
-            fig = go.Figure()
-            fig.add_trace(go.Box(y=df[selected_feature], name=selected_feature))
-            fig.update_layout(title=f"Box Plot of {selected_feature}")
-            return fig
-        elif plot_type == "scatter" and selected_feature and len(numeric_cols) > 1:
-            other_col = [col for col in numeric_cols if col != selected_feature][0]
-            fig = px.scatter(df, x=selected_feature, y=other_col, color=target_col)
-            return fig
-        else:
-            # Default empty plot
-            fig = go.Figure()
-            fig.update_layout(title="Select valid options to display plot")
-            return fig
+        return _dashboard_update_plot(
+            plot_type, selected_feature, df, numeric_cols, target_col
+        )
 
     @app.callback(
         Output("summary-stats", "children"), [Input("feature-dropdown", "value")]
     )
     def update_summary(selected_feature):
-        if selected_feature:
-            if selected_feature in numeric_cols:
-                stats = df[selected_feature].describe()
-                return html.Table(
-                    [
-                        html.Tr([html.Td(stat), html.Td(f"{value:.2f}")])
-                        for stat, value in stats.items()
-                    ]
-                )
-            else:
-                value_counts = df[selected_feature].value_counts()
-                return html.Table(
-                    [
-                        html.Tr([html.Td(value), html.Td(count)])
-                        for value, count in value_counts.head(10).items()
-                    ]
-                )
-        return "Select a feature to see summary statistics"
+        return _dashboard_update_summary(selected_feature, df, numeric_cols)
 
     if run_server:
         print(f"Starting dashboard on http://localhost:{port}")

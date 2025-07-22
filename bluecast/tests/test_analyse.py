@@ -7,6 +7,8 @@ import plotly.graph_objects as go
 import pytest
 
 from bluecast.eda.analyse import (
+    _dashboard_update_plot,
+    _dashboard_update_summary,
     bi_variate_plots,
     check_unique_values,
     correlation_heatmap,
@@ -1126,3 +1128,144 @@ def test_dashboard_comprehensive_callbacks_coverage():
     # Test mixed column treated as categorical
     result = simulate_edge_summary("mixed_col")
     assert isinstance(result, html.Table)
+
+
+def test_dashboard_helper_functions_coverage():
+    """Test the dashboard helper functions directly to ensure proper coverage."""
+    try:
+        from dash import html
+    except ImportError:
+        pytest.skip("Dash not available for testing")
+
+    # Create test data
+    test_df = pd.DataFrame(
+        {
+            "numeric_col1": np.random.randn(100),
+            "numeric_col2": np.random.randn(100),
+            "categorical_col1": np.random.choice(["A", "B", "C"], 100),
+            "target": np.random.choice([0, 1], 100),
+        }
+    )
+
+    # Get the column lists exactly as the dashboard would
+    numeric_cols = test_df.select_dtypes(include=[np.number]).columns.tolist()
+    categorical_cols = test_df.select_dtypes(
+        include=["object", "category"]
+    ).columns.tolist()
+
+    if "target" in numeric_cols:
+        numeric_cols.remove("target")
+    if "target" in categorical_cols:
+        categorical_cols.remove("target")
+
+    target_col = "target"
+
+    # Test all branches of _dashboard_update_plot function
+
+    # Test successful cases
+    result = _dashboard_update_plot(
+        "correlation", "numeric_col1", test_df, numeric_cols, target_col
+    )
+    assert isinstance(result, go.Figure)
+
+    result = _dashboard_update_plot(
+        "distribution", "numeric_col1", test_df, numeric_cols, target_col
+    )
+    assert isinstance(result, go.Figure)
+    assert "Distribution of numeric_col1" in result.layout.title.text
+
+    result = _dashboard_update_plot(
+        "pca", "numeric_col1", test_df, numeric_cols, target_col
+    )
+    assert isinstance(result, go.Figure)
+
+    result = _dashboard_update_plot(
+        "boxplot", "numeric_col1", test_df, numeric_cols, target_col
+    )
+    assert isinstance(result, go.Figure)
+    assert "Box Plot of numeric_col1" in result.layout.title.text
+
+    result = _dashboard_update_plot(
+        "scatter", "numeric_col1", test_df, numeric_cols, target_col
+    )
+    assert isinstance(result, go.Figure)
+
+    # Test default/else cases that trigger the final else branch
+    result = _dashboard_update_plot(
+        "invalid_plot_type", "numeric_col1", test_df, numeric_cols, target_col
+    )
+    assert isinstance(result, go.Figure)
+    assert "Select valid options to display plot" in result.layout.title.text
+
+    result = _dashboard_update_plot(
+        "distribution", None, test_df, numeric_cols, target_col
+    )  # No selected feature
+    assert isinstance(result, go.Figure)
+    assert "Select valid options to display plot" in result.layout.title.text
+
+    result = _dashboard_update_plot(
+        "boxplot", "", test_df, numeric_cols, target_col
+    )  # Empty selected feature
+    assert isinstance(result, go.Figure)
+    assert "Select valid options to display plot" in result.layout.title.text
+
+    # Test all branches of _dashboard_update_summary function
+
+    # Numeric column case
+    result = _dashboard_update_summary("numeric_col1", test_df, numeric_cols)
+    assert isinstance(result, html.Table)
+
+    # Categorical column case (else within if selected_feature)
+    result = _dashboard_update_summary("categorical_col1", test_df, numeric_cols)
+    assert isinstance(result, html.Table)
+
+    # No selection case (main else)
+    result = _dashboard_update_summary(None, test_df, numeric_cols)
+    assert result == "Select a feature to see summary statistics"
+
+    result = _dashboard_update_summary("", test_df, numeric_cols)
+    assert result == "Select a feature to see summary statistics"
+
+    # Test edge case: insufficient numeric columns
+    # Create scenario with only 1 numeric column
+    single_df = pd.DataFrame(
+        {
+            "numeric_col1": np.random.randn(100),
+            "categorical_col1": np.random.choice(["A", "B", "C"], 100),
+            "target": np.random.choice([0, 1], 100),
+        }
+    )
+
+    single_numeric_cols = ["numeric_col1"]  # Only one numeric column
+
+    # Test cases that trigger the else branch due to insufficient columns
+    result = _dashboard_update_plot(
+        "correlation", "numeric_col1", single_df, single_numeric_cols, target_col
+    )
+    assert isinstance(result, go.Figure)
+    assert "Select valid options to display plot" in result.layout.title.text
+
+    result = _dashboard_update_plot(
+        "pca", "numeric_col1", single_df, single_numeric_cols, target_col
+    )
+    assert isinstance(result, go.Figure)
+    assert "Select valid options to display plot" in result.layout.title.text
+
+    result = _dashboard_update_plot(
+        "scatter", "numeric_col1", single_df, single_numeric_cols, target_col
+    )
+    assert isinstance(result, go.Figure)
+    assert "Select valid options to display plot" in result.layout.title.text
+
+    # These should still work (distribution and boxplot don't require multiple numeric cols)
+    result = _dashboard_update_plot(
+        "distribution", "numeric_col1", single_df, single_numeric_cols, target_col
+    )
+    assert isinstance(result, go.Figure)
+    assert "Distribution of numeric_col1" in result.layout.title.text
+
+    result = _dashboard_update_plot(
+        "boxplot", "numeric_col1", single_df, single_numeric_cols, target_col
+    )
+    assert isinstance(result, go.Figure)
+    assert "Box Plot of numeric_col1" in result.layout.title.text
