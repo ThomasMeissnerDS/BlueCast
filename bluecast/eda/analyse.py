@@ -3124,7 +3124,11 @@ def _dashboard_update_classification_plot(
 
 # Enhanced Dashboard functionality
 def create_eda_dashboard_regression(
-    df: pd.DataFrame, target_col: str, port: int = 8050, run_server: bool = True
+    df: pd.DataFrame,
+    target_col: str,
+    port: int = 8050,
+    run_server: bool = True,
+    jupyter_mode: Optional[str] = None,
 ):
     """
     Create a Dash dashboard for regression analysis with enhanced features.
@@ -3133,6 +3137,8 @@ def create_eda_dashboard_regression(
     :param target_col: Target column name (should be numeric for regression)
     :param port: Port number for the dashboard
     :param run_server: Whether to start the server (set to False for testing)
+    :param jupyter_mode: Mode for Jupyter environments ("inline", "external", "tab", "jupyterlab")
+                        If None, runs as regular server. For Kaggle/Colab use "external"
     """
     try:
         import dash
@@ -3509,14 +3515,38 @@ def create_eda_dashboard_regression(
         return _dashboard_update_summary(selected_feature, df, numeric_cols)
 
     if run_server:
-        print(f"Starting regression dashboard on http://localhost:{port}")
-        app.run(debug=True, port=port)
+        if jupyter_mode:
+            # Running in Jupyter environment (Kaggle, Colab, SageMaker, etc.)
+            try:
+                from dash import jupyter_dash
+
+                if jupyter_mode == "external":
+                    # Try to infer proxy config for hosted environments
+                    try:
+                        jupyter_dash.infer_jupyter_proxy_config()
+                    except Exception:
+                        pass  # Continue if inference fails
+                print(f"Starting regression dashboard in Jupyter mode: {jupyter_mode}")
+                app.run(jupyter_mode=jupyter_mode, port=port, debug=True)
+            except ImportError:
+                print(
+                    "Jupyter mode requires Dash 2.11+. Falling back to regular server mode."
+                )
+                print(f"Starting regression dashboard on http://localhost:{port}")
+                app.run(debug=True, port=port)
+        else:
+            print(f"Starting regression dashboard on http://localhost:{port}")
+            app.run(debug=True, port=port)
 
     return app
 
 
 def create_eda_dashboard_classification(
-    df: pd.DataFrame, target_col: str, port: int = 8050, run_server: bool = True
+    df: pd.DataFrame,
+    target_col: str,
+    port: int = 8050,
+    run_server: bool = True,
+    jupyter_mode: Optional[str] = None,
 ):
     """
     Create a Dash dashboard for classification analysis with enhanced features.
@@ -3525,6 +3555,8 @@ def create_eda_dashboard_classification(
     :param target_col: Target column name (should be categorical for classification)
     :param port: Port number for the dashboard
     :param run_server: Whether to start the server (set to False for testing)
+    :param jupyter_mode: Mode for Jupyter environments ("inline", "external", "tab", "jupyterlab")
+                        If None, runs as regular server. For Kaggle/Colab use "external"
     """
     try:
         import dash
@@ -3886,15 +3918,41 @@ def create_eda_dashboard_classification(
         return _dashboard_update_summary(selected_feature, df, numeric_cols)
 
     if run_server:
-        print(f"Starting classification dashboard on http://localhost:{port}")
-        app.run(debug=True, port=port)
+        if jupyter_mode:
+            # Running in Jupyter environment (Kaggle, Colab, SageMaker, etc.)
+            try:
+                from dash import jupyter_dash
+
+                if jupyter_mode == "external":
+                    # Try to infer proxy config for hosted environments
+                    try:
+                        jupyter_dash.infer_jupyter_proxy_config()
+                    except Exception:
+                        pass  # Continue if inference fails
+                print(
+                    f"Starting classification dashboard in Jupyter mode: {jupyter_mode}"
+                )
+                app.run(jupyter_mode=jupyter_mode, port=port, debug=True)
+            except ImportError:
+                print(
+                    "Jupyter mode requires Dash 2.11+. Falling back to regular server mode."
+                )
+                print(f"Starting classification dashboard on http://localhost:{port}")
+                app.run(debug=True, port=port)
+        else:
+            print(f"Starting classification dashboard on http://localhost:{port}")
+            app.run(debug=True, port=port)
 
     return app
 
 
 # Dashboard functionality (keep original for backward compatibility)
 def create_eda_dashboard(
-    df: pd.DataFrame, target_col: str, port: int = 8050, run_server: bool = True
+    df: pd.DataFrame,
+    target_col: str,
+    port: int = 8050,
+    run_server: bool = True,
+    jupyter_mode: Optional[str] = None,
 ):
     """
     Create a Dash dashboard for exploratory data analysis.
@@ -3903,6 +3961,8 @@ def create_eda_dashboard(
     :param target_col: Target column name
     :param port: Port number for the dashboard
     :param run_server: Whether to start the server (set to False for testing)
+    :param jupyter_mode: Mode for Jupyter environments ("inline", "external", "tab", "jupyterlab")
+                        If None, runs as regular server. For Kaggle/Colab use "external"
     """
     try:
         import dash
@@ -3994,7 +4054,27 @@ def create_eda_dashboard(
         return _dashboard_update_summary(selected_feature, df, numeric_cols)
 
     if run_server:
-        print(f"Starting dashboard on http://localhost:{port}")
-        app.run(debug=True, port=port)
+        if jupyter_mode:
+            # Running in Jupyter environment (Kaggle, Colab, SageMaker, etc.)
+            try:
+                from dash import jupyter_dash
+
+                if jupyter_mode == "external":
+                    # Try to infer proxy config for hosted environments
+                    try:
+                        jupyter_dash.infer_jupyter_proxy_config()
+                    except Exception:
+                        pass  # Continue if inference fails
+                print(f"Starting dashboard in Jupyter mode: {jupyter_mode}")
+                app.run(jupyter_mode=jupyter_mode, port=port, debug=True)
+            except ImportError:
+                print(
+                    "Jupyter mode requires Dash 2.11+. Falling back to regular server mode."
+                )
+                print(f"Starting dashboard on http://localhost:{port}")
+                app.run(debug=True, port=port)
+        else:
+            print(f"Starting dashboard on http://localhost:{port}")
+            app.run(debug=True, port=port)
 
     return app

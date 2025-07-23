@@ -1346,11 +1346,23 @@ def test_create_eda_dashboard_regression():
     df = create_synthetic_dataframe_regression(100, random_state=42)
 
     try:
+        # Test regular mode
         app = create_eda_dashboard_regression(
             df=df, target_col="target", port=8055, run_server=False
         )
         assert app is not None
         assert hasattr(app, "layout")
+
+        # Test jupyter mode
+        app_jupyter = create_eda_dashboard_regression(
+            df=df,
+            target_col="target",
+            port=8056,
+            run_server=False,
+            jupyter_mode="inline",
+        )
+        assert app_jupyter is not None
+        assert hasattr(app_jupyter, "layout")
     except ImportError:
         pytest.skip("Dash not available for testing")
 
@@ -1360,10 +1372,22 @@ def test_create_eda_dashboard_classification():
     df = create_synthetic_dataframe(100, random_state=42)
 
     try:
+        # Test regular mode
         app = create_eda_dashboard_classification(
-            df=df, target_col="target", port=8056, run_server=False
+            df=df, target_col="target", port=8057, run_server=False
         )
         assert app is not None
         assert hasattr(app, "layout")
+
+        # Test jupyter mode
+        app_jupyter = create_eda_dashboard_classification(
+            df=df,
+            target_col="target",
+            port=8058,
+            run_server=False,
+            jupyter_mode="external",
+        )
+        assert app_jupyter is not None
+        assert hasattr(app_jupyter, "layout")
     except ImportError:
         pytest.skip("Dash not available for testing")
