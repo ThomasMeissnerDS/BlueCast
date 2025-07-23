@@ -1,7 +1,8 @@
+import hashlib
 import math
 import warnings
 from collections import Counter
-from typing import List, Literal, Optional, Union
+from typing import Any, Dict, List, Literal, Optional, Union
 
 import numpy as np
 import pandas as pd
@@ -12,6 +13,14 @@ from sklearn.decomposition import PCA
 from sklearn.feature_selection import mutual_info_classif, mutual_info_regression
 from sklearn.manifold import TSNE
 from sklearn.preprocessing import StandardScaler
+
+# Try to import wordcloud for text visualization
+try:
+    from wordcloud import WordCloud
+
+    HAS_WORDCLOUD = True
+except ImportError:
+    HAS_WORDCLOUD = False
 
 # Try to import scipy.stats, but provide fallback if import fails due to compatibility issues
 try:
@@ -37,6 +46,52 @@ except (ImportError, ValueError) as e:
 
 warnings.filterwarnings("ignore", "is_categorical_dtype")
 warnings.filterwarnings("ignore", "use_inf_as_na")
+
+# Global cache for expensive computations
+_plot_cache: Dict[str, Any] = {}
+
+
+def _create_data_hash(df: pd.DataFrame, *args) -> str:
+    """Create a hash from DataFrame and additional arguments for caching."""
+    try:
+        # Create hash from DataFrame shape, column names, and a sample of data
+        data_info = f"{df.shape}_{list(df.columns)}_{str(args)}"
+        # Add a small sample of the data for uniqueness
+        if len(df) > 0:
+            sample_data = df.head(5).to_string() if len(df) >= 5 else df.to_string()
+            data_info += sample_data
+        return hashlib.md5(data_info.encode()).hexdigest()
+    except Exception:
+        # Fallback to string representation
+        return hashlib.md5(str(df.shape).encode()).hexdigest()
+
+
+def _cached_plot_computation(func):
+    """Decorator to cache expensive plot computations."""
+
+    def wrapper(*args, **kwargs):
+        # Create cache key from function name and arguments
+        func_name = func.__name__
+        cache_key = f"{func_name}_{_create_data_hash(*args)}_{str(kwargs)}"
+
+        # Check if result is cached
+        if cache_key in _plot_cache:
+            return _plot_cache[cache_key]
+
+        # Compute and cache result
+        result = func(*args, **kwargs)
+        _plot_cache[cache_key] = result
+
+        # Limit cache size to prevent memory issues
+        if len(_plot_cache) > 50:
+            # Remove oldest entries
+            oldest_keys = list(_plot_cache.keys())[:-25]
+            for key in oldest_keys:
+                del _plot_cache[key]
+
+        return result
+
+    return wrapper
 
 
 def _entropy_fallback(p_x):
@@ -549,11 +604,14 @@ def plot_against_target_for_regression(
     return fig
 
 
+@_cached_plot_computation
 def plot_pca(
     df: pd.DataFrame, target: str, scale_data: bool = True, show: bool = True
 ) -> go.Figure:
     """
     Plots PCA for the dataframe. The target column must be part of the provided DataFrame.
+
+    Handles missing values by dropping rows with any NaN values before PCA.
 
     Expects numeric columns only.
     :param df: Pandas DataFrame. Should include the target variable.
@@ -567,7 +625,56 @@ def plot_pca(
     if target not in df.columns.to_list():
         raise ValueError("Target column must be part of the provided DataFrame")
 
-    df_features = df.drop([target], axis=1)
+    # Get only numeric columns for PCA
+    numeric_cols = df.select_dtypes(include=[np.number]).columns.tolist()
+    if target in numeric_cols:
+        numeric_cols.remove(target)
+
+    if len(numeric_cols) < 2:
+        # Not enough numeric columns for PCA
+        fig = go.Figure()
+        fig.add_annotation(
+            text="⚠️ PCA requires at least 2 numeric features",
+            x=0.5,
+            y=0.5,
+            xref="paper",
+            yref="paper",
+            showarrow=False,
+            font=dict(size=16, color="orange"),
+        )
+        fig.update_layout(title="PCA Analysis - Insufficient Data")
+        if show:
+            fig.show()
+        return fig
+
+    # Create working dataframe with numeric features and target
+    df_work = df[numeric_cols + [target]].copy()
+    original_rows = len(df_work)
+
+    # Drop rows with any missing values
+    df_clean = df_work.dropna()
+    clean_rows = len(df_clean)
+
+    if clean_rows < 10:  # Need minimum data for meaningful PCA
+        fig = go.Figure()
+        fig.add_annotation(
+            text=f"⚠️ Insufficient data after removing missing values\n"
+            f"Dropped {original_rows - clean_rows} rows with missing values\n"
+            f"Only {clean_rows} complete rows remain",
+            x=0.5,
+            y=0.5,
+            xref="paper",
+            yref="paper",
+            showarrow=False,
+            font=dict(size=14, color="orange"),
+        )
+        fig.update_layout(title="PCA Analysis - Insufficient Clean Data")
+        if show:
+            fig.show()
+        return fig
+
+    df_features = df_clean[numeric_cols]
+    target_values = df_clean[target]
 
     if scale_data:
         scaler = StandardScaler()
@@ -584,12 +691,17 @@ def plot_pca(
 
     explained_variance = round(sum(pca.explained_variance_ratio_), 2)
 
+    # Create title with missing data info
+    title_text = f"PCA - Explained Variance: {explained_variance}"
+    if original_rows > clean_rows:
+        title_text += f"<br><sub>Dropped {original_rows - clean_rows} rows with missing values</sub>"
+
     # Create PCA plot
     fig = px.scatter(
         x=pca_result[:, 0],
         y=pca_result[:, 1],
-        color=df[target],
-        title=f"PCA - Explained Variance: {explained_variance}",
+        color=target_values,
+        title=title_text,
         labels={"x": "Component 1", "y": "Component 2"},
     )
 
@@ -598,11 +710,14 @@ def plot_pca(
     return fig
 
 
+@_cached_plot_computation
 def plot_pca_cumulative_variance(
     df: pd.DataFrame, scale_data: bool = True, n_components: int = 10, show: bool = True
 ) -> go.Figure:
     """
     Plot the cumulative variance of principal components.
+
+    Handles missing values by dropping rows with any NaN values before PCA.
 
     :param df: Pandas DataFrame. Should not include the target variable.
     :param scale_data: If true, standard scaling will be performed before applying PCA, otherwise the raw data is used.
@@ -612,14 +727,60 @@ def plot_pca_cumulative_variance(
     Returns:
     - plotly.graph_objects.Figure: The PCA cumulative variance figure
     """
+    # Get only numeric columns
+    numeric_cols = df.select_dtypes(include=[np.number]).columns.tolist()
+
+    if len(numeric_cols) < 2:
+        fig = go.Figure()
+        fig.add_annotation(
+            text="⚠️ PCA requires at least 2 numeric features",
+            x=0.5,
+            y=0.5,
+            xref="paper",
+            yref="paper",
+            showarrow=False,
+            font=dict(size=16, color="orange"),
+        )
+        fig.update_layout(title="PCA Cumulative Variance - Insufficient Data")
+        if show:
+            fig.show()
+        return fig
+
+    # Work with numeric data only and handle missing values
+    df_numeric = df[numeric_cols].copy()
+    original_rows = len(df_numeric)
+    df_clean = df_numeric.dropna()
+    clean_rows = len(df_clean)
+
+    if clean_rows < 10:
+        fig = go.Figure()
+        fig.add_annotation(
+            text=f"⚠️ Insufficient data after removing missing values\n"
+            f"Dropped {original_rows - clean_rows} rows with missing values\n"
+            f"Only {clean_rows} complete rows remain",
+            x=0.5,
+            y=0.5,
+            xref="paper",
+            yref="paper",
+            showarrow=False,
+            font=dict(size=14, color="orange"),
+        )
+        fig.update_layout(title="PCA Cumulative Variance - Insufficient Clean Data")
+        if show:
+            fig.show()
+        return fig
+
+    # Limit n_components to available features and data
+    max_components = min(n_components, len(numeric_cols), clean_rows - 1)
+
     if scale_data:
         scaler = StandardScaler()
-        data_standardized = scaler.fit_transform(df.copy())
+        data_standardized = scaler.fit_transform(df_clean)
     else:
-        data_standardized = df.copy()
+        data_standardized = df_clean.values
 
     # Perform PCA to create components
-    pca = PCA(n_components=n_components)
+    pca = PCA(n_components=max_components)
     pca.fit(data_standardized)
     explained_variances = pca.explained_variance_ratio_
 
@@ -629,7 +790,7 @@ def plot_pca_cumulative_variance(
     # Compute the cumulative explained variance
     cumulative_variances = np.cumsum(individual_variances)
 
-    components = list(range(1, n_components + 1))
+    components = list(range(1, max_components + 1))
 
     # Create figure
     fig = go.Figure()
@@ -673,11 +834,14 @@ def plot_pca_cumulative_variance(
     return fig
 
 
+@_cached_plot_computation
 def plot_pca_biplot(
     df: pd.DataFrame, target: str, scale_data: bool = True, show: bool = True
 ) -> go.Figure:
     """
     Plots PCA biplot for the dataframe.
+
+    Handles missing values by dropping rows with any NaN values before PCA.
 
     Expects numeric columns only.
 
@@ -689,23 +853,66 @@ def plot_pca_biplot(
     Returns:
     - plotly.graph_objects.Figure: The PCA biplot figure
     """
+    # Get numeric features only
     if target in df.columns.to_list():
-        df_features = df.drop(target, axis=1)
+        numeric_cols = df.select_dtypes(include=[np.number]).columns.tolist()
+        if target in numeric_cols:
+            numeric_cols.remove(target)
+        df_features = df[numeric_cols].copy()
     else:
-        df_features = df.copy()
+        df_features = df.select_dtypes(include=[np.number]).copy()
+
+    if len(df_features.columns) < 2:
+        fig = go.Figure()
+        fig.add_annotation(
+            text="⚠️ PCA biplot requires at least 2 numeric features",
+            x=0.5,
+            y=0.5,
+            xref="paper",
+            yref="paper",
+            showarrow=False,
+            font=dict(size=16, color="orange"),
+        )
+        fig.update_layout(title="PCA Biplot - Insufficient Data")
+        if show:
+            fig.show()
+        return fig
+
+    # Handle missing values
+    original_rows = len(df_features)
+    df_features_clean = df_features.dropna()
+    clean_rows = len(df_features_clean)
+
+    if clean_rows < 10:
+        fig = go.Figure()
+        fig.add_annotation(
+            text=f"⚠️ Insufficient data after removing missing values\n"
+            f"Dropped {original_rows - clean_rows} rows with missing values\n"
+            f"Only {clean_rows} complete rows remain",
+            x=0.5,
+            y=0.5,
+            xref="paper",
+            yref="paper",
+            showarrow=False,
+            font=dict(size=14, color="orange"),
+        )
+        fig.update_layout(title="PCA Biplot - Insufficient Clean Data")
+        if show:
+            fig.show()
+        return fig
 
     if scale_data:
         scaler = StandardScaler()
         df_scaled = pd.DataFrame(
-            scaler.fit_transform(df_features), columns=df_features.columns
+            scaler.fit_transform(df_features_clean), columns=df_features_clean.columns
         )
     else:
-        df_scaled = df_features.copy()
+        df_scaled = df_features_clean.copy()
 
     pca = PCA(n_components=2)
     pca.fit(df_scaled)
 
-    labels = df_features.columns
+    labels = df_features_clean.columns
     coeff = np.transpose(pca.components_)
 
     fig = go.Figure()
@@ -761,6 +968,7 @@ def plot_pca_biplot(
     return fig
 
 
+@_cached_plot_computation
 def plot_tsne(
     df: pd.DataFrame,
     target: str,
@@ -842,6 +1050,7 @@ def theil_u(x, y):
         return (s_x - s_xy) / s_x
 
 
+@_cached_plot_computation
 def plot_theil_u_heatmap(
     data: pd.DataFrame, columns: List[Union[str, int, float]], show: bool = True
 ) -> go.Figure:
@@ -1037,6 +1246,7 @@ def mutual_info_to_target(
     return fig
 
 
+@_cached_plot_computation
 def plot_ecdf(
     df: pd.DataFrame,
     columns: List[Union[str, int, float]],
@@ -1410,6 +1620,309 @@ def plot_distribution_pairs(
     return fig
 
 
+def plot_benfords_law(df: pd.DataFrame, column: str, show: bool = True) -> go.Figure:
+    """
+    Plot Benford's Law analysis for a numerical column.
+
+    Benford's Law states that in many naturally occurring datasets,
+    the leading digit d (d ∈ {1, 2, ..., 9}) occurs with probability:
+    P(d) = log10(1 + 1/d)
+
+    This is useful for fraud detection and data quality analysis.
+
+    :param df: DataFrame containing the data
+    :param column: Name of the numerical column to analyze
+    :param show: Whether to display the plot
+    :return: plotly.graph_objects.Figure: The Benford's Law figure
+    """
+    if column not in df.columns:
+        raise ValueError(f"Column '{column}' not found in DataFrame")
+
+    # Extract non-zero, positive values and get first digits
+    data = df[column].dropna()
+    positive_data = data[data > 0]
+
+    if len(positive_data) == 0:
+        raise ValueError(f"No positive values found in column '{column}'")
+
+    # Extract first digits
+    first_digits = []
+    for value in positive_data:
+        first_digit = int(str(abs(value)).lstrip("0.")[0])
+        if 1 <= first_digit <= 9:
+            first_digits.append(first_digit)
+
+    if len(first_digits) == 0:
+        raise ValueError(f"No valid first digits found in column '{column}'")
+
+    # Calculate observed frequencies
+    observed_counts = pd.Series(first_digits).value_counts().sort_index()
+    observed_freq = observed_counts / len(first_digits)
+
+    # Calculate expected Benford's Law frequencies
+    digits = np.arange(1, 10)
+    expected_freq = np.log10(1 + 1 / digits)
+
+    # Create comparison plot
+    fig = go.Figure()
+
+    # Add expected Benford's Law
+    fig.add_trace(
+        go.Bar(
+            x=digits,
+            y=expected_freq,
+            name="Expected (Benford's Law)",
+            marker_color="#2ecc71",
+            opacity=0.7,
+        )
+    )
+
+    # Add observed frequencies
+    observed_x = []
+    observed_y = []
+    for digit in digits:
+        observed_x.append(digit)
+        observed_y.append(observed_freq.get(digit, 0))
+
+    fig.add_trace(
+        go.Bar(
+            x=observed_x,
+            y=observed_y,
+            name=f"Observed ({column})",
+            marker_color="#e74c3c",
+            opacity=0.7,
+        )
+    )
+
+    # Calculate chi-square test statistic for reference
+    expected_counts = expected_freq * len(first_digits)
+    chi_square = 0
+    for digit in digits:
+        observed = observed_freq.get(digit, 0) * len(first_digits)
+        expected = expected_counts[digit - 1]
+        if expected > 0:
+            chi_square += (observed - expected) ** 2 / expected
+
+    fig.update_layout(
+        title=f"Benford's Law Analysis: {column}<br><sub>χ² = {chi_square:.2f}, n = {len(first_digits)}</sub>",
+        xaxis_title="First Digit",
+        yaxis_title="Frequency",
+        barmode="group",
+        xaxis=dict(tickmode="array", tickvals=digits),
+        showlegend=True,
+    )
+
+    if show:
+        fig.show()
+    return fig
+
+
+def _create_gradient_bar_chart(value_counts: pd.Series, column: str) -> go.Figure:
+    """
+    Create a beautiful gradient bar chart for category frequencies.
+
+    :param value_counts: Series with category counts
+    :param column: Column name for labeling
+    :return: plotly.graph_objects.Figure with gradient bars
+    """
+    # Create gradient colors from high to low frequency
+    n_categories = len(value_counts)
+
+    # Beautiful gradient color scheme
+    colors = []
+    for i in range(n_categories):
+        # Create gradient from deep blue to light cyan
+        ratio = i / max(n_categories - 1, 1)
+        # RGB gradient: deep blue (67, 56, 202) to cyan (34, 197, 213)
+        r = int(67 + (34 - 67) * ratio)
+        g = int(56 + (197 - 56) * ratio)
+        b = int(202 + (213 - 202) * ratio)
+        colors.append(f"rgb({r}, {g}, {b})")
+
+    # Create the bar chart
+    fig = go.Figure(
+        data=[
+            go.Bar(
+                x=value_counts.index,
+                y=value_counts.values,
+                marker=dict(
+                    color=colors, line=dict(color="rgba(255,255,255,0.8)", width=1)
+                ),
+                text=value_counts.values,
+                textposition="outside",
+                textfont=dict(size=10, color="white"),
+                hovertemplate="<b>%{x}</b><br>Count: %{y}<extra></extra>",
+            )
+        ]
+    )
+
+    fig.update_layout(
+        title=f"📊 Category Frequencies: {column}",
+        xaxis_title=column,
+        yaxis_title="Count",
+        xaxis_tickangle=45 if len(value_counts) > 5 else 0,
+        showlegend=False,
+        margin=dict(b=100),  # Extra margin for rotated labels
+    )
+
+    return fig
+
+
+def plot_category_frequency(
+    df: pd.DataFrame, column: str, max_categories: int = 20, show: bool = True
+) -> go.Figure:
+    """
+    Create a beautiful category frequency visualization for categorical/text data.
+
+    Uses gradient colors for enhanced visual appeal. Falls back from word cloud
+    to gradient bar chart when WordCloud library is unavailable.
+
+    :param df: DataFrame containing the data
+    :param column: Name of the categorical/text column
+    :param max_categories: Maximum number of categories to display
+    :param show: Whether to display the plot
+    :return: plotly.graph_objects.Figure: The category frequency figure
+    """
+    if column not in df.columns:
+        raise ValueError(f"Column '{column}' not found in DataFrame")
+
+    # Get value counts
+    value_counts = df[column].value_counts().head(max_categories)
+
+    if HAS_WORDCLOUD and len(value_counts) > 0:
+        # Try word cloud first, but with better fallback
+        try:
+            # Prepare text data
+            text_data = {}
+            for value, count in value_counts.items():
+                if pd.notna(value):
+                    text_data[str(value)] = count
+
+            # Generate word cloud
+            if text_data and len(text_data) > 1:
+                wordcloud = WordCloud(
+                    width=800,
+                    height=400,
+                    background_color="white",
+                    max_words=max_categories,
+                    colormap="plasma",
+                ).generate_from_frequencies(text_data)
+
+                # Convert to plotly figure
+                fig = go.Figure()
+                fig.add_layout_image(
+                    dict(
+                        source=wordcloud.to_image(),
+                        xref="x",
+                        yref="y",
+                        x=0,
+                        y=1,
+                        sizex=1,
+                        sizey=1,
+                        sizing="stretch",
+                        opacity=1,
+                        layer="below",
+                    )
+                )
+                fig.update_layout(
+                    title=f"Word Cloud: {column}",
+                    xaxis=dict(showgrid=False, showticklabels=False, zeroline=False),
+                    yaxis=dict(showgrid=False, showticklabels=False, zeroline=False),
+                    plot_bgcolor="white",
+                )
+            else:
+                # Create gradient bar chart
+                fig = _create_gradient_bar_chart(value_counts, column)
+        except Exception:
+            # Create gradient bar chart if word cloud fails
+            fig = _create_gradient_bar_chart(value_counts, column)
+    else:
+        # Create gradient bar chart when WordCloud is not available
+        fig = _create_gradient_bar_chart(value_counts, column)
+
+    if show:
+        fig.show()
+    return fig
+
+
+def plot_missing_values_matrix(df: pd.DataFrame, show: bool = True) -> go.Figure:
+    """
+    Create a missing values matrix visualization.
+
+    :param df: DataFrame to analyze
+    :param show: Whether to display the plot
+    :return: plotly.graph_objects.Figure: The missing values matrix figure
+    """
+    # Create binary matrix: 1 for missing, 0 for present
+    missing_matrix = df.isnull().astype(int)
+
+    # Calculate missing percentages
+    missing_percentages = (df.isnull().sum() / len(df) * 100).round(2)
+    missing_percentages = missing_percentages[missing_percentages > 0].sort_values(
+        ascending=False
+    )
+
+    if len(missing_percentages) == 0:
+        # No missing values
+        fig = go.Figure()
+        fig.add_annotation(
+            text="🎉 No missing values found in the dataset!",
+            x=0.5,
+            y=0.5,
+            xref="paper",
+            yref="paper",
+            showarrow=False,
+            font=dict(size=20, color="green"),
+        )
+        fig.update_layout(
+            title="Missing Values Analysis",
+            xaxis=dict(visible=False),
+            yaxis=dict(visible=False),
+        )
+    else:
+        # Create heatmap of missing values
+        cols_with_missing = missing_percentages.index.tolist()
+        matrix_subset = missing_matrix[cols_with_missing]
+
+        fig = go.Figure(
+            data=go.Heatmap(
+                z=matrix_subset.T.values,
+                x=matrix_subset.index,
+                y=cols_with_missing,
+                colorscale=[[0, "#2ecc71"], [1, "#e74c3c"]],
+                showscale=True,
+                colorbar=dict(
+                    title="Missing", tickvals=[0, 1], ticktext=["Present", "Missing"]
+                ),
+            )
+        )
+
+        # Add percentage annotations
+        annotations = []
+        for i, col in enumerate(cols_with_missing):
+            annotations.append(
+                dict(
+                    x=len(matrix_subset) + 1,
+                    y=i,
+                    text=f"{missing_percentages[col]:.1f}%",
+                    showarrow=False,
+                    font=dict(color="black", size=10),
+                )
+            )
+
+        fig.update_layout(
+            title="Missing Values Matrix<br><sub>Red = Missing, Green = Present</sub>",
+            xaxis_title="Sample Index",
+            yaxis_title="Features with Missing Values",
+            annotations=annotations,
+            height=max(400, len(cols_with_missing) * 30),
+        )
+
+    if show:
+        fig.show()
+    return fig
+
+
 # Dashboard helper functions
 def _dashboard_update_plot(
     plot_type: str,
@@ -1545,6 +2058,377 @@ def _dashboard_update_summary(
     )
 
 
+def _create_benford_plot(
+    selected_feature_x: str,
+    df: pd.DataFrame,
+    numeric_cols: List[str],
+    dark_theme_layout: dict,
+) -> go.Figure:
+    """Create Benford's Law analysis plot for regression dashboard."""
+    if selected_feature_x in numeric_cols:
+        try:
+            fig = plot_benfords_law(df, selected_feature_x, show=False)
+            fig.update_layout(**dark_theme_layout)
+            fig.update_layout(
+                title={
+                    "text": f"🔍 Benford's Law Analysis: {selected_feature_x}",
+                    "font": {"color": "#ffffff", "size": 18},
+                }
+            )
+        except Exception as e:
+            fig = go.Figure()
+            fig.add_annotation(
+                text=f"❌ Benford's Law analysis failed: {str(e)}",
+                x=0.5,
+                y=0.5,
+                xref="paper",
+                yref="paper",
+                showarrow=False,
+                font=dict(size=16, color="#e74c3c"),
+            )
+            fig.update_layout(**dark_theme_layout)
+            fig.update_layout(
+                title={
+                    "text": "🔍 Benford's Law Analysis",
+                    "font": {"color": "#ffffff", "size": 18},
+                }
+            )
+    else:
+        fig = go.Figure()
+        fig.add_annotation(
+            text="⚠️ Benford's Law analysis requires a numerical feature",
+            x=0.5,
+            y=0.5,
+            xref="paper",
+            yref="paper",
+            showarrow=False,
+            font=dict(size=16, color="#f39c12"),
+        )
+        fig.update_layout(**dark_theme_layout)
+        fig.update_layout(
+            title={
+                "text": "🔍 Benford's Law Analysis",
+                "font": {"color": "#ffffff", "size": 18},
+            }
+        )
+    return fig
+
+
+def _create_category_frequency_plot(
+    selected_feature_x: str, df: pd.DataFrame, dark_theme_layout: dict
+) -> go.Figure:
+    """Create category frequency plot for regression dashboard."""
+    categorical_cols_all = df.select_dtypes(
+        include=["object", "category"]
+    ).columns.tolist()
+    if selected_feature_x in categorical_cols_all:
+        fig = plot_category_frequency(df, selected_feature_x, show=False)
+        fig.update_layout(**dark_theme_layout)
+        fig.update_layout(
+            title={
+                "text": f"📊 Category Frequency: {selected_feature_x}",
+                "font": {"color": "#ffffff", "size": 18},
+            }
+        )
+    else:
+        fig = go.Figure()
+        fig.add_annotation(
+            text="⚠️ Category frequency requires a categorical/text feature",
+            x=0.5,
+            y=0.5,
+            xref="paper",
+            yref="paper",
+            showarrow=False,
+            font=dict(size=16, color="#f39c12"),
+        )
+        fig.update_layout(**dark_theme_layout)
+        fig.update_layout(
+            title={
+                "text": "📊 Category Frequency",
+                "font": {"color": "#ffffff", "size": 18},
+            }
+        )
+    return fig
+
+
+def _create_violin_plot(
+    selected_feature_x: str, df: pd.DataFrame, target_col: str, dark_theme_layout: dict
+) -> go.Figure:
+    """Create violin plot by target bins for regression dashboard."""
+    try:
+        # Create 4 bins for the target variable with descriptive ordered labels
+        df_temp = df.copy()
+        bin_edges = pd.cut(df_temp[target_col], bins=4, retbins=True)[1]
+
+        # Create descriptive labels based on quartiles
+        bin_labels = []
+        quartile_names = ["Q1 (Low)", "Q2 (Med-Low)", "Q3 (Med-High)", "Q4 (High)"]
+        for i, name in enumerate(quartile_names):
+            if i < len(bin_edges) - 1:
+                label = f"{name}: {bin_edges[i]:.1f} to {bin_edges[i + 1]:.1f}"
+                bin_labels.append(label)
+
+        df_temp["target_bins"] = pd.cut(
+            df_temp[target_col],
+            bins=4,
+            labels=bin_labels,
+        )
+
+        # Ensure proper ordering
+        df_temp["target_bins"] = pd.Categorical(
+            df_temp["target_bins"], categories=bin_labels, ordered=True
+        )
+
+        # Create violin plots for each target bin
+        fig = px.violin(
+            df_temp,
+            x="target_bins",
+            y=selected_feature_x,
+            color="target_bins",
+            color_discrete_sequence=["#667eea", "#f093fb", "#4facfe", "#43e97b"],
+            box=True,  # Show box plot inside violin
+        )
+        fig.update_layout(**dark_theme_layout)
+        fig.update_layout(
+            title={
+                "text": f"🎻 Violin Plot of {selected_feature_x} by {target_col} Quartiles",
+                "font": {"color": "#ffffff", "size": 18},
+            },
+            xaxis_title=f"{target_col} Ranges (Low → High)",
+            yaxis_title=selected_feature_x,
+            xaxis={"categoryorder": "category ascending"},
+        )
+    except Exception:
+        # Fallback to simple violin plot if binning fails
+        fig = px.violin(df, y=selected_feature_x)
+        fig.update_layout(**dark_theme_layout)
+        fig.update_layout(
+            title={
+                "text": f"🎻 Violin Plot of {selected_feature_x}",
+                "font": {"color": "#ffffff", "size": 18},
+            }
+        )
+    return fig
+
+
+def _create_theil_u_plot(
+    df: pd.DataFrame,
+    target_col: str,
+    dark_theme_layout: dict,
+    is_regression: bool = True,
+) -> go.Figure:
+    """Create Theil U heatmap for categorical features including the target."""
+    # Get categorical columns only
+    categorical_cols = df.select_dtypes(include=["object", "category"]).columns.tolist()
+
+    # Prepare the dataframe for Theil U analysis
+    df_theil = df.copy()
+
+    # Handle target variable inclusion
+    if target_col:
+        if is_regression:
+            # For regression: bin the continuous target into quartiles
+            try:
+                df_theil[f"{target_col}_binned"] = pd.cut(
+                    df_theil[target_col],
+                    bins=4,
+                    labels=["Low", "Med-Low", "Med-High", "High"],
+                )
+                categorical_cols_with_target = categorical_cols + [
+                    f"{target_col}_binned"
+                ]
+                target_info = "(target binned into quartiles)"
+            except Exception:
+                # If binning fails, exclude target
+                categorical_cols_with_target = categorical_cols
+                target_info = "(target binning failed)"
+        else:
+            # For classification: target is already categorical
+            if target_col not in categorical_cols:
+                categorical_cols_with_target = categorical_cols + [target_col]
+            else:
+                categorical_cols_with_target = categorical_cols
+            target_info = f"(includes {target_col})"
+    else:
+        categorical_cols_with_target = categorical_cols
+        target_info = ""
+
+    # Remove target column from the list if it was originally there to avoid duplication
+    if target_col in categorical_cols_with_target and is_regression:
+        categorical_cols_with_target = [
+            col for col in categorical_cols_with_target if col != target_col
+        ]
+
+    if len(categorical_cols_with_target) < 2:
+        fig = go.Figure()
+        fig.add_annotation(
+            text="⚠️ Theil U heatmap requires at least 2 categorical features",
+            x=0.5,
+            y=0.5,
+            xref="paper",
+            yref="paper",
+            showarrow=False,
+            font=dict(size=16, color="#f39c12"),
+        )
+        fig.update_layout(**dark_theme_layout)
+        fig.update_layout(
+            title={
+                "text": "🔗 Theil U Heatmap",
+                "font": {"color": "#ffffff", "size": 18},
+            }
+        )
+        return fig
+
+    try:
+        fig, theil_matrix = plot_theil_u_heatmap(
+            df_theil, categorical_cols_with_target, show=False
+        )
+        fig.update_layout(**dark_theme_layout)
+        fig.update_layout(
+            title={
+                "text": f"🔗 Theil U Heatmap ({len(categorical_cols_with_target)} features) {target_info}",
+                "font": {"color": "#ffffff", "size": 18},
+            }
+        )
+        # Add info about the cache and target inclusion
+        cache_info = f"📊 Cached computation - {len(categorical_cols_with_target)}×{len(categorical_cols_with_target)} matrix"
+        if target_col and is_regression:
+            cache_info += f" | Target '{target_col}' binned"
+        elif target_col and not is_regression:
+            cache_info += f" | Includes target '{target_col}'"
+
+        fig.add_annotation(
+            text=cache_info,
+            xref="paper",
+            yref="paper",
+            x=0.02,
+            y=0.98,
+            showarrow=False,
+            font=dict(size=10, color="#999"),
+            bgcolor="rgba(0,0,0,0.3)",
+        )
+    except Exception as e:
+        fig = go.Figure()
+        fig.add_annotation(
+            text=f"❌ Theil U calculation failed: {str(e)}",
+            x=0.5,
+            y=0.5,
+            xref="paper",
+            yref="paper",
+            showarrow=False,
+            font=dict(size=16, color="#e74c3c"),
+        )
+        fig.update_layout(**dark_theme_layout)
+        fig.update_layout(
+            title={
+                "text": "🔗 Theil U Heatmap",
+                "font": {"color": "#ffffff", "size": 18},
+            }
+        )
+
+    return fig
+
+
+def _create_ecdf_plot(
+    selected_feature_x: str,
+    df: pd.DataFrame,
+    numeric_cols: List[str],
+    dark_theme_layout: dict,
+) -> go.Figure:
+    """Create ECDF analysis plot for dashboard."""
+    if selected_feature_x and selected_feature_x in numeric_cols:
+        try:
+            # Remove NaN values for ECDF calculation
+            clean_data = df[selected_feature_x].dropna()
+
+            if len(clean_data) < 10:
+                fig = go.Figure()
+                fig.add_annotation(
+                    text="⚠️ Insufficient data for ECDF analysis",
+                    x=0.5,
+                    y=0.5,
+                    xref="paper",
+                    yref="paper",
+                    showarrow=False,
+                    font=dict(size=16, color="#f39c12"),
+                )
+                fig.update_layout(**dark_theme_layout)
+                fig.update_layout(
+                    title={
+                        "text": "📈 ECDF Analysis",
+                        "font": {"color": "#ffffff", "size": 18},
+                    }
+                )
+                return fig
+
+            # Create ECDF with histogram using existing function
+            fig_list = plot_ecdf(
+                df, [selected_feature_x], plot_all_at_once=False, show=False
+            )
+            fig = fig_list[0]  # Get the single figure for this feature
+
+            # Apply dark theme
+            fig.update_layout(**dark_theme_layout)
+            fig.update_layout(
+                title={
+                    "text": f"📈 ECDF Analysis: {selected_feature_x}",
+                    "font": {"color": "#ffffff", "size": 18},
+                }
+            )
+
+            # Add cache info
+            cache_info = f"📊 Cached ECDF computation - {len(clean_data)} data points"
+            fig.add_annotation(
+                text=cache_info,
+                xref="paper",
+                yref="paper",
+                x=0.02,
+                y=0.98,
+                showarrow=False,
+                font=dict(size=10, color="#999"),
+                bgcolor="rgba(0,0,0,0.3)",
+            )
+
+        except Exception as e:
+            fig = go.Figure()
+            fig.add_annotation(
+                text=f"❌ ECDF analysis failed: {str(e)}",
+                x=0.5,
+                y=0.5,
+                xref="paper",
+                yref="paper",
+                showarrow=False,
+                font=dict(size=16, color="#e74c3c"),
+            )
+            fig.update_layout(**dark_theme_layout)
+            fig.update_layout(
+                title={
+                    "text": "📈 ECDF Analysis",
+                    "font": {"color": "#ffffff", "size": 18},
+                }
+            )
+    else:
+        fig = go.Figure()
+        fig.add_annotation(
+            text="⚠️ ECDF analysis requires a numerical feature",
+            x=0.5,
+            y=0.5,
+            xref="paper",
+            yref="paper",
+            showarrow=False,
+            font=dict(size=16, color="#f39c12"),
+        )
+        fig.update_layout(**dark_theme_layout)
+        fig.update_layout(
+            title={
+                "text": "📈 ECDF Analysis",
+                "font": {"color": "#ffffff", "size": 18},
+            }
+        )
+
+    return fig
+
+
 def _dashboard_update_regression_plot(
     plot_type: str,
     selected_feature_x: str,
@@ -1616,22 +2500,99 @@ def _dashboard_update_regression_plot(
         )
         return fig
     elif plot_type == "boxplot" and selected_feature_x:
-        fig = go.Figure()
-        fig.add_trace(
-            go.Box(
-                y=df[selected_feature_x],
-                name=selected_feature_x,
-                marker_color="#667eea",
-                line_color="#667eea",
+        # Check if the feature is categorical
+        if (
+            selected_feature_x
+            in df.select_dtypes(include=["object", "category"]).columns
+        ):
+            # Boxplot of target per category
+            fig = px.box(
+                df,
+                x=selected_feature_x,
+                y=target_col,
+                color=selected_feature_x,
+                color_discrete_sequence=[
+                    "#667eea",
+                    "#f093fb",
+                    "#4facfe",
+                    "#43e97b",
+                    "#fa709a",
+                    "#fad0c4",
+                    "#a8edea",
+                    "#fed6e3",
+                ],
             )
-        )
-        fig.update_layout(**dark_theme_layout)
-        fig.update_layout(
-            title={
-                "text": f"📦 Box Plot of {selected_feature_x}",
-                "font": {"color": "#ffffff", "size": 18},
-            }
-        )
+            fig.update_layout(**dark_theme_layout)
+            fig.update_layout(
+                title={
+                    "text": f"📦 Box Plot of {target_col} by {selected_feature_x} Categories",
+                    "font": {"color": "#ffffff", "size": 18},
+                }
+            )
+        else:
+            # Create target bins for continuous target and show boxplots per bin
+            try:
+                # Create 5 bins for the target variable with meaningful labels
+                df_temp = df.copy()
+                bin_edges = pd.cut(df_temp[target_col], bins=5, retbins=True)[1]
+
+                # Create descriptive labels based on target ranges
+                bin_labels = []
+                for i in range(len(bin_edges) - 1):
+                    label = f"{bin_edges[i]:.1f} to {bin_edges[i + 1]:.1f}"
+                    bin_labels.append(label)
+
+                df_temp["target_bins"] = pd.cut(
+                    df_temp[target_col],
+                    bins=5,
+                    labels=bin_labels,
+                )
+
+                # Ensure proper ordering by converting to categorical with ordered levels
+                df_temp["target_bins"] = pd.Categorical(
+                    df_temp["target_bins"], categories=bin_labels, ordered=True
+                )
+
+                fig = px.box(
+                    df_temp,
+                    x="target_bins",
+                    y=selected_feature_x,
+                    color="target_bins",
+                    color_discrete_sequence=[
+                        "#667eea",
+                        "#f093fb",
+                        "#4facfe",
+                        "#43e97b",
+                        "#fa709a",
+                    ],
+                )
+                fig.update_layout(**dark_theme_layout)
+                fig.update_layout(
+                    title={
+                        "text": f"📦 Box Plot of {selected_feature_x} by {target_col} Bins (Ordered)",
+                        "font": {"color": "#ffffff", "size": 18},
+                    },
+                    xaxis_title=f"{target_col} Ranges (Low → High)",
+                    xaxis={"categoryorder": "category ascending"},
+                )
+            except Exception:
+                # Fallback to simple boxplot if binning fails
+                fig = go.Figure()
+                fig.add_trace(
+                    go.Box(
+                        y=df[selected_feature_x],
+                        name=selected_feature_x,
+                        marker_color="#667eea",
+                        line_color="#667eea",
+                    )
+                )
+                fig.update_layout(**dark_theme_layout)
+                fig.update_layout(
+                    title={
+                        "text": f"📦 Box Plot of {selected_feature_x}",
+                        "font": {"color": "#ffffff", "size": 18},
+                    }
+                )
         return fig
     elif (
         plot_type == "scatter_with_regression"
@@ -1734,6 +2695,99 @@ def _dashboard_update_regression_plot(
             }
         )
         return fig
+    elif plot_type == "distribution_by_target" and selected_feature_x:
+        # Show feature distribution across target bins
+        try:
+            # Create 4 bins for the target variable with descriptive ordered labels
+            df_temp = df.copy()
+            bin_edges = pd.cut(df_temp[target_col], bins=4, retbins=True)[1]
+
+            # Create descriptive labels based on quartiles
+            bin_labels = []
+            quartile_names = ["Q1 (Low)", "Q2 (Med-Low)", "Q3 (Med-High)", "Q4 (High)"]
+            for i, name in enumerate(quartile_names):
+                if i < len(bin_edges) - 1:
+                    label = f"{name}: {bin_edges[i]:.1f} to {bin_edges[i + 1]:.1f}"
+                    bin_labels.append(label)
+
+            df_temp["target_bins"] = pd.cut(
+                df_temp[target_col],
+                bins=4,
+                labels=bin_labels,
+            )
+
+            # Ensure proper ordering
+            df_temp["target_bins"] = pd.Categorical(
+                df_temp["target_bins"], categories=bin_labels, ordered=True
+            )
+
+            # Create overlapping histograms for each target bin
+            fig = px.histogram(
+                df_temp,
+                x=selected_feature_x,
+                color="target_bins",
+                color_discrete_sequence=["#667eea", "#f093fb", "#4facfe", "#43e97b"],
+                opacity=0.7,
+                barmode="overlay",
+            )
+            fig.update_layout(**dark_theme_layout)
+            fig.update_layout(
+                title={
+                    "text": f"🎯 Distribution of {selected_feature_x} by {target_col} Quartiles",
+                    "font": {"color": "#ffffff", "size": 18},
+                },
+                xaxis_title=selected_feature_x,
+                yaxis_title="Count",
+            )
+        except Exception:
+            # Fallback to simple distribution if binning fails
+            fig = go.Figure()
+            fig.add_trace(
+                go.Histogram(
+                    x=df[selected_feature_x],
+                    name=selected_feature_x,
+                    marker_color="#667eea",
+                    opacity=0.8,
+                )
+            )
+            fig.update_layout(**dark_theme_layout)
+            fig.update_layout(
+                title={
+                    "text": f"📈 Distribution of {selected_feature_x}",
+                    "font": {"color": "#ffffff", "size": 18},
+                }
+            )
+        return fig
+    elif plot_type == "violin_by_target" and selected_feature_x:
+        return _create_violin_plot(
+            selected_feature_x, df, target_col, dark_theme_layout
+        )
+    elif plot_type == "benfords_law" and selected_feature_x:
+        return _create_benford_plot(
+            selected_feature_x, df, numeric_cols, dark_theme_layout
+        )
+    elif plot_type == "missing_values":
+        fig = plot_missing_values_matrix(df, show=False)
+        fig.update_layout(**dark_theme_layout)
+        fig.update_layout(
+            title={
+                "text": "❌ Missing Values Matrix",
+                "font": {"color": "#ffffff", "size": 18},
+            }
+        )
+        return fig
+    elif plot_type == "category_frequency" and selected_feature_x:
+        return _create_category_frequency_plot(
+            selected_feature_x, df, dark_theme_layout
+        )
+    elif plot_type == "theil_u":
+        return _create_theil_u_plot(
+            df, target_col, dark_theme_layout, is_regression=True
+        )
+    elif plot_type == "ecdf" and selected_feature_x:
+        return _create_ecdf_plot(
+            selected_feature_x, df, numeric_cols, dark_theme_layout
+        )
     else:
         # Default empty plot
         fig = go.Figure()
@@ -1745,6 +2799,99 @@ def _dashboard_update_regression_plot(
             }
         )
         return fig
+
+
+def _create_benford_plot_classification(
+    selected_feature_x: str,
+    df: pd.DataFrame,
+    numeric_cols: List[str],
+    dark_theme_layout: dict,
+) -> go.Figure:
+    """Create Benford's Law analysis plot for classification dashboard."""
+    if selected_feature_x in numeric_cols:
+        try:
+            fig = plot_benfords_law(df, selected_feature_x, show=False)
+            fig.update_layout(**dark_theme_layout)
+            fig.update_layout(
+                title={
+                    "text": f"🔍 Benford's Law Analysis: {selected_feature_x}",
+                    "font": {"color": "#ffffff", "size": 18},
+                }
+            )
+        except Exception as e:
+            fig = go.Figure()
+            fig.add_annotation(
+                text=f"❌ Benford's Law analysis failed: {str(e)}",
+                x=0.5,
+                y=0.5,
+                xref="paper",
+                yref="paper",
+                showarrow=False,
+                font=dict(size=16, color="#e74c3c"),
+            )
+            fig.update_layout(**dark_theme_layout)
+            fig.update_layout(
+                title={
+                    "text": "🔍 Benford's Law Analysis",
+                    "font": {"color": "#ffffff", "size": 18},
+                }
+            )
+    else:
+        fig = go.Figure()
+        fig.add_annotation(
+            text="⚠️ Benford's Law analysis requires a numerical feature",
+            x=0.5,
+            y=0.5,
+            xref="paper",
+            yref="paper",
+            showarrow=False,
+            font=dict(size=16, color="#f39c12"),
+        )
+        fig.update_layout(**dark_theme_layout)
+        fig.update_layout(
+            title={
+                "text": "🔍 Benford's Law Analysis",
+                "font": {"color": "#ffffff", "size": 18},
+            }
+        )
+    return fig
+
+
+def _create_category_frequency_plot_classification(
+    selected_feature_x: str,
+    df: pd.DataFrame,
+    categorical_cols: List[str],
+    dark_theme_layout: dict,
+) -> go.Figure:
+    """Create category frequency plot for classification dashboard."""
+    if selected_feature_x in categorical_cols:
+        fig = plot_category_frequency(df, selected_feature_x, show=False)
+        fig.update_layout(**dark_theme_layout)
+        fig.update_layout(
+            title={
+                "text": f"📊 Category Frequency: {selected_feature_x}",
+                "font": {"color": "#ffffff", "size": 18},
+            }
+        )
+    else:
+        fig = go.Figure()
+        fig.add_annotation(
+            text="⚠️ Category frequency requires a categorical/text feature",
+            x=0.5,
+            y=0.5,
+            xref="paper",
+            yref="paper",
+            showarrow=False,
+            font=dict(size=16, color="#f39c12"),
+        )
+        fig.update_layout(**dark_theme_layout)
+        fig.update_layout(
+            title={
+                "text": "📊 Category Frequency",
+                "font": {"color": "#ffffff", "size": 18},
+            }
+        )
+    return fig
 
 
 def _dashboard_update_classification_plot(
@@ -1935,6 +3082,33 @@ def _dashboard_update_classification_plot(
                 }
             )
         return fig
+    elif plot_type == "benfords_law" and selected_feature_x:
+        return _create_benford_plot_classification(
+            selected_feature_x, df, numeric_cols, dark_theme_layout
+        )
+    elif plot_type == "missing_values":
+        # Missing values matrix for the entire dataset
+        fig = plot_missing_values_matrix(df, show=False)
+        fig.update_layout(**dark_theme_layout)
+        fig.update_layout(
+            title={
+                "text": "❌ Missing Values Matrix",
+                "font": {"color": "#ffffff", "size": 18},
+            }
+        )
+        return fig
+    elif plot_type == "category_frequency" and selected_feature_x:
+        return _create_category_frequency_plot_classification(
+            selected_feature_x, df, categorical_cols, dark_theme_layout
+        )
+    elif plot_type == "theil_u":
+        return _create_theil_u_plot(
+            df, target_col, dark_theme_layout, is_regression=False
+        )
+    elif plot_type == "ecdf" and selected_feature_x:
+        return _create_ecdf_plot(
+            selected_feature_x, df, numeric_cols, dark_theme_layout
+        )
     else:
         # Default empty plot
         fig = go.Figure()
@@ -2197,7 +3371,7 @@ def create_eda_dashboard_regression(
                                                 "value": "pca",
                                             },
                                             {
-                                                "label": "📦 Box Plot",
+                                                "label": "📦 Box Plot (Target Bins / Categories)",
                                                 "value": "boxplot",
                                             },
                                             {
@@ -2207,6 +3381,34 @@ def create_eda_dashboard_regression(
                                             {
                                                 "label": "⚖️ Feature Coefficients",
                                                 "value": "coefficients",
+                                            },
+                                            {
+                                                "label": "🎯 Distribution by Target Bins",
+                                                "value": "distribution_by_target",
+                                            },
+                                            {
+                                                "label": "🎻 Violin Plot by Target Bins",
+                                                "value": "violin_by_target",
+                                            },
+                                            {
+                                                "label": "🔍 Benford's Law Analysis",
+                                                "value": "benfords_law",
+                                            },
+                                            {
+                                                "label": "❌ Missing Values Matrix",
+                                                "value": "missing_values",
+                                            },
+                                            {
+                                                "label": "📊 Category Frequency",
+                                                "value": "category_frequency",
+                                            },
+                                            {
+                                                "label": "🔗 Theil U Heatmap",
+                                                "value": "theil_u",
+                                            },
+                                            {
+                                                "label": "📈 ECDF Analysis",
+                                                "value": "ecdf",
                                             },
                                         ],
                                         value="correlation",
@@ -2566,6 +3768,26 @@ def create_eda_dashboard_classification(
                                             {
                                                 "label": "📊 Feature by Target",
                                                 "value": "feature_by_target",
+                                            },
+                                            {
+                                                "label": "🔍 Benford's Law Analysis",
+                                                "value": "benfords_law",
+                                            },
+                                            {
+                                                "label": "❌ Missing Values Matrix",
+                                                "value": "missing_values",
+                                            },
+                                            {
+                                                "label": "📊 Category Frequency",
+                                                "value": "category_frequency",
+                                            },
+                                            {
+                                                "label": "🔗 Theil U Heatmap",
+                                                "value": "theil_u",
+                                            },
+                                            {
+                                                "label": "📈 ECDF Analysis",
+                                                "value": "ecdf",
                                             },
                                         ],
                                         value="target_distribution",

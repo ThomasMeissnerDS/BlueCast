@@ -14,15 +14,20 @@ from bluecast.eda.analyse import (
     correlation_heatmap,
     correlation_to_target,
     create_eda_dashboard,
+    create_eda_dashboard_classification,
+    create_eda_dashboard_regression,
     mutual_info_to_target,
     plot_against_target_for_regression,
     plot_andrews_curve,
+    plot_benfords_law,
+    plot_category_frequency,
     plot_classification_target_distribution_within_categories,
     plot_count_pair,
     plot_count_pairs,
     plot_distribution_by_time,
     plot_distribution_pairs,
     plot_ecdf,
+    plot_missing_values_matrix,
     plot_null_percentage,
     plot_pca,
     plot_pca_biplot,
@@ -1221,10 +1226,12 @@ def test_dashboard_helper_functions_coverage():
 
     # No selection case (main else)
     result = _dashboard_update_summary(None, test_df, numeric_cols)
-    assert result == "Select a feature to see summary statistics"
+    assert isinstance(result, html.Div)
+    assert "Select a feature to see summary statistics" in result.children
 
     result = _dashboard_update_summary("", test_df, numeric_cols)
-    assert result == "Select a feature to see summary statistics"
+    assert isinstance(result, html.Div)
+    assert "Select a feature to see summary statistics" in result.children
 
     # Test edge case: insufficient numeric columns
     # Create scenario with only 1 numeric column
@@ -1269,3 +1276,94 @@ def test_dashboard_helper_functions_coverage():
     )
     assert isinstance(result, go.Figure)
     assert "Box Plot of numeric_col1" in result.layout.title.text
+
+
+def test_plot_benfords_law():
+    """Test Benford's Law analysis plotting."""
+    # Create data that could follow Benford's Law
+    np.random.seed(42)
+    data = np.random.lognormal(mean=3, sigma=2, size=1000)
+    df = pd.DataFrame({"financial_amounts": data})
+
+    # Test successful case
+    fig = plot_benfords_law(df, "financial_amounts", show=False)
+    assert isinstance(fig, go.Figure)
+    assert "Benford's Law Analysis" in fig.layout.title.text
+
+    # Test with non-existent column
+    with pytest.raises(ValueError, match="Column 'nonexistent' not found"):
+        plot_benfords_law(df, "nonexistent", show=False)
+
+    # Test with no positive values
+    df_zeros = pd.DataFrame({"zero_col": [0, -1, -2, 0]})
+    with pytest.raises(ValueError, match="No positive values found"):
+        plot_benfords_law(df_zeros, "zero_col", show=False)
+
+
+def test_plot_missing_values_matrix():
+    """Test missing values matrix plotting."""
+    # Create data with missing values
+    df = pd.DataFrame(
+        {
+            "col1": [1, 2, np.nan, 4, 5],
+            "col2": [1, np.nan, 3, np.nan, 5],
+            "col3": [1, 2, 3, 4, 5],  # No missing values
+        }
+    )
+
+    # Test with missing values
+    fig = plot_missing_values_matrix(df, show=False)
+    assert isinstance(fig, go.Figure)
+    assert "Missing Values Matrix" in fig.layout.title.text
+
+    # Test with no missing values
+    df_complete = pd.DataFrame({"col1": [1, 2, 3], "col2": [4, 5, 6]})
+    fig = plot_missing_values_matrix(df_complete, show=False)
+    assert isinstance(fig, go.Figure)
+    assert "No missing values found" in fig.layout.annotations[0].text
+
+
+def test_plot_category_frequency():
+    """Test category frequency plotting."""
+    # Create categorical data
+    df = pd.DataFrame({"categories": ["A", "B", "A", "C", "B", "B", "A"]})
+
+    # Test successful case
+    fig = plot_category_frequency(df, "categories", show=False)
+    assert isinstance(fig, go.Figure)
+    assert (
+        "Category Frequencies" in fig.layout.title.text
+        or "Word Cloud" in fig.layout.title.text
+    )
+
+    # Test with non-existent column
+    with pytest.raises(ValueError, match="Column 'nonexistent' not found"):
+        plot_category_frequency(df, "nonexistent", show=False)
+
+
+def test_create_eda_dashboard_regression():
+    """Test regression dashboard creation without starting server."""
+    df = create_synthetic_dataframe_regression(100, random_state=42)
+
+    try:
+        app = create_eda_dashboard_regression(
+            df=df, target_col="target", port=8055, run_server=False
+        )
+        assert app is not None
+        assert hasattr(app, "layout")
+    except ImportError:
+        pytest.skip("Dash not available for testing")
+
+
+def test_create_eda_dashboard_classification():
+    """Test classification dashboard creation without starting server."""
+    df = create_synthetic_dataframe(100, random_state=42)
+
+    try:
+        app = create_eda_dashboard_classification(
+            df=df, target_col="target", port=8056, run_server=False
+        )
+        assert app is not None
+        assert hasattr(app, "layout")
+    except ImportError:
+        pytest.skip("Dash not available for testing")
