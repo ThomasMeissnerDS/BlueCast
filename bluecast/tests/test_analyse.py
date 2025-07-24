@@ -1216,20 +1216,22 @@ def test_dashboard_helper_functions_coverage():
 
     # Test all branches of _dashboard_update_summary function
 
-    # Numeric column case
-    result = _dashboard_update_summary("numeric_col1", test_df, numeric_cols)
-    assert isinstance(result, html.Table)
+    # Numeric column case - now returns html.Div with enhanced statistics
+    result = _dashboard_update_summary("numeric_col1", test_df, numeric_cols, target_col)
+    assert isinstance(result, html.Div)
+    assert len(result.children) > 0  # Should contain feature statistics
 
-    # Categorical column case (else within if selected_feature)
-    result = _dashboard_update_summary("categorical_col1", test_df, numeric_cols)
-    assert isinstance(result, html.Table)
+    # Categorical column case - now returns html.Div with enhanced statistics
+    result = _dashboard_update_summary("categorical_col1", test_df, numeric_cols, target_col)
+    assert isinstance(result, html.Div)
+    assert len(result.children) > 0  # Should contain feature statistics
 
     # No selection case (main else)
-    result = _dashboard_update_summary(None, test_df, numeric_cols)
+    result = _dashboard_update_summary(None, test_df, numeric_cols, target_col)
     assert isinstance(result, html.Div)
     assert "Select a feature to see summary statistics" in result.children
 
-    result = _dashboard_update_summary("", test_df, numeric_cols)
+    result = _dashboard_update_summary("", test_df, numeric_cols, target_col)
     assert isinstance(result, html.Div)
     assert "Select a feature to see summary statistics" in result.children
 
