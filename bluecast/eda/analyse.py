@@ -14,6 +14,17 @@ from sklearn.feature_selection import mutual_info_classif, mutual_info_regressio
 from sklearn.manifold import TSNE
 from sklearn.preprocessing import StandardScaler
 
+# For outlier detection enhancement
+try:
+    from sklearn.ensemble import IsolationForest
+
+    HAS_ISOLATION_FOREST = True
+except ImportError:
+    HAS_ISOLATION_FOREST = False
+
+# For pandas query filtering (no external dependencies needed)
+HAS_PANDAS_QUERY = True  # pandas is already a core dependency
+
 # Try to import wordcloud for text visualization
 try:
     from wordcloud import WordCloud
@@ -1967,15 +1978,20 @@ def _dashboard_update_plot(
 
 
 def _dashboard_update_summary(
-    selected_feature: str, df: pd.DataFrame, numeric_cols: List[str]
+    selected_feature: str,
+    df: pd.DataFrame,
+    numeric_cols: List[str],
+    target_col: Optional[str] = None,
 ):
     """
     Helper function for dashboard summary updates with dark theme styling.
+    Shows statistics for both selected feature and target column.
 
     :param selected_feature: Selected feature for the summary
     :param df: DataFrame containing the data
     :param numeric_cols: List of numeric column names
-    :return: HTML table or string message
+    :param target_col: Target column name (optional)
+    :return: HTML div with tables or string message
     """
     try:
         from dash import html
@@ -1984,40 +2000,10 @@ def _dashboard_update_summary(
             "Dash is required for dashboard functionality. Install with: pip install dash"
         )
 
-    if selected_feature:
-        if selected_feature in numeric_cols:
-            stats = df[selected_feature].describe()
-            return html.Table(
-                [
-                    html.Tr(
-                        [
-                            html.Td(
-                                stat.title(),
-                                style={
-                                    "padding": "12px 16px",
-                                    "backgroundColor": "#3a3a3a",
-                                    "color": "#e0e0e0",
-                                    "fontWeight": "500",
-                                },
-                            ),
-                            html.Td(
-                                f"{value:.3f}",
-                                style={
-                                    "padding": "12px 16px",
-                                    "backgroundColor": "#2d2d2d",
-                                    "color": "#ffffff",
-                                    "fontFamily": "monospace",
-                                },
-                            ),
-                        ],
-                        style={"borderBottom": "1px solid #4a4a4a"},
-                    )
-                    for stat, value in stats.items()
-                ],
-                style={"width": "100%", "borderCollapse": "collapse"},
-            )
-        else:
-            value_counts = df[selected_feature].value_counts()
+    def create_stats_table(col_name, stats_data, is_categorical=False):
+        """Helper to create a stats table for a column"""
+        if is_categorical:
+            # For categorical data, show value counts
             return html.Table(
                 [
                     html.Tr(
@@ -2043,19 +2029,370 @@ def _dashboard_update_summary(
                         ],
                         style={"borderBottom": "1px solid #4a4a4a"},
                     )
-                    for value, count in value_counts.head(10).items()
+                    for value, count in stats_data.head(10).items()
                 ],
                 style={"width": "100%", "borderCollapse": "collapse"},
             )
-    return html.Div(
-        "🎯 Select a feature to see summary statistics",
-        style={
-            "textAlign": "center",
-            "padding": "20px",
-            "color": "#999",
-            "fontStyle": "italic",
-        },
-    )
+        else:
+            # For numeric data, show descriptive statistics
+            return html.Table(
+                [
+                    html.Tr(
+                        [
+                            html.Td(
+                                stat.title(),
+                                style={
+                                    "padding": "12px 16px",
+                                    "backgroundColor": "#3a3a3a",
+                                    "color": "#e0e0e0",
+                                    "fontWeight": "500",
+                                },
+                            ),
+                            html.Td(
+                                f"{value:.3f}",
+                                style={
+                                    "padding": "12px 16px",
+                                    "backgroundColor": "#2d2d2d",
+                                    "color": "#ffffff",
+                                    "fontFamily": "monospace",
+                                },
+                            ),
+                        ],
+                        style={"borderBottom": "1px solid #4a4a4a"},
+                    )
+                    for stat, value in stats_data.items()
+                ],
+                style={"width": "100%", "borderCollapse": "collapse"},
+            )
+
+    if not selected_feature:
+        return html.Div(
+            "🎯 Select a feature to see summary statistics",
+            style={
+                "textAlign": "center",
+                "padding": "20px",
+                "color": "#999",
+                "fontStyle": "italic",
+            },
+        )
+
+    # Prepare components list
+    components = []
+
+    # Selected feature statistics
+    if selected_feature in numeric_cols:
+        stats = df[selected_feature].describe()
+        components.extend(
+            [
+                html.H4(
+                    f"📊 {selected_feature} Statistics",
+                    style={"color": "#667eea", "marginBottom": "15px"},
+                ),
+                create_stats_table(selected_feature, stats, is_categorical=False),
+            ]
+        )
+    else:
+        value_counts = df[selected_feature].value_counts()
+        components.extend(
+            [
+                html.H4(
+                    f"📊 {selected_feature} Value Counts",
+                    style={"color": "#667eea", "marginBottom": "15px"},
+                ),
+                create_stats_table(selected_feature, value_counts, is_categorical=True),
+            ]
+        )
+
+    # Add target column statistics if provided
+    if target_col and target_col != selected_feature:
+        # Add some spacing
+        components.append(html.Hr(style={"borderColor": "#4a4a4a", "margin": "20px 0"}))
+
+        # Check if target is numeric or categorical
+        if pd.api.types.is_numeric_dtype(df[target_col]):
+            target_stats = df[target_col].describe()
+            components.extend(
+                [
+                    html.H4(
+                        f"🎯 {target_col} (Target) Statistics",
+                        style={"color": "#f093fb", "marginBottom": "15px"},
+                    ),
+                    create_stats_table(target_col, target_stats, is_categorical=False),
+                ]
+            )
+        else:
+            target_counts = df[target_col].value_counts()
+            components.extend(
+                [
+                    html.H4(
+                        f"🎯 {target_col} (Target) Value Counts",
+                        style={"color": "#f093fb", "marginBottom": "15px"},
+                    ),
+                    create_stats_table(target_col, target_counts, is_categorical=True),
+                ]
+            )
+
+    return html.Div(components)
+
+
+def _apply_pandas_query_filter(df: pd.DataFrame, query_text: str) -> pd.DataFrame:
+    """
+    Apply SQL-like filtering using pandas query syntax and operations.
+
+    :param df: DataFrame to filter
+    :param query_text: Query text (supports pandas query syntax or simple SQL-like syntax)
+    :return: Filtered DataFrame
+    """
+    if not query_text or not query_text.strip():
+        return df.copy()
+
+    try:
+        # Clean up the query text
+        query = query_text.strip()
+
+        # Handle simple SQL SELECT statements by converting to pandas operations
+        if query.upper().startswith("SELECT"):
+            # Extract the part after WHERE if it exists
+            if " WHERE " in query.upper():
+                where_part = (
+                    query.split(" WHERE ")[1].split(" FROM ")[0]
+                    if " FROM " in query.upper()
+                    else query.split(" WHERE ")[1]
+                )
+                # Convert common SQL operators to pandas query syntax
+                where_part = where_part.replace("=", "==")
+                where_part = where_part.replace("AND", "&").replace("and", "&")
+                where_part = where_part.replace("OR", "|").replace("or", "|")
+                # Apply the filter
+                return df.query(where_part)
+            else:
+                # SELECT without WHERE, return all data
+                return df.copy()
+        else:
+            # Assume it's already in pandas query format
+            # Convert common SQL operators just in case
+            query = query.replace("=", "==")
+            query = query.replace("AND", "&").replace("and", "&")
+            query = query.replace("OR", "|").replace("or", "|")
+            return df.query(query)
+
+    except Exception as e:
+        # If query fails, return original dataframe and let the caller handle the error
+        raise ValueError(f"Invalid query syntax: {str(e)}")
+
+
+def _create_outlier_detection_plot(
+    df: pd.DataFrame,
+    target_col: str,
+    dark_theme_layout: dict,
+    contamination: float = 0.1,
+) -> go.Figure:
+    """
+    Create IsolationForest outlier detection plot showing outlier scores and top outliers.
+
+    :param df: DataFrame containing the data
+    :param target_col: Target column name
+    :param dark_theme_layout: Dark theme layout configuration
+    :param contamination: Expected proportion of outliers
+    :return: Plotly figure
+    """
+    if not HAS_ISOLATION_FOREST:
+        # Create a simple message plot if IsolationForest is not available
+        fig = go.Figure()
+        fig.add_annotation(
+            text="IsolationForest requires scikit-learn.<br>Please install: pip install scikit-learn",
+            xref="paper",
+            yref="paper",
+            x=0.5,
+            y=0.5,
+            xanchor="center",
+            yanchor="middle",
+            showarrow=False,
+            font=dict(size=16, color="white"),
+        )
+        fig.update_layout(**dark_theme_layout)
+        fig.update_layout(
+            title={
+                "text": "🚨 Outlier Detection (IsolationForest)",
+                "font": {"color": "#ffffff", "size": 18},
+            }
+        )
+        return fig
+
+    try:
+        # Get numeric columns only for outlier detection
+        numeric_cols = df.select_dtypes(include=[np.number]).columns.tolist()
+        if target_col in numeric_cols:
+            numeric_cols.remove(target_col)
+
+        if len(numeric_cols) == 0:
+            fig = go.Figure()
+            fig.add_annotation(
+                text="No numeric features available for outlier detection",
+                xref="paper",
+                yref="paper",
+                x=0.5,
+                y=0.5,
+                xanchor="center",
+                yanchor="middle",
+                showarrow=False,
+                font=dict(size=16, color="white"),
+            )
+            fig.update_layout(**dark_theme_layout)
+            return fig
+
+        # Prepare data for IsolationForest
+        X = df[numeric_cols].fillna(df[numeric_cols].median())
+
+        # Fit IsolationForest
+        iso_forest = IsolationForest(contamination=contamination, random_state=42)
+        outlier_pred = iso_forest.fit_predict(X)
+        outlier_scores = iso_forest.score_samples(X)
+
+        # Create subplots
+        fig = make_subplots(
+            rows=2,
+            cols=2,
+            subplot_titles=(
+                "Outlier Score Distribution",
+                "Outlier vs Normal Points",
+                "Top 10 Outliers by Score",
+                "Feature Contribution to Top Outlier",
+            ),
+            specs=[[{"type": "xy"}, {"type": "xy"}], [{"type": "xy"}, {"type": "xy"}]],
+        )
+
+        # 1. Outlier score distribution
+        fig.add_trace(
+            go.Histogram(
+                x=outlier_scores,
+                name="Outlier Scores",
+                marker_color="#ff6b6b",
+                opacity=0.7,
+                nbinsx=30,
+            ),
+            row=1,
+            col=1,
+        )
+
+        # 2. Scatter plot: outliers vs normal points
+        outliers_mask = outlier_pred == -1
+        normal_mask = outlier_pred == 1
+
+        # Use first two numeric features for visualization
+        if len(numeric_cols) >= 2:
+            x_col, y_col = numeric_cols[0], numeric_cols[1]
+
+            # Normal points
+            fig.add_trace(
+                go.Scatter(
+                    x=df.loc[normal_mask, x_col],
+                    y=df.loc[normal_mask, y_col],
+                    mode="markers",
+                    marker=dict(color="#4ecdc4", size=6, opacity=0.6),
+                    name="Normal Points",
+                    showlegend=True,
+                ),
+                row=1,
+                col=2,
+            )
+
+            # Outlier points
+            fig.add_trace(
+                go.Scatter(
+                    x=df.loc[outliers_mask, x_col],
+                    y=df.loc[outliers_mask, y_col],
+                    mode="markers",
+                    marker=dict(color="#ff6b6b", size=8, opacity=0.8),
+                    name="Outliers",
+                    showlegend=True,
+                ),
+                row=1,
+                col=2,
+            )
+
+            fig.update_xaxes(title_text=x_col, row=1, col=2)
+            fig.update_yaxes(title_text=y_col, row=1, col=2)
+
+        # 3. Top 10 outliers by score
+        df_with_scores = df.copy()
+        df_with_scores["outlier_score"] = outlier_scores
+        df_with_scores["is_outlier"] = outlier_pred == -1
+
+        top_outliers = df_with_scores.nsmallest(10, "outlier_score")
+
+        fig.add_trace(
+            go.Bar(
+                x=list(range(1, 11)),
+                y=top_outliers["outlier_score"].values,
+                marker_color="#ff9f43",
+                name="Top 10 Outliers",
+                text=[f"Row {idx}" for idx in top_outliers.index],
+                textposition="outside",
+            ),
+            row=2,
+            col=1,
+        )
+
+        fig.update_xaxes(title_text="Outlier Rank", row=2, col=1)
+        fig.update_yaxes(title_text="Outlier Score", row=2, col=1)
+
+        # 4. Feature contribution for the top outlier
+        if len(top_outliers) > 0:
+            top_outlier_idx = top_outliers.index[0]
+            top_outlier_features = df.loc[top_outlier_idx, numeric_cols]
+            feature_medians = df[numeric_cols].median()
+            feature_deviations = abs(
+                top_outlier_features - feature_medians
+            ) / feature_medians.replace(0, 1)
+
+            # Sort by deviation magnitude
+            feature_deviations_sorted = feature_deviations.sort_values(ascending=False)
+
+            fig.add_trace(
+                go.Bar(
+                    x=feature_deviations_sorted.values[:10],  # Top 10 features
+                    y=feature_deviations_sorted.index[:10],
+                    orientation="h",
+                    marker_color="#a55eea",
+                    name="Feature Deviations",
+                ),
+                row=2,
+                col=2,
+            )
+
+            fig.update_xaxes(title_text="Relative Deviation from Median", row=2, col=2)
+            fig.update_yaxes(title_text="Features", row=2, col=2)
+
+        # Update layout
+        fig.update_layout(**dark_theme_layout)
+        fig.update_layout(
+            title={
+                "text": f"🚨 Outlier Detection Analysis (Found {sum(outliers_mask)} outliers)",
+                "font": {"color": "#ffffff", "size": 18},
+            },
+            height=800,
+            showlegend=False,
+        )
+
+        return fig
+
+    except Exception as e:
+        # Fallback in case of any errors
+        fig = go.Figure()
+        fig.add_annotation(
+            text=f"Error in outlier detection: {str(e)}",
+            xref="paper",
+            yref="paper",
+            x=0.5,
+            y=0.5,
+            xanchor="center",
+            yanchor="middle",
+            showarrow=False,
+            font=dict(size=16, color="white"),
+        )
+        fig.update_layout(**dark_theme_layout)
+        return fig
 
 
 def _create_benford_plot(
@@ -2429,7 +2766,7 @@ def _create_ecdf_plot(
     return fig
 
 
-def _dashboard_update_regression_plot(
+def _dashboard_update_regression_plot(  # noqa: C901
     plot_type: str,
     selected_feature_x: str,
     selected_feature_y: str,
@@ -2788,6 +3125,8 @@ def _dashboard_update_regression_plot(
         return _create_ecdf_plot(
             selected_feature_x, df, numeric_cols, dark_theme_layout
         )
+    elif plot_type == "outlier_detection":
+        return _create_outlier_detection_plot(df, target_col, dark_theme_layout)
     else:
         # Default empty plot
         fig = go.Figure()
@@ -3109,6 +3448,8 @@ def _dashboard_update_classification_plot(
         return _create_ecdf_plot(
             selected_feature_x, df, numeric_cols, dark_theme_layout
         )
+    elif plot_type == "outlier_detection":
+        return _create_outlier_detection_plot(df, target_col, dark_theme_layout)
     else:
         # Default empty plot
         fig = go.Figure()
@@ -3123,7 +3464,7 @@ def _dashboard_update_classification_plot(
 
 
 # Enhanced Dashboard functionality
-def create_eda_dashboard_regression(
+def create_eda_dashboard_regression(  # noqa: C901
     df: pd.DataFrame,
     target_col: str,
     port: int = 8050,
@@ -3416,6 +3757,10 @@ def create_eda_dashboard_regression(
                                                 "label": "📈 ECDF Analysis",
                                                 "value": "ecdf",
                                             },
+                                            {
+                                                "label": "🚨 Outlier Detection (IsolationForest)",
+                                                "value": "outlier_detection",
+                                            },
                                         ],
                                         value="correlation",
                                         className="dash-dropdown",
@@ -3465,6 +3810,47 @@ def create_eda_dashboard_regression(
                     )
                 ],
             ),
+            # Pandas Query Filter Section
+            html.Div(
+                className="controls-container",
+                children=[
+                    html.Div(
+                        className="control-group",
+                        children=[
+                            html.Label("🔍 Data Filter (Pandas Query Syntax):"),
+                            html.P(
+                                "Filter your data using pandas query syntax. Examples: 'column_name > 100', 'category == \"A\"', 'value >= 50 & value <= 100'",
+                                style={
+                                    "fontSize": "0.9rem",
+                                    "color": "#999",
+                                    "margin": "5px 0 10px 0",
+                                },
+                            ),
+                            dcc.Textarea(
+                                id="pandas-query-input",
+                                placeholder="column_name > 100 & category == 'value'",
+                                style={
+                                    "width": "100%",
+                                    "height": "80px",
+                                    "backgroundColor": "#4a4a4a",
+                                    "color": "#ffffff",
+                                    "border": "1px solid #666",
+                                    "borderRadius": "8px",
+                                    "padding": "10px",
+                                    "fontFamily": "monospace",
+                                    "fontSize": "0.9rem",
+                                    "resize": "vertical",
+                                },
+                                value="",
+                            ),
+                            html.Div(
+                                id="query-status",
+                                style={"marginTop": "10px", "fontSize": "0.9rem"},
+                            ),
+                        ],
+                    )
+                ],
+            ),
             # Graph
             html.Div(
                 className="graph-container",
@@ -3491,28 +3877,105 @@ def create_eda_dashboard_regression(
     )
 
     @app.callback(
-        Output("main-plot", "figure"),
+        [Output("main-plot", "figure"), Output("query-status", "children")],
         [
             Input("plot-type", "value"),
             Input("feature-x-dropdown", "value"),
             Input("feature-y-dropdown", "value"),
+            Input("pandas-query-input", "value"),
         ],
     )
-    def update_plot(plot_type, selected_feature_x, selected_feature_y):
-        return _dashboard_update_regression_plot(
+    def update_plot_and_status(
+        plot_type, selected_feature_x, selected_feature_y, pandas_query
+    ):
+        # Handle pandas query filtering
+        filtered_df = df.copy()
+        status_message = ""
+
+        if pandas_query and pandas_query.strip():
+            if HAS_PANDAS_QUERY:
+                try:
+                    # Use pandas query filtering
+                    filtered_df = _apply_pandas_query_filter(df, pandas_query)
+                    if len(filtered_df) == 0:
+                        status_message = (
+                            "❌ Query returned no results. Showing original data."
+                        )
+                        filtered_df = df.copy()
+                    else:
+                        status_message = f"✅ Query applied successfully. Showing {len(filtered_df):,} of {len(df):,} rows."
+                except Exception as e:
+                    status_message = f"❌ Query Error: {str(e)}"
+                    filtered_df = df.copy()
+            else:
+                status_message = "❌ Pandas query filtering is not available"
+                filtered_df = df.copy()
+        else:
+            if len(filtered_df) > 0:
+                status_message = f"📊 Showing all {len(df):,} rows (no filter applied)."
+
+        # Update numeric_cols for the filtered data
+        filtered_numeric_cols = filtered_df.select_dtypes(
+            include=[np.number]
+        ).columns.tolist()
+        if target_col in filtered_numeric_cols:
+            filtered_numeric_cols.remove(target_col)
+
+        # Generate the plot
+        plot_fig = _dashboard_update_regression_plot(
             plot_type,
             selected_feature_x,
             selected_feature_y,
-            df,
-            numeric_cols,
+            filtered_df,
+            filtered_numeric_cols,
             target_col,
         )
 
+        # Create status div
+        status_div = html.Div(
+            status_message,
+            style={
+                "color": (
+                    "#4ecdc4"
+                    if "✅" in status_message
+                    else "#ff6b6b" if "❌" in status_message else "#999"
+                ),
+                "fontWeight": (
+                    "500"
+                    if "✅" in status_message or "❌" in status_message
+                    else "normal"
+                ),
+            },
+        )
+
+        return plot_fig, status_div
+
     @app.callback(
-        Output("summary-stats", "children"), [Input("feature-x-dropdown", "value")]
+        Output("summary-stats", "children"),
+        [Input("feature-x-dropdown", "value"), Input("pandas-query-input", "value")],
     )
-    def update_summary(selected_feature):
-        return _dashboard_update_summary(selected_feature, df, numeric_cols)
+    def update_summary(selected_feature, pandas_query):
+        # Handle pandas query filtering for summary stats
+        filtered_df = df.copy()
+
+        if pandas_query and pandas_query.strip() and HAS_PANDAS_QUERY:
+            try:
+                filtered_df = _apply_pandas_query_filter(df, pandas_query)
+                if len(filtered_df) == 0:
+                    filtered_df = df.copy()
+            except Exception:
+                filtered_df = df.copy()
+
+        # Update numeric_cols for the filtered data
+        filtered_numeric_cols = filtered_df.select_dtypes(
+            include=[np.number]
+        ).columns.tolist()
+        if target_col in filtered_numeric_cols:
+            filtered_numeric_cols.remove(target_col)
+
+        return _dashboard_update_summary(
+            selected_feature, filtered_df, filtered_numeric_cols, target_col
+        )
 
     if run_server:
         if jupyter_mode:
@@ -3541,7 +4004,7 @@ def create_eda_dashboard_regression(
     return app
 
 
-def create_eda_dashboard_classification(
+def create_eda_dashboard_classification(  # noqa: C901
     df: pd.DataFrame,
     target_col: str,
     port: int = 8050,
@@ -3821,6 +4284,10 @@ def create_eda_dashboard_classification(
                                                 "label": "📈 ECDF Analysis",
                                                 "value": "ecdf",
                                             },
+                                            {
+                                                "label": "🚨 Outlier Detection (IsolationForest)",
+                                                "value": "outlier_detection",
+                                            },
                                         ],
                                         value="target_distribution",
                                         className="dash-dropdown",
@@ -3867,6 +4334,47 @@ def create_eda_dashboard_classification(
                     )
                 ],
             ),
+            # Pandas Query Filter Section
+            html.Div(
+                className="controls-container",
+                children=[
+                    html.Div(
+                        className="control-group",
+                        children=[
+                            html.Label("🔍 Data Filter (Pandas Query Syntax):"),
+                            html.P(
+                                "Filter your data using pandas query syntax. Examples: 'column_name > 100', 'category == \"A\"', 'value >= 50 & value <= 100'",
+                                style={
+                                    "fontSize": "0.9rem",
+                                    "color": "#999",
+                                    "margin": "5px 0 10px 0",
+                                },
+                            ),
+                            dcc.Textarea(
+                                id="pandas-query-input",
+                                placeholder="column_name > 100 & category == 'value'",
+                                style={
+                                    "width": "100%",
+                                    "height": "80px",
+                                    "backgroundColor": "#4a4a4a",
+                                    "color": "#ffffff",
+                                    "border": "1px solid #666",
+                                    "borderRadius": "8px",
+                                    "padding": "10px",
+                                    "fontFamily": "monospace",
+                                    "fontSize": "0.9rem",
+                                    "resize": "vertical",
+                                },
+                                value="",
+                            ),
+                            html.Div(
+                                id="query-status",
+                                style={"marginTop": "10px", "fontSize": "0.9rem"},
+                            ),
+                        ],
+                    )
+                ],
+            ),
             # Graph
             html.Div(
                 className="graph-container",
@@ -3893,29 +4401,111 @@ def create_eda_dashboard_classification(
     )
 
     @app.callback(
-        Output("main-plot", "figure"),
+        [Output("main-plot", "figure"), Output("query-status", "children")],
         [
             Input("plot-type", "value"),
             Input("feature-x-dropdown", "value"),
             Input("feature-y-dropdown", "value"),
+            Input("pandas-query-input", "value"),
         ],
     )
-    def update_plot(plot_type, selected_feature_x, selected_feature_y):
-        return _dashboard_update_classification_plot(
+    def update_plot_and_status(
+        plot_type, selected_feature_x, selected_feature_y, pandas_query
+    ):
+        # Handle pandas query filtering
+        filtered_df = df.copy()
+        status_message = ""
+
+        if pandas_query and pandas_query.strip():
+            if HAS_PANDAS_QUERY:
+                try:
+                    # Use pandas query filtering
+                    filtered_df = _apply_pandas_query_filter(df, pandas_query)
+                    if len(filtered_df) == 0:
+                        status_message = (
+                            "❌ Query returned no results. Showing original data."
+                        )
+                        filtered_df = df.copy()
+                    else:
+                        status_message = f"✅ Query applied successfully. Showing {len(filtered_df):,} of {len(df):,} rows."
+                except Exception as e:
+                    status_message = f"❌ Query Error: {str(e)}"
+                    filtered_df = df.copy()
+            else:
+                status_message = "❌ Pandas query filtering is not available"
+                filtered_df = df.copy()
+        else:
+            if len(filtered_df) > 0:
+                status_message = f"📊 Showing all {len(df):,} rows (no filter applied)."
+
+        # Update numeric_cols and categorical_cols for the filtered data
+        filtered_numeric_cols = filtered_df.select_dtypes(
+            include=[np.number]
+        ).columns.tolist()
+        filtered_categorical_cols = filtered_df.select_dtypes(
+            include=["object", "category"]
+        ).columns.tolist()
+        if target_col in filtered_numeric_cols:
+            filtered_numeric_cols.remove(target_col)
+        if target_col in filtered_categorical_cols:
+            filtered_categorical_cols.remove(target_col)
+
+        # Generate the plot
+        plot_fig = _dashboard_update_classification_plot(
             plot_type,
             selected_feature_x,
             selected_feature_y,
-            df,
-            numeric_cols,
-            categorical_cols,
+            filtered_df,
+            filtered_numeric_cols,
+            filtered_categorical_cols,
             target_col,
         )
 
+        # Create status div
+        status_div = html.Div(
+            status_message,
+            style={
+                "color": (
+                    "#4ecdc4"
+                    if "✅" in status_message
+                    else "#ff6b6b" if "❌" in status_message else "#999"
+                ),
+                "fontWeight": (
+                    "500"
+                    if "✅" in status_message or "❌" in status_message
+                    else "normal"
+                ),
+            },
+        )
+
+        return plot_fig, status_div
+
     @app.callback(
-        Output("summary-stats", "children"), [Input("feature-x-dropdown", "value")]
+        Output("summary-stats", "children"),
+        [Input("feature-x-dropdown", "value"), Input("pandas-query-input", "value")],
     )
-    def update_summary(selected_feature):
-        return _dashboard_update_summary(selected_feature, df, numeric_cols)
+    def update_summary(selected_feature, pandas_query):
+        # Handle pandas query filtering for summary stats
+        filtered_df = df.copy()
+
+        if pandas_query and pandas_query.strip() and HAS_PANDAS_QUERY:
+            try:
+                filtered_df = _apply_pandas_query_filter(df, pandas_query)
+                if len(filtered_df) == 0:
+                    filtered_df = df.copy()
+            except Exception:
+                filtered_df = df.copy()
+
+        # Update numeric_cols for the filtered data
+        filtered_numeric_cols = filtered_df.select_dtypes(
+            include=[np.number]
+        ).columns.tolist()
+        if target_col in filtered_numeric_cols:
+            filtered_numeric_cols.remove(target_col)
+
+        return _dashboard_update_summary(
+            selected_feature, filtered_df, filtered_numeric_cols, target_col
+        )
 
     if run_server:
         if jupyter_mode:
