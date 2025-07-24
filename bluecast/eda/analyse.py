@@ -22,6 +22,14 @@ try:
 except ImportError:
     HAS_ISOLATION_FOREST = False
 
+# For SHAP-based feature importance in outlier detection
+try:
+    import shap
+
+    HAS_SHAP = True
+except ImportError:
+    HAS_SHAP = False
+
 # For pandas query filtering (no external dependencies needed)
 HAS_PANDAS_QUERY = True  # pandas is already a core dependency
 
@@ -2003,9 +2011,12 @@ def _dashboard_update_summary(
     def create_stats_table(col_name, stats_data, is_categorical=False):
         """Helper to create a stats table for a column"""
         if is_categorical:
-            # For categorical data, show value counts
-            return html.Table(
-                [
+            # For categorical data, show value counts with percentages
+            total_count = stats_data.sum()
+            rows = []
+            for value, count in stats_data.head(10).items():
+                percentage = (count / total_count) * 100
+                rows.append(
                     html.Tr(
                         [
                             html.Td(
@@ -2018,7 +2029,7 @@ def _dashboard_update_summary(
                                 },
                             ),
                             html.Td(
-                                str(count),
+                                f"{count} ({percentage:.1f}%)",
                                 style={
                                     "padding": "12px 16px",
                                     "backgroundColor": "#2d2d2d",
@@ -2029,8 +2040,9 @@ def _dashboard_update_summary(
                         ],
                         style={"borderBottom": "1px solid #4a4a4a"},
                     )
-                    for value, count in stats_data.head(10).items()
-                ],
+                )
+            return html.Table(
+                rows,
                 style={"width": "100%", "borderCollapse": "collapse"},
             )
         else:
@@ -2250,6 +2262,11 @@ def _create_outlier_detection_plot(
         outlier_scores = iso_forest.score_samples(X)
 
         # Create subplots
+        shap_title = (
+            "SHAP Feature Importance for Top Outlier"
+            if HAS_SHAP
+            else "Feature Contribution to Top Outlier"
+        )
         fig = make_subplots(
             rows=2,
             cols=2,
@@ -2257,7 +2274,7 @@ def _create_outlier_detection_plot(
                 "Outlier Score Distribution",
                 "Outlier vs Normal Points",
                 "Top 10 Outliers by Score",
-                "Feature Contribution to Top Outlier",
+                shap_title,
             ),
             specs=[[{"type": "xy"}, {"type": "xy"}], [{"type": "xy"}, {"type": "xy"}]],
         )
@@ -2337,32 +2354,95 @@ def _create_outlier_detection_plot(
         fig.update_xaxes(title_text="Outlier Rank", row=2, col=1)
         fig.update_yaxes(title_text="Outlier Score", row=2, col=1)
 
-        # 4. Feature contribution for the top outlier
+        # 4. Feature importance for the top outlier using SHAP
         if len(top_outliers) > 0:
             top_outlier_idx = top_outliers.index[0]
-            top_outlier_features = df.loc[top_outlier_idx, numeric_cols]
-            feature_medians = df[numeric_cols].median()
-            feature_deviations = abs(
-                top_outlier_features - feature_medians
-            ) / feature_medians.replace(0, 1)
 
-            # Sort by deviation magnitude
-            feature_deviations_sorted = feature_deviations.sort_values(ascending=False)
+            if HAS_SHAP:
+                try:
+                    # Use SHAP to explain feature importance for the top outlier
+                    explainer = shap.Explainer(iso_forest, X.sample(min(100, len(X))))
+                    top_outlier_data = X.loc[[top_outlier_idx]]
+                    shap_values = explainer(top_outlier_data)
 
-            fig.add_trace(
-                go.Bar(
-                    x=feature_deviations_sorted.values[:10],  # Top 10 features
-                    y=feature_deviations_sorted.index[:10],
-                    orientation="h",
-                    marker_color="#a55eea",
-                    name="Feature Deviations",
-                ),
-                row=2,
-                col=2,
-            )
+                    # Get SHAP values for the top outlier
+                    feature_importance = pd.Series(
+                        abs(shap_values.values[0]), index=numeric_cols
+                    ).sort_values(ascending=False)
 
-            fig.update_xaxes(title_text="Relative Deviation from Median", row=2, col=2)
-            fig.update_yaxes(title_text="Features", row=2, col=2)
+                    fig.add_trace(
+                        go.Bar(
+                            x=feature_importance.values[:10],  # Top 10 features
+                            y=feature_importance.index[:10],
+                            orientation="h",
+                            marker_color="#a55eea",
+                            name="SHAP Feature Importance",
+                        ),
+                        row=2,
+                        col=2,
+                    )
+
+                    fig.update_xaxes(
+                        title_text="SHAP Value (|importance|)", row=2, col=2
+                    )
+                    fig.update_yaxes(title_text="Features", row=2, col=2)
+
+                except Exception:
+                    # Fallback to relative deviation if SHAP fails
+                    top_outlier_features = df.loc[top_outlier_idx, numeric_cols]
+                    feature_medians = df[numeric_cols].median()
+                    feature_deviations = abs(
+                        top_outlier_features - feature_medians
+                    ) / feature_medians.replace(0, 1)
+                    feature_deviations_sorted = feature_deviations.sort_values(
+                        ascending=False
+                    )
+
+                    fig.add_trace(
+                        go.Bar(
+                            x=feature_deviations_sorted.values[:10],
+                            y=feature_deviations_sorted.index[:10],
+                            orientation="h",
+                            marker_color="#a55eea",
+                            name="Feature Deviations",
+                        ),
+                        row=2,
+                        col=2,
+                    )
+
+                    fig.update_xaxes(
+                        title_text="Relative Deviation (SHAP failed)", row=2, col=2
+                    )
+                    fig.update_yaxes(title_text="Features", row=2, col=2)
+            else:
+                # Fallback to relative deviation if SHAP not available
+                top_outlier_features = df.loc[top_outlier_idx, numeric_cols]
+                feature_medians = df[numeric_cols].median()
+                feature_deviations = abs(
+                    top_outlier_features - feature_medians
+                ) / feature_medians.replace(0, 1)
+                feature_deviations_sorted = feature_deviations.sort_values(
+                    ascending=False
+                )
+
+                fig.add_trace(
+                    go.Bar(
+                        x=feature_deviations_sorted.values[:10],
+                        y=feature_deviations_sorted.index[:10],
+                        orientation="h",
+                        marker_color="#a55eea",
+                        name="Feature Deviations",
+                    ),
+                    row=2,
+                    col=2,
+                )
+
+                fig.update_xaxes(
+                    title_text="Relative Deviation (install SHAP for better insights)",
+                    row=2,
+                    col=2,
+                )
+                fig.update_yaxes(title_text="Features", row=2, col=2)
 
         # Update layout
         fig.update_layout(**dark_theme_layout)
