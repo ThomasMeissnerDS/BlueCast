@@ -33,6 +33,7 @@ from bluecast.evaluation.shap_values import (
 )
 from bluecast.experimentation.tracking import ExperimentTracker
 from bluecast.general_utils.general_utils import save_out_of_fold_data
+from bluecast.ml_modelling.catboost_regression import CatboostModelRegression
 from bluecast.ml_modelling.xgboost_regression import XgboostModelRegression
 from bluecast.preprocessing.category_encoder_orchestration import (
     CategoryEncoderOrchestrator,
@@ -420,6 +421,9 @@ class BlueCastRegression:
             self.ml_model.custom_in_fold_preprocessor=self.custom_in_fold_preprocessor
             self.ml_model.cat_columns=[col for col in self.feat_type_detector.cat_columns if col != self.target_column]
             self.ml_model.single_fold_eval_metric_func=self.single_fold_eval_metric_func
+            self.ml_model.conf_training=self.conf_training
+            if isinstance(self.ml_model, CatboostModelRegression):
+                self.ml_model.conf_params_catboost=self.conf_params_xgboost
         
         self.ml_model.fit(x_train, x_test, y_train, y_test)
 
