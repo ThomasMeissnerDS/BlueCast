@@ -284,7 +284,7 @@ class BlueCast:
         if self.feat_type_detector.cat_columns:
             if self.target_column in self.feat_type_detector.cat_columns:
                 self.target_label_encoder = TargetLabelEncoder()
-                df.loc[:, self.target_column] = (
+                df[[self.target_column]] = (
                     self.target_label_encoder.fit_transform_target_labels(
                         df.loc[:, self.target_column]
                     )

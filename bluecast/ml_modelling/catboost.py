@@ -268,8 +268,6 @@ class CatboostModel(CatboostBaseModel):
                     random_state=self.conf_training.global_random_state,
                 )
                 fold_scores = []
-                logging.info(f"Target train: {y_train}")
-                logging.info(f"Type of target train: {type(y_train)}")
                 for train_index, valid_index in skf.split(x_train, y_train):
                     X_trn, X_val = x_train.iloc[train_index], x_train.iloc[valid_index]
                     y_trn, y_val = y_train.iloc[train_index], y_train.iloc[valid_index]
