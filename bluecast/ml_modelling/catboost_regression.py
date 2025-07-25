@@ -128,6 +128,7 @@ class CatboostModelRegression(CatboostBaseModel):
         if test_pool is not None and not test_pool.is_empty():
             self.model.fit(
                 train_pool,
+                cat_features=self.cat_columns,
                 eval_set=test_pool,
                 use_best_model=bool(early_stopping_dict),
                 verbose=self.conf_training.show_detailed_tuning_logs,
@@ -135,6 +136,7 @@ class CatboostModelRegression(CatboostBaseModel):
         else:
             self.model.fit(
                 train_pool,
+                cat_features=self.cat_columns,
                 use_best_model=False,
                 verbose=self.conf_training.show_detailed_tuning_logs,
             )

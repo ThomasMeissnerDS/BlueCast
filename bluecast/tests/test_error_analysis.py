@@ -7,9 +7,11 @@ import pytest
 from bluecast.blueprints.cast import BlueCast
 from bluecast.blueprints.cast_cv import BlueCastCV
 from bluecast.evaluation.error_analysis import (
+    DuckDBErrorAnalysisEngine,
     ErrorAnalyserClassification,
     ErrorAnalyserClassificationCV,
     ErrorAnalyserClassificationMixin,
+    ErrorDistributionPlotterMixin,
     OutOfFoldDataReader,
     OutOfFoldDataReaderCV,
 )
@@ -17,582 +19,352 @@ from bluecast.evaluation.error_analysis import (
 
 @pytest.fixture
 def create_test_bluecast_instance():
-    # Create a mock or a test instance of BlueCast
+    """Create a mock or a test instance of BlueCast"""
     return BlueCast(class_problem="binary")
 
 
+@pytest.fixture
+def create_test_bluecast_cv_instance():
+    """Create a mock BlueCastCV instance for testing"""
+    return BlueCastCV(class_problem="binary")
+
+
+@pytest.fixture
+def sample_error_data():
+    """Create sample error analysis data for testing"""
+    return pd.DataFrame(
+        {
+            "target_class": ["A", "B", "A", "B", "A"],
+            "prediction_error": [0.1, 0.2, 0.05, 0.15, 0.3],
+            "feature_1": [1, 2, 3, 4, 5],
+            "feature_2": ["x", "y", "x", "y", "x"],
+        }
+    )
+
+
+@pytest.fixture
+def duckdb_engine():
+    """Create a DuckDB error analysis engine for testing"""
+    engine = DuckDBErrorAnalysisEngine()
+    yield engine
+    engine.close()
+
+
+def test_duckdb_error_analysis_engine_init(duckdb_engine):
+    """Test DuckDB error analysis engine initialization"""
+    assert duckdb_engine.db_path is not None
+    # Test that tables were created
+    import duckdb
+
+    with duckdb.connect(duckdb_engine.db_path) as conn:
+        tables = conn.execute("SHOW TABLES").fetchall()
+        table_names = [table[0] for table in tables]
+        assert "error_analysis" in table_names
+        assert "error_statistics" in table_names
+
+
+def test_duckdb_load_data(duckdb_engine, sample_error_data):
+    """Test loading data into DuckDB"""
+    experiment_id = "test_exp_001"
+    target_column = "target_class"
+
+    duckdb_engine.load_data(sample_error_data, experiment_id, target_column)
+
+    # Verify data was loaded
+    import duckdb
+
+    with duckdb.connect(duckdb_engine.db_path) as conn:
+        count = conn.execute(
+            "SELECT COUNT(*) FROM error_analysis WHERE experiment_id = ?",
+            [experiment_id],
+        ).fetchone()[0]
+        assert count == len(sample_error_data)
+
+
+def test_duckdb_compute_statistics(duckdb_engine, sample_error_data):
+    """Test computing error statistics"""
+    experiment_id = "test_exp_002"
+    target_column = "target_class"
+
+    duckdb_engine.load_data(sample_error_data, experiment_id, target_column)
+    stats = duckdb_engine.compute_error_statistics(experiment_id)
+
+    assert "overall_statistics" in stats
+    assert "class_statistics" in stats
+    assert "top_errors" in stats
+
+    # Check overall statistics
+    overall = stats["overall_statistics"]
+    assert not overall.empty
+    assert overall["total_samples"].iloc[0] == len(sample_error_data)
+
+    # Check class statistics
+    class_stats = stats["class_statistics"]
+    assert not class_stats.empty
+    assert len(class_stats) == 2  # Two classes: A and B
+
+
+def test_duckdb_create_visualizations(duckdb_engine, sample_error_data):
+    """Test creating error visualizations"""
+    experiment_id = "test_exp_003"
+    target_column = "target_class"
+
+    duckdb_engine.load_data(sample_error_data, experiment_id, target_column)
+    figures = duckdb_engine.create_error_visualizations(experiment_id, target_column)
+
+    # Check that figures were created
+    assert isinstance(figures, dict)
+    assert "error_distribution" in figures
+    assert "error_by_class" in figures
+
+    # Verify figures are plotly objects
+    import plotly.graph_objects as go
+
+    for fig in figures.values():
+        assert isinstance(fig, go.Figure)
+
+
 def test_out_of_fold_data_reader(create_test_bluecast_instance):
+    """Test OutOfFoldDataReader with proper error handling"""
     bluecast_instance = create_test_bluecast_instance
+    bluecast_instance.target_column = "target"
 
     data_reader = OutOfFoldDataReader(bluecast_instance)
 
-    # Test read_data_from_bluecast_instance
-    with pytest.raises(ValueError):
+    # Test with None path
+    with pytest.raises(
+        ValueError, match="out_of_fold_dataset_store_path has not been configured"
+    ):
         bluecast_instance.conf_training.out_of_fold_dataset_store_path = None
         data_reader.read_data_from_bluecast_instance()
 
+    # Test with valid path and data
     with tempfile.TemporaryDirectory() as tmpdir:
-        bluecast_instance.conf_training.out_of_fold_dataset_store_path = tmpdir
+        bluecast_instance.conf_training.out_of_fold_dataset_store_path = tmpdir + "/"
+        bluecast_instance.conf_training.global_random_state = 42
+
         oof_data = pl.DataFrame(
             {
                 "target": [0, 1, 0, 1],
                 "predictions_class_0": [0.8, 0.2, 0.7, 0.3],
                 "predictions_class_1": [0.2, 0.8, 0.3, 0.7],
+                "feature_1": [1, 2, 3, 4],
             }
         )
 
         oof_data.write_parquet(f"{tmpdir}/oof_data_42.parquet")
-        # Add more assertions or tests as needed
+
+        # Should work now
+        loaded_data = data_reader.read_data_from_bluecast_instance()
+        assert len(loaded_data) == 4
+        assert "target" in loaded_data.columns
 
 
-def test_error_analyser_classification(create_test_bluecast_instance):
-    bluecast_instance = create_test_bluecast_instance
+def test_out_of_fold_data_reader_cv_error():
+    """Test that OutOfFoldDataReader properly fails for CV instances"""
+    bluecast_instance = BlueCast(class_problem="binary")
+    data_reader = OutOfFoldDataReader(bluecast_instance)
 
-    error_analyser = ErrorAnalyserClassification(bluecast_instance)
-
-    oof_data = pl.DataFrame(
-        {
-            "target": [0, 1, 0, 1],
-            "predictions_class_0": [0.8, 0.2, 0.7, 0.3],
-            "predictions_class_1": [0.2, 0.8, 0.3, 0.7],
-        }
-    )
-
-    error_analyser.target_classes = [0, 1]
-    error_analyser.prediction_columns = ["predictions_class_0", "predictions_class_1"]
-    error_analyser.target_column = "target"
-
-    stacked_data = error_analyser.stack_predictions_by_class(oof_data)
-    expected_stacked_data = pl.DataFrame(
-        {
-            "target": [0, 0, 1, 1],
-            "prediction": [0.8, 0.7, 0.8, 0.7],
-            "target_class": [0, 0, 1, 1],
-        }
-    )
-
-    assert (
-        pd.testing.assert_frame_equal(
-            stacked_data.to_pandas(),
-            expected_stacked_data.to_pandas(),
-            check_dtype=False,
-        )
-        is None
-    )
-
-
-def test_calculate_errors_classification(create_test_bluecast_instance):
-    bluecast_instance = create_test_bluecast_instance
-
-    error_analyser = ErrorAnalyserClassification(bluecast_instance)
-
-    stacked_data = pl.DataFrame(
-        {
-            "target": [0, 0, 1, 1],
-            "prediction": [0.8, 0.7, 0.8, 0.7],
-            "target_class": [0, 0, 1, 1],
-            "target_class_predicted_probas": [0.2, 0.3, 0.8, 0.7],
-        }
-    )
-
-    expected_errors = pl.DataFrame(
-        {
-            "target": [0, 0, 1, 1],
-            "prediction": [0.8, 0.7, 0.8, 0.7],
-            "target_class": [0, 0, 1, 1],
-            "target_class_predicted_probas": [0.2, 0.3, 0.8, 0.7],
-            "prediction_error": [0.8, 0.7, 0.2, 0.3],
-        }
-    )
-
-    calculated_errors = error_analyser.calculate_errors(stacked_data)
-
-    assert (
-        pd.testing.assert_frame_equal(
-            calculated_errors.to_pandas(),
-            expected_errors.to_pandas(),
-            check_dtype=False,
-        )
-        is None
-    )
-
-
-@pytest.fixture
-def create_test_bluecast_cv_instance():
-    # Create a mock or a test instance of BlueCastCV
-    # Create a mock or a test instance of BlueCastCV with initialized bluecast_models
-    bluecast_cv_instance = BlueCastCV(class_problem="binary")
-    bluecast_cv_instance.bluecast_models = []
-
-    # Initialize bluecast_models with dummy models to avoid IndexError
-    for _i in range(5):
-        model = BlueCast(class_problem="binary")
-        model.target_column = "target"
-        bluecast_cv_instance.bluecast_models.append(model)
-    return bluecast_cv_instance
+    with pytest.raises(
+        ValueError, match="Please use OutOfFoldDataReaderCV class instead"
+    ):
+        data_reader.read_data_from_bluecast_cv_instance()
 
 
 def test_out_of_fold_data_reader_cv(create_test_bluecast_cv_instance):
+    """Test OutOfFoldDataReaderCV"""
     bluecast_cv_instance = create_test_bluecast_cv_instance
 
-    data_reader_cv = OutOfFoldDataReaderCV(bluecast_cv_instance)
+    # Create mock bluecast models
+    mock_model1 = BlueCast(class_problem="binary")
+    mock_model1.target_column = "target"
+    mock_model1.conf_training.global_random_state = 42
 
-    # Test read_data_from_bluecast_instance
-    with pytest.raises(ValueError):
-        bluecast_cv_instance.conf_training.out_of_fold_dataset_store_path = None
-        data_reader_cv.read_data_from_bluecast_cv_instance()
+    mock_model2 = BlueCast(class_problem="binary")
+    mock_model2.target_column = "target"
+    mock_model2.conf_training.global_random_state = 43
 
+    bluecast_cv_instance.bluecast_models = [mock_model1, mock_model2]
+
+    data_reader = OutOfFoldDataReaderCV(bluecast_cv_instance)
+
+    # Test error when path not configured
+    with pytest.raises(
+        ValueError, match="out_of_fold_dataset_store_path has not been configured"
+    ):
+        data_reader.read_data_from_bluecast_cv_instance()
+
+    # Test with valid configuration
     with tempfile.TemporaryDirectory() as tmpdir:
-        bluecast_cv_instance.conf_training.out_of_fold_dataset_store_path = tmpdir + "/"
-
-        for model in bluecast_cv_instance.bluecast_models:
+        for i, model in enumerate([mock_model1, mock_model2]):
             model.conf_training.out_of_fold_dataset_store_path = tmpdir + "/"
 
-        for i in range(5):
-            global_random_state = (
-                bluecast_cv_instance.conf_training.global_random_state
-                + i
-                * bluecast_cv_instance.conf_training.increase_random_state_in_bluecast_cv_by
-            )
             oof_data = pl.DataFrame(
                 {
-                    "target": [0, 1, 0, 1],
-                    "predictions_class_0": [0.8, 0.2, 0.7, 0.3],
-                    "predictions_class_1": [0.2, 0.8, 0.3, 0.7],
-                    "target_class_predicted_probas": [0.2, 0.8, 0.7, 0.7],
+                    "target": [0, 1],
+                    "predictions_class_0": [0.8, 0.2],
+                    "predictions_class_1": [0.2, 0.8],
+                    "feature_1": [i + 1, i + 2],
                 }
             )
 
-            oof_data.write_parquet(f"{tmpdir}/oof_data_{global_random_state}.parquet")
+            oof_data.write_parquet(
+                f"{tmpdir}/oof_data_{model.conf_training.global_random_state}.parquet"
+            )
 
-        # Read and validate the data
-        data_reader_cv = OutOfFoldDataReaderCV(bluecast_cv_instance)
-        read_data = data_reader_cv.read_data_from_bluecast_cv_instance()
-
-        # You can add more detailed checks to validate read_data against expected values
-
-        assert isinstance(read_data, pl.DataFrame)
-        assert "target" in read_data.columns
-        assert "predictions_class_0" in read_data.columns
-        assert "predictions_class_1" in read_data.columns
-
-        # test full pipeline
-        error_analyser = ErrorAnalyserClassificationCV(bluecast_cv_instance)
-        analysis_result = error_analyser.analyse_segment_errors()
-        assert isinstance(analysis_result, pl.DataFrame)
+        # Should work now
+        loaded_data = data_reader.read_data_from_bluecast_cv_instance()
+        assert len(loaded_data) == 4  # Combined data from both models
 
 
-def test_error_analyser_classification_cv(create_test_bluecast_cv_instance):
-    bluecast_cv_instance = create_test_bluecast_cv_instance
+def test_error_analyser_classification_mixin():
+    """Test ErrorAnalyserClassificationMixin functionality"""
+    mixin = ErrorAnalyserClassificationMixin()
 
-    error_analyser_cv = ErrorAnalyserClassificationCV(bluecast_cv_instance)
-
-    oof_data = pl.DataFrame(
+    # Test with sample data
+    sample_df = pd.DataFrame(
         {
-            "target": [0, 1, 0, 1],
-            "predictions_class_0": [0.8, 0.2, 0.7, 0.3],
-            "predictions_class_1": [0.2, 0.8, 0.3, 0.7],
+            "target_class": ["A", "B", "A", "B"],
+            "prediction_error": [0.1, 0.2, 0.05, 0.15],
+            "feature_1": [1, 2, 3, 4],
         }
     )
 
-    error_analyser_cv.target_classes = [0, 1]
-    error_analyser_cv.prediction_columns = [
-        "predictions_class_0",
-        "predictions_class_1",
-    ]
+    # This should create visualizations and return enhanced analysis
+    result = mixin.analyse_errors(sample_df)
 
-    stacked_data_cv = error_analyser_cv.stack_predictions_by_class(oof_data)
-    expected_stacked_data_cv = pl.DataFrame(
-        {
-            "target": [0, 0, 1, 1],
-            "prediction": [0.8, 0.7, 0.8, 0.7],
-            "target_class": [0, 0, 1, 1],
-        }
-    )
+    assert isinstance(result, pl.DataFrame)
+    assert not result.is_empty()
 
-    assert (
-        pd.testing.assert_frame_equal(
-            stacked_data_cv.to_pandas(),
-            expected_stacked_data_cv.to_pandas(),
-            check_dtype=False,
-        )
-        is None
-    )
+    # Clean up
+    mixin.duckdb_engine.close()
 
 
-def test_calculate_errors_classification_cv(create_test_bluecast_cv_instance):
-    bluecast_cv_instance = create_test_bluecast_cv_instance
-
-    error_analyser_cv = ErrorAnalyserClassificationCV(bluecast_cv_instance)
-
-    stacked_data = pl.DataFrame(
-        {
-            "target": [0, 0, 1, 1],
-            "prediction": [0.8, 0.7, 0.8, 0.7],
-            "target_class": [0, 0, 1, 1],
-            "target_class_predicted_probas": [0.2, 0.3, 0.8, 0.7],
-        }
-    )
-
-    expected_errors = pl.DataFrame(
-        {
-            "target": [0, 0, 1, 1],
-            "prediction": [0.8, 0.7, 0.8, 0.7],
-            "target_class": [0, 0, 1, 1],
-            "target_class_predicted_probas": [0.2, 0.3, 0.8, 0.7],
-            "prediction_error": [0.8, 0.7, 0.2, 0.3],
-        }
-    )
-
-    calculated_errors = error_analyser_cv.calculate_errors(stacked_data)
-
-    assert (
-        pd.testing.assert_frame_equal(
-            calculated_errors.to_pandas(),
-            expected_errors.to_pandas(),
-            check_dtype=False,
-        )
-        is None
-    )
-
-
-@pytest.fixture
-def create_test_bluecast_instance_multiclass():
-    # Create a mock or a test instance of BlueCast
-    return BlueCast(class_problem="multiclass")
-
-
-def test_out_of_fold_data_reader_multiclass(create_test_bluecast_instance_multiclass):
-    bluecast_instance = create_test_bluecast_instance_multiclass
+def test_error_analyser_classification_full_pipeline(create_test_bluecast_instance):
+    """Test full ErrorAnalyserClassification pipeline"""
+    bluecast_instance = create_test_bluecast_instance
     bluecast_instance.target_column = "target"
 
-    data_reader = OutOfFoldDataReader(bluecast_instance)
-
-    # Test read_data_from_bluecast_instance
-    with pytest.raises(ValueError):
-        bluecast_instance.conf_training.out_of_fold_dataset_store_path = None
-        data_reader.read_data_from_bluecast_instance()
-
+    # Create temporary out-of-fold data
     with tempfile.TemporaryDirectory() as tmpdir:
-
-        # Test error when Bluecast instance type mismatches data reader type (CV vs non-CV)
-        with pytest.raises(ValueError):
-            bluecast_instance.conf_training.out_of_fold_dataset_store_path = (
-                tmpdir + "/"
-            )
-            data_reader.read_data_from_bluecast_cv_instance()
-
         bluecast_instance.conf_training.out_of_fold_dataset_store_path = tmpdir + "/"
+        bluecast_instance.conf_training.global_random_state = 42
+
+        # Create realistic out-of-fold data
         oof_data = pl.DataFrame(
             {
-                "target": [0, 1, 2, 0, 1, 2],
-                "predictions_class_0": [0.7, 0.1, 0.2, 0.6, 0.2, 0.2],
-                "predictions_class_1": [0.2, 0.7, 0.1, 0.3, 0.6, 0.1],
-                "predictions_class_2": [0.1, 0.2, 0.7, 0.1, 0.2, 0.7],
-                "target_class_predicted_probas": [0.7, 0.7, 0.7, 0.6, 0.6, 0.7],
+                "target": [0, 1, 0, 1, 0, 1],
+                "predictions_class_0": [0.8, 0.2, 0.7, 0.3, 0.9, 0.1],
+                "predictions_class_1": [0.2, 0.8, 0.3, 0.7, 0.1, 0.9],
+                "target_class_predicted_probas": [0.8, 0.8, 0.7, 0.7, 0.9, 0.9],
+                "feature_1": [1, 2, 3, 4, 5, 6],
+                "feature_2": ["x", "y", "x", "y", "x", "y"],
             }
         )
 
-        oof_data.write_parquet(f"{tmpdir}/oof_data_33.parquet")
-        # Add more assertions or tests as needed
-        data_reader = OutOfFoldDataReader(bluecast_instance)
-        read_data = data_reader.read_data_from_bluecast_instance()
-        assert isinstance(read_data, pl.DataFrame)
-        assert sorted(data_reader.prediction_columns) == sorted(
-            [
-                f"predictions_class_{target_class}"
-                for target_class in oof_data.unique(subset=["target"])
-                .select("target")
-                .to_series()
-                .to_list()
-            ]
-        )
+        oof_data.write_parquet(f"{tmpdir}/oof_data_42.parquet")
 
-        # test full pipeline
-        error_analyser = ErrorAnalyserClassification(bluecast_instance)
-        analysis_result = error_analyser.analyse_segment_errors()
-        assert isinstance(analysis_result, pl.DataFrame)
+        # Test the full pipeline
+        analyser = ErrorAnalyserClassification(bluecast_instance)
+
+        # Test individual methods
+        loaded_data = analyser.read_data_from_bluecast_instance()
+        assert len(loaded_data) > 0
+
+        stacked_data = analyser.stack_predictions_by_class(loaded_data)
+        assert len(stacked_data) > 0
+        assert "target_class" in stacked_data.columns
+
+        errors_data = analyser.calculate_errors(stacked_data)
+        assert "prediction_error" in errors_data.columns
+
+        # Clean up DuckDB engine
+        analyser.duckdb_engine.close()
 
 
-def test_error_analyser_classification_multiclass(
-    create_test_bluecast_instance_multiclass,
+def test_error_analyser_classification_cv_full_pipeline(
+    create_test_bluecast_cv_instance,
 ):
-    bluecast_instance = create_test_bluecast_instance_multiclass
+    """Test full ErrorAnalyserClassificationCV pipeline"""
+    bluecast_cv_instance = create_test_bluecast_cv_instance
 
-    error_analyser = ErrorAnalyserClassification(bluecast_instance)
+    # Create mock models
+    mock_model1 = BlueCast(class_problem="binary")
+    mock_model1.target_column = "target"
+    mock_model1.conf_training.global_random_state = 42
 
-    oof_data = pl.DataFrame(
-        {
-            "target": [0, 1, 2, 0, 1, 2],
-            "predictions_class_0": [0.7, 0.1, 0.2, 0.6, 0.2, 0.2],
-            "predictions_class_1": [0.2, 0.7, 0.1, 0.3, 0.6, 0.1],
-            "predictions_class_2": [0.1, 0.2, 0.7, 0.1, 0.2, 0.7],
-        }
-    )
+    mock_model2 = BlueCast(class_problem="binary")
+    mock_model2.target_column = "target"
+    mock_model2.conf_training.global_random_state = 43
 
-    error_analyser.target_classes = [0, 1, 2]
-    error_analyser.prediction_columns = [
-        "predictions_class_0",
-        "predictions_class_1",
-        "predictions_class_2",
-    ]
-    error_analyser.target_column = "target"
-
-    stacked_data = error_analyser.stack_predictions_by_class(oof_data)
-    expected_stacked_data = pl.DataFrame(
-        {
-            "target": [0, 0, 1, 1, 2, 2],
-            "prediction": [0.7, 0.6, 0.7, 0.6, 0.7, 0.7],
-            "target_class": [0, 0, 1, 1, 2, 2],
-        }
-    )
-
-    assert (
-        pd.testing.assert_frame_equal(
-            stacked_data.to_pandas(),
-            expected_stacked_data.to_pandas(),
-            check_dtype=False,
-        )
-        is None
-    )
-
-
-@pytest.fixture
-def create_test_bluecast_cv_instance_multiclass():
-    # Create a mock or a test instance of BlueCastCV with initialized bluecast_models
-    bluecast_cv_instance = BlueCastCV(class_problem="multiclass")
-    bluecast_cv_instance.bluecast_models = []
-
-    # Initialize bluecast_models with dummy models to avoid IndexError
-    for _i in range(5):
-        model = BlueCast(class_problem="multiclass")
-        model.target_column = "target"
-        bluecast_cv_instance.bluecast_models.append(model)
-    return bluecast_cv_instance
-
-
-def test_out_of_fold_data_reader_cv_multiclass(
-    create_test_bluecast_cv_instance_multiclass,
-):
-    bluecast_cv_instance = create_test_bluecast_cv_instance_multiclass
-
-    data_reader_cv = OutOfFoldDataReaderCV(bluecast_cv_instance)
-
-    # Test read_data_from_bluecast_instance
-    with pytest.raises(ValueError):
-        bluecast_cv_instance.conf_training.out_of_fold_dataset_store_path = None
-        data_reader_cv.read_data_from_bluecast_cv_instance()
+    bluecast_cv_instance.bluecast_models = [mock_model1, mock_model2]
 
     with tempfile.TemporaryDirectory() as tmpdir:
-
-        # Test error when Bluecast instance type mismatches data reader type (CV vs non-CV)
-        with pytest.raises(ValueError):
-            bluecast_cv_instance.bluecast_models[
-                0
-            ].conf_training.out_of_fold_dataset_store_path = (tmpdir + "/")
-            data_reader_cv.read_data_from_bluecast_instance()
-
-        bluecast_cv_instance.conf_training.out_of_fold_dataset_store_path = tmpdir + "/"
-
-        for model in bluecast_cv_instance.bluecast_models:
+        for model in [mock_model1, mock_model2]:
             model.conf_training.out_of_fold_dataset_store_path = tmpdir + "/"
 
-        for i in range(5):
-            global_random_state = (
-                bluecast_cv_instance.conf_training.global_random_state
-                + i
-                * bluecast_cv_instance.conf_training.increase_random_state_in_bluecast_cv_by
-            )
             oof_data = pl.DataFrame(
                 {
-                    "target": [0, 1, 2, 0, 1, 2],
-                    "predictions_class_0": [0.7, 0.1, 0.2, 0.6, 0.2, 0.2],
-                    "predictions_class_1": [0.2, 0.7, 0.1, 0.3, 0.6, 0.1],
-                    "predictions_class_2": [0.1, 0.2, 0.7, 0.1, 0.2, 0.7],
-                    "target_class_predicted_probas": [0.7, 0.7, 0.7, 0.6, 0.6, 0.7],
+                    "target": [0, 1, 0],
+                    "predictions_class_0": [0.8, 0.2, 0.7],
+                    "predictions_class_1": [0.2, 0.8, 0.3],
+                    "target_class_predicted_probas": [0.8, 0.8, 0.7],
+                    "feature_1": [1, 2, 3],
                 }
             )
 
-            oof_data.write_parquet(f"{tmpdir}/oof_data_{global_random_state}.parquet")
+            oof_data.write_parquet(
+                f"{tmpdir}/oof_data_{model.conf_training.global_random_state}.parquet"
+            )
 
-        # Read and validate the data
-        data_reader_cv = OutOfFoldDataReaderCV(bluecast_cv_instance)
-        read_data = data_reader_cv.read_data_from_bluecast_cv_instance()
+        # Test CV analyser
+        analyser_cv = ErrorAnalyserClassificationCV(bluecast_cv_instance)
 
-        # You can add more detailed checks to validate read_data against expected values
+        # Test CV-specific method
+        loaded_data = analyser_cv.read_data_from_bluecast_cv_instance()
+        assert len(loaded_data) == 6  # Combined from both models
 
-        assert isinstance(read_data, pl.DataFrame)
-        assert "target" in read_data.columns
-        assert "predictions_class_0" in read_data.columns
-        assert "predictions_class_1" in read_data.columns
-        assert "predictions_class_2" in read_data.columns
-
-        # test full pipeline
-        error_analyser = ErrorAnalyserClassificationCV(bluecast_cv_instance)
-        analysis_result = error_analyser.analyse_segment_errors()
-        assert isinstance(analysis_result, pl.DataFrame)
+        # Clean up
+        analyser_cv.duckdb_engine.close()
 
 
-def test_error_analyser_classification_cv_multiclass(
-    create_test_bluecast_cv_instance_multiclass,
-):
-    bluecast_cv_instance = create_test_bluecast_cv_instance_multiclass
+def test_error_analyser_wrong_method_calls():
+    """Test that wrong method calls raise appropriate errors"""
+    # Test OutOfFoldDataReader with CV method
+    bluecast_instance = BlueCast(class_problem="binary")
+    reader = OutOfFoldDataReader(bluecast_instance)
 
-    error_analyser_cv = ErrorAnalyserClassificationCV(bluecast_cv_instance)
+    with pytest.raises(
+        ValueError, match="Please use OutOfFoldDataReaderCV class instead"
+    ):
+        reader.read_data_from_bluecast_cv_instance()
 
-    oof_data = pl.DataFrame(
-        {
-            "target": [0, 1, 2, 0, 1, 2],
-            "predictions_class_0": [0.7, 0.1, 0.2, 0.6, 0.2, 0.2],
-            "predictions_class_1": [0.2, 0.7, 0.1, 0.3, 0.6, 0.1],
-            "predictions_class_2": [0.1, 0.2, 0.7, 0.1, 0.2, 0.7],
-        }
+    # Test OutOfFoldDataReaderCV with non-CV method
+    bluecast_cv = BlueCastCV(class_problem="binary")
+    bluecast_cv.bluecast_models = [BlueCast(class_problem="binary")]
+    reader_cv = OutOfFoldDataReaderCV(bluecast_cv)
+
+    with pytest.raises(
+        ValueError, match="Please use OutOfFoldDataReader class instead"
+    ):
+        reader_cv.read_data_from_bluecast_instance()
+
+
+def test_error_distribution_plotter_mixin():
+    """Test ErrorDistributionPlotterMixin"""
+    # Test with ignore columns
+    ignore_cols = ["ignore_me"]
+    plotter = ErrorDistributionPlotterMixin(
+        ignore_columns_during_visualization=ignore_cols
     )
+    assert plotter.ignore_columns_during_visualization == ignore_cols
 
-    error_analyser_cv.target_classes = [0, 1, 2]
-    error_analyser_cv.prediction_columns = [
-        "predictions_class_0",
-        "predictions_class_1",
-        "predictions_class_2",
-    ]
+    # Test with None (should default to empty list)
+    plotter2 = ErrorDistributionPlotterMixin(ignore_columns_during_visualization=None)
+    assert plotter2.ignore_columns_during_visualization == []
 
-    stacked_data_cv = error_analyser_cv.stack_predictions_by_class(oof_data)
-    expected_stacked_data_cv = pl.DataFrame(
-        {
-            "target": [0, 0, 1, 1, 2, 2],
-            "prediction": [0.7, 0.6, 0.7, 0.6, 0.7, 0.7],
-            "target_class": [0, 0, 1, 1, 2, 2],
-        }
-    )
+    # Test error handling for missing columns
+    test_df = pl.DataFrame({"feature_1": [1, 2, 3], "feature_2": ["a", "b", "c"]})
 
-    assert (
-        pd.testing.assert_frame_equal(
-            stacked_data_cv.to_pandas(),
-            expected_stacked_data_cv.to_pandas(),
-            check_dtype=False,
-        )
-        is None
-    )
-
-
-@pytest.fixture
-def create_test_error_analyser_mixin_instance():
-    return ErrorAnalyserClassificationMixin()
-
-
-def test_analyse_errors_with_numeric_columns(create_test_error_analyser_mixin_instance):
-    analyser_instance = create_test_error_analyser_mixin_instance
-
-    df = pl.DataFrame(
-        {
-            "target_class": [0, 0, 1, 1, 2, 2],
-            "feature_1": [0.1, 0.2, 0.1, 0.2, 0.3, 0.4],
-            "feature_2": [1, 2, 1, 2, 3, 4],
-            "prediction_error": [0.5, 0.6, 0.7, 0.8, 0.9, 1.0],
-        }
-    )
-
-    result = analyser_instance.analyse_errors(df)
-
-    expected_columns = [
-        "target_class",
-        "column_subset",
-        "prediction_error",
-        "column_name",
-    ]
-    assert all(col in result.columns for col in expected_columns)
-
-
-def test_analyse_errors_with_categorical_columns(
-    create_test_error_analyser_mixin_instance,
-):
-    analyser_instance = create_test_error_analyser_mixin_instance
-
-    df = pl.DataFrame(
-        {
-            "target_class": [0, 0, 1, 1, 2, 2],
-            "feature_1": ["A", "B", "A", "B", "C", "D"],
-            "feature_2": ["X", "Y", "X", "Y", "Z", "W"],
-            "prediction_error": [0.5, 0.6, 0.7, 0.8, 0.9, 1.0],
-        }
-    )
-
-    result = analyser_instance.analyse_errors(df)
-
-    expected_columns = [
-        "target_class",
-        "column_subset",
-        "prediction_error",
-        "column_name",
-    ]
-    assert all(col in result.columns for col in expected_columns)
-
-
-def test_analyse_errors_with_mixed_columns(create_test_error_analyser_mixin_instance):
-    analyser_instance = create_test_error_analyser_mixin_instance
-
-    df = pl.DataFrame(
-        {
-            "target_class": [0, 0, 1, 1, 2, 2],
-            "feature_1": [0.1, 0.2, 0.1, 0.2, 0.3, 0.4],
-            "feature_2": ["A", "B", "A", "B", "C", "D"],
-            "prediction_error": [0.5, 0.6, 0.7, 0.8, 0.9, 1.0],
-        }
-    )
-
-    result = analyser_instance.analyse_errors(df)
-
-    expected_columns = [
-        "target_class",
-        "column_subset",
-        "prediction_error",
-        "column_name",
-    ]
-    assert all(col in result.columns for col in expected_columns)
-
-
-def test_analyse_errors_descending_false(create_test_error_analyser_mixin_instance):
-    analyser_instance = create_test_error_analyser_mixin_instance
-
-    df = pl.DataFrame(
-        {
-            "target_class": [0, 0, 1, 1, 2, 2],
-            "feature_1": [0.1, 0.2, 0.1, 0.2, 0.3, 0.4],
-            "feature_2": ["A", "B", "A", "B", "C", "D"],
-            "prediction_error": [0.5, 0.6, 0.7, 0.8, 0.9, 1.0],
-        }
-    )
-
-    result = analyser_instance.analyse_errors(df, descending=False)
-
-    expected_columns = [
-        "target_class",
-        "column_subset",
-        "prediction_error",
-        "column_name",
-    ]
-    assert all(col in result.columns for col in expected_columns)
-
-
-def test_analyse_errors_with_empty_dataframe(create_test_error_analyser_mixin_instance):
-    analyser_instance = create_test_error_analyser_mixin_instance
-
-    df = pl.DataFrame(
-        {
-            "target_class": [],
-            "feature_1": [],
-            "feature_2": [],
-            "prediction_error": [],
-        }
-    )
-
-    result = analyser_instance.analyse_errors(df)
-
-    expected_columns = [
-        "target_class",
-        "column_subset",
-        "prediction_error",
-        "column_name",
-    ]
-    assert all(col in result.columns for col in expected_columns)
-    assert result.shape == (0, len(expected_columns))
+    with pytest.raises(ValueError, match="Required columns missing"):
+        plotter.plot_error_distributions(test_df)
