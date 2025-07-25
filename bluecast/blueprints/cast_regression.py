@@ -418,7 +418,7 @@ class BlueCastRegression:
         if not getattr(self.ml_model, "cat_columns", None):
             self.ml_model.experiment_tracker=self.experiment_tracker
             self.ml_model.custom_in_fold_preprocessor=self.custom_in_fold_preprocessor
-            self.ml_model.cat_columns=self.feat_type_detector.cat_columns
+            self.ml_model.cat_columns=[col for col in self.feat_type_detector.cat_columns if col != self.target_column]
             self.ml_model.single_fold_eval_metric_func=self.single_fold_eval_metric_func
         
         self.ml_model.fit(x_train, x_test, y_train, y_test)
