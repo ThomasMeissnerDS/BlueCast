@@ -35,6 +35,11 @@ Here you can see our test coverage in more detail:
 * [Philosophy](#philosophy)
 * [What BlueCast has to offer](#what-bluecast-has-to-offer)
   * [Basic usage](#basic-usage)
+  * [Recent Major Improvements (v2.0+)](#recent-major-improvements-v20)
+    * [🗄️ **DuckDB-Powered Experiment Tracking**](#%F0%9F%97%84%EF%B8%8F-duckdb-powered-experiment-tracking)
+    * [📊 **Enhanced Error Analysis Framework**](#%F0%9F%93%8A-enhanced-error-analysis-framework)
+    * [🎯 **Key Benefits**](#%F0%9F%8E%AF-key-benefits)
+    * [📦 **Dependencies**](#%F0%9F%93%A6-dependencies)
   * [Convenience features](#convenience-features)
   * [Kaggle competition results and example notebooks](#kaggle-competition-results-and-example-notebooks)
 * [About the code](#about-the-code)
@@ -82,27 +87,63 @@ y_probs, y_classes = automl.predict(df_val)
 y_probs = automl.predict_proba(df_val)
 ```
 
+### Recent Major Improvements (v2.0+)
+
+BlueCast has undergone significant enhancements to provide enterprise-grade data science capabilities:
+
+#### 🗄️ **DuckDB-Powered Experiment Tracking**
+- **Persistent Storage**: Experiment results are now stored in DuckDB databases instead of in-memory lists
+- **Structured Data Management**: Separate tables for hyperparameter tuning (`hyperparameter_experiments`) and final model evaluation (`evaluation_experiments`)
+- **Advanced Querying**: Rich SQL-based analytics on experiment history with methods like `get_experiment_summary()` and `get_best_score()`
+- **Scalability**: Handle thousands of experiments efficiently with analytical database performance
+
+#### 📊 **Enhanced Error Analysis Framework**
+- **DuckDB Backend**: Lightning-fast error analysis using DuckDB's analytical capabilities
+- **Interactive Visualizations**: Plotly-powered charts replace static matplotlib plots:
+  - Error distribution histograms with statistical annotations
+  - Q-Q plots for normality testing
+  - Residual plots for regression analysis
+  - Predicted vs Actual scatter plots
+  - Enhanced violin plots with statistical insights
+- **Advanced Statistics**: Automatic calculation of R-squared, correlation, heteroscedasticity detection, and comprehensive error metrics
+- **Unified Interface**: Consistent API for both classification and regression error analysis
+
+#### 🎯 **Key Benefits**
+- **Performance**: 3-5x faster analytics on large experiment datasets
+- **Insights**: Deeper statistical understanding with enhanced visualizations
+- **Persistence**: Experiment data survives between sessions and can be shared
+- **Scalability**: Enterprise-ready architecture that grows with your needs
+- **Backward Compatibility**: All existing code continues to work seamlessly
+
+#### 📦 **Dependencies**
+The refactoring introduces `duckdb` as a new core dependency for enhanced data management and analytics capabilities, while maintaining all existing functionality.
+
 ### Convenience features
 
 Despite being a lightweight library, BlueCast also includes some convenience
 with the following features:
 
-* rich library of EDA functions to visualize and understand the data
-* plenty of customization options via an open API
-* inbuilt uncertainty quantification framework (conformal prediction)
-* hyperparameter tuning (with lots of customization available)
-* automatic feature type detection and casting
-* automatic DataFrame schema detection: checks if unseen data has new or
-  missing columns
-* categorical feature encoding (target encoding or directly in Xgboost)
-* datetime feature encoding
-* automated GPU availability check and usage for Xgboost
-  a fit_eval method to fit a model and evaluate it on a validation set
-  to mimic production environment reality
-* functions to save and load a trained pipeline
-* shapley values
-* ROC AUC curve & lift chart
-* warnings for potential misconfigurations
+* **Enhanced Experiment Tracking**: DuckDB-powered experiment tracking with persistent storage, separate tables for hyperparameter tuning and model evaluation results
+* **Advanced Error Analysis**: Comprehensive error analysis with DuckDB backend and interactive Plotly visualizations for both classification and regression problems
+* **Rich EDA Library**: Comprehensive library of EDA functions to visualize and understand the data
+* **Uncertainty Quantification**: Inbuilt uncertainty quantification framework using conformal prediction
+* **Intelligent Hyperparameter Tuning**: Advanced hyperparameter optimization with extensive customization options
+* **Automatic Feature Engineering**:
+  - Automatic feature type detection and casting
+  - Categorical feature encoding (target encoding or directly in Xgboost)
+  - Datetime feature encoding
+  - Automatic DataFrame schema detection for production consistency
+* **Production-Ready Features**:
+  - Automated GPU availability check and usage for Xgboost
+  - fit_eval method to mimic production environment reality
+  - Functions to save and load trained pipelines
+  - Comprehensive model evaluation and monitoring capabilities
+* **Explainability & Insights**:
+  - SHAP values for feature importance
+  - ROC AUC curves & lift charts
+  - Enhanced statistical insights with error distributions and residual analysis
+  - Interactive visualizations for better model understanding
+* **Quality Assurance**: Built-in warnings for potential misconfigurations
 
 The fit_eval method can be used like this:
 

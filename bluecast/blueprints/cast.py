@@ -449,6 +449,13 @@ class BlueCast:
                 cat_columns=self.cat_columns,
                 single_fold_eval_metric_func=self.single_fold_eval_metric_func,
             )
+
+        if not getattr(self.ml_model, "cat_columns", None):
+            self.ml_model.experiment_tracker=self.experiment_tracker
+            self.ml_model.custom_in_fold_preprocessor=self.custom_in_fold_preprocessor
+            self.ml_model.cat_columns=self.feat_type_detector.cat_columns
+            self.ml_model.single_fold_eval_metric_func=self.single_fold_eval_metric_func
+        
         self.ml_model.fit(x_train, x_test, y_train, y_test)
 
         if self.custom_in_fold_preprocessor:

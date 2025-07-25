@@ -1217,12 +1217,16 @@ def test_dashboard_helper_functions_coverage():
     # Test all branches of _dashboard_update_summary function
 
     # Numeric column case - now returns html.Div with enhanced statistics
-    result = _dashboard_update_summary("numeric_col1", test_df, numeric_cols, target_col)
+    result = _dashboard_update_summary(
+        "numeric_col1", test_df, numeric_cols, target_col
+    )
     assert isinstance(result, html.Div)
     assert len(result.children) > 0  # Should contain feature statistics
 
     # Categorical column case - now returns html.Div with enhanced statistics
-    result = _dashboard_update_summary("categorical_col1", test_df, numeric_cols, target_col)
+    result = _dashboard_update_summary(
+        "categorical_col1", test_df, numeric_cols, target_col
+    )
     assert isinstance(result, html.Div)
     assert len(result.children) > 0  # Should contain feature statistics
 
