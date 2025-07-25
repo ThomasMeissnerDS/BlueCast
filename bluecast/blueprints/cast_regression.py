@@ -571,6 +571,11 @@ class BlueCastRegression:
                 df.copy(), predicton_mode=True
             )
 
+        if self.conf_training.cat_encoding_via_ml_algorithm and self.cat_columns:
+            for col in self.cat_columns:
+                if col in df.columns:
+                    df[col] = df[col].astype(str).fillna("nan")
+
         return df
 
     def predict(self, df: pd.DataFrame, save_shap_values: bool = False) -> np.ndarray:
