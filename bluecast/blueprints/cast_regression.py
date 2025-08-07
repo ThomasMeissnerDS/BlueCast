@@ -417,14 +417,21 @@ class BlueCastRegression:
                 single_fold_eval_metric_func=self.single_fold_eval_metric_func,
             )
         if not getattr(self.ml_model, "cat_columns", None):
-            self.ml_model.experiment_tracker=self.experiment_tracker
-            self.ml_model.custom_in_fold_preprocessor=self.custom_in_fold_preprocessor
-            self.ml_model.cat_columns=[col for col in self.feat_type_detector.cat_columns if col != self.target_column]
-            self.ml_model.single_fold_eval_metric_func=self.single_fold_eval_metric_func
-            self.ml_model.conf_training=self.conf_training
+            self.ml_model.experiment_tracker = self.experiment_tracker
+            self.ml_model.custom_in_fold_preprocessor = self.custom_in_fold_preprocessor
+            self.ml_model.cat_columns = [
+                col
+                for col in self.feat_type_detector.cat_columns
+                if col != self.target_column
+            ]
+            if self.single_fold_eval_metric_func is not None:
+                self.ml_model.single_fold_eval_metric_func = (
+                    self.single_fold_eval_metric_func
+                )
+            self.ml_model.conf_training = self.conf_training
             if isinstance(self.ml_model, CatboostModelRegression):
-                self.ml_model.conf_params_catboost=self.conf_params_xgboost
-        
+                self.ml_model.conf_params_catboost = self.conf_params_xgboost
+
         self.ml_model.fit(x_train, x_test, y_train, y_test)
 
         if self.custom_in_fold_preprocessor:
@@ -498,8 +505,14 @@ class BlueCastRegression:
             ],
             [False, False, False, False, False],
         ):
+            experiment_ids = self.experiment_tracker.experiment_id
+            if len(experiment_ids) == 0:
+                experiment_id = 0
+            else:
+                experiment_id = experiment_ids[-1]
+
             self.experiment_tracker.add_results(
-                experiment_id=self.experiment_tracker.experiment_id[-1],
+                experiment_id=experiment_id,
                 score_category="oof_score",
                 training_config=self.conf_training,
                 model_parameters=self.conf_params_xgboost.params,  # noqa

@@ -32,7 +32,7 @@ from bluecast.evaluation.shap_values import (
 )
 from bluecast.experimentation.tracking import ExperimentTracker
 from bluecast.general_utils.general_utils import save_out_of_fold_data
-from bluecast.ml_modelling.catboost import CatBoostClassifier, CatboostModel
+from bluecast.ml_modelling.catboost import CatboostModel
 from bluecast.ml_modelling.xgboost import XgboostModel
 from bluecast.preprocessing.category_encoder_orchestration import (
     CategoryEncoderOrchestrator,
@@ -452,14 +452,21 @@ class BlueCast:
             )
 
         if not getattr(self.ml_model, "cat_columns", None):
-            self.ml_model.experiment_tracker=self.experiment_tracker
-            self.ml_model.custom_in_fold_preprocessor=self.custom_in_fold_preprocessor
-            self.ml_model.cat_columns=[col for col in self.feat_type_detector.cat_columns if col != self.target_column]
-            self.ml_model.single_fold_eval_metric_func=self.single_fold_eval_metric_func
-            self.ml_model.conf_training=self.conf_training
+            self.ml_model.experiment_tracker = self.experiment_tracker
+            self.ml_model.custom_in_fold_preprocessor = self.custom_in_fold_preprocessor
+            self.ml_model.cat_columns = [
+                col
+                for col in self.feat_type_detector.cat_columns
+                if col != self.target_column
+            ]
+            if self.single_fold_eval_metric_func is not None:
+                self.ml_model.single_fold_eval_metric_func = (
+                    self.single_fold_eval_metric_func
+                )
+            self.ml_model.conf_training = self.conf_training
             if isinstance(self.ml_model, CatboostModel):
-                self.ml_model.conf_params_catboost=self.conf_params_xgboost
-        
+                self.ml_model.conf_params_catboost = self.conf_params_xgboost
+
         self.ml_model.fit(x_train, x_test, y_train, y_test)
 
         if self.custom_in_fold_preprocessor:
@@ -547,8 +554,14 @@ class BlueCast:
             ],
             [True, True, True, False, False, True, True],
         ):
+            experiment_ids = self.experiment_tracker.experiment_id
+            if len(experiment_ids) == 0:
+                experiment_id = 0
+            else:
+                experiment_id = experiment_ids[-1]
+
             self.experiment_tracker.add_results(
-                experiment_id=self.experiment_tracker.experiment_id[-1],
+                experiment_id=experiment_id,
                 score_category="oof_score",
                 training_config=self.conf_training,
                 model_parameters=self.conf_params_xgboost.params,  # noqa
@@ -631,7 +644,6 @@ class BlueCast:
             for col in self.cat_columns:
                 if col in df.columns:
                     df[col] = df[col].astype(str).fillna("nan")
-
 
         return df
 
