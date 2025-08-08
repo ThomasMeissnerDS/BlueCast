@@ -276,8 +276,17 @@ class CatboostModelRegression(CatboostBaseModel):
 
             params = {**params, **train_on}
 
-            train_pool = Pool(x_train, label=y_train, cat_features=self.cat_columns)
-            test_pool = Pool(x_test, label=y_test, cat_features=self.cat_columns)
+            # Filter categorical columns to only include those that actually exist in the data
+            valid_cat_columns = None
+            if self.cat_columns:
+                valid_cat_columns = [
+                    col for col in self.cat_columns if col in x_train.columns
+                ]
+                if not valid_cat_columns:
+                    valid_cat_columns = None
+
+            train_pool = Pool(x_train, label=y_train, cat_features=valid_cat_columns)
+            test_pool = Pool(x_test, label=y_test, cat_features=valid_cat_columns)
 
             if self.conf_training.hypertuning_cv_folds == 1:
                 return self.train_single_fold_model(
@@ -301,11 +310,20 @@ class CatboostModelRegression(CatboostBaseModel):
                     X_tr, X_val = x_train.iloc[train_idx], x_train.iloc[valid_idx]
                     y_tr, y_val = y_train.iloc[train_idx], y_train.iloc[valid_idx]
 
+                    # Filter categorical columns to only include those that actually exist in the data
+                    valid_cat_columns = None
+                    if self.cat_columns:
+                        valid_cat_columns = [
+                            col for col in self.cat_columns if col in X_tr.columns
+                        ]
+                        if not valid_cat_columns:
+                            valid_cat_columns = None
+
                     fold_train_pool = Pool(
-                        X_tr, label=y_tr, cat_features=self.cat_columns
+                        X_tr, label=y_tr, cat_features=valid_cat_columns
                     )
                     fold_val_pool = Pool(
-                        X_val, label=y_val, cat_features=self.cat_columns
+                        X_val, label=y_val, cat_features=valid_cat_columns
                     )
 
                     model = CatBoostRegressor(**params)
@@ -492,10 +510,21 @@ class CatboostModelRegression(CatboostBaseModel):
             else:
                 X_test_fold, y_test_fold = x_test, y_test
 
+            # Filter categorical columns to only include those that actually exist in the data
+            valid_cat_columns = None
+            if self.cat_columns:
+                valid_cat_columns = [
+                    col for col in self.cat_columns if col in X_train_fold.columns
+                ]
+                if not valid_cat_columns:
+                    valid_cat_columns = None
+
             train_pool = Pool(
-                X_train_fold, label=y_train_fold, cat_features=self.cat_columns
+                X_train_fold, label=y_train_fold, cat_features=valid_cat_columns
             )
-            val_pool = Pool(X_val_fold, label=y_val_fold, cat_features=self.cat_columns)
+            val_pool = Pool(
+                X_val_fold, label=y_val_fold, cat_features=valid_cat_columns
+            )
 
             model = CatBoostRegressor(**tuned_params)
             model.fit(train_pool, eval_set=val_pool, verbose=False)
@@ -624,7 +653,14 @@ class CatboostModelRegression(CatboostBaseModel):
                 df, None, predicton_mode=True
             )
 
-        test_pool = Pool(df, cat_features=self.cat_columns)
+        # Filter categorical columns to only include those that actually exist in the data
+        valid_cat_columns = None
+        if self.cat_columns:
+            valid_cat_columns = [col for col in self.cat_columns if col in df.columns]
+            if not valid_cat_columns:
+                valid_cat_columns = None
+
+        test_pool = Pool(df, cat_features=valid_cat_columns)
 
         if not self.model:
             raise Exception("No trained CatBoost model found.")

@@ -288,18 +288,29 @@ class CatboostModel(CatboostBaseModel):
                 "sample_weight", [True, False]
             )
 
+            # Filter categorical columns to only include those that actually exist in the data
+            valid_cat_columns = None
+            if self.cat_columns:
+                valid_cat_columns = [
+                    col for col in self.cat_columns if col in x_train.columns
+                ]
+                if not valid_cat_columns:
+                    valid_cat_columns = None
+
             if sample_weight_choice:
                 weights = class_weight.compute_sample_weight("balanced", y_train)
                 train_pool = Pool(
                     x_train,
                     label=y_train,
                     weight=weights,
-                    cat_features=self.cat_columns,
+                    cat_features=valid_cat_columns,
                 )
             else:
-                train_pool = Pool(x_train, label=y_train, cat_features=self.cat_columns)
+                train_pool = Pool(
+                    x_train, label=y_train, cat_features=valid_cat_columns
+                )
 
-            test_pool = Pool(x_test, label=y_test, cat_features=self.cat_columns)
+            test_pool = Pool(x_test, label=y_test, cat_features=valid_cat_columns)
 
             if self.conf_training.hypertuning_cv_folds == 1:
                 return self.train_single_fold_model(
@@ -685,7 +696,14 @@ class CatboostModel(CatboostBaseModel):
         if not self.conf_params_catboost:
             raise Exception("No CatBoost model configuration found.")
 
-        pool_test = Pool(df, cat_features=self.cat_columns)
+        # Filter categorical columns to only include those that actually exist in the data
+        valid_cat_columns = None
+        if self.cat_columns:
+            valid_cat_columns = [col for col in self.cat_columns if col in df.columns]
+            if not valid_cat_columns:
+                valid_cat_columns = None
+
+        pool_test = Pool(df, cat_features=valid_cat_columns)
         partial_probs = self.model.predict_proba(pool_test)
 
         if self.class_problem == "binary":
@@ -721,7 +739,14 @@ class CatboostModel(CatboostBaseModel):
         if not self.conf_params_catboost:
             raise Exception("No CatBoost model configuration found.")
 
-        pool_test = Pool(df, cat_features=self.cat_columns)
+        # Filter categorical columns to only include those that actually exist in the data
+        valid_cat_columns = None
+        if self.cat_columns:
+            valid_cat_columns = [col for col in self.cat_columns if col in df.columns]
+            if not valid_cat_columns:
+                valid_cat_columns = None
+
+        pool_test = Pool(df, cat_features=valid_cat_columns)
         partial_probs = self.model.predict_proba(pool_test)
 
         if self.class_problem == "binary":
