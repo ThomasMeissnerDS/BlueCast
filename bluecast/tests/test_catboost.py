@@ -735,8 +735,8 @@ def test_bluecast_without_hyperparam_tuning():
     assert isinstance(predicted_classes, np.ndarray)
     print(bluecast.experiment_tracker.experiment_id)
     assert (
-        len(bluecast.experiment_tracker.experiment_id) == 10
-    )  # due to hyperparameter tuning with 10 rounds
+        len(bluecast.experiment_tracker.experiment_id) == 0
+    )  # no hyperparameter tuning when autotune_model=False
 
 
 def test_bluecast_with_hyperparam_tuning():
