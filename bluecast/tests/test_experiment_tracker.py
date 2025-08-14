@@ -49,7 +49,8 @@ def test_add_hyperparameter_results(experiment_tracker, sample_training_config):
     assert hyperparameter_results["score_category"].iloc[0] == "cv_score"
     assert hyperparameter_results["eval_scores"].iloc[0] == 0.95
     assert hyperparameter_results["metric_used"].iloc[0] == "accuracy"
-    assert hyperparameter_results["metric_higher_is_better"].iloc[0] == True  # noqa: E712
+    # numpy boolean needs equality comparison for correctness
+    assert bool(hyperparameter_results["metric_higher_is_better"].iloc[0]) is True
 
 
 def test_add_evaluation_results(experiment_tracker, sample_training_config):
