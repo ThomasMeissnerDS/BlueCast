@@ -117,6 +117,55 @@ class CatboostModel(CatboostBaseModel):
 
         # Pull out final params (dictionary) from config
         final_params = dict(self.conf_params_catboost.params)
+
+        # If we detect XGBoost parameters, it means configuration got corrupted
+        # Fall back to safe CatBoost defaults
+        if "objective" in final_params or "booster" in final_params:
+            print(
+                "WARNING: Detected XGBoost parameters in CatBoost config. Using safe defaults."
+            )
+            final_params = {
+                "iterations": final_params.get(
+                    "steps", final_params.get("iterations", 1000)
+                ),
+                "depth": final_params.get("max_depth", 6),
+                "learning_rate": final_params.get(
+                    "eta", final_params.get("learning_rate", 0.03)
+                ),
+                "l2_leaf_reg": 3.0,
+                "random_seed": 0,
+            }
+
+        # Remove any remaining XGBoost-specific parameters that don't belong in CatBoost
+        xgboost_only_params = [
+            "booster",
+            "tree_method",
+            "device",
+            "alpha",
+            "lambda",
+            "gamma",
+            "min_child_weight",
+            "subsample",
+            "colsample_bytree",
+            "colsample_bylevel",
+            "eta",
+            "steps",
+            "max_depth",
+            "num_class",
+            "validate_parameters",
+            "objective",
+        ]
+        for param in xgboost_only_params:
+            final_params.pop(param, None)
+
+        # Set correct loss function and eval metric for binary vs multiclass
+        if self.class_problem == "binary":
+            final_params["loss_function"] = "Logloss"
+            final_params["eval_metric"] = "Logloss"
+        elif self.class_problem == "multiclass":
+            final_params["loss_function"] = "MultiClass"
+            final_params["eval_metric"] = "MultiClass"
+
         # Add or override logging level
         if "logging_level" not in final_params:
             final_params["logging_level"] = "Silent"
@@ -133,6 +182,7 @@ class CatboostModel(CatboostBaseModel):
         if test_pool is not None and not test_pool.is_empty():
             self.model.fit(
                 train_pool,
+                # cat_features=self.cat_columns,
                 eval_set=test_pool,
                 use_best_model=bool(early_stopping_dict),  # only if early_stopping
                 verbose=self.conf_training.show_detailed_tuning_logs,
@@ -140,6 +190,7 @@ class CatboostModel(CatboostBaseModel):
         else:
             self.model.fit(
                 train_pool,
+                # cat_features=self.cat_columns,
                 use_best_model=False,
                 verbose=self.conf_training.show_detailed_tuning_logs,
             )
@@ -237,18 +288,29 @@ class CatboostModel(CatboostBaseModel):
                 "sample_weight", [True, False]
             )
 
+            # Filter categorical columns to only include those that actually exist in the data
+            valid_cat_columns = None
+            if self.cat_columns:
+                valid_cat_columns = [
+                    col for col in self.cat_columns if col in x_train.columns
+                ]
+                if not valid_cat_columns:
+                    valid_cat_columns = None
+
             if sample_weight_choice:
                 weights = class_weight.compute_sample_weight("balanced", y_train)
                 train_pool = Pool(
                     x_train,
                     label=y_train,
                     weight=weights,
-                    cat_features=self.cat_columns,
+                    cat_features=valid_cat_columns,
                 )
             else:
-                train_pool = Pool(x_train, label=y_train, cat_features=self.cat_columns)
+                train_pool = Pool(
+                    x_train, label=y_train, cat_features=valid_cat_columns
+                )
 
-            test_pool = Pool(x_test, label=y_test, cat_features=self.cat_columns)
+            test_pool = Pool(x_test, label=y_test, cat_features=valid_cat_columns)
 
             if self.conf_training.hypertuning_cv_folds == 1:
                 return self.train_single_fold_model(
@@ -301,10 +363,11 @@ class CatboostModel(CatboostBaseModel):
 
                 final_score = np.mean(fold_scores)
 
-                if len(self.experiment_tracker.experiment_id) == 0:
+                experiment_ids = self.experiment_tracker.experiment_id
+                if len(experiment_ids) == 0:
                     new_id = 0
                 else:
-                    new_id = self.experiment_tracker.experiment_id[-1] + 1
+                    new_id = experiment_ids[-1] + 1
                 self.experiment_tracker.add_results(
                     experiment_id=new_id,
                     score_category="cv_score",
@@ -388,7 +451,7 @@ class CatboostModel(CatboostBaseModel):
                     final_best_params.pop("bagging_temperature", None)
 
                 final_best_params = update_params_with_best_params(
-                    final_best_params, best_param
+                    final_best_params, best_param, model_type="catboost"
                 )
 
                 self.conf_params_catboost.params = final_best_params
@@ -412,10 +475,11 @@ class CatboostModel(CatboostBaseModel):
             y_test, preds
         )
 
-        if len(self.experiment_tracker.experiment_id) == 0:
+        experiment_ids = self.experiment_tracker.experiment_id
+        if len(experiment_ids) == 0:
             new_id = 0
         else:
-            new_id = self.experiment_tracker.experiment_id[-1] + 1
+            new_id = experiment_ids[-1] + 1
 
         self.experiment_tracker.add_results(
             experiment_id=new_id,
@@ -497,10 +561,11 @@ class CatboostModel(CatboostBaseModel):
 
         score_mean = np.mean(fold_scores)
 
-        if len(self.experiment_tracker.experiment_id) == 0:
+        experiment_ids = self.experiment_tracker.experiment_id
+        if len(experiment_ids) == 0:
             new_id = 0
         else:
-            new_id = self.experiment_tracker.experiment_id[-1] + 1
+            new_id = experiment_ids[-1] + 1
         self.experiment_tracker.add_results(
             experiment_id=new_id,
             score_category="oof_score",
@@ -592,10 +657,11 @@ class CatboostModel(CatboostBaseModel):
 
                 final_score = np.mean(fold_scores)
 
-                if len(self.experiment_tracker.experiment_id) == 0:
+                experiment_ids = self.experiment_tracker.experiment_id
+                if len(experiment_ids) == 0:
                     new_id = 0
                 else:
-                    new_id = self.experiment_tracker.experiment_id[-1] + 1
+                    new_id = experiment_ids[-1] + 1
                 self.experiment_tracker.add_results(
                     experiment_id=new_id,
                     score_category="cv_score",
@@ -630,7 +696,14 @@ class CatboostModel(CatboostBaseModel):
         if not self.conf_params_catboost:
             raise Exception("No CatBoost model configuration found.")
 
-        pool_test = Pool(df, cat_features=self.cat_columns)
+        # Filter categorical columns to only include those that actually exist in the data
+        valid_cat_columns = None
+        if self.cat_columns:
+            valid_cat_columns = [col for col in self.cat_columns if col in df.columns]
+            if not valid_cat_columns:
+                valid_cat_columns = None
+
+        pool_test = Pool(df, cat_features=valid_cat_columns)
         partial_probs = self.model.predict_proba(pool_test)
 
         if self.class_problem == "binary":
@@ -666,7 +739,14 @@ class CatboostModel(CatboostBaseModel):
         if not self.conf_params_catboost:
             raise Exception("No CatBoost model configuration found.")
 
-        pool_test = Pool(df, cat_features=self.cat_columns)
+        # Filter categorical columns to only include those that actually exist in the data
+        valid_cat_columns = None
+        if self.cat_columns:
+            valid_cat_columns = [col for col in self.cat_columns if col in df.columns]
+            if not valid_cat_columns:
+                valid_cat_columns = None
+
+        pool_test = Pool(df, cat_features=valid_cat_columns)
         partial_probs = self.model.predict_proba(pool_test)
 
         if self.class_problem == "binary":

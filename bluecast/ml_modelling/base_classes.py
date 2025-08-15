@@ -602,6 +602,15 @@ class CatboostBaseModel:
         Potentially uses sample weights if available.
         Also sets cat_features if self.cat_columns is provided.
         """
+        # Filter categorical columns to only include those that actually exist in the data
+        valid_cat_columns = None
+        if self.cat_columns:
+            valid_cat_columns = [
+                col for col in self.cat_columns if col in x_train.columns
+            ]
+            if not valid_cat_columns:
+                valid_cat_columns = None
+
         if self.conf_params_catboost.sample_weight:
             # Just as an example, for classification we might compute balanced sample weights
             if self.class_problem in ["binary", "multiclass"]:
@@ -612,23 +621,23 @@ class CatboostBaseModel:
                     data=x_train,
                     label=y_train,
                     weight=classes_weights,
-                    cat_features=self.cat_columns,
+                    cat_features=valid_cat_columns,
                 )
             else:
                 # For regression or if no special weighting is needed:
                 train_pool = Pool(
-                    data=x_train, label=y_train, cat_features=self.cat_columns
+                    data=x_train, label=y_train, cat_features=valid_cat_columns
                 )
         else:
             # No sample weighting
             train_pool = Pool(
-                data=x_train, label=y_train, cat_features=self.cat_columns
+                data=x_train, label=y_train, cat_features=valid_cat_columns
             )
 
         if x_test.empty:
             test_pool = None
         else:
-            test_pool = Pool(data=x_test, label=y_test, cat_features=self.cat_columns)
+            test_pool = Pool(data=x_test, label=y_test, cat_features=valid_cat_columns)
         return train_pool, test_pool
 
     def concat_prepare_full_train_datasets(

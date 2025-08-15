@@ -116,6 +116,54 @@ class CatboostModelRegression(CatboostBaseModel):
             test_pool = None
 
         final_params = dict(self.conf_params_catboost.params)
+
+        # If we detect XGBoost parameters, it means configuration got corrupted
+        # Fall back to safe CatBoost defaults
+        if "objective" in final_params or "booster" in final_params:
+            print(
+                "WARNING: Detected XGBoost parameters in CatBoost regression config. Using safe defaults."
+            )
+            final_params = {
+                "iterations": final_params.get(
+                    "steps", final_params.get("iterations", 1000)
+                ),
+                "depth": final_params.get("max_depth", 6),
+                "learning_rate": final_params.get(
+                    "eta", final_params.get("learning_rate", 0.03)
+                ),
+                "l2_leaf_reg": 3.0,
+                "random_seed": 0,
+                "loss_function": "RMSE",
+                "eval_metric": "RMSE",
+            }
+
+        # Remove any remaining XGBoost-specific parameters that don't belong in CatBoost
+        xgboost_only_params = [
+            "booster",
+            "tree_method",
+            "device",
+            "alpha",
+            "lambda",
+            "gamma",
+            "min_child_weight",
+            "subsample",
+            "colsample_bytree",
+            "colsample_bylevel",
+            "eta",
+            "steps",
+            "max_depth",
+            "num_class",
+            "validate_parameters",
+            "objective",
+        ]
+        for param in xgboost_only_params:
+            final_params.pop(param, None)
+
+        # Set correct loss function for regression
+        if "loss_function" not in final_params:
+            final_params["loss_function"] = "RMSE"
+        if "eval_metric" not in final_params:
+            final_params["eval_metric"] = "RMSE"
         if "logging_level" not in final_params:
             final_params["logging_level"] = "Silent"
 
@@ -228,8 +276,17 @@ class CatboostModelRegression(CatboostBaseModel):
 
             params = {**params, **train_on}
 
-            train_pool = Pool(x_train, label=y_train, cat_features=self.cat_columns)
-            test_pool = Pool(x_test, label=y_test, cat_features=self.cat_columns)
+            # Filter categorical columns to only include those that actually exist in the data
+            valid_cat_columns = None
+            if self.cat_columns:
+                valid_cat_columns = [
+                    col for col in self.cat_columns if col in x_train.columns
+                ]
+                if not valid_cat_columns:
+                    valid_cat_columns = None
+
+            train_pool = Pool(x_train, label=y_train, cat_features=valid_cat_columns)
+            test_pool = Pool(x_test, label=y_test, cat_features=valid_cat_columns)
 
             if self.conf_training.hypertuning_cv_folds == 1:
                 return self.train_single_fold_model(
@@ -253,11 +310,20 @@ class CatboostModelRegression(CatboostBaseModel):
                     X_tr, X_val = x_train.iloc[train_idx], x_train.iloc[valid_idx]
                     y_tr, y_val = y_train.iloc[train_idx], y_train.iloc[valid_idx]
 
+                    # Filter categorical columns to only include those that actually exist in the data
+                    valid_cat_columns = None
+                    if self.cat_columns:
+                        valid_cat_columns = [
+                            col for col in self.cat_columns if col in X_tr.columns
+                        ]
+                        if not valid_cat_columns:
+                            valid_cat_columns = None
+
                     fold_train_pool = Pool(
-                        X_tr, label=y_tr, cat_features=self.cat_columns
+                        X_tr, label=y_tr, cat_features=valid_cat_columns
                     )
                     fold_val_pool = Pool(
-                        X_val, label=y_val, cat_features=self.cat_columns
+                        X_val, label=y_val, cat_features=valid_cat_columns
                     )
 
                     model = CatBoostRegressor(**params)
@@ -274,10 +340,11 @@ class CatboostModelRegression(CatboostBaseModel):
                 avg_score = np.mean(fold_scores)
 
                 # Track in experiment tracker
-                if len(self.experiment_tracker.experiment_id) == 0:
+                experiment_ids = self.experiment_tracker.experiment_id
+                if len(experiment_ids) == 0:
                     new_id = 0
                 else:
-                    new_id = self.experiment_tracker.experiment_id[-1] + 1
+                    new_id = experiment_ids[-1] + 1
 
                 self.experiment_tracker.add_results(
                     experiment_id=new_id,
@@ -364,7 +431,7 @@ class CatboostModelRegression(CatboostBaseModel):
 
                 # Optionally apply a custom function to finalize best params
                 final_best_params = update_params_with_best_params(
-                    final_best_params, catboost_best_param
+                    final_best_params, catboost_best_param, model_type="catboost"
                 )
 
                 self.conf_params_catboost.params = final_best_params
@@ -391,10 +458,11 @@ class CatboostModelRegression(CatboostBaseModel):
         )
 
         # Track the result
-        if len(self.experiment_tracker.experiment_id) == 0:
+        experiment_ids = self.experiment_tracker.experiment_id
+        if len(experiment_ids) == 0:
             new_id = 0
         else:
-            new_id = self.experiment_tracker.experiment_id[-1] + 1
+            new_id = experiment_ids[-1] + 1
 
         self.experiment_tracker.add_results(
             experiment_id=new_id,
@@ -442,10 +510,21 @@ class CatboostModelRegression(CatboostBaseModel):
             else:
                 X_test_fold, y_test_fold = x_test, y_test
 
+            # Filter categorical columns to only include those that actually exist in the data
+            valid_cat_columns = None
+            if self.cat_columns:
+                valid_cat_columns = [
+                    col for col in self.cat_columns if col in X_train_fold.columns
+                ]
+                if not valid_cat_columns:
+                    valid_cat_columns = None
+
             train_pool = Pool(
-                X_train_fold, label=y_train_fold, cat_features=self.cat_columns
+                X_train_fold, label=y_train_fold, cat_features=valid_cat_columns
             )
-            val_pool = Pool(X_val_fold, label=y_val_fold, cat_features=self.cat_columns)
+            val_pool = Pool(
+                X_val_fold, label=y_val_fold, cat_features=valid_cat_columns
+            )
 
             model = CatBoostRegressor(**tuned_params)
             model.fit(train_pool, eval_set=val_pool, verbose=False)
@@ -467,10 +546,11 @@ class CatboostModelRegression(CatboostBaseModel):
         mean_score = np.mean(fold_losses)
 
         # Track the result
-        if len(self.experiment_tracker.experiment_id) == 0:
+        experiment_ids = self.experiment_tracker.experiment_id
+        if len(experiment_ids) == 0:
             new_id = 0
         else:
-            new_id = self.experiment_tracker.experiment_id[-1] + 1
+            new_id = experiment_ids[-1] + 1
 
         self.experiment_tracker.add_results(
             experiment_id=new_id,
@@ -541,10 +621,11 @@ class CatboostModelRegression(CatboostBaseModel):
 
                 avg_score = np.mean(fold_scores)
 
-                if len(self.experiment_tracker.experiment_id) == 0:
+                experiment_ids = self.experiment_tracker.experiment_id
+                if len(experiment_ids) == 0:
                     new_id = 0
                 else:
-                    new_id = self.experiment_tracker.experiment_id[-1] + 1
+                    new_id = experiment_ids[-1] + 1
 
                 self.experiment_tracker.add_results(
                     experiment_id=new_id,
@@ -572,7 +653,14 @@ class CatboostModelRegression(CatboostBaseModel):
                 df, None, predicton_mode=True
             )
 
-        test_pool = Pool(df, cat_features=self.cat_columns)
+        # Filter categorical columns to only include those that actually exist in the data
+        valid_cat_columns = None
+        if self.cat_columns:
+            valid_cat_columns = [col for col in self.cat_columns if col in df.columns]
+            if not valid_cat_columns:
+                valid_cat_columns = None
+
+        test_pool = Pool(df, cat_features=valid_cat_columns)
 
         if not self.model:
             raise Exception("No trained CatBoost model found.")

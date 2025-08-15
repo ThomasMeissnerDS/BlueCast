@@ -103,10 +103,10 @@ def test_regression_init():
 def test_regression_run_with_args(sample_data_regression):
     y_true, y_hat = sample_data_regression
     wrapper = RegressionEvalWrapper(
-        higher_is_better=False, metric_func=mean_squared_error, **{"squared": False}
+        higher_is_better=False, metric_func=root_mean_squared_error
     )
     score = wrapper.regression_eval_func_wrapper(y_true, y_hat)
-    expected_score = mean_squared_error(y_true, y_hat, squared=False)
+    expected_score = root_mean_squared_error(y_true, y_hat)
     assert score == expected_score
 
 
@@ -299,7 +299,7 @@ def mock_root_mean_squared_error(y_true, y_preds):
 def test_root_mean_squared_error_diff_sklearn_versions_correct():
     y_true = [1, 2, 3, 4, 5]
     y_preds = [1, 2, 3, 4, 6]
-    expected_rmse = mean_squared_error(y_true, y_preds, squared=False)
+    expected_rmse = root_mean_squared_error(y_true, y_preds)
     result = root_mean_squared_error_diff_sklearn_versions(y_true, y_preds)
     assert np.isclose(result, expected_rmse), f"Expected {expected_rmse}, got {result}"
 
@@ -314,7 +314,7 @@ def test_root_mean_squared_error_diff_sklearn_versions_empty():
 def test_root_mean_squared_error_diff_sklearn_versions_single_element():
     y_true = [1]
     y_preds = [1]
-    expected_rmse = mean_squared_error(y_true, y_preds, squared=False)
+    expected_rmse = root_mean_squared_error(y_true, y_preds)
     result = root_mean_squared_error_diff_sklearn_versions(y_true, y_preds)
     assert np.isclose(result, expected_rmse), f"Expected {expected_rmse}, got {result}"
 

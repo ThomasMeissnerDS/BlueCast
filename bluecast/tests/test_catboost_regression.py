@@ -149,8 +149,8 @@ def test_BlueCastRegression_with_hyperparam_tuning():
     assert isinstance(predicted_values, np.ndarray)
     print(bluecast.experiment_tracker.experiment_id)
     assert (
-        len(bluecast.experiment_tracker.experiment_id) == 0
-    )  # due to custom model and fit method
+        len(bluecast.experiment_tracker.experiment_id) == 10
+    )  # due to hyperparameter tuning with 10 rounds
 
     # TEST with 1 fold
     train_config = TrainingConfig()
@@ -182,8 +182,8 @@ def test_BlueCastRegression_with_hyperparam_tuning():
     assert isinstance(predicted_values, np.ndarray)
     print(bluecast.experiment_tracker.experiment_id)
     assert (
-        len(bluecast.experiment_tracker.experiment_id) == 0
-    )  # due to custom model and fit method
+        len(bluecast.experiment_tracker.experiment_id) == 10
+    )  # due to hyperparameter tuning with 10 rounds
 
 
 def test_BlueCastRegression_with_fine_tune_hyperparam_tuning():
@@ -242,8 +242,8 @@ def test_BlueCastRegression_with_fine_tune_hyperparam_tuning():
     assert isinstance(predicted_values, np.ndarray)
     print(bluecast.experiment_tracker.experiment_id)
     assert (
-        len(bluecast.experiment_tracker.experiment_id) == 0
-    )  # due to custom model and fit method
+        len(bluecast.experiment_tracker.experiment_id) == 10
+    )  # due to fine-tune hyperparameter tuning with 10 rounds
 
 
 def test_BlueCastRegression_with_grid_search_tune_hyperparam_tuning():
@@ -303,8 +303,8 @@ def test_BlueCastRegression_with_grid_search_tune_hyperparam_tuning():
     assert isinstance(predicted_values, np.ndarray)
     print(bluecast.experiment_tracker.experiment_id)
     assert (
-        len(bluecast.experiment_tracker.experiment_id) == 0
-    )  # due to custom model and fit method
+        len(bluecast.experiment_tracker.experiment_id) == 6
+    )  # due to grid search fine tuning (2 rounds + 4 grid search entries)
 
 
 def test_catboost_regression_with_cat_columns_none_and_ml_algorithm_encoding():

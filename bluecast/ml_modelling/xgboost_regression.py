@@ -290,10 +290,12 @@ class XgboostModelRegression(XgboostBaseModel):
                 ].values[-1]
 
                 # track results
-                if len(self.experiment_tracker.experiment_id) == 0:
+                experiment_ids = self.experiment_tracker.experiment_id
+
+                if len(experiment_ids) == 0:
                     new_id = 0
                 else:
-                    new_id = self.experiment_tracker.experiment_id[-1] + 1
+                    new_id = experiment_ids[-1] + 1
                 self.experiment_tracker.add_results(
                     experiment_id=new_id,
                     score_category="cv_score",
@@ -400,10 +402,12 @@ class XgboostModelRegression(XgboostBaseModel):
         )
 
         # track results
-        if len(self.experiment_tracker.experiment_id) == 0:
+        experiment_ids = self.experiment_tracker.experiment_id
+
+        if len(experiment_ids) == 0:
             new_id = 0
         else:
-            new_id = self.experiment_tracker.experiment_id[-1] + 1
+            new_id = experiment_ids[-1] + 1
         self.experiment_tracker.add_results(
             experiment_id=new_id,
             score_category="simple_train_test_score",
@@ -503,10 +507,12 @@ class XgboostModelRegression(XgboostBaseModel):
 
         if self.experiment_tracker and self.conf_training:
             # track results
-            if len(self.experiment_tracker.experiment_id) == 0:
+            experiment_ids = self.experiment_tracker.experiment_id
+
+            if len(experiment_ids) == 0:
                 new_id = 0
             else:
-                new_id = self.experiment_tracker.experiment_id[-1] + 1
+                new_id = experiment_ids[-1] + 1
             self.experiment_tracker.add_results(
                 experiment_id=new_id,
                 score_category="oof_score",
@@ -588,10 +594,12 @@ class XgboostModelRegression(XgboostBaseModel):
                 ].values[-1]
 
                 # track results
-                if len(self.experiment_tracker.experiment_id) == 0:
+                experiment_ids = self.experiment_tracker.experiment_id
+
+                if len(experiment_ids) == 0:
                     new_id = 0
                 else:
-                    new_id = self.experiment_tracker.experiment_id[-1] + 1
+                    new_id = experiment_ids[-1] + 1
                 self.experiment_tracker.add_results(
                     experiment_id=new_id,
                     score_category="cv_score",

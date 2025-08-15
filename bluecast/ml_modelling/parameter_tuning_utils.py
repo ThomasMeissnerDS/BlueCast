@@ -101,10 +101,15 @@ def get_params_based_on_device_catboost(
 def update_params_with_best_params(
     param: Dict[str, Any],
     best_params: Dict[str, Any],
+    model_type: str = "xgboost",
 ) -> Dict[str, Any]:
     """Update parameters based on best parameters after tuning."""
 
-    params_to_check = ["tree_method", "booster", "grow_policy", "max_bin"]
+    if model_type == "xgboost":
+        params_to_check = ["tree_method", "booster", "grow_policy", "max_bin"]
+    else:  # catboost
+        params_to_check = ["grow_policy", "max_bin"]  # Only params applicable to both
+
     for param_name in params_to_check:
         if param_name in best_params.keys():
             param[param_name] = best_params[param_name]
