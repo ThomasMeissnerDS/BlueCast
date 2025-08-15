@@ -441,3 +441,63 @@ def test_regression_calculate_errors():
 
     # Clean up
     analyser.duckdb_engine.close()
+
+
+def test_duckdb_create_regression_visualizations_with_residual_qq_plot(
+    duckdb_regression_engine,
+):
+    """Ensure residual Q-Q plot branch is executed when enough samples are present"""
+    import numpy as np
+
+    experiment_id = "reg_test_exp_qq_001"
+
+    # Create >10 rows to trigger Q-Q plot
+    n = 25
+    df = pd.DataFrame(
+        {
+            "target": np.linspace(0, 10, n),
+            "predictions": np.linspace(0, 10, n) + np.random.normal(0, 0.5, n),
+            # simple absolute error approximation for loading
+            "prediction_error": np.abs(np.random.normal(0, 0.5, n)),
+            "feature_1": ["a", "b", "c", "a", "b"] * 5,
+        }
+    )
+
+    duckdb_regression_engine.load_regression_data(
+        df, experiment_id, target_column="target"
+    )
+    figures = duckdb_regression_engine.create_regression_visualizations(experiment_id)
+
+    assert "residual_qq_plot" in figures
+
+
+def test_error_distribution_regression_plotter_mixin_plots():
+    """Exercise regression feature-level violin/box plotting path"""
+    from bluecast.evaluation.error_analysis_regression import (
+        ErrorDistributionRegressionPlotterMixin,
+    )
+
+    plotter = ErrorDistributionRegressionPlotterMixin()
+
+    df = pl.DataFrame(
+        {
+            "target_quantiles": [
+                "low",
+                "low",
+                "mid",
+                "mid",
+                "high",
+                "high",
+                "low",
+                "mid",
+                "high",
+                "low",
+            ],
+            "prediction_error": [0.5, 0.3, 0.2, 0.4, 0.35, 0.6, 0.1, 0.25, 0.45, 0.2],
+            "feature_1": ["x", "y", "x", "y", "x", "y", "x", "y", "x", "y"],
+            "feature_2": ["c1", "c2", "c1", "c2", "c1", "c2", "c1", "c2", "c1", "c2"],
+        }
+    )
+
+    # Should not raise
+    plotter.plot_error_distributions(df, target_column="target_quantiles")

@@ -368,3 +368,54 @@ def test_error_distribution_plotter_mixin():
 
     with pytest.raises(ValueError, match="Required columns missing"):
         plotter.plot_error_distributions(test_df)
+
+
+def test_duckdb_create_visualizations_with_qq_plot(duckdb_engine):
+    """Ensure Q-Q plot branch is executed when enough samples are present"""
+    import numpy as np
+
+    experiment_id = "test_exp_qq_001"
+    target_column = "target_class"
+
+    # Create >10 rows to trigger Q-Q plot
+    n = 20
+    df = pd.DataFrame(
+        {
+            "target_class": ["A" if i % 2 == 0 else "B" for i in range(n)],
+            "prediction_error": np.abs(np.random.normal(loc=0.0, scale=0.2, size=n)),
+            "feature_1": ["x", "y", "z", "x", "y"] * 4,
+        }
+    )
+
+    duckdb_engine.load_data(df, experiment_id, target_column)
+    figures = duckdb_engine.create_error_visualizations(experiment_id, target_column)
+
+    assert "qq_plot" in figures
+
+
+def test_error_distribution_plotter_mixin_plots():
+    """Exercise feature-level violin plotting path for classification"""
+    plotter = ErrorDistributionPlotterMixin()
+
+    df = pl.DataFrame(
+        {
+            "target_class": ["A", "A", "B", "B", "A", "B", "A", "B", "A", "B"],
+            "prediction_error": [
+                0.1,
+                0.2,
+                0.05,
+                0.15,
+                0.12,
+                0.08,
+                0.2,
+                0.1,
+                0.06,
+                0.18,
+            ],
+            "feature_1": ["x", "y", "x", "y", "x", "y", "x", "y", "x", "y"],
+            "feature_2": ["c1", "c2", "c1", "c2", "c1", "c2", "c1", "c2", "c1", "c2"],
+        }
+    )
+
+    # Should not raise
+    plotter.plot_error_distributions(df)
