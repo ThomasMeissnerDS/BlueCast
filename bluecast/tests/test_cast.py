@@ -414,7 +414,7 @@ def test_missing_xgboost_tune_params_config_warning():
     bluecast_instance_test.conf_xgboost = None
     print(f"Bluecast conf Xgboost is: {bluecast_instance_test.conf_xgboost}")
     with pytest.warns(
-        UserWarning, match="No XgboostTuneParamsConfig has been provided."
+        UserWarning, match="No CatboostTuneParamsConfig has been provided."
     ):
         bluecast_instance_test.initial_checks(df)
 
@@ -498,7 +498,9 @@ def test_categorical_encoding_not_supported_by_exact_tree_method(bluecast_instan
     df = pd.DataFrame({"feature1": [1, 2, 3], "target": [0, 1, 0]})
     bluecast_instance.conf_training.calculate_shap_values = True
     bluecast_instance.conf_training.cat_encoding_via_ml_algorithm = True
-    config = XgboostTuneParamsConfig()
+    # Explicitly use XgboostTuneParamsConfig to test XGBoost-specific warning
+    bluecast_instance.conf_xgboost = XgboostTuneParamsConfig()
+    config = bluecast_instance.conf_xgboost
     config.tree_method.remove("exact")
 
     expected_message = re.escape(

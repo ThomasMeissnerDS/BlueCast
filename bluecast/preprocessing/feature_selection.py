@@ -36,6 +36,7 @@ class BoostaRootaWrapper(CustomPreprocessing):
                 random_state=self.random_state,
                 importance_type="total_cover",
                 max_depth=10,
+                enable_categorical=True,
             )
             br = BoostARoota(clf=model)
         elif self.class_problem == "multiclass":
@@ -48,6 +49,7 @@ class BoostaRootaWrapper(CustomPreprocessing):
                 random_state=self.random_state,
                 importance_type="total_cover",
                 max_depth=10,
+                enable_categorical=True,
             )
             br = BoostARoota(clf=model)
 

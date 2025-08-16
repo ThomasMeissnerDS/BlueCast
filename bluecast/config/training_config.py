@@ -103,7 +103,7 @@ class TrainingConfig:
         use_full_data_for_final_model: bool = True,
         cardinality_threshold_for_onehot_encoding: int = 5,
         infrequent_categories_threshold: int = 5,
-        cat_encoding_via_ml_algorithm: bool = False,
+        cat_encoding_via_ml_algorithm: bool = True,
         show_detailed_tuning_logs: bool = False,
         optuna_sampler_n_startup_trials: int = 10,
         enable_grid_search_fine_tuning: bool = False,

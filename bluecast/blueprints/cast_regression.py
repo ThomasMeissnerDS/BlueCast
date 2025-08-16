@@ -34,7 +34,6 @@ from bluecast.evaluation.shap_values import (
 from bluecast.experimentation.tracking import ExperimentTracker
 from bluecast.general_utils.general_utils import save_out_of_fold_data
 from bluecast.ml_modelling.catboost_regression import CatboostModelRegression
-from bluecast.ml_modelling.xgboost_regression import XgboostModelRegression
 from bluecast.preprocessing.category_encoder_orchestration import (
     CategoryEncoderOrchestrator,
 )
@@ -65,7 +64,7 @@ class BlueCastRegression:
         BlueCast will infer these automatically.
     :param :time_split_column: Takes a string containing the name of the time split column. If not provided,
         BlueCast will not split the data by time or order, but do a random split instead.
-    :param :ml_model: Takes an instance of a XgboostModelRegression class. If not provided, BlueCast will instantiate one.
+    :param :ml_model: Takes an instance of a CatboostModelRegression class. If not provided, BlueCast will instantiate one.
         This is an API to pass any model class. Inherit the baseclass from ml_modelling.base_model.BaseModel.
     :param custom_in_fold_preprocessor: Takes an instance of a CustomPreprocessing class. Allows users to eeecute
         preprocessing after the train test split within cv folds. This will be executed only if precise_cv_tuning in
@@ -88,7 +87,7 @@ class BlueCastRegression:
         cat_columns: Optional[List[Union[str, float, int]]] = None,
         date_columns: Optional[List[Union[str, float, int]]] = None,
         time_split_column: Optional[str] = None,
-        ml_model: Optional[Union[XgboostModelRegression, Any]] = None,
+        ml_model: Optional[Union[CatboostModelRegression, Any]] = None,
         custom_in_fold_preprocessor: Optional[CustomPreprocessing] = None,
         custom_last_mile_computation: Optional[CustomPreprocessing] = None,
         custom_preprocessor: Optional[CustomPreprocessing] = None,
@@ -126,7 +125,7 @@ class BlueCastRegression:
         self.target_label_encoder: Optional[TargetLabelEncoder] = None
         self.schema_detector: Optional[SchemaDetector] = None
         self.date_part_extractor: Optional[DatePartExtractor] = None
-        self.ml_model: Optional[XgboostModelRegression] = ml_model
+        self.ml_model: Optional[CatboostModelRegression] = ml_model
         self.custom_in_fold_preprocessor = custom_in_fold_preprocessor
         self.custom_last_mile_computation = custom_last_mile_computation
         self.custom_preprocessor = custom_preprocessor
@@ -145,13 +144,13 @@ class BlueCastRegression:
             self.experiment_tracker = ExperimentTracker()
 
         if not self.conf_params_xgboost:
-            self.conf_params_xgboost = XgboostRegressionFinalParamConfig()
+            self.conf_params_xgboost = CatboostRegressionFinalParamConfig()
             self.conf_params_xgboost.params.pop("num_class", None)
 
         self.conf_training: TrainingConfig = conf_training or TrainingConfig()
 
         if not self.conf_xgboost:
-            self.conf_xgboost = XgboostTuneParamsRegressionConfig()
+            self.conf_xgboost = CatboostTuneParamsRegressionConfig()
 
         if not self.single_fold_eval_metric_func:
             self.single_fold_eval_metric_func = RegressionEvalWrapper(
@@ -196,9 +195,9 @@ class BlueCastRegression:
             feature selector."""
             warnings.warn(message, UserWarning, stacklevel=2)
         if not self.conf_xgboost:
-            message = """No XgboostTuneParamsRegressionConfig has been provided. Falling back to default values. Default values
+            message = """No CatboostTuneParamsRegressionConfig has been provided. Falling back to default values. Default values
             have been chosen to speed up the prototyping. For robust hyperparameter tuning consider providing a custom
-            XgboostTuneParamsRegressionConfig with a deeper hyperparameter search space and a custom TrainingConfig to enable
+            CatboostTuneParamsRegressionConfig with a deeper hyperparameter search space and a custom TrainingConfig to enable
             cross-validation."""
             warnings.warn(message, UserWarning, stacklevel=2)
 
@@ -396,20 +395,20 @@ class BlueCastRegression:
             )
 
         if not self.ml_model:
-            self.ml_model = XgboostModelRegression(
+            self.ml_model = CatboostModelRegression(
                 self.class_problem,
                 conf_training=self.conf_training,
-                conf_xgboost=(
+                conf_catboost=(
                     self.conf_xgboost
-                    if isinstance(self.conf_xgboost, XgboostTuneParamsRegressionConfig)
-                    else XgboostTuneParamsRegressionConfig()
+                    if isinstance(self.conf_xgboost, CatboostTuneParamsRegressionConfig)
+                    else CatboostTuneParamsRegressionConfig()
                 ),
-                conf_params_xgboost=(
+                conf_params_catboost=(
                     self.conf_params_xgboost
                     if isinstance(
-                        self.conf_params_xgboost, XgboostRegressionFinalParamConfig
+                        self.conf_params_xgboost, CatboostRegressionFinalParamConfig
                     )
-                    else XgboostRegressionFinalParamConfig()
+                    else CatboostRegressionFinalParamConfig()
                 ),
                 experiment_tracker=self.experiment_tracker,
                 custom_in_fold_preprocessor=self.custom_in_fold_preprocessor,
@@ -430,7 +429,14 @@ class BlueCastRegression:
                 )
             self.ml_model.conf_training = self.conf_training
             if isinstance(self.ml_model, CatboostModelRegression):
-                self.ml_model.conf_params_catboost = self.conf_params_xgboost
+                if isinstance(
+                    self.conf_params_xgboost, CatboostRegressionFinalParamConfig
+                ):
+                    self.ml_model.conf_params_catboost = self.conf_params_xgboost
+                else:
+                    self.ml_model.conf_params_catboost = (
+                        CatboostRegressionFinalParamConfig()
+                    )
 
         self.ml_model.fit(x_train, x_test, y_train, y_test)
 
