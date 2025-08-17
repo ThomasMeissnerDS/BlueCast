@@ -177,9 +177,11 @@ class BlueCastCV:
                 f"Start fitting model number {fn} with random seed {self.conf_training.global_random_state}"
             )
 
+            # Ensure we don't pass target as categorical feature
+            safe_cat_cols = [c for c in self.cat_columns if c != target_col]
             automl = BlueCast(
                 class_problem=self.class_problem,
-                cat_columns=self.cat_columns,
+                cat_columns=safe_cat_cols,
                 conf_training=self.conf_training,
                 conf_xgboost=self.conf_xgboost,
                 conf_params_xgboost=deepcopy(self.conf_params_xgboost),
@@ -231,9 +233,11 @@ class BlueCastCV:
                 f"Start fitting model number {fn} with random seed {self.conf_training.global_random_state}"
             )
 
+            # Ensure we don't pass target as categorical feature
+            safe_cat_cols = [c for c in self.cat_columns if c != target_col]
             automl = BlueCast(
                 class_problem=self.class_problem,
-                cat_columns=self.cat_columns,
+                cat_columns=safe_cat_cols,
                 conf_training=self.conf_training,
                 conf_xgboost=self.conf_xgboost,
                 conf_params_xgboost=deepcopy(self.conf_params_xgboost),

@@ -661,7 +661,9 @@ class CatboostBaseModel:
 
         if self.cat_columns and self.conf_training.cat_encoding_via_ml_algorithm:
             # Convert columns to 'category' dtype if desired
-            x_train[self.cat_columns] = x_train[self.cat_columns].astype("category")
+            valid_cat_columns = [col for col in self.cat_columns if col in x_train.columns]
+            if valid_cat_columns:
+                x_train[valid_cat_columns] = x_train[valid_cat_columns].astype("category")
 
         return x_train, y_train
 
@@ -713,14 +715,22 @@ class CatboostBaseModel:
     def create_fine_tune_search_space(self) -> Dict[str, np.array]:
         l2_leaf_reg = self.conf_params_catboost.params.get("l2_leaf_reg")
         learning_rate = self.conf_params_catboost.params.get("learning_rate")
+        depth = self.conf_params_catboost.params.get("depth")
+        iterations = self.conf_params_catboost.params.get("iterations")
 
-        if isinstance(l2_leaf_reg, (float, int)) and isinstance(
-            learning_rate, (float, int)
+        if (
+            isinstance(l2_leaf_reg, (float, int))
+            and isinstance(learning_rate, (float, int))
+            and isinstance(depth, (float, int))
+            and isinstance(iterations, (float, int))
         ):
             l2_leaf_reg = float(l2_leaf_reg)
             learning_rate = float(learning_rate)
+            depth = int(depth)
+            iterations = int(iterations)
 
-            return {
+            # Build grids around the current values
+            search_space: Dict[str, np.ndarray] = {
                 "l2_leaf_reg": np.linspace(
                     l2_leaf_reg * 0.9,
                     l2_leaf_reg * 1.1,
@@ -734,8 +744,34 @@ class CatboostBaseModel:
                     dtype=float,
                 ),
             }
+
+            # For integer params, ensure integer grid and lower bound >= 1
+            depth_min = max(1, int(round(depth * 0.9)))
+            depth_max = max(depth_min, int(round(depth * 1.1)))
+            iter_min = max(1, int(round(iterations * 0.9)))
+            iter_max = max(iter_min, int(round(iterations * 1.1)))
+
+            # Create evenly spaced integer grids
+            search_space["depth"] = np.unique(
+                np.linspace(
+                    depth_min,
+                    depth_max,
+                    self.conf_training.gridsearch_nb_parameters_per_grid,
+                    dtype=int,
+                )
+            )
+            search_space["iterations"] = np.unique(
+                np.linspace(
+                    iter_min,
+                    iter_max,
+                    self.conf_training.gridsearch_nb_parameters_per_grid,
+                    dtype=int,
+                )
+            )
+
+            return search_space
         else:
-            raise ValueError("Some parameters are not floats or not found in params.")
+            raise ValueError("Some parameters are not floats/ints or not found in params.")
 
     def _get_param_space_fpr_grid_search(self, trial: optuna.trial) -> Dict[str, Any]:
         """
@@ -744,33 +780,47 @@ class CatboostBaseModel:
         """
         l2_leaf_reg = self.conf_params_catboost.params.get("l2_leaf_reg")
         learning_rate = self.conf_params_catboost.params.get("learning_rate")
+        depth = self.conf_params_catboost.params.get("depth")
+        iterations = self.conf_params_catboost.params.get("iterations")
         tuned_params = deepcopy(self.conf_params_catboost.params)
 
-        if isinstance(l2_leaf_reg, (float, int)) and isinstance(
-            learning_rate, (float, int)
+        if (
+            isinstance(l2_leaf_reg, (float, int))
+            and isinstance(learning_rate, (float, int))
+            and isinstance(depth, (float, int))
+            and isinstance(iterations, (float, int))
         ):
             l2_leaf_reg = float(l2_leaf_reg)
             learning_rate = float(learning_rate)
+            depth = int(depth)
+            iterations = int(iterations)
 
-            l2_leaf_reg_space = trial.suggest_float(
+            tuned_params["l2_leaf_reg"] = trial.suggest_float(
                 "l2_leaf_reg",
                 l2_leaf_reg * 0.9,
                 l2_leaf_reg * 1.1,
                 log=False,
             )
-            learning_rate_space = trial.suggest_float(
+            tuned_params["learning_rate"] = trial.suggest_float(
                 "learning_rate",
                 learning_rate * 0.9,
                 learning_rate * 1.1,
                 log=False,
             )
-
-            tuned_params["l2_leaf_reg"] = l2_leaf_reg_space
-            tuned_params["learning_rate"] = learning_rate_space
+            tuned_params["depth"] = trial.suggest_int(
+                "depth",
+                max(1, int(round(depth * 0.9))),
+                max(1, int(round(depth * 1.1))),
+            )
+            tuned_params["iterations"] = trial.suggest_int(
+                "iterations",
+                max(1, int(round(iterations * 0.9))),
+                max(1, int(round(iterations * 1.1))),
+            )
 
             return tuned_params
         else:
-            raise ValueError("Some parameters are not floats or not found in params.")
+            raise ValueError("Some parameters are not floats/ints or not found in params.")
 
     def _optimize_and_plot_grid_search_study(
         self, objective: Callable, search_space: Dict[str, np.array]

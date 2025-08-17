@@ -331,6 +331,15 @@ class CatboostModel(CatboostBaseModel):
                 for train_index, valid_index in skf.split(x_train, y_train):
                     X_trn, X_val = x_train.iloc[train_index], x_train.iloc[valid_index]
                     y_trn, y_val = y_train.iloc[train_index], y_train.iloc[valid_index]
+                    # Restrict categorical columns to those present in the current fold
+                    valid_cat_columns_fold = None
+                    if self.cat_columns:
+                        valid_cols = [
+                            col for col in self.cat_columns if col in X_trn.columns
+                        ]
+                        if valid_cols:
+                            valid_cat_columns_fold = valid_cols
+
                     if sample_weight_choice:
                         fold_weights = class_weight.compute_sample_weight(
                             "balanced", y_trn
@@ -339,14 +348,16 @@ class CatboostModel(CatboostBaseModel):
                             X_trn,
                             label=y_trn,
                             weight=fold_weights,
-                            cat_features=self.cat_columns,
+                            cat_features=valid_cat_columns_fold,
                         )
                     else:
                         fold_pool = Pool(
-                            X_trn, label=y_trn, cat_features=self.cat_columns
+                            X_trn, label=y_trn, cat_features=valid_cat_columns_fold
                         )
 
-                    val_pool = Pool(X_val, label=y_val, cat_features=self.cat_columns)
+                    val_pool = Pool(
+                        X_val, label=y_val, cat_features=valid_cat_columns_fold
+                    )
 
                     model = CatBoostClassifier(**params)
                     model.fit(
@@ -515,6 +526,12 @@ class CatboostModel(CatboostBaseModel):
         for _fn, (train_idx, val_idx) in enumerate(stratifier.split(x_train, y_train)):
             X_train_fold, X_val_fold = x_train.iloc[train_idx], x_train.iloc[val_idx]
             y_train_fold, y_val_fold = y_train.iloc[train_idx], y_train.iloc[val_idx]
+            # Restrict categorical columns to those present in the current fold
+            valid_cat_columns_fold = None
+            if self.cat_columns:
+                valid_cols = [col for col in self.cat_columns if col in X_train_fold.columns]
+                if valid_cols:
+                    valid_cat_columns_fold = valid_cols
 
             # Optionally apply custom preprocessing
             if self.custom_in_fold_preprocessor:
@@ -540,18 +557,20 @@ class CatboostModel(CatboostBaseModel):
                     X_train_fold,
                     label=y_train_fold,
                     weight=weights_fold,
-                    cat_features=self.cat_columns,
+                    cat_features=valid_cat_columns_fold,
                 )
             else:
                 train_pool = Pool(
-                    X_train_fold, label=y_train_fold, cat_features=self.cat_columns
+                    X_train_fold, label=y_train_fold, cat_features=valid_cat_columns_fold
                 )
-            val_pool = Pool(X_val_fold, label=y_val_fold, cat_features=self.cat_columns)
+            val_pool = Pool(
+                X_val_fold, label=y_val_fold, cat_features=valid_cat_columns_fold
+            )
 
             model = CatBoostClassifier(**tuned_params)
             model.fit(train_pool, eval_set=val_pool, verbose=False)
             test_pool = Pool(
-                X_test_fold, label=y_test_fold, cat_features=self.cat_columns
+                X_test_fold, label=y_test_fold, cat_features=valid_cat_columns_fold
             )
             preds = model.predict_proba(test_pool)
             score = self.single_fold_eval_metric_func.classification_eval_func_wrapper(
@@ -629,6 +648,14 @@ class CatboostModel(CatboostBaseModel):
                 for train_index, valid_index in skf.split(x_train, y_train):
                     X_trn, X_val = x_train.iloc[train_index], x_train.iloc[valid_index]
                     y_trn, y_val = y_train.iloc[train_index], y_train.iloc[valid_index]
+                    # Restrict categorical columns to those present in the current fold
+                    valid_cat_columns_fold = None
+                    if self.cat_columns:
+                        valid_cols = [
+                            col for col in self.cat_columns if col in X_trn.columns
+                        ]
+                        if valid_cols:
+                            valid_cat_columns_fold = valid_cols
 
                     if self.conf_params_catboost.sample_weight:
                         fold_weights = class_weight.compute_sample_weight(
@@ -638,13 +665,15 @@ class CatboostModel(CatboostBaseModel):
                             X_trn,
                             label=y_trn,
                             weight=fold_weights,
-                            cat_features=self.cat_columns,
+                            cat_features=valid_cat_columns_fold,
                         )
                     else:
                         fold_pool = Pool(
-                            X_trn, label=y_trn, cat_features=self.cat_columns
+                            X_trn, label=y_trn, cat_features=valid_cat_columns_fold
                         )
-                    val_pool = Pool(X_val, label=y_val, cat_features=self.cat_columns)
+                    val_pool = Pool(
+                        X_val, label=y_val, cat_features=valid_cat_columns_fold
+                    )
 
                     model = CatBoostClassifier(**tuned_params)
                     model.fit(fold_pool, eval_set=val_pool, verbose=False)
