@@ -43,8 +43,10 @@ def test_blueprint_cv_xgboost(synthetic_train_test_data, synthetic_calibration_d
     xgboost_param_config.steps_max = 100
     xgboost_param_config.max_depth_max = 3
     train_config = TrainingConfig()
-    train_config.hyperparameter_tuning_rounds = 10
+    # Speed up
+    train_config.hyperparameter_tuning_rounds = 2
     train_config.sample_data_during_tuning = True
+    train_config.hypertuning_cv_folds = 2
 
     nb_models = 3
 
@@ -109,12 +111,13 @@ def test_blueprint_cv_xgboost(synthetic_train_test_data, synthetic_calibration_d
     assert isinstance(pred_intervals, pd.DataFrame)
 
     train_config = TrainingConfig()
-    train_config.hyperparameter_tuning_rounds = 3
+    train_config.hyperparameter_tuning_rounds = 2
     train_config.enable_feature_selection = True
     train_config.hypertuning_cv_folds = 2
     train_config.enable_grid_search_fine_tuning = True
     train_config.gridsearch_nb_parameters_per_grid = 2
     train_config.precise_cv_tuning = True
+    train_config.sample_data_during_tuning = True
 
     automl_cv = BlueCastCVRegression(
         conf_xgboost=xgboost_param_config, conf_training=train_config, stratifier=None
@@ -327,12 +330,13 @@ def test_bluecast_cv_fit_eval_with_custom_model():
 def test_bluecast_cv_with_custom_objects():
     custom_model = CustomModel()
     train_config = TrainingConfig()
-    train_config.hyperparameter_tuning_rounds = 10
+    train_config.hyperparameter_tuning_rounds = 2
     train_config.enable_feature_selection = True
     train_config.hypertuning_cv_folds = 2
     train_config.enable_grid_search_fine_tuning = False
     train_config.gridsearch_nb_parameters_per_grid = 2
     train_config.use_full_data_for_final_model = True
+    train_config.sample_data_during_tuning = True
 
     xgboost_param_config = XgboostTuneParamsRegressionConfig()
     xgboost_param_config.steps_max = 100

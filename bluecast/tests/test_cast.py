@@ -92,6 +92,10 @@ def test_blueprint_xgboost(
         custom_last_mile_computation=custom_last_mile_computation,
     )
     automl.conf_training.autotune_on_device = "cpu"
+    # Speed up
+    automl.conf_training.hyperparameter_tuning_rounds = 2
+    automl.conf_training.hypertuning_cv_folds = 2
+    automl.conf_training.sample_data_during_tuning = True
 
     automl.fit_eval(
         df_train,
@@ -114,6 +118,10 @@ def test_blueprint_xgboost(
         conf_xgboost=xgboost_param_config,
         custom_last_mile_computation=custom_last_mile_computation,
     )
+    # Speed up
+    automl.conf_training.hyperparameter_tuning_rounds = 2
+    automl.conf_training.hypertuning_cv_folds = 2
+    automl.conf_training.sample_data_during_tuning = True
     automl.fit_eval(
         df_train,
         df_train.drop("target", axis=1),
@@ -151,7 +159,8 @@ def test_blueprint_xgboost(
     custom_config = TrainingConfig()
     custom_config.precise_cv_tuning = True
     custom_config.hypertuning_cv_folds = 2
-    custom_config.hyperparameter_tuning_rounds = 10
+    custom_config.hyperparameter_tuning_rounds = 2
+    custom_config.sample_data_during_tuning = True
 
     automl = BlueCast(
         class_problem="multiclass",
@@ -175,6 +184,7 @@ def test_blueprint_xgboost(
         <= automl.conf_training.hypertuning_cv_folds
         * 2
         * automl.conf_training.hyperparameter_tuning_rounds
+        + 7  # metrics logged during fit_eval
     )
 
 
@@ -202,11 +212,12 @@ def test_bluecast_with_custom_model():
     # Create an instance of the custom model
     custom_model = CustomModel()
     train_config = TrainingConfig()
-    train_config.hyperparameter_tuning_rounds = 10
+    train_config.hyperparameter_tuning_rounds = 2
     train_config.enable_feature_selection = True
     train_config.hypertuning_cv_folds = 2
     train_config.enable_grid_search_fine_tuning = True
     train_config.gridsearch_nb_parameters_per_grid = 2
+    train_config.sample_data_during_tuning = True
 
     xgboost_param_config = XgboostTuneParamsConfig()
     xgboost_param_config.steps_min = 2

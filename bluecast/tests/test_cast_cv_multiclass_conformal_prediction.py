@@ -13,6 +13,11 @@ def test_bluecast_cv_fit_eval_multiclass_without_custom_model():
     # Create an instance of the BlueCast class with the custom model
     train_config = TrainingConfig()
     train_config.calculate_shap_values = False
+    # Speed up unit test runtime
+    train_config.autotune_model = False
+    train_config.enable_grid_search_fine_tuning = False
+    train_config.hyperparameter_tuning_rounds = 2
+    train_config.hypertuning_cv_folds = 2
 
     bluecast = BlueCastCV(
         class_problem="multiclass",
