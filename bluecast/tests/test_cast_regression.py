@@ -362,7 +362,7 @@ def test_bluecast_with_custom_model():
     # Assert the expected results
     assert isinstance(preds, np.ndarray)
     print(bluecast.experiment_tracker.experiment_id)
-    assert len(bluecast.experiment_tracker.experiment_id) == 26
+    assert len(bluecast.experiment_tracker.experiment_id) == 14
 
     # test cross-validated model without custom model and with custom infold preproc
     bluecast = BlueCastRegression(
@@ -411,7 +411,7 @@ def test_bluecast_with_custom_model():
     # Assert the expected results
     assert isinstance(preds, np.ndarray)
     print(bluecast.experiment_tracker.experiment_id)
-    assert len(bluecast.experiment_tracker.experiment_id) == 26
+    assert len(bluecast.experiment_tracker.experiment_id) == 14
 
     # test cross-validated model without custom model
     bluecast = BlueCastRegression(
@@ -455,7 +455,7 @@ def test_bluecast_with_custom_model():
     assert isinstance(preds, np.ndarray)
     print(bluecast.experiment_tracker.experiment_id)
     assert (
-        len(bluecast.experiment_tracker.experiment_id) == 26
+        len(bluecast.experiment_tracker.experiment_id) == 14
     )  # due to custom model and fit method
 
 
@@ -503,7 +503,7 @@ def test_missing_xgboost_tune_params_config_warning():
     bluecast_instance_test.target_column = "target"
     bluecast_instance_test.conf_xgboost = None
     with pytest.warns(
-        UserWarning, match="No XgboostTuneParamsRegressionConfig has been provided."
+        UserWarning, match="No CatboostTuneParamsRegressionConfig has been provided."
     ):
         bluecast_instance_test.initial_checks(df)
 
@@ -564,7 +564,9 @@ def test_categorical_encoding_not_supported_by_exact_tree_method(bluecast_instan
     df = pd.DataFrame({"feature1": [1, 2, 3], "target": [0, 1, 0]})
     bluecast_instance.conf_training.calculate_shap_values = True
     bluecast_instance.conf_training.cat_encoding_via_ml_algorithm = True
-    config = XgboostTuneParamsRegressionConfig()
+    # Explicitly use XgboostTuneParamsRegressionConfig to test XGBoost-specific warning
+    bluecast_instance.conf_xgboost = XgboostTuneParamsRegressionConfig()
+    config = bluecast_instance.conf_xgboost
     config.tree_method.remove("exact")
 
     expected_message = re.escape(

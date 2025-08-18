@@ -33,7 +33,6 @@ from bluecast.evaluation.shap_values import (
 from bluecast.experimentation.tracking import ExperimentTracker
 from bluecast.general_utils.general_utils import save_out_of_fold_data
 from bluecast.ml_modelling.catboost import CatboostModel
-from bluecast.ml_modelling.xgboost import XgboostModel
 from bluecast.preprocessing.category_encoder_orchestration import (
     CategoryEncoderOrchestrator,
 )
@@ -69,7 +68,7 @@ class BlueCast:
         BlueCast will infer these automatically.
     :param :time_split_column: Takes a string containing the name of the time split column. If not provided,
         BlueCast will not split the data by time or order, but do a random split instead.
-    :param :ml_model: Takes an instance of a XgboostModel class. If not provided, BlueCast will instantiate one.
+    :param :ml_model: Takes an instance of a CatboostModel class. If not provided, BlueCast will instantiate one.
         This is an API to pass any model class. Inherit the baseclass from ml_modelling.base_model.BaseModel.
     :param custom_in_fold_preprocessor: Takes an instance of a CustomPreprocessing class. Allows users to eeecute
         preprocessing after the train test split within cv folds. This will be executed only if precise_cv_tuning in
@@ -92,7 +91,7 @@ class BlueCast:
         cat_columns: Optional[List[Union[str, float, int]]] = None,
         date_columns: Optional[List[Union[str, float, int]]] = None,
         time_split_column: Optional[str] = None,
-        ml_model: Optional[Union[XgboostModel, Any]] = None,
+        ml_model: Optional[Union[CatboostModel, Any]] = None,
         custom_in_fold_preprocessor: Optional[CustomPreprocessing] = None,
         custom_last_mile_computation: Optional[CustomPreprocessing] = None,
         custom_preprocessor: Optional[CustomPreprocessing] = None,
@@ -132,7 +131,7 @@ class BlueCast:
         self.target_label_encoder: Optional[TargetLabelEncoder] = None
         self.schema_detector: Optional[SchemaDetector] = None
         self.date_part_extractor: Optional[DatePartExtractor] = None
-        self.ml_model: Optional[XgboostModel] = ml_model
+        self.ml_model: Optional[CatboostModel] = ml_model
         self.custom_in_fold_preprocessor = custom_in_fold_preprocessor
         self.custom_last_mile_computation = custom_last_mile_computation
         self.custom_preprocessor = custom_preprocessor
@@ -149,25 +148,21 @@ class BlueCast:
             self.experiment_tracker = ExperimentTracker()
 
         if not self.conf_params_xgboost:
-            self.conf_params_xgboost = XgboostFinalParamConfig()
+            self.conf_params_xgboost = CatboostFinalParamConfig()
 
         self.conf_training: TrainingConfig = conf_training or TrainingConfig()
 
         if not self.conf_xgboost:
-            self.conf_xgboost = XgboostTuneParamsConfig()
-
+            self.conf_xgboost = CatboostTuneParamsConfig()
         if not self.single_fold_eval_metric_func:
             self.single_fold_eval_metric_func = ClassificationEvalWrapper()
-
         logging.basicConfig(
             filename=self.conf_training.logging_file_path,
             filemode="w",
             format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
             level=logging.INFO,
-            # stream=sys.stdout,
             force=True,
         )
-
         logging.info("BlueCast blueprint initialized.")
 
     def initial_checks(self, df: pd.DataFrame) -> None:
@@ -197,12 +192,14 @@ class BlueCast:
             many features have been removed. Otherwise, consider disabling feature selection or providing a custom
             feature selector."""
             warnings.warn(message, UserWarning, stacklevel=2)
+
         if not self.conf_xgboost:
-            message = """No XgboostTuneParamsConfig has been provided. Falling back to default values. Default values
+            message = """No CatboostTuneParamsConfig has been provided. Falling back to default values. Default values
             have been chosen to speed up the prototyping. For robust hyperparameter tuning consider providing a custom
-            XgboostTuneParamsConfig with a deeper hyperparameter search space and a custom TrainingConfig to enable
+            CatboostTuneParamsConfig with a deeper hyperparameter search space and a custom TrainingConfig to enable
             cross-validation."""
             warnings.warn(message, UserWarning, stacklevel=2)
+
         if (
             self.conf_training.cat_encoding_via_ml_algorithm
             and self.conf_training.calculate_shap_values
@@ -217,11 +214,13 @@ class BlueCast:
             required. Alternatively use Xgboost as a custom model and calculate shap values manually via
             pred_contribs=True."""
             warnings.warn(message, UserWarning, stacklevel=2)
+
         if self.conf_training.cat_encoding_via_ml_algorithm and self.ml_model:
             message = """Categorical encoding via ML algorithm is enabled. Make sure to handle categorical features
             within the provided ml model or consider disabling categorical encoding via ML algorithm in the
             TrainingConfig alternatively."""
             warnings.warn(message, UserWarning, stacklevel=2)
+
         if (
             self.conf_training.cat_encoding_via_ml_algorithm
             and self.custom_last_mile_computation
@@ -230,11 +229,13 @@ class BlueCast:
             within the provided last mile computation or consider disabling categorical encoding via ML algorithm in the
             TrainingConfig alternatively."""
             warnings.warn(message, UserWarning, stacklevel=2)
+
         if self.conf_training.precise_cv_tuning:
             message = """Precise fine tuning has been enabled. Please make sure to transform your data to a normal
             distribution (yeo-johnson). This is an experimental feature as it includes a special
             evaluation (see more in the docs). If you plan to use this feature, please make sure to read the docs."""
             warnings.warn(message, UserWarning, stacklevel=2)
+
         if (
             self.conf_training.precise_cv_tuning
             and not self.custom_in_fold_preprocessor
@@ -245,6 +246,7 @@ class BlueCast:
             using precise_cv_tuning. Otherwise disable precise_cv_tuning to benefit from early pruning of unpromising
             hyperparameter sets."""
             warnings.warn(message, UserWarning, stacklevel=2)
+
         if (
             self.conf_training.precise_cv_tuning
             and self.conf_training.hypertuning_cv_folds < 2
@@ -253,21 +255,21 @@ class BlueCast:
             less than 2 folds precise_cv_tuning will not have any impact. Consider raising the number of folds to two
             or higher or disable precise_cv_tuning."""
             warnings.warn(message, UserWarning, stacklevel=2)
+
         if self.class_problem == "binary" and df[self.target_column].nunique() > 2:
             message = """During class instantiation class_problem = 'binary' has been passed. However more than 2
             unique target classes have been found. Did you mean 'multiclass' instead?"""
             warnings.warn(message, UserWarning, stacklevel=2)
+
         if self.class_problem == "multiclass" and df[self.target_column].nunique() < 3:
             message = """During class instantiation class_problem = 'multiclass' has been passed. However less than 3
             unique target classes have been found. Did you mean 'binary' instead?"""
             warnings.warn(message, UserWarning, stacklevel=2)
 
         if self.conf_xgboost and isinstance(self.conf_xgboost, XgboostTuneParamsConfig):
-            if (
-                self.conf_training.cat_encoding_via_ml_algorithm
-                and "exact" in self.conf_xgboost.tree_method
-            ):
-                self.conf_xgboost.tree_method.remove("exact")
+            if self.conf_training.cat_encoding_via_ml_algorithm:
+                if "exact" in self.conf_xgboost.tree_method:
+                    self.conf_xgboost.tree_method.remove("exact")
                 message = f"""Categorical encoding via ML algorithm is enabled. The tree method 'exact' is not supported with categorical encoding within Xgboost. The tree method 'exact' has been removed. Using {self.conf_xgboost.tree_method} only during hyperparameter tuning."""
                 warnings.warn(message, UserWarning, stacklevel=2)
 
@@ -432,18 +434,18 @@ class BlueCast:
             )
 
         if not self.ml_model:
-            self.ml_model = XgboostModel(
+            self.ml_model = CatboostModel(
                 self.class_problem,
                 conf_training=self.conf_training,
-                conf_xgboost=(
+                conf_catboost=(
                     self.conf_xgboost
-                    if isinstance(self.conf_xgboost, XgboostTuneParamsConfig)
-                    else XgboostTuneParamsConfig()
+                    if isinstance(self.conf_xgboost, CatboostTuneParamsConfig)
+                    else CatboostTuneParamsConfig()
                 ),
-                conf_params_xgboost=(
+                conf_params_catboost=(
                     self.conf_params_xgboost
-                    if isinstance(self.conf_params_xgboost, XgboostFinalParamConfig)
-                    else XgboostFinalParamConfig()
+                    if isinstance(self.conf_params_xgboost, CatboostFinalParamConfig)
+                    else CatboostFinalParamConfig()
                 ),
                 experiment_tracker=self.experiment_tracker,
                 custom_in_fold_preprocessor=self.custom_in_fold_preprocessor,
@@ -451,21 +453,25 @@ class BlueCast:
                 single_fold_eval_metric_func=self.single_fold_eval_metric_func,
             )
 
-        if not getattr(self.ml_model, "cat_columns", None):
-            self.ml_model.experiment_tracker = self.experiment_tracker
-            self.ml_model.custom_in_fold_preprocessor = self.custom_in_fold_preprocessor
-            self.ml_model.cat_columns = [
-                col
-                for col in self.feat_type_detector.cat_columns
-                if col != self.target_column
-            ]
-            if self.single_fold_eval_metric_func is not None:
-                self.ml_model.single_fold_eval_metric_func = (
-                    self.single_fold_eval_metric_func
-                )
-            self.ml_model.conf_training = self.conf_training
-            if isinstance(self.ml_model, CatboostModel):
+        # Always override model wiring based on detected schema; ensure target is excluded
+        self.ml_model.experiment_tracker = self.experiment_tracker
+        self.ml_model.custom_in_fold_preprocessor = self.custom_in_fold_preprocessor
+        self.ml_model.cat_columns = [
+            col
+            for col in self.feat_type_detector.cat_columns
+            if col != self.target_column
+        ]
+        if self.single_fold_eval_metric_func is not None:
+            self.ml_model.single_fold_eval_metric_func = (
+                self.single_fold_eval_metric_func
+            )
+        self.ml_model.conf_training = self.conf_training
+        if isinstance(self.ml_model, CatboostModel):
+            # Ensure CatBoost final params config exists and is of correct type
+            if isinstance(self.conf_params_xgboost, CatboostFinalParamConfig):
                 self.ml_model.conf_params_catboost = self.conf_params_xgboost
+            else:
+                self.ml_model.conf_params_catboost = CatboostFinalParamConfig()
 
         self.ml_model.fit(x_train, x_test, y_train, y_test)
 
@@ -524,8 +530,15 @@ class BlueCast:
         if not self.conf_training:
             raise ValueError("Could not find any training config")
 
-        if not self.conf_params_xgboost:
-            raise ValueError("Could not find Xgboost params")
+        # Ensure final params exist depending on model backend
+        if isinstance(self.ml_model, CatboostModel):
+            if not getattr(self.ml_model, "conf_params_catboost", None):
+                raise ValueError("Could not find CatBoost params")
+            final_params_for_log = self.ml_model.conf_params_catboost.params
+        else:
+            if not self.conf_params_xgboost:
+                raise ValueError("Could not find Xgboost params")
+            final_params_for_log = self.conf_params_xgboost.params
 
         if len(self.experiment_tracker.experiment_id) == 0:
             self.experiment_tracker.experiment_id.append(0)
@@ -564,7 +577,7 @@ class BlueCast:
                 experiment_id=experiment_id,
                 score_category="oof_score",
                 training_config=self.conf_training,
-                model_parameters=self.conf_params_xgboost.params,  # noqa
+                model_parameters=final_params_for_log,  # noqa
                 eval_scores=self.eval_metrics["accuracy"],
                 metric_used=metric,
                 metric_higher_is_better=higher_is_better,

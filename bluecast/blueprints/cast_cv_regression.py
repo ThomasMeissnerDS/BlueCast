@@ -21,7 +21,7 @@ from bluecast.conformal_prediction.conformal_prediction_regression import (
 )
 from bluecast.evaluation.eval_metrics import RegressionEvalWrapper
 from bluecast.experimentation.tracking import ExperimentTracker
-from bluecast.ml_modelling.xgboost import XgboostModel
+from bluecast.ml_modelling.catboost import CatboostModel
 from bluecast.preprocessing.custom import CustomPreprocessing
 from bluecast.preprocessing.feature_selection import BoostaRootaWrapper
 
@@ -76,7 +76,7 @@ class BlueCastCVRegression:
         custom_feature_selector: Optional[
             Union[BoostaRootaWrapper, CustomPreprocessing]
         ] = None,
-        ml_model: Optional[Union[XgboostModel, Any]] = None,
+        ml_model: Optional[Union[CatboostModel, Any]] = None,
         single_fold_eval_metric_func: Optional[RegressionEvalWrapper] = None,
     ):
         self.class_problem = class_problem
@@ -105,12 +105,12 @@ class BlueCastCVRegression:
             self.experiment_tracker = ExperimentTracker()
 
         if not self.conf_params_xgboost:
-            self.conf_params_xgboost = XgboostRegressionFinalParamConfig()
+            self.conf_params_xgboost = CatboostRegressionFinalParamConfig()
 
         self.conf_training: TrainingConfig = conf_training or TrainingConfig()
 
         if not self.conf_xgboost:
-            self.conf_xgboost = XgboostTuneParamsRegressionConfig()
+            self.conf_xgboost = CatboostTuneParamsRegressionConfig()
 
         if not self.single_fold_eval_metric_func:
             self.single_fold_eval_metric_func = RegressionEvalWrapper(

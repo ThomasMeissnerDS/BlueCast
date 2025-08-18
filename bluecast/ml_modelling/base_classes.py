@@ -661,7 +661,13 @@ class CatboostBaseModel:
 
         if self.cat_columns and self.conf_training.cat_encoding_via_ml_algorithm:
             # Convert columns to 'category' dtype if desired
-            x_train[self.cat_columns] = x_train[self.cat_columns].astype("category")
+            valid_cat_columns = [
+                col for col in self.cat_columns if col in x_train.columns
+            ]
+            if valid_cat_columns:
+                x_train[valid_cat_columns] = x_train[valid_cat_columns].astype(
+                    "category"
+                )
 
         return x_train, y_train
 
@@ -752,21 +758,18 @@ class CatboostBaseModel:
             l2_leaf_reg = float(l2_leaf_reg)
             learning_rate = float(learning_rate)
 
-            l2_leaf_reg_space = trial.suggest_float(
+            tuned_params["l2_leaf_reg"] = trial.suggest_float(
                 "l2_leaf_reg",
                 l2_leaf_reg * 0.9,
                 l2_leaf_reg * 1.1,
                 log=False,
             )
-            learning_rate_space = trial.suggest_float(
+            tuned_params["learning_rate"] = trial.suggest_float(
                 "learning_rate",
                 learning_rate * 0.9,
                 learning_rate * 1.1,
                 log=False,
             )
-
-            tuned_params["l2_leaf_reg"] = l2_leaf_reg_space
-            tuned_params["learning_rate"] = learning_rate_space
 
             return tuned_params
         else:

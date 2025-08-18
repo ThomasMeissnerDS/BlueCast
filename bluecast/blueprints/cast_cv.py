@@ -19,7 +19,7 @@ from bluecast.conformal_prediction.conformal_prediction import (
 )
 from bluecast.evaluation.eval_metrics import ClassificationEvalWrapper
 from bluecast.experimentation.tracking import ExperimentTracker
-from bluecast.ml_modelling.xgboost import XgboostModel
+from bluecast.ml_modelling.catboost import CatboostModel
 from bluecast.preprocessing.custom import CustomPreprocessing
 from bluecast.preprocessing.feature_selection import BoostaRootaWrapper
 
@@ -73,7 +73,7 @@ class BlueCastCV:
         custom_feature_selector: Optional[
             Union[BoostaRootaWrapper, CustomPreprocessing]
         ] = None,
-        ml_model: Optional[Union[XgboostModel, Any]] = None,
+        ml_model: Optional[Union[CatboostModel, Any]] = None,
         single_fold_eval_metric_func: Optional[ClassificationEvalWrapper] = None,
     ):
         self.class_problem = class_problem
@@ -100,12 +100,12 @@ class BlueCastCV:
             self.experiment_tracker = ExperimentTracker()
 
         if not self.conf_params_xgboost:
-            self.conf_params_xgboost = XgboostFinalParamConfig()
+            self.conf_params_xgboost = CatboostFinalParamConfig()
 
         self.conf_training: TrainingConfig = conf_training or TrainingConfig()
 
         if not self.conf_xgboost:
-            self.conf_xgboost = XgboostTuneParamsConfig()
+            self.conf_xgboost = CatboostTuneParamsConfig()
 
         if not self.single_fold_eval_metric_func:
             self.single_fold_eval_metric_func = ClassificationEvalWrapper()
@@ -177,9 +177,11 @@ class BlueCastCV:
                 f"Start fitting model number {fn} with random seed {self.conf_training.global_random_state}"
             )
 
+            # Ensure we don't pass target as categorical feature
+            safe_cat_cols = [c for c in self.cat_columns if c != target_col]
             automl = BlueCast(
                 class_problem=self.class_problem,
-                cat_columns=self.cat_columns,
+                cat_columns=safe_cat_cols,
                 conf_training=self.conf_training,
                 conf_xgboost=self.conf_xgboost,
                 conf_params_xgboost=deepcopy(self.conf_params_xgboost),
@@ -231,9 +233,11 @@ class BlueCastCV:
                 f"Start fitting model number {fn} with random seed {self.conf_training.global_random_state}"
             )
 
+            # Ensure we don't pass target as categorical feature
+            safe_cat_cols = [c for c in self.cat_columns if c != target_col]
             automl = BlueCast(
                 class_problem=self.class_problem,
-                cat_columns=self.cat_columns,
+                cat_columns=safe_cat_cols,
                 conf_training=self.conf_training,
                 conf_xgboost=self.conf_xgboost,
                 conf_params_xgboost=deepcopy(self.conf_params_xgboost),
