@@ -661,9 +661,13 @@ class CatboostBaseModel:
 
         if self.cat_columns and self.conf_training.cat_encoding_via_ml_algorithm:
             # Convert columns to 'category' dtype if desired
-            valid_cat_columns = [col for col in self.cat_columns if col in x_train.columns]
+            valid_cat_columns = [
+                col for col in self.cat_columns if col in x_train.columns
+            ]
             if valid_cat_columns:
-                x_train[valid_cat_columns] = x_train[valid_cat_columns].astype("category")
+                x_train[valid_cat_columns] = x_train[valid_cat_columns].astype(
+                    "category"
+                )
 
         return x_train, y_train
 
@@ -771,7 +775,9 @@ class CatboostBaseModel:
 
             return search_space
         else:
-            raise ValueError("Some parameters are not floats/ints or not found in params.")
+            raise ValueError(
+                "Some parameters are not floats/ints or not found in params."
+            )
 
     def _get_param_space_fpr_grid_search(self, trial: optuna.trial) -> Dict[str, Any]:
         """
@@ -820,7 +826,9 @@ class CatboostBaseModel:
 
             return tuned_params
         else:
-            raise ValueError("Some parameters are not floats/ints or not found in params.")
+            raise ValueError(
+                "Some parameters are not floats/ints or not found in params."
+            )
 
     def _optimize_and_plot_grid_search_study(
         self, objective: Callable, search_space: Dict[str, np.array]

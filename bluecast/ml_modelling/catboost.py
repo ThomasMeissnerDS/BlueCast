@@ -529,7 +529,9 @@ class CatboostModel(CatboostBaseModel):
             # Restrict categorical columns to those present in the current fold
             valid_cat_columns_fold = None
             if self.cat_columns:
-                valid_cols = [col for col in self.cat_columns if col in X_train_fold.columns]
+                valid_cols = [
+                    col for col in self.cat_columns if col in X_train_fold.columns
+                ]
                 if valid_cols:
                     valid_cat_columns_fold = valid_cols
 
@@ -561,7 +563,9 @@ class CatboostModel(CatboostBaseModel):
                 )
             else:
                 train_pool = Pool(
-                    X_train_fold, label=y_train_fold, cat_features=valid_cat_columns_fold
+                    X_train_fold,
+                    label=y_train_fold,
+                    cat_features=valid_cat_columns_fold,
                 )
             val_pool = Pool(
                 X_val_fold, label=y_val_fold, cat_features=valid_cat_columns_fold

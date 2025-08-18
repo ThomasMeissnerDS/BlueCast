@@ -457,10 +457,14 @@ class BlueCast:
         self.ml_model.experiment_tracker = self.experiment_tracker
         self.ml_model.custom_in_fold_preprocessor = self.custom_in_fold_preprocessor
         self.ml_model.cat_columns = [
-            col for col in self.feat_type_detector.cat_columns if col != self.target_column
+            col
+            for col in self.feat_type_detector.cat_columns
+            if col != self.target_column
         ]
         if self.single_fold_eval_metric_func is not None:
-            self.ml_model.single_fold_eval_metric_func = self.single_fold_eval_metric_func
+            self.ml_model.single_fold_eval_metric_func = (
+                self.single_fold_eval_metric_func
+            )
         self.ml_model.conf_training = self.conf_training
         if isinstance(self.ml_model, CatboostModel):
             # Ensure CatBoost final params config exists and is of correct type
