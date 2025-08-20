@@ -38,14 +38,17 @@ class LogisticRegressionModel(BaseClassMlModel):
                 "penalty": ["l2"],
                 "C": np.logspace(0.1, 1, 5),
                 "class_weight": ["balanced", None],
-                "solver": ["newton-cg", "newton-cholesky", "sag", "saga"],
+                # solvers that support l2
+                "solver": ["lbfgs", "newton-cg", "newton-cholesky", "sag", "saga"],
             },
             {
                 "penalty": ["elasticnet"],
                 "C": np.logspace(0.1, 1, 5),
                 "class_weight": ["balanced", None],
-                "solver": ["newton-cg", "newton-cholesky", "sag", "saga"],
-                "l1_ratio": np.arange(0, 1, 3),
+                # elasticnet is only supported by 'saga'
+                "solver": ["saga"],
+                # include endpoints 0.0, 0.5, 1.0
+                "l1_ratio": np.linspace(0.0, 1.0, 3),
             },
         ]
 
