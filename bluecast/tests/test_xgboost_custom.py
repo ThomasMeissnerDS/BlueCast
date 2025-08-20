@@ -1,151 +1,155 @@
+from typing import Optional, Tuple
+
 import numpy as np
 import pandas as pd
 
 from bluecast.blueprints.cast import BlueCast
-from bluecast.config.training_config import TrainingConfig, XgboostTuneParamsConfig, XgboostFinalParamConfig
+from bluecast.config.training_config import (
+    TrainingConfig,
+    XgboostFinalParamConfig,
+    XgboostTuneParamsConfig,
+)
 from bluecast.ml_modelling.xgboost import XgboostModel
 from bluecast.preprocessing.custom import CustomPreprocessing
-from typing import Optional, Tuple
 
 
 def test_bluecast_with_custom_xgboost_no_tuning():
-	train_config = TrainingConfig()
-	train_config.hyperparameter_tuning_rounds = 5
-	train_config.hypertuning_cv_folds = 2
-	train_config.autotune_model = False
+    train_config = TrainingConfig()
+    train_config.hyperparameter_tuning_rounds = 5
+    train_config.hypertuning_cv_folds = 2
+    train_config.autotune_model = False
 
-	xgboost_param_config = XgboostTuneParamsConfig()
-	xgboost_param_config.steps_min = 2
-	xgboost_param_config.steps_max = 100
-	xgboost_param_config.max_depth_max = 3
+    xgboost_param_config = XgboostTuneParamsConfig()
+    xgboost_param_config.steps_min = 2
+    xgboost_param_config.steps_max = 100
+    xgboost_param_config.max_depth_max = 3
 
-	# Ensure final params are valid for binary classification and fast
-	xgb_final_params = XgboostFinalParamConfig()
-	xgb_final_params.params["objective"] = "multi:softprob"
-	xgb_final_params.params["eval_metric"] = "mlogloss"
-	xgb_final_params.params["num_class"] = 2
-	xgb_final_params.params["steps"] = 50
+    # Ensure final params are valid for binary classification and fast
+    xgb_final_params = XgboostFinalParamConfig()
+    xgb_final_params.params["objective"] = "multi:softprob"
+    xgb_final_params.params["eval_metric"] = "mlogloss"
+    xgb_final_params.params["num_class"] = 2
+    xgb_final_params.params["steps"] = 50
 
-	class MyCustomLastMilePreprocessing(CustomPreprocessing):
-		def custom_function(self, df: pd.DataFrame) -> pd.DataFrame:
-			df["custom_col"] = 5
-			return df
+    class MyCustomLastMilePreprocessing(CustomPreprocessing):
+        def custom_function(self, df: pd.DataFrame) -> pd.DataFrame:
+            df["custom_col"] = 5
+            return df
 
-		def fit_transform(
-			self, df: pd.DataFrame, target: pd.Series
-		) -> Tuple[pd.DataFrame, pd.Series]:
-			df = self.custom_function(df)
-			return df, target
+        def fit_transform(
+            self, df: pd.DataFrame, target: pd.Series
+        ) -> Tuple[pd.DataFrame, pd.Series]:
+            df = self.custom_function(df)
+            return df, target
 
-		def transform(
-			self,
-			df: pd.DataFrame,
-			target: Optional[pd.Series] = None,
-			predicton_mode: bool = False,
-		) -> Tuple[pd.DataFrame, Optional[pd.Series]]:
-			df = self.custom_function(df)
-			return df, target
+        def transform(
+            self,
+            df: pd.DataFrame,
+            target: Optional[pd.Series] = None,
+            predicton_mode: bool = False,
+        ) -> Tuple[pd.DataFrame, Optional[pd.Series]]:
+            df = self.custom_function(df)
+            return df, target
 
-	bluecast = BlueCast(
-		class_problem="binary",
-		ml_model=XgboostModel(
-			class_problem="binary",
-			conf_training=train_config,
-			conf_xgboost=xgboost_param_config,
-			conf_params_xgboost=xgb_final_params,
-		),
-		conf_xgboost=xgboost_param_config,
-		conf_training=train_config,
-		custom_last_mile_computation=MyCustomLastMilePreprocessing(),
-	)
+    bluecast = BlueCast(
+        class_problem="binary",
+        ml_model=XgboostModel(
+            class_problem="binary",
+            conf_training=train_config,
+            conf_xgboost=xgboost_param_config,
+            conf_params_xgboost=xgb_final_params,
+        ),
+        conf_xgboost=xgboost_param_config,
+        conf_training=train_config,
+        custom_last_mile_computation=MyCustomLastMilePreprocessing(),
+    )
 
-	x_train = pd.DataFrame(
-		{
-			"feature1": [i for i in range(20)],
-			"feature2": [i for i in range(20)],
-			"feature3": [i for i in range(20)],
-			"feature4": [i for i in range(20)],
-			"feature5": [i for i in range(20)],
-			"feature6": [i for i in range(20)],
-		}
-	)
-	y_train = pd.Series([0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1])
-	x_test = pd.DataFrame(
-		{
-			"feature1": [i for i in range(10)],
-			"feature2": [i for i in range(10)],
-			"feature3": [i for i in range(10)],
-			"feature4": [i for i in range(10)],
-			"feature5": [i for i in range(10)],
-			"feature6": [i for i in range(10)],
-		}
-	)
+    x_train = pd.DataFrame(
+        {
+            "feature1": [i for i in range(20)],
+            "feature2": [i for i in range(20)],
+            "feature3": [i for i in range(20)],
+            "feature4": [i for i in range(20)],
+            "feature5": [i for i in range(20)],
+            "feature6": [i for i in range(20)],
+        }
+    )
+    y_train = pd.Series([0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1])
+    x_test = pd.DataFrame(
+        {
+            "feature1": [i for i in range(10)],
+            "feature2": [i for i in range(10)],
+            "feature3": [i for i in range(10)],
+            "feature4": [i for i in range(10)],
+            "feature5": [i for i in range(10)],
+            "feature6": [i for i in range(10)],
+        }
+    )
 
-	x_train["target"] = y_train
+    x_train["target"] = y_train
 
-	bluecast.fit(x_train, "target")
+    bluecast.fit(x_train, "target")
 
-	predicted_probas, predicted_classes = bluecast.predict(x_test)
-	_ = bluecast.predict_proba(x_test)
+    predicted_probas, predicted_classes = bluecast.predict(x_test)
+    _ = bluecast.predict_proba(x_test)
 
-	assert isinstance(predicted_probas, np.ndarray)
-	assert isinstance(predicted_classes, np.ndarray)
-	assert len(bluecast.experiment_tracker.experiment_id) == 0
-
+    assert isinstance(predicted_probas, np.ndarray)
+    assert isinstance(predicted_classes, np.ndarray)
+    assert len(bluecast.experiment_tracker.experiment_id) == 0
 
 
 def test_bluecast_with_custom_xgboost_with_tuning():
-	train_config = TrainingConfig()
-	train_config.hyperparameter_tuning_rounds = 5
-	train_config.hypertuning_cv_folds = 2
-	train_config.autotune_model = True
-	train_config.plot_hyperparameter_tuning_overview = False
+    train_config = TrainingConfig()
+    train_config.hyperparameter_tuning_rounds = 5
+    train_config.hypertuning_cv_folds = 2
+    train_config.autotune_model = True
+    train_config.plot_hyperparameter_tuning_overview = False
 
-	xgboost_param_config = XgboostTuneParamsConfig()
-	xgboost_param_config.steps_min = 2
-	xgboost_param_config.steps_max = 100
-	xgboost_param_config.max_depth_max = 3
+    xgboost_param_config = XgboostTuneParamsConfig()
+    xgboost_param_config.steps_min = 2
+    xgboost_param_config.steps_max = 100
+    xgboost_param_config.max_depth_max = 3
 
-	bluecast = BlueCast(
-		class_problem="binary",
-		ml_model=XgboostModel(
-			class_problem="binary",
-			conf_training=train_config,
-			conf_xgboost=xgboost_param_config,
-		),
-		conf_xgboost=xgboost_param_config,
-		conf_training=train_config,
-	)
+    bluecast = BlueCast(
+        class_problem="binary",
+        ml_model=XgboostModel(
+            class_problem="binary",
+            conf_training=train_config,
+            conf_xgboost=xgboost_param_config,
+        ),
+        conf_xgboost=xgboost_param_config,
+        conf_training=train_config,
+    )
 
-	x_train = pd.DataFrame(
-		{
-			"feature1": [i for i in range(20)],
-			"feature2": [i for i in range(20)],
-			"feature3": [i for i in range(20)],
-			"feature4": [i for i in range(20)],
-			"feature5": [i for i in range(20)],
-			"feature6": [i for i in range(20)],
-		}
-	)
-	y_train = pd.Series([0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1])
-	x_test = pd.DataFrame(
-		{
-			"feature1": [i for i in range(10)],
-			"feature2": [i for i in range(10)],
-			"feature3": [i for i in range(10)],
-			"feature4": [i for i in range(10)],
-			"feature5": [i for i in range(10)],
-			"feature6": [i for i in range(10)],
-		}
-	)
+    x_train = pd.DataFrame(
+        {
+            "feature1": [i for i in range(20)],
+            "feature2": [i for i in range(20)],
+            "feature3": [i for i in range(20)],
+            "feature4": [i for i in range(20)],
+            "feature5": [i for i in range(20)],
+            "feature6": [i for i in range(20)],
+        }
+    )
+    y_train = pd.Series([0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1])
+    x_test = pd.DataFrame(
+        {
+            "feature1": [i for i in range(10)],
+            "feature2": [i for i in range(10)],
+            "feature3": [i for i in range(10)],
+            "feature4": [i for i in range(10)],
+            "feature5": [i for i in range(10)],
+            "feature6": [i for i in range(10)],
+        }
+    )
 
-	x_train["target"] = y_train
+    x_train["target"] = y_train
 
-	bluecast.fit(x_train, "target")
+    bluecast.fit(x_train, "target")
 
-	predicted_probas, predicted_classes = bluecast.predict(x_test)
-	_ = bluecast.predict_proba(x_test)
+    predicted_probas, predicted_classes = bluecast.predict(x_test)
+    _ = bluecast.predict_proba(x_test)
 
-	assert isinstance(predicted_probas, np.ndarray)
-	assert isinstance(predicted_classes, np.ndarray)
-	assert len(bluecast.experiment_tracker.experiment_id) == 5 
+    assert isinstance(predicted_probas, np.ndarray)
+    assert isinstance(predicted_classes, np.ndarray)
+    assert len(bluecast.experiment_tracker.experiment_id) == 5
