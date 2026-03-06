@@ -1,11 +1,19 @@
 from typing import Optional, Tuple
 
+import numpy as np
 import pandas as pd
 import xgboost as xgb
+from sklearn.ensemble import RandomForestClassifier, RandomForestRegressor
 from sklearn.feature_selection import RFECV
 from sklearn.metrics import make_scorer, matthews_corrcoef
 from sklearn.model_selection import StratifiedKFold
 
+from bluecast.ml_modelling.base_classes import (
+    BaseClassMlModel,
+    BaseClassMlRegressionModel,
+    PredictedClasses,
+    PredictedProbas,
+)
 from bluecast.preprocessing.custom import CustomPreprocessing
 
 
@@ -125,3 +133,104 @@ class MyCustomInFoldPreprocessor(CustomPreprocessing):
     ) -> Tuple[pd.DataFrame, Optional[pd.Series]]:
         df["leakage"] = 0
         return df, target
+
+
+class TestCustomPreprocessor(CustomPreprocessing):
+    def custom_function(self, df: pd.DataFrame) -> pd.DataFrame:
+        df = df.copy()
+        df["custom_feature"] = df["feature1"] * 2
+        return df
+
+    def fit_transform(
+        self, df: pd.DataFrame, target: pd.Series
+    ) -> Tuple[pd.DataFrame, pd.Series]:
+        df = self.custom_function(df)
+        return df, target
+
+    def transform(
+        self,
+        df: pd.DataFrame,
+        target: Optional[pd.Series] = None,
+        prediction_mode: bool = False,
+    ) -> Tuple[pd.DataFrame, Optional[pd.Series]]:
+        df = self.custom_function(df)
+        return df, target
+
+
+class CustomClassificationModel(BaseClassMlModel):
+    def __init__(self):
+        self.model = None
+
+    def fit(
+        self,
+        x_train: pd.DataFrame,
+        x_test: pd.DataFrame,
+        y_train: pd.Series,
+        y_test: pd.Series,
+    ) -> None:
+        self.model = RandomForestClassifier()
+        self.model.fit(x_train, y_train)
+
+    def predict(self, df: pd.DataFrame) -> Tuple[PredictedProbas, PredictedClasses]:
+        predicted_probas = self.model.predict_proba(df)
+        predicted_classes = self.model.predict(df)
+        return predicted_probas, predicted_classes
+
+
+class CustomBinaryClassificationModel(BaseClassMlModel):
+    def __init__(self):
+        self.model = None
+
+    def fit(
+        self,
+        x_train: pd.DataFrame,
+        x_test: pd.DataFrame,
+        y_train: pd.Series,
+        y_test: pd.Series,
+    ) -> None:
+        self.model = RandomForestClassifier()
+        self.model.fit(x_train, y_train)
+
+    def predict(self, df: pd.DataFrame) -> Tuple[PredictedProbas, PredictedClasses]:
+        predicted_probas = self.model.predict_proba(df)[:, 1]
+        predicted_classes = self.model.predict(df)
+        return predicted_probas, predicted_classes
+
+
+class CustomMulticlassClassificationModel(BaseClassMlModel):
+    def __init__(self):
+        self.model = None
+
+    def fit(
+        self,
+        x_train: pd.DataFrame,
+        x_test: pd.DataFrame,
+        y_train: pd.Series,
+        y_test: pd.Series,
+    ) -> None:
+        self.model = RandomForestClassifier()
+        self.model.fit(x_train, y_train)
+
+    def predict(self, df: pd.DataFrame) -> Tuple[PredictedProbas, PredictedClasses]:
+        predicted_probas = self.model.predict_proba(df)
+        predicted_classes = np.asarray([np.argmax(line) for line in predicted_probas])
+        return predicted_probas, predicted_classes
+
+
+class CustomRegressionModel(BaseClassMlRegressionModel):
+    def __init__(self):
+        self.model = None
+
+    def fit(
+        self,
+        x_train: pd.DataFrame,
+        x_test: pd.DataFrame,
+        y_train: pd.Series,
+        y_test: pd.Series,
+    ) -> None:
+        self.model = RandomForestRegressor()
+        self.model.fit(x_train, y_train)
+
+    def predict(self, df: pd.DataFrame) -> np.ndarray:
+        preds = self.model.predict(df)
+        return preds

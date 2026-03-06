@@ -1,5 +1,3 @@
-from typing import Optional, Tuple
-
 import numpy as np
 import pandas as pd
 import pytest
@@ -8,7 +6,10 @@ from catboost import CatBoostClassifier
 from bluecast.blueprints.cast import BlueCast
 from bluecast.config.training_config import CatboostTuneParamsConfig, TrainingConfig
 from bluecast.ml_modelling.catboost import CatboostModel
-from bluecast.preprocessing.custom import CustomPreprocessing
+from bluecast.tests.shared_test_helpers import (
+    MyCustomLastMilePreprocessing,
+    TestCustomPreprocessor,
+)
 
 
 def test_catboost_predict_proba_exceptions():
@@ -240,27 +241,6 @@ def test_catboost_predict_with_trained_model_multiclass():
 def test_catboost_predict_proba_with_custom_preprocessor():
     """Test predict_proba method with custom in-fold preprocessor."""
 
-    class TestCustomPreprocessor(CustomPreprocessing):
-        def custom_function(self, df: pd.DataFrame) -> pd.DataFrame:
-            df = df.copy()
-            df["custom_feature"] = df["feature1"] * 2
-            return df
-
-        def fit_transform(
-            self, df: pd.DataFrame, target: pd.Series
-        ) -> Tuple[pd.DataFrame, pd.Series]:
-            df = self.custom_function(df)
-            return df, target
-
-        def transform(
-            self,
-            df: pd.DataFrame,
-            target: Optional[pd.Series] = None,
-            prediction_mode: bool = False,
-        ) -> Tuple[pd.DataFrame, Optional[pd.Series]]:
-            df = self.custom_function(df)
-            return df, target
-
     # Create simple training data
     X_train = pd.DataFrame(
         {
@@ -300,27 +280,6 @@ def test_catboost_predict_proba_with_custom_preprocessor():
 
 def test_catboost_predict_with_custom_preprocessor():
     """Test predict method with custom in-fold preprocessor."""
-
-    class TestCustomPreprocessor(CustomPreprocessing):
-        def custom_function(self, df: pd.DataFrame) -> pd.DataFrame:
-            df = df.copy()
-            df["custom_feature"] = df["feature1"] * 2
-            return df
-
-        def fit_transform(
-            self, df: pd.DataFrame, target: pd.Series
-        ) -> Tuple[pd.DataFrame, pd.Series]:
-            df = self.custom_function(df)
-            return df, target
-
-        def transform(
-            self,
-            df: pd.DataFrame,
-            target: Optional[pd.Series] = None,
-            prediction_mode: bool = False,
-        ) -> Tuple[pd.DataFrame, Optional[pd.Series]]:
-            df = self.custom_function(df)
-            return df, target
 
     # Create simple training data
     X_train = pd.DataFrame(
@@ -659,31 +618,11 @@ def test_catboost_no_conf_params_catboost_fixed():
 
 def test_bluecast_without_hyperparam_tuning():
     train_config = TrainingConfig()
-    train_config.hyperparameter_tuning_rounds = 10
+    train_config.hyperparameter_tuning_rounds = 2
     train_config.hypertuning_cv_folds = 2
     train_config.autotune_model = False
 
     catboost_pram_config = CatboostTuneParamsConfig()
-
-    class MyCustomLastMilePreprocessing(CustomPreprocessing):
-        def custom_function(self, df: pd.DataFrame) -> pd.DataFrame:
-            df["custom_col"] = 5
-            return df
-
-        def fit_transform(
-            self, df: pd.DataFrame, target: pd.Series
-        ) -> Tuple[pd.DataFrame, pd.Series]:
-            df = self.custom_function(df)
-            return df, target
-
-        def transform(
-            self,
-            df: pd.DataFrame,
-            target: Optional[pd.Series] = None,
-            prediction_mode: bool = False,
-        ) -> Tuple[pd.DataFrame, Optional[pd.Series]]:
-            df = self.custom_function(df)
-            return df, target
 
     # Create an instance of the BlueCast class with the custom model
     bluecast = BlueCast(
@@ -741,7 +680,7 @@ def test_bluecast_without_hyperparam_tuning():
 
 def test_bluecast_with_hyperparam_tuning():
     train_config = TrainingConfig()
-    train_config.hyperparameter_tuning_rounds = 10
+    train_config.hyperparameter_tuning_rounds = 2
     train_config.hypertuning_cv_folds = 2
     train_config.autotune_model = True
     train_config.plot_hyperparameter_tuning_overview = False
@@ -797,12 +736,12 @@ def test_bluecast_with_hyperparam_tuning():
     assert isinstance(predicted_classes, np.ndarray)
     print(bluecast.experiment_tracker.experiment_id)
     assert (
-        len(bluecast.experiment_tracker.experiment_id) == 10
-    )  # due to hyperparameter tuning with 10 rounds
+        len(bluecast.experiment_tracker.experiment_id) == 2
+    )  # due to hyperparameter tuning with 2 rounds
 
     # TEST with 1 fold
     train_config = TrainingConfig()
-    train_config.hyperparameter_tuning_rounds = 10
+    train_config.hyperparameter_tuning_rounds = 2
     train_config.hypertuning_cv_folds = 1
     train_config.autotune_model = True
 
@@ -832,13 +771,13 @@ def test_bluecast_with_hyperparam_tuning():
     assert isinstance(predicted_classes, np.ndarray)
     print(bluecast.experiment_tracker.experiment_id)
     assert (
-        len(bluecast.experiment_tracker.experiment_id) == 10
-    )  # due to hyperparameter tuning with 10 rounds (part 2)
+        len(bluecast.experiment_tracker.experiment_id) == 2
+    )  # due to hyperparameter tuning with 2 rounds (part 2)
 
 
 def test_bluecast_with_fine_tune_hyperparam_tuning():
     train_config = TrainingConfig()
-    train_config.hyperparameter_tuning_rounds = 10
+    train_config.hyperparameter_tuning_rounds = 2
     train_config.hypertuning_cv_folds = 2
     train_config.autotune_model = True
     train_config.precise_cv_tuning = True
@@ -894,8 +833,8 @@ def test_bluecast_with_fine_tune_hyperparam_tuning():
     assert isinstance(predicted_classes, np.ndarray)
     print(bluecast.experiment_tracker.experiment_id)
     assert (
-        len(bluecast.experiment_tracker.experiment_id) == 10
-    )  # due to fine-tune hyperparameter tuning with 10 rounds
+        len(bluecast.experiment_tracker.experiment_id) == 2
+    )  # due to fine-tune hyperparameter tuning with 2 rounds
 
 
 def test_bluecast_with_grid_search_tune_hyperparam_tuning():

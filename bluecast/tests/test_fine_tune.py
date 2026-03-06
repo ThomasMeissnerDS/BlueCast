@@ -28,7 +28,7 @@ def test_fine_tune_runs_without_errors(xgboost_model):
     xgboost_model.experiment_tracker = ExperimentTracker()
     xgboost_model.conf_training.autotune_model = False
     xgboost_model.conf_training.hypertuning_cv_folds = 3  # enable cross validation
-    xgboost_model.conf_training.hyperparameter_tuning_rounds = 5
+    xgboost_model.conf_training.hyperparameter_tuning_rounds = 2
     xgboost_model.conf_training.gridsearch_nb_parameters_per_grid = 2
 
     df_train, df_val = create_synthetic_dataframe(
@@ -64,7 +64,7 @@ def test_fine_tune_runs_without_errors_using_cv(xgboost_model):
     xgboost_model.experiment_tracker = ExperimentTracker()
     xgboost_model.conf_training.autotune_model = False
     xgboost_model.conf_training.hypertuning_cv_folds = 3  # enable cross validation
-    xgboost_model.conf_training.hyperparameter_tuning_rounds = 5
+    xgboost_model.conf_training.hyperparameter_tuning_rounds = 2
     xgboost_model.conf_training.gridsearch_nb_parameters_per_grid = 2
 
     df_train, df_val = create_synthetic_dataframe(

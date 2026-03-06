@@ -4,20 +4,15 @@ from typing import Tuple
 import numpy as np
 import pandas as pd
 import pytest
-from sklearn.ensemble import RandomForestClassifier
 
 from bluecast.blueprints.cast import BlueCast
 from bluecast.config.training_config import TrainingConfig, XgboostTuneParamsConfig
-from bluecast.ml_modelling.base_classes import (
-    BaseClassMlModel,
-    PredictedClasses,
-    PredictedProbas,
-)
 from bluecast.tests.make_data.create_data import (
     create_synthetic_dataframe,
     create_synthetic_multiclass_dataframe,
 )
 from bluecast.tests.shared_test_helpers import (
+    CustomClassificationModel,
     MyCustomInFoldPreprocessor,
     MyCustomLastMilePreprocessing,
     MyCustomPreprocessor,
@@ -163,29 +158,9 @@ def test_blueprint_xgboost(
     )
 
 
-class CustomModel(BaseClassMlModel):
-    def __init__(self):
-        self.model = None
-
-    def fit(
-        self,
-        x_train: pd.DataFrame,
-        x_test: pd.DataFrame,
-        y_train: pd.Series,
-        y_test: pd.Series,
-    ) -> None:
-        self.model = RandomForestClassifier()
-        self.model.fit(x_train, y_train)
-
-    def predict(self, df: pd.DataFrame) -> Tuple[PredictedProbas, PredictedClasses]:
-        predicted_probas = self.model.predict_proba(df)
-        predicted_classes = self.model.predict(df)
-        return predicted_probas, predicted_classes
-
-
 def test_bluecast_with_custom_model():
     # Create an instance of the custom model
-    custom_model = CustomModel()
+    custom_model = CustomClassificationModel()
     train_config = TrainingConfig()
     train_config.hyperparameter_tuning_rounds = 2
     train_config.enable_feature_selection = True

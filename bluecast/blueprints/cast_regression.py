@@ -521,10 +521,10 @@ class BlueCastRegression:
     def transform_new_data(self, df: pd.DataFrame) -> pd.DataFrame:
         """Transform new data according to preprocessing pipeline."""
         if not self.feat_type_detector:
-            raise Exception("Feature type converter could not be found.")
+            raise RuntimeError("Feature type converter could not be found.")
 
         if not self.conf_training:
-            raise Exception("Training configuration could not be found.")
+            raise RuntimeError("Training configuration could not be found.")
 
         df = self.feat_type_detector.transform_feature_types(
             df, ignore_cols=[self.target_column]
@@ -597,13 +597,13 @@ class BlueCastRegression:
             waterfall plots for selected rows on demand.
         """
         if not self.ml_model:
-            raise Exception("Ml model could not be found")
+            raise RuntimeError("ML model could not be found.")
 
         if not self.feat_type_detector:
-            raise Exception("Feature type converter could not be found.")
+            raise RuntimeError("Feature type converter could not be found.")
 
         if not self.conf_training:
-            raise ValueError("conf_training is None")
+            raise RuntimeError("Training configuration is None.")
 
         df = self.transform_new_data(df)
 

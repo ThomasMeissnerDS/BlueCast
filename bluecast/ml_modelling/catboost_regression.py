@@ -173,7 +173,7 @@ class CatboostModelRegression(CatboostBaseModel):
 
         self.model = CatBoostRegressor(**final_params)
 
-        if test_pool is not None and not test_pool.is_empty():
+        if test_pool is not None and not test_pool.is_empty_:
             self.model.fit(
                 train_pool,
                 eval_set=test_pool,

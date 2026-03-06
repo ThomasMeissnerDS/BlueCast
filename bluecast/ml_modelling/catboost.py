@@ -179,7 +179,7 @@ class CatboostModel(CatboostBaseModel):
         self.model = CatBoostClassifier(**final_params)
 
         # Train model with or without an eval set
-        if test_pool is not None and not test_pool.is_empty():
+        if test_pool is not None and not test_pool.is_empty_:
             self.model.fit(
                 train_pool,
                 # cat_features=self.cat_columns,

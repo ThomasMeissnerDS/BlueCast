@@ -1,43 +1,15 @@
-from typing import Tuple
-
-import numpy as np
 import pandas as pd
-from sklearn.ensemble import RandomForestClassifier
 
 from bluecast.blueprints.cast_cv import BlueCastCV
 from bluecast.config.training_config import TrainingConfig
-from bluecast.ml_modelling.base_classes import (
-    BaseClassMlModel,
-    PredictedClasses,
-    PredictedProbas,
-)
-
-
-class CustomLRModel(BaseClassMlModel):
-    def __init__(self):
-        self.model = None
-
-    def fit(
-        self,
-        x_train: pd.DataFrame,
-        x_test: pd.DataFrame,
-        y_train: pd.Series,
-        y_test: pd.Series,
-    ) -> None:
-        self.model = RandomForestClassifier()
-        self.model.fit(x_train, y_train)
-
-    def predict(self, df: pd.DataFrame) -> Tuple[PredictedProbas, PredictedClasses]:
-        predicted_probas = self.model.predict_proba(df)
-        predicted_classes = np.asarray([np.argmax(line) for line in predicted_probas])
-        return predicted_probas, predicted_classes
+from bluecast.tests.shared_test_helpers import CustomMulticlassClassificationModel
 
 
 def test_bluecast_cv_fit_eval_multiclass_with_custom_model():
     # Create an instance of the BlueCast class with the custom model
     train_config = TrainingConfig()
     train_config.calculate_shap_values = False
-    custom_model = CustomLRModel()
+    custom_model = CustomMulticlassClassificationModel()
 
     # Create an instance of the BlueCast class with the custom model
     bluecast = BlueCastCV(

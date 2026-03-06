@@ -4,7 +4,6 @@ import numpy as np
 import pandas as pd
 import pytest
 import xgboost
-from sklearn.ensemble import RandomForestRegressor
 from sklearn.metrics import make_scorer, mean_absolute_error
 from sklearn.model_selection import KFold
 
@@ -16,9 +15,9 @@ from bluecast.config.training_config import (
 from bluecast.config.training_config import (
     XgboostTuneParamsRegressionConfig as XgboostTuneParamsRegressionConfig,
 )
-from bluecast.ml_modelling.base_classes import BaseClassMlRegressionModel
 from bluecast.tests.make_data.create_data import create_synthetic_dataframe_regression
 from bluecast.tests.shared_test_helpers import (
+    CustomRegressionModel,
     MyCustomInFoldPreprocessor,
     MyCustomPreprocessor,
     RFECVSelector,
@@ -172,46 +171,8 @@ def test_blueprint_cv_xgboost(synthetic_train_test_data, synthetic_calibration_d
     assert automl_cv.class_problem == "regression"
 
 
-class CustomLRModel(BaseClassMlRegressionModel):
-    def __init__(self):
-        self.model = None
-
-    def fit(
-        self,
-        x_train: pd.DataFrame,
-        x_test: pd.DataFrame,
-        y_train: pd.Series,
-        y_test: pd.Series,
-    ) -> None:
-        self.model = RandomForestRegressor()
-        self.model.fit(x_train, y_train)
-
-    def predict(self, df: pd.DataFrame) -> np.ndarray:
-        preds = self.model.predict(df)
-        return preds
-
-
-class CustomModel(BaseClassMlRegressionModel):
-    def __init__(self):
-        self.model = None
-
-    def fit(
-        self,
-        x_train: pd.DataFrame,
-        x_test: pd.DataFrame,
-        y_train: pd.Series,
-        y_test: pd.Series,
-    ) -> None:
-        self.model = RandomForestRegressor()
-        self.model.fit(x_train, y_train)
-
-    def predict(self, df: pd.DataFrame) -> np.ndarray:
-        preds = self.model.predict(df)
-        return preds
-
-
 def test_bluecast_cv_fit_eval_with_custom_model():
-    custom_model = CustomLRModel()
+    custom_model = CustomRegressionModel()
 
     # Create an instance of the BlueCast class with the custom model
     bluecast = BlueCastRegression(
@@ -306,7 +267,7 @@ def test_bluecast_cv_fit_eval_with_custom_model():
 
 
 def test_bluecast_cv_with_custom_objects():
-    custom_model = CustomModel()
+    custom_model = CustomRegressionModel()
     train_config = TrainingConfig()
     train_config.hyperparameter_tuning_rounds = 2
     train_config.enable_feature_selection = True

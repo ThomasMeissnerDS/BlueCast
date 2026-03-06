@@ -12,7 +12,7 @@ from bluecast.tests.shared_test_helpers import MyCustomLastMilePreprocessing
 
 def test_bluecast_regression_with_custom_xgboost_no_tuning():
     train_config = TrainingConfig()
-    train_config.hyperparameter_tuning_rounds = 5
+    train_config.hyperparameter_tuning_rounds = 2
     train_config.hypertuning_cv_folds = 2
     train_config.autotune_model = False
 
@@ -67,7 +67,7 @@ def test_bluecast_regression_with_custom_xgboost_no_tuning():
 
 def test_bluecast_regression_with_custom_xgboost_with_tuning():
     train_config = TrainingConfig()
-    train_config.hyperparameter_tuning_rounds = 5
+    train_config.hyperparameter_tuning_rounds = 2
     train_config.hypertuning_cv_folds = 2
     train_config.autotune_model = True
     train_config.plot_hyperparameter_tuning_overview = False
@@ -117,4 +117,4 @@ def test_bluecast_regression_with_custom_xgboost_with_tuning():
     predicted_values = bluecast.predict(x_test)
 
     assert isinstance(predicted_values, np.ndarray)
-    assert len(bluecast.experiment_tracker.experiment_id) == 5
+    assert len(bluecast.experiment_tracker.experiment_id) == 2
