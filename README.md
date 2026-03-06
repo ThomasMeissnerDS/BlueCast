@@ -10,8 +10,8 @@
 [![Documentation Status](https://readthedocs.org/projects/bluecast/badge/?version=latest)](https://bluecast.readthedocs.io/en/latest/?badge=latest)
 [![PyPI version](https://badge.fury.io/py/bluecast.svg)](https://pypi.python.org/pypi/bluecast/)
 [![Optuna](https://img.shields.io/badge/Optuna-integrated-blue)](https://optuna.org)
-[![python](https://img.shields.io/badge/Python-3.9-3776AB.svg?style=flat&logo=python&logoColor=white)](https://www.python.org)
-[![python](https://img.shields.io/badge/Python-3.10-3776AB.svg?style=flat&logo=python&logoColor=white)](https://www.python.org)
+[![python](https://img.shields.io/badge/Python-3.11-3776AB.svg?style=flat&logo=python&logoColor=white)](https://www.python.org)
+[![python](https://img.shields.io/badge/Python-3.12-3776AB.svg?style=flat&logo=python&logoColor=white)](https://www.python.org)
 [![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg?style=flat-square)](http://makeapullrequest.com)
 
 ![BlueCast](docs/source/bluecast_dragon_logo_5.jpeg)
@@ -19,13 +19,13 @@
 A lightweight and fast auto-ml library, that helps data scientists
 tackling real world problems from EDA to model explainability
 and even uncertainty quantification.
-BlueCast focuses on a few model architectures (on default Xgboost
-only) and a few preprocessing options (only what is
-needed for Xgboost). This allows for a much faster development
-cycle and a much more stable codebase while also having as few dependencies
-as possible for the library. Despite being lightweight in its core BlueCast
-offers high customization options for advanced users. Find
-the full documentation [on Read the Docs](https://bluecast.readthedocs.io/en/latest/).
+BlueCast focuses on a few model architectures (CatBoost by default)
+and minimal preprocessing. This allows for a much faster development
+cycle and a much more stable codebase while also having as few
+dependencies as possible for the library. Despite being lightweight
+in its core BlueCast offers high customization options for advanced
+users. Find the full documentation
+[on Read the Docs](https://bluecast.readthedocs.io/en/latest/).
 
 Here you can see our test coverage in more detail:
 
@@ -36,11 +36,9 @@ Here you can see our test coverage in more detail:
 * [Philosophy](#philosophy)
 * [What BlueCast has to offer](#what-bluecast-has-to-offer)
   * [Basic usage](#basic-usage)
-  * [Recent Major Improvements (v2.0+)](#recent-major-improvements-v20)
-    * [🗄️ **DuckDB-Powered Experiment Tracking**](#%F0%9F%97%84%EF%B8%8F-duckdb-powered-experiment-tracking)
-    * [📊 **Enhanced Error Analysis Framework**](#%F0%9F%93%8A-enhanced-error-analysis-framework)
-    * [🎯 **Key Benefits**](#%F0%9F%8E%AF-key-benefits)
-    * [📦 **Dependencies**](#%F0%9F%93%A6-dependencies)
+  * [Recent Major Improvements](#recent-major-improvements)
+    * [v3.0 Breaking Changes](#v30-breaking-changes)
+    * [v2.0 Improvements](#v20-improvements)
   * [Convenience features](#convenience-features)
   * [Kaggle competition results and example notebooks](#kaggle-competition-results-and-example-notebooks)
 * [About the code](#about-the-code)
@@ -84,40 +82,42 @@ automl = BlueCast(
 automl.fit(df_train, target_col="target")
 y_probs, y_classes = automl.predict(df_val)
 
-# from version 0.95 also predict_proba is directly available (also for BlueCastCV)
+# predict_proba is also available (also for BlueCastCV)
 y_probs = automl.predict_proba(df_val)
 ```
 
-### Recent Major Improvements (v2.0+)
+### Recent Major Improvements
 
-BlueCast has undergone significant enhancements to provide enterprise-grade data science capabilities:
+#### v3.0 Breaking Changes
 
-#### 🗄️ **DuckDB-Powered Experiment Tracking**
-- **Persistent Storage**: Experiment results are now stored in DuckDB databases instead of in-memory lists
-- **Structured Data Management**: Separate tables for hyperparameter tuning (`hyperparameter_experiments`) and final model evaluation (`evaluation_experiments`)
-- **Advanced Querying**: Rich SQL-based analytics on experiment history with methods like `get_experiment_summary()` and `get_best_score()`
-- **Scalability**: Handle thousands of experiments efficiently with analytical database performance
+BlueCast v3.0 introduces several API improvements that
+require code changes when upgrading from v2.x:
 
-#### 📊 **Enhanced Error Analysis Framework**
-- **DuckDB Backend**: Lightning-fast error analysis using DuckDB's analytical capabilities
-- **Interactive Visualizations**: Plotly-powered charts replace static matplotlib plots:
-  - Error distribution histograms with statistical annotations
-  - Q-Q plots for normality testing
-  - Residual plots for regression analysis
-  - Predicted vs Actual scatter plots
-  - Enhanced violin plots with statistical insights
-- **Advanced Statistics**: Automatic calculation of R-squared, correlation, heteroscedasticity detection, and comprehensive error metrics
-- **Unified Interface**: Consistent API for both classification and regression error analysis
+- **Renamed parameters**: `predicton_mode` is now correctly
+  spelled `prediction_mode` across the entire API
+- **Renamed blueprint attributes**: `conf_xgboost` is now
+  `conf_tuning`, and `conf_params_xgboost` is now
+  `conf_params` in all blueprint classes
+- **CatBoost as default**: CatBoost is the default model
+  backend (since v2.x, now reflected in naming)
+- **Fixed `classification_report` key**: The misspelled
+  `classfication_report` dict key has been removed from
+  `eval_classifier()` return values
+- **Proper logging**: Library no longer overrides application
+  logging configuration via `logging.basicConfig`
+- **Instance-isolated configs**: `*FinalParamConfig` classes
+  now use instance-level `params` dicts instead of
+  shared class-level dicts
 
-#### 🎯 **Key Benefits**
-- **Performance**: 3-5x faster analytics on large experiment datasets
-- **Insights**: Deeper statistical understanding with enhanced visualizations
-- **Persistence**: Experiment data survives between sessions and can be shared
-- **Scalability**: Enterprise-ready architecture that grows with your needs
-- **Backward Compatibility**: All existing code continues to work seamlessly
+#### v2.0 Improvements
 
-#### 📦 **Dependencies**
-The refactoring introduces `duckdb` as a new core dependency for enhanced data management and analytics capabilities, while maintaining all existing functionality.
+- **DuckDB-Powered Experiment Tracking**: Persistent storage
+  with structured data management and SQL-based analytics
+- **Enhanced Error Analysis**: Plotly-powered interactive
+  visualizations with DuckDB backend for both classification
+  and regression
+- **Advanced Statistics**: Automatic R-squared, correlation,
+  heteroscedasticity detection, and comprehensive metrics
 
 ### Convenience features
 
@@ -131,11 +131,13 @@ with the following features:
 * **Intelligent Hyperparameter Tuning**: Advanced hyperparameter optimization with extensive customization options
 * **Automatic Feature Engineering**:
   - Automatic feature type detection and casting
-  - Categorical feature encoding (target encoding or directly in Xgboost)
+  - Categorical feature encoding (target encoding or
+    natively in CatBoost/XGBoost)
   - Datetime feature encoding
-  - Automatic DataFrame schema detection for production consistency
+  - Automatic DataFrame schema detection for production
+    consistency
 * **Production-Ready Features**:
-  - Automated GPU availability check and usage for Xgboost
+  - Automated GPU availability check and usage
   - fit_eval method to mimic production environment reality
   - Functions to save and load trained pipelines
   - Comprehensive model evaluation and monitoring capabilities
