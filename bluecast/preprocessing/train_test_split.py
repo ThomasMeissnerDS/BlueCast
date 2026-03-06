@@ -48,17 +48,15 @@ def train_test_split_time(
 ):
     """Split data into train and test based on a provided order (i.e. time)."""
     logging.info(
-        "Start executing ordered train-test split with train size of {train_size}."
+        f"Start executing ordered train-test split with train size of {train_size}."
     )
     length = len(df.index)
     train_length = int(length * train_size)
     test_length = length - train_length
-    if not split_by_col:
-        df = df.sort_index()
-    elif split_by_col:
+    if split_by_col:
         df = df.sort_values(by=[split_by_col])
     else:
-        pass
+        df = df.sort_index()
     x_train = df.head(train_length)
     x_test = df.tail(test_length)
     y_train = x_train[target_col]

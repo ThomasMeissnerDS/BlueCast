@@ -45,8 +45,7 @@ class ExperimentTracker(BaseClassExperimentTracker):
             conn.execute("CREATE SEQUENCE IF NOT EXISTS hyperparameter_seq START 1")
 
             # Create hyperparameter tuning table
-            conn.execute(
-                """
+            conn.execute("""
                 CREATE TABLE IF NOT EXISTS hyperparameter_experiments (
                     id INTEGER DEFAULT nextval('hyperparameter_seq'),
                     experiment_id INTEGER NOT NULL,
@@ -65,15 +64,13 @@ class ExperimentTracker(BaseClassExperimentTracker):
                     -- Model parameters (JSON)
                     model_parameters JSON
                 )
-            """
-            )
+            """)
 
             # Create sequence for evaluation experiments
             conn.execute("CREATE SEQUENCE IF NOT EXISTS evaluation_seq START 1")
 
             # Create evaluation table
-            conn.execute(
-                """
+            conn.execute("""
                 CREATE TABLE IF NOT EXISTS evaluation_experiments (
                     id INTEGER DEFAULT nextval('evaluation_seq'),
                     experiment_id INTEGER NOT NULL,
@@ -92,8 +89,7 @@ class ExperimentTracker(BaseClassExperimentTracker):
                     -- Model parameters (JSON)
                     model_parameters JSON
                 )
-            """
-            )
+            """)
 
     def add_results(
         self,
@@ -233,25 +229,21 @@ class ExperimentTracker(BaseClassExperimentTracker):
                 "SELECT COUNT(*) FROM evaluation_experiments"
             ).fetchone()[0]
 
-            unique_experiments = conn.execute(
-                """
+            unique_experiments = conn.execute("""
                 SELECT COUNT(DISTINCT experiment_id) FROM (
                     SELECT experiment_id FROM hyperparameter_experiments
                     UNION
                     SELECT experiment_id FROM evaluation_experiments
                 )
-            """
-            ).fetchone()[0]
+            """).fetchone()[0]
 
-            metrics_used = conn.execute(
-                """
+            metrics_used = conn.execute("""
                 SELECT DISTINCT metric_used FROM (
                     SELECT metric_used FROM hyperparameter_experiments
                     UNION
                     SELECT metric_used FROM evaluation_experiments
                 )
-            """
-            ).fetchall()
+            """).fetchall()
 
             return {
                 "total_hyperparameter_experiments": hyperparameter_count,
@@ -279,13 +271,11 @@ class ExperimentTracker(BaseClassExperimentTracker):
     def experiment_id(self) -> List[int]:
         """Legacy compatibility property."""
         with duckdb.connect(self.db_path) as conn:
-            results = conn.execute(
-                """
+            results = conn.execute("""
                 SELECT experiment_id FROM (
                     SELECT experiment_id FROM hyperparameter_experiments
                     UNION ALL
                     SELECT experiment_id FROM evaluation_experiments
                 ) ORDER BY experiment_id
-            """
-            ).fetchall()
+            """).fetchall()
             return [r[0] for r in results]

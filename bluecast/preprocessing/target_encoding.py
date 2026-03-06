@@ -102,8 +102,7 @@ class MultiClassTargetEncoder:
         enc.fit(y)
         y_onehot = enc.transform(y)
         self.class_names = y_onehot.columns.to_list()
-        if self.target_col in self.cat_columns:
-            self.cat_columns.remove(self.target_col)
+        self.cat_columns = [c for c in self.cat_columns if c != self.target_col]
 
         x_obj = x.loc[:, self.cat_columns].copy()
         x = x.loc[:, ~x.columns.isin(self.cat_columns)]

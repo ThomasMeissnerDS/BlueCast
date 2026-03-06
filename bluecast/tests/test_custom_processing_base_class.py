@@ -14,7 +14,7 @@ def custom_preprocessing():
             self,
             df: pd.DataFrame,
             target: pd.Series = None,
-            predicton_mode: bool = False,
+            prediction_mode: bool = False,
         ):
             return df, target
 
@@ -48,7 +48,7 @@ def test_transform_returns_optional_target(custom_preprocessing):
 
 def test_transform_returns_optional_target_prediction_mode(custom_preprocessing):
     df = pd.DataFrame({"col1": [1, 2, 3], "col2": [4, 5, 6]})
-    result = custom_preprocessing.transform(df, predicton_mode=True)
+    result = custom_preprocessing.transform(df, prediction_mode=True)
     assert isinstance(result, tuple)
     assert len(result) == 2
     assert isinstance(result[0], pd.DataFrame)

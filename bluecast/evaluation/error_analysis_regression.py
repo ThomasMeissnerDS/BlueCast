@@ -58,8 +58,7 @@ class DuckDBRegressionErrorAnalysisEngine:
             )
 
             # Create main regression error analysis table
-            conn.execute(
-                """
+            conn.execute("""
                 CREATE TABLE IF NOT EXISTS regression_error_analysis (
                     id INTEGER DEFAULT nextval('regression_error_analysis_seq'),
                     experiment_id VARCHAR NOT NULL,
@@ -76,8 +75,7 @@ class DuckDBRegressionErrorAnalysisEngine:
                     feature_values JSON,
                     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
                 )
-            """
-            )
+            """)
 
             # Create sequence for regression error statistics
             conn.execute(
@@ -85,8 +83,7 @@ class DuckDBRegressionErrorAnalysisEngine:
             )
 
             # Create regression statistics table
-            conn.execute(
-                """
+            conn.execute("""
                 CREATE TABLE IF NOT EXISTS regression_error_statistics (
                     id INTEGER DEFAULT nextval('regression_error_statistics_seq'),
                     experiment_id VARCHAR NOT NULL,
@@ -104,8 +101,7 @@ class DuckDBRegressionErrorAnalysisEngine:
                     r_squared DOUBLE,
                     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
                 )
-            """
-            )
+            """)
 
     def load_regression_data(
         self, df: pd.DataFrame, experiment_id: str, target_column: str
@@ -137,8 +133,7 @@ class DuckDBRegressionErrorAnalysisEngine:
 
             conn.register("temp_df", df_copy)
 
-            conn.execute(
-                f"""
+            conn.execute(f"""
                 INSERT INTO regression_error_analysis (
                     experiment_id, target_column, target_value, predicted_value,
                     prediction_error, absolute_error, squared_error, percentage_error,
@@ -167,8 +162,7 @@ class DuckDBRegressionErrorAnalysisEngine:
                     CURRENT_TIMESTAMP as created_at
                 FROM temp_df
                 WHERE prediction_error IS NOT NULL
-            """
-            )
+            """)
 
     def compute_regression_statistics(
         self, experiment_id: str

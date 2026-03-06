@@ -11,7 +11,9 @@ from bluecast.ml_modelling.base_classes import (
 from bluecast.ml_modelling.base_classes import (
     PredictedProbas,  # just for linting checks
 )
-from bluecast.ml_modelling.base_classes import BaseClassMlModel
+from bluecast.ml_modelling.base_classes import (
+    BaseClassMlModel,
+)
 
 
 # Linear Regression and Logistic Regression

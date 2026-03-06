@@ -65,7 +65,7 @@ class FeatureTypeDetector:
             "float16",
             "float32",
             "float64",
-            "Float8,",
+            "Float8",
             "Float16",
             "Float32",
             "Float64",
@@ -158,7 +158,7 @@ class FeatureTypeDetector:
         return col.apply(is_float_or_castable).any()
 
     def check_if_column_is_int(self, col: pd.Series) -> bool:
-        """Check if column is float."""
+        """Check if column contains integer values."""
         return col.apply(lambda x: isinstance(x, int)).any()
 
     def check_if_column_is_float(self, col: pd.Series) -> bool:

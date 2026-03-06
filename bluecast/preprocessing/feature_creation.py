@@ -48,7 +48,7 @@ class AddRowLevelAggFeatures:
         :param df: Pandas DataFrame holding all features.
         :param feature_to_agg: List of column names indicating which features to aggregate.
         :param agg_col_name: Name of the new column.
-        :return: Original Pandas DataFrame with added row level means.
+        :return: Original Pandas DataFrame with added row level standard deviations.
         """
         df[agg_col_name] = df[feature_to_agg].std(axis=1)
         return df
@@ -65,7 +65,7 @@ class AddRowLevelAggFeatures:
         :param df: Pandas DataFrame holding all features.
         :param feature_to_agg: List of column names indicating which features to aggregate.
         :param agg_col_name: Name of the new column.
-        :return: Original Pandas DataFrame with added row level means.
+        :return: Original Pandas DataFrame with added row level minimums.
         """
         df[agg_col_name] = df[feature_to_agg].min(axis=1)
         return df
@@ -82,7 +82,7 @@ class AddRowLevelAggFeatures:
         :param df: Pandas DataFrame holding all features.
         :param feature_to_agg: List of column names indicating which features to aggregate.
         :param agg_col_name: Name of the new column.
-        :return: Original Pandas DataFrame with added row level means.
+        :return: Original Pandas DataFrame with added row level maximums.
         """
         df[agg_col_name] = df[feature_to_agg].max(axis=1)
         return df
@@ -99,7 +99,7 @@ class AddRowLevelAggFeatures:
         :param df: Pandas DataFrame holding all features.
         :param feature_to_agg: List of column names indicating which features to aggregate.
         :param agg_col_name: Name of the new column.
-        :return: Original Pandas DataFrame with added row level means.
+        :return: Original Pandas DataFrame with added row level sums.
         """
         df[agg_col_name] = df[feature_to_agg].sum(axis=1)
         return df

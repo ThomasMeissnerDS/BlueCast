@@ -118,5 +118,6 @@ automl, historic_df = model_matchmaker.find_best_match(
 Please note that  `find_best_match` requires a list of column names
 that are numerical, otherwise the function will fail.
 The last parameter is the threshold for the adversarial validation score.
-If abs(0.5 - score) is below the threshold, the model is considered a good match.
-If no dataset matches the threshold, the function will return a tuple of (None, None).
+If abs(0.5 - score) is below the threshold, the model is considered
+a good match. If no dataset matches the threshold, the function will
+return a tuple of (None, None).

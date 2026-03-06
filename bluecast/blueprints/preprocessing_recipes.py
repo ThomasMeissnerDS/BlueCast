@@ -55,7 +55,7 @@ class PreprocessingForLinearModels(CustomPreprocessing):
         self,
         df: pd.DataFrame,
         target: Optional[pd.Series] = None,
-        predicton_mode: bool = False,
+        prediction_mode: bool = False,
     ) -> Tuple[pd.DataFrame, Optional[pd.Series]]:
         df.loc[:, self.num_columns] = df.loc[:, self.num_columns].replace(
             [np.inf, -np.inf], np.nan

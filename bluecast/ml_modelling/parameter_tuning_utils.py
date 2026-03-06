@@ -67,11 +67,12 @@ def get_params_based_on_device_xgboost(
         if "exact" in conf_xgboost.tree_method and conf_params_xgboost.params[
             "device"
         ] in ["gpu", "cuda"]:
-            conf_xgboost.tree_method.remove("exact")
+            conf_xgboost.tree_method = [
+                m for m in conf_xgboost.tree_method if m != "exact"
+            ]
     elif conf_training.autotune_on_device == "gpu":
         train_on = {"tree_method": "hist", "device": "cuda"}
-        if "exact" in conf_xgboost.tree_method:
-            conf_xgboost.tree_method.remove("exact")
+        conf_xgboost.tree_method = [m for m in conf_xgboost.tree_method if m != "exact"]
     else:
         train_on = {"tree_method": "exact", "device": "cpu"}
     return train_on

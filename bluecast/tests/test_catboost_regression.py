@@ -36,7 +36,7 @@ def test_BlueCastRegression_without_hyperparam_tuning():
             self,
             df: pd.DataFrame,
             target: Optional[pd.Series] = None,
-            predicton_mode: bool = False,
+            prediction_mode: bool = False,
         ) -> Tuple[pd.DataFrame, Optional[pd.Series]]:
             df = self.custom_function(df)
             return df, target
@@ -49,7 +49,7 @@ def test_BlueCastRegression_without_hyperparam_tuning():
             conf_training=train_config,
             conf_catboost=catboost_pram_config,
         ),
-        conf_xgboost=catboost_pram_config,
+        conf_tuning=catboost_pram_config,
         conf_training=train_config,
         custom_last_mile_computation=MyCustomLastMilePreprocessing(),
     )
@@ -110,7 +110,7 @@ def test_BlueCastRegression_with_hyperparam_tuning():
             conf_training=train_config,
             conf_catboost=catboost_pram_config,
         ),
-        conf_xgboost=catboost_pram_config,
+        conf_tuning=catboost_pram_config,
         conf_training=train_config,
     )
 
@@ -168,7 +168,7 @@ def test_BlueCastRegression_with_hyperparam_tuning():
             conf_training=train_config,
             conf_catboost=catboost_pram_config,
         ),
-        conf_xgboost=catboost_pram_config,
+        conf_tuning=catboost_pram_config,
         conf_training=train_config,
     )
 
@@ -203,7 +203,7 @@ def test_BlueCastRegression_with_fine_tune_hyperparam_tuning():
             conf_training=train_config,
             conf_catboost=catboost_pram_config,
         ),
-        conf_xgboost=catboost_pram_config,
+        conf_tuning=catboost_pram_config,
         conf_training=train_config,
     )
 
@@ -264,7 +264,7 @@ def test_BlueCastRegression_with_grid_search_tune_hyperparam_tuning():
             conf_training=train_config,
             conf_catboost=catboost_pram_config,
         ),
-        conf_xgboost=catboost_pram_config,
+        conf_tuning=catboost_pram_config,
         conf_training=train_config,
     )
 
@@ -344,7 +344,7 @@ def test_catboost_regression_with_cat_columns_none_and_ml_algorithm_encoding():
             conf_catboost=catboost_param_config,
             cat_columns=categorical_cols,  # Explicitly specify categorical columns
         ),
-        conf_xgboost=catboost_param_config,
+        conf_tuning=catboost_param_config,
         conf_training=train_config,
     )
 
@@ -376,7 +376,7 @@ def test_catboost_regression_with_cat_columns_none_and_ml_algorithm_encoding():
             conf_catboost=catboost_param_config,
             cat_columns=categorical_cols,  # Explicitly specify categorical columns
         ),
-        conf_xgboost=catboost_param_config,
+        conf_tuning=catboost_param_config,
     )
 
     # Set configuration after initialization
@@ -437,7 +437,7 @@ def test_catboost_regression_with_disabled_ml_algorithm_encoding():
             conf_catboost=catboost_param_config,
             cat_columns=None,  # This works when cat_encoding_via_ml_algorithm=False
         ),
-        conf_xgboost=catboost_param_config,
+        conf_tuning=catboost_param_config,
         conf_training=train_config,
     )
 

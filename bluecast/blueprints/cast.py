@@ -54,6 +54,8 @@ from bluecast.preprocessing.target_encoding import (
 )
 from bluecast.preprocessing.train_test_split import train_test_split
 
+logger = logging.getLogger(__name__)
+
 
 class BlueCast:
     """Run fully configured classification blueprint.
@@ -70,12 +72,12 @@ class BlueCast:
         BlueCast will not split the data by time or order, but do a random split instead.
     :param :ml_model: Takes an instance of a CatboostModel class. If not provided, BlueCast will instantiate one.
         This is an API to pass any model class. Inherit the baseclass from ml_modelling.base_model.BaseModel.
-    :param custom_in_fold_preprocessor: Takes an instance of a CustomPreprocessing class. Allows users to eeecute
+    :param custom_in_fold_preprocessor: Takes an instance of a CustomPreprocessing class. Allows users to execute
         preprocessing after the train test split within cv folds. This will be executed only if precise_cv_tuning in
         the conf_Training is True. Custom ML models need to implement this themselves. This step is only useful when
-        the proprocessing step has a high chance of overfitting otherwise (i.e: oversampling techniques).
+        the preprocessing step has a high chance of overfitting otherwise (i.e: oversampling techniques).
     :param custom_preprocessor: Takes an instance of a CustomPreprocessing class. Allows users to inject custom
-        preprocessing steps which take place right after the train test spit.
+        preprocessing steps which take place right after the train test split.
     :param custom_last_mile_computation: Takes an instance of a CustomPreprocessing class. Allows users to inject custom
         preprocessing steps which take place right before the model training.
     :param experiment_tracker: Takes an instance of an ExperimentTracker class. If not provided this will be initialized
@@ -91,7 +93,7 @@ class BlueCast:
         cat_columns: Optional[List[Union[str, float, int]]] = None,
         date_columns: Optional[List[Union[str, float, int]]] = None,
         time_split_column: Optional[str] = None,
-        ml_model: Optional[Union[CatboostModel, Any]] = None,
+        ml_model: Optional[Any] = None,
         custom_in_fold_preprocessor: Optional[CustomPreprocessing] = None,
         custom_last_mile_computation: Optional[CustomPreprocessing] = None,
         custom_preprocessor: Optional[CustomPreprocessing] = None,
@@ -99,10 +101,10 @@ class BlueCast:
             Union[BoostaRootaWrapper, CustomPreprocessing]
         ] = None,
         conf_training: Optional[TrainingConfig] = None,
-        conf_xgboost: Optional[
+        conf_tuning: Optional[
             Union[XgboostTuneParamsConfig, CatboostTuneParamsConfig]
         ] = None,
-        conf_params_xgboost: Optional[
+        conf_params: Optional[
             Union[XgboostFinalParamConfig, CatboostFinalParamConfig]
         ] = None,
         experiment_tracker: Optional[ExperimentTracker] = None,
@@ -119,8 +121,8 @@ class BlueCast:
         self.date_columns = date_columns
         self.time_split_column = time_split_column
         self.target_column = "Undefined"
-        self.conf_xgboost = conf_xgboost
-        self.conf_params_xgboost = conf_params_xgboost
+        self.conf_tuning = conf_tuning
+        self.conf_params = conf_params
         self.feat_type_detector: Optional[FeatureTypeDetector] = None
         self.infreq_cat_encoder: Optional[InFrequentCategoryEncoder] = None
         self.cat_encoder: Optional[
@@ -147,23 +149,16 @@ class BlueCast:
         else:
             self.experiment_tracker = ExperimentTracker()
 
-        if not self.conf_params_xgboost:
-            self.conf_params_xgboost = CatboostFinalParamConfig()
+        if not self.conf_params:
+            self.conf_params = CatboostFinalParamConfig()
 
         self.conf_training: TrainingConfig = conf_training or TrainingConfig()
 
-        if not self.conf_xgboost:
-            self.conf_xgboost = CatboostTuneParamsConfig()
+        if not self.conf_tuning:
+            self.conf_tuning = CatboostTuneParamsConfig()
         if not self.single_fold_eval_metric_func:
             self.single_fold_eval_metric_func = ClassificationEvalWrapper()
-        logging.basicConfig(
-            filename=self.conf_training.logging_file_path,
-            filemode="w",
-            format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
-            level=logging.INFO,
-            force=True,
-        )
-        logging.info("BlueCast blueprint initialized.")
+        logger.info("BlueCast blueprint initialized.")
 
     def initial_checks(self, df: pd.DataFrame) -> None:
         if not self.conf_training:
@@ -193,7 +188,7 @@ class BlueCast:
             feature selector."""
             warnings.warn(message, UserWarning, stacklevel=2)
 
-        if not self.conf_xgboost:
+        if not self.conf_tuning:
             message = """No CatboostTuneParamsConfig has been provided. Falling back to default values. Default values
             have been chosen to speed up the prototyping. For robust hyperparameter tuning consider providing a custom
             CatboostTuneParamsConfig with a deeper hyperparameter search space and a custom TrainingConfig to enable
@@ -266,11 +261,11 @@ class BlueCast:
             unique target classes have been found. Did you mean 'binary' instead?"""
             warnings.warn(message, UserWarning, stacklevel=2)
 
-        if self.conf_xgboost and isinstance(self.conf_xgboost, XgboostTuneParamsConfig):
+        if self.conf_tuning and isinstance(self.conf_tuning, XgboostTuneParamsConfig):
             if self.conf_training.cat_encoding_via_ml_algorithm:
-                if "exact" in self.conf_xgboost.tree_method:
-                    self.conf_xgboost.tree_method.remove("exact")
-                message = f"""Categorical encoding via ML algorithm is enabled. The tree method 'exact' is not supported with categorical encoding within Xgboost. The tree method 'exact' has been removed. Using {self.conf_xgboost.tree_method} only during hyperparameter tuning."""
+                if "exact" in self.conf_tuning.tree_method:
+                    self.conf_tuning.tree_method.remove("exact")
+                message = f"""Categorical encoding via ML algorithm is enabled. The tree method 'exact' is not supported with categorical encoding within Xgboost. The tree method 'exact' has been removed. Using {self.conf_tuning.tree_method} only during hyperparameter tuning."""
                 warnings.warn(message, UserWarning, stacklevel=2)
 
     def fit(self, df: pd.DataFrame, target_col: str) -> None:
@@ -312,15 +307,15 @@ class BlueCast:
             self.conf_training.train_split_stratify,
         )
 
-        if not self.conf_training.autotune_model and self.conf_params_xgboost:
-            self.conf_params_xgboost.params["num_class"] = (
-                self.conf_params_xgboost.params.get("num_class", y_test.nunique())
+        if not self.conf_training.autotune_model and self.conf_params:
+            self.conf_params.params["num_class"] = self.conf_params.params.get(
+                "num_class", y_test.nunique()
             )
 
         if self.custom_preprocessor:
             x_train, y_train = self.custom_preprocessor.fit_transform(x_train, y_train)
             x_test, y_test = self.custom_preprocessor.transform(
-                x_test, y_test, predicton_mode=False
+                x_test, y_test, prediction_mode=False
             )
             feat_type_detector = FeatureTypeDetector(
                 cat_columns=[], num_columns=[], date_columns=[]
@@ -416,7 +411,7 @@ class BlueCast:
                 x_train.copy(), y_train
             )
             x_test, y_test = self.custom_last_mile_computation.transform(
-                x_test.copy(), y_test, predicton_mode=False
+                x_test.copy(), y_test, prediction_mode=False
             )
 
         if not self.custom_feature_selector:
@@ -430,7 +425,7 @@ class BlueCast:
                 x_train.copy(), y_train
             )
             x_test, _ = self.custom_feature_selector.transform(
-                x_test.copy(), predicton_mode=False
+                x_test.copy(), prediction_mode=False
             )
 
         if not self.ml_model:
@@ -438,13 +433,13 @@ class BlueCast:
                 self.class_problem,
                 conf_training=self.conf_training,
                 conf_catboost=(
-                    self.conf_xgboost
-                    if isinstance(self.conf_xgboost, CatboostTuneParamsConfig)
+                    self.conf_tuning
+                    if isinstance(self.conf_tuning, CatboostTuneParamsConfig)
                     else CatboostTuneParamsConfig()
                 ),
                 conf_params_catboost=(
-                    self.conf_params_xgboost
-                    if isinstance(self.conf_params_xgboost, CatboostFinalParamConfig)
+                    self.conf_params
+                    if isinstance(self.conf_params, CatboostFinalParamConfig)
                     else CatboostFinalParamConfig()
                 ),
                 experiment_tracker=self.experiment_tracker,
@@ -468,8 +463,8 @@ class BlueCast:
         self.ml_model.conf_training = self.conf_training
         if isinstance(self.ml_model, CatboostModel):
             # Ensure CatBoost final params config exists and is of correct type
-            if isinstance(self.conf_params_xgboost, CatboostFinalParamConfig):
-                self.ml_model.conf_params_catboost = self.conf_params_xgboost
+            if isinstance(self.conf_params, CatboostFinalParamConfig):
+                self.ml_model.conf_params_catboost = self.conf_params
             else:
                 self.ml_model.conf_params_catboost = CatboostFinalParamConfig()
 
@@ -477,7 +472,7 @@ class BlueCast:
 
         if self.custom_in_fold_preprocessor:
             x_test, _ = self.custom_in_fold_preprocessor.transform(
-                x_test.copy(), None, predicton_mode=True
+                x_test.copy(), None, prediction_mode=True
             )
 
         if self.conf_training and self.conf_training.calculate_shap_values:
@@ -536,9 +531,9 @@ class BlueCast:
                 raise ValueError("Could not find CatBoost params")
             final_params_for_log = self.ml_model.conf_params_catboost.params
         else:
-            if not self.conf_params_xgboost:
+            if not self.conf_params:
                 raise ValueError("Could not find Xgboost params")
-            final_params_for_log = self.conf_params_xgboost.params
+            final_params_for_log = self.conf_params.params
 
         if len(self.experiment_tracker.experiment_id) == 0:
             self.experiment_tracker.experiment_id.append(0)
@@ -578,7 +573,7 @@ class BlueCast:
                 score_category="oof_score",
                 training_config=self.conf_training,
                 model_parameters=final_params_for_log,  # noqa
-                eval_scores=self.eval_metrics["accuracy"],
+                eval_scores=self.eval_metrics[metric],
                 metric_used=metric,
                 metric_higher_is_better=higher_is_better,
             )
@@ -587,17 +582,17 @@ class BlueCast:
     def transform_new_data(self, df: pd.DataFrame) -> pd.DataFrame:
         """Transform new data according to preprocessing pipeline."""
         if not self.feat_type_detector:
-            raise Exception("Feature type converter could not be found.")
+            raise RuntimeError("Feature type converter could not be found.")
 
         if not self.conf_training:
-            raise Exception("Training configuration could not be found.")
+            raise RuntimeError("Training configuration could not be found.")
 
         df = self.feat_type_detector.transform_feature_types(
             df, ignore_cols=[self.target_column]
         )
 
         if self.custom_preprocessor:
-            df, _ = self.custom_preprocessor.transform(df, predicton_mode=True)
+            df, _ = self.custom_preprocessor.transform(df, prediction_mode=True)
             df = df.reset_index(drop=True)
 
         df = fill_infinite_values(df)
@@ -645,12 +640,12 @@ class BlueCast:
 
         if self.custom_last_mile_computation:
             df, _ = self.custom_last_mile_computation.transform(
-                df.copy(), predicton_mode=True
+                df.copy(), prediction_mode=True
             )
 
         if self.custom_feature_selector and self.conf_training.enable_feature_selection:
             df, _ = self.custom_feature_selector.transform(
-                df.copy(), predicton_mode=True
+                df.copy(), prediction_mode=True
             )
 
         if self.conf_training.cat_encoding_via_ml_algorithm and self.cat_columns:
@@ -676,13 +671,13 @@ class BlueCast:
         :param return_original_labels: If True, returns the original labels instead of the encoded ones.
         """
         if not self.ml_model:
-            raise Exception("Ml model could not be found")
+            raise RuntimeError("ML model could not be found.")
 
         if not self.feat_type_detector:
-            raise Exception("Feature type converter could not be found.")
+            raise RuntimeError("Feature type converter could not be found.")
 
         if not self.conf_training:
-            raise ValueError("conf_training is None")
+            raise RuntimeError("Training configuration is None.")
 
         df = self.transform_new_data(df)
 
@@ -712,13 +707,13 @@ class BlueCast:
             waterfall plots for selected rows o demand.
         """
         if not self.ml_model:
-            raise Exception("Ml model could not be found")
+            raise RuntimeError("ML model could not be found.")
 
         if not self.feat_type_detector:
-            raise Exception("Feature type converter could not be found.")
+            raise RuntimeError("Feature type converter could not be found.")
 
         if not self.conf_training:
-            raise ValueError("conf_training is None")
+            raise RuntimeError("Training configuration is None.")
 
         df = self.transform_new_data(df)
 
@@ -798,17 +793,21 @@ class BlueCast:
 
                 string_pred_sets = []
                 for numerical_set in pred_sets:
-                    # Convert numerical labels to string labels
-                    string_set = {reverse_mapping[label] for label in numerical_set}
+                    string_set = {
+                        reverse_mapping[i]
+                        for i, indicator in enumerate(numerical_set)
+                        if indicator == 1
+                    }
                     string_pred_sets.append(string_set)
                 return pd.DataFrame({"prediction_set": string_pred_sets})
             else:
-                string_pred_sets = []
+                pred_sets_list: list = []
                 for numerical_set in pred_sets:
-                    # Convert numerical labels to string labels
-                    string_set = {label for label in numerical_set}
-                    string_pred_sets.append(string_set)
-                return pd.DataFrame({"prediction_set": string_pred_sets})
+                    pred_set = {
+                        i for i, indicator in enumerate(numerical_set) if indicator == 1
+                    }
+                    pred_sets_list.append(pred_set)
+                return pd.DataFrame({"prediction_set": pred_sets_list})
         else:
             raise ValueError(
                 """This instance has not been calibrated yet. Make use of calibrate to fit the

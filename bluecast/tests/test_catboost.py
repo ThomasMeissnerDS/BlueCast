@@ -256,7 +256,7 @@ def test_catboost_predict_proba_with_custom_preprocessor():
             self,
             df: pd.DataFrame,
             target: Optional[pd.Series] = None,
-            predicton_mode: bool = False,
+            prediction_mode: bool = False,
         ) -> Tuple[pd.DataFrame, Optional[pd.Series]]:
             df = self.custom_function(df)
             return df, target
@@ -317,7 +317,7 @@ def test_catboost_predict_with_custom_preprocessor():
             self,
             df: pd.DataFrame,
             target: Optional[pd.Series] = None,
-            predicton_mode: bool = False,
+            prediction_mode: bool = False,
         ) -> Tuple[pd.DataFrame, Optional[pd.Series]]:
             df = self.custom_function(df)
             return df, target
@@ -680,7 +680,7 @@ def test_bluecast_without_hyperparam_tuning():
             self,
             df: pd.DataFrame,
             target: Optional[pd.Series] = None,
-            predicton_mode: bool = False,
+            prediction_mode: bool = False,
         ) -> Tuple[pd.DataFrame, Optional[pd.Series]]:
             df = self.custom_function(df)
             return df, target
@@ -693,7 +693,7 @@ def test_bluecast_without_hyperparam_tuning():
             conf_training=train_config,
             conf_catboost=catboost_pram_config,
         ),
-        conf_xgboost=catboost_pram_config,
+        conf_tuning=catboost_pram_config,
         conf_training=train_config,
         custom_last_mile_computation=MyCustomLastMilePreprocessing(),
     )
@@ -756,7 +756,7 @@ def test_bluecast_with_hyperparam_tuning():
             conf_training=train_config,
             conf_catboost=catboost_pram_config,
         ),
-        conf_xgboost=catboost_pram_config,
+        conf_tuning=catboost_pram_config,
         conf_training=train_config,
     )
 
@@ -816,7 +816,7 @@ def test_bluecast_with_hyperparam_tuning():
             conf_training=train_config,
             conf_catboost=catboost_pram_config,
         ),
-        conf_xgboost=catboost_pram_config,
+        conf_tuning=catboost_pram_config,
         conf_training=train_config,
     )
 
@@ -853,7 +853,7 @@ def test_bluecast_with_fine_tune_hyperparam_tuning():
             conf_training=train_config,
             conf_catboost=catboost_pram_config,
         ),
-        conf_xgboost=catboost_pram_config,
+        conf_tuning=catboost_pram_config,
         conf_training=train_config,
     )
 
@@ -916,7 +916,7 @@ def test_bluecast_with_grid_search_tune_hyperparam_tuning():
             conf_training=train_config,
             conf_catboost=catboost_pram_config,
         ),
-        conf_xgboost=catboost_pram_config,
+        conf_tuning=catboost_pram_config,
         conf_training=train_config,
     )
 

@@ -55,8 +55,7 @@ class DuckDBErrorAnalysisEngine:
             conn.execute("CREATE SEQUENCE IF NOT EXISTS error_analysis_seq START 1")
 
             # Create main error analysis table
-            conn.execute(
-                """
+            conn.execute("""
                 CREATE TABLE IF NOT EXISTS error_analysis (
                     id INTEGER DEFAULT nextval('error_analysis_seq'),
                     experiment_id VARCHAR NOT NULL,
@@ -73,15 +72,13 @@ class DuckDBErrorAnalysisEngine:
                     feature_values JSON,
                     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
                 )
-            """
-            )
+            """)
 
             # Create sequence for error statistics
             conn.execute("CREATE SEQUENCE IF NOT EXISTS error_statistics_seq START 1")
 
             # Create aggregated error statistics table
-            conn.execute(
-                """
+            conn.execute("""
                 CREATE TABLE IF NOT EXISTS error_statistics (
                     id INTEGER DEFAULT nextval('error_statistics_seq'),
                     experiment_id VARCHAR NOT NULL,
@@ -99,8 +96,7 @@ class DuckDBErrorAnalysisEngine:
                     error_variance DOUBLE,
                     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
                 )
-            """
-            )
+            """)
 
     def load_data(
         self, df: pd.DataFrame, experiment_id: str, target_column: str
@@ -121,8 +117,7 @@ class DuckDBErrorAnalysisEngine:
             # Convert DataFrame to DuckDB for efficient processing
             conn.register("temp_df", df_copy)
 
-            conn.execute(
-                """
+            conn.execute("""
                 INSERT INTO error_analysis (
                     experiment_id, target_column, prediction_column, prediction_error,
                     absolute_error, squared_error, target_class, predicted_class,
@@ -143,8 +138,7 @@ class DuckDBErrorAnalysisEngine:
                     CURRENT_TIMESTAMP as created_at
                 FROM temp_df
                 WHERE prediction_error IS NOT NULL
-            """
-            )
+            """)
 
     def compute_error_statistics(self, experiment_id: str) -> Dict[str, pd.DataFrame]:
         """
@@ -511,9 +505,7 @@ class ErrorAnalyserClassificationMixin(ErrorAnalyser):
                 WHERE experiment_id = ?
                 GROUP BY target_class
                 ORDER BY mean_error {}
-            """.format(
-                    "DESC" if descending else "ASC"
-                ),
+            """.format("DESC" if descending else "ASC"),
                 [experiment_id],
             ).df()
 

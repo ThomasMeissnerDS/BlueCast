@@ -28,8 +28,6 @@ class TrainingConfig:
     :param sample_data_during_tuning: Whether to sample the data during tuning. Not used when custom ML model is passed.
     :param sample_data_during_tuning_alpha: Alpha value for sampling the data during tuning. The higher alpha the
         fewer samples will be left. Not used when custom ML model is passed.
-    :param class_weight_during_dmatrix_creation: Whether to use class weights during DMatrix creation. Not used when
-        custom ML model is passed.
     :param early_stopping_rounds: Number of early stopping rounds during final training or when hyperparameter tuning
         follows a single train-test split. Not used when custom ML model is passed.
     :param autotune_model: Whether to autotune the model. Not used when custom ML model is passed.
@@ -139,6 +137,8 @@ class TrainingConfig:
 
         if shap_waterfall_indices is None:
             self.shap_waterfall_indices: List[Optional[int]] = []
+        else:
+            self.shap_waterfall_indices = shap_waterfall_indices
 
         self.show_dependence_plots_of_top_n_features = (
             show_dependence_plots_of_top_n_features
@@ -170,6 +170,10 @@ class TrainingConfig:
         The implementation keeps backwards compatibility as this class has been a Pydantic Basemodel before.
         """
         return vars(self)
+
+    def __repr__(self) -> str:
+        params = ", ".join(f"{k}={v!r}" for k, v in vars(self).items())
+        return f"{self.__class__.__name__}({params})"
 
 
 # Xgboost
@@ -292,6 +296,10 @@ class XgboostTuneParamsConfig:
         """
         return vars(self)
 
+    def __repr__(self) -> str:
+        params = ", ".join(f"{k}={v!r}" for k, v in vars(self).items())
+        return f"{self.__class__.__name__}({params})"
+
 
 class XgboostTuneParamsRegressionConfig:
     """Define hyperparameter tuning search space.
@@ -412,53 +420,67 @@ class XgboostTuneParamsRegressionConfig:
         """
         return vars(self)
 
+    def __repr__(self) -> str:
+        params = ", ".join(f"{k}={v!r}" for k, v in vars(self).items())
+        return f"{self.__class__.__name__}({params})"
+
 
 class XgboostFinalParamConfig:
     """Define final hyper parameters."""
 
-    params = {
-        "booster": "gbtree",
-        "max_depth": 10,  # maximum depth of the decision trees being trained
-        "alpha": 0.0,
-        "lambda": 1.0,
-        "gamma": 0.0,
-        "subsample": 1.0,
-        "min_child_weight": 1.0,
-        "colsample_bytree": 1.0,
-        "colsample_bylevel": 1.0,
-        "eta": 0.05,
-        "steps": 1000,
-        "objective": "multi:softprob",
-        "eval_metric": "mlogloss",
-        "tree_method": "hist",
-        "device": "cpu",
-    }
-    sample_weight: Optional[Dict[str, float]] = None
-    classification_threshold: float = 0.5
+    def __init__(self):
+        self.params = {
+            "booster": "gbtree",
+            "max_depth": 10,
+            "alpha": 0.0,
+            "lambda": 1.0,
+            "gamma": 0.0,
+            "subsample": 1.0,
+            "min_child_weight": 1.0,
+            "colsample_bytree": 1.0,
+            "colsample_bylevel": 1.0,
+            "eta": 0.05,
+            "steps": 1000,
+            "objective": "multi:softprob",
+            "eval_metric": "mlogloss",
+            "tree_method": "hist",
+            "device": "cpu",
+        }
+        self.sample_weight: Optional[Dict[str, float]] = None
+        self.classification_threshold: float = 0.5
+
+    def __repr__(self) -> str:
+        params = ", ".join(f"{k}={v!r}" for k, v in vars(self).items())
+        return f"{self.__class__.__name__}({params})"
 
 
 class XgboostRegressionFinalParamConfig:
     """Define final hyper parameters."""
 
-    params = {
-        "booster": "gbtree",
-        "max_depth": 10,  # maximum depth of the decision trees being trained
-        "alpha": 0.0,
-        "lambda": 1.0,
-        "gamma": 0.0,
-        "subsample": 1.0,
-        "min_child_weight": 1.0,
-        "colsample_bytree": 1.0,
-        "colsample_bylevel": 1.0,
-        "eta": 0.05,
-        "steps": 1000,
-        "objective": "reg:squarederror",
-        "eval_metric": "rmse",
-        "tree_method": "hist",
-        "device": "cpu",
-    }
-    sample_weight: Optional[Dict[str, float]] = None
-    classification_threshold: float = 999
+    def __init__(self):
+        self.params = {
+            "booster": "gbtree",
+            "max_depth": 10,
+            "alpha": 0.0,
+            "lambda": 1.0,
+            "gamma": 0.0,
+            "subsample": 1.0,
+            "min_child_weight": 1.0,
+            "colsample_bytree": 1.0,
+            "colsample_bylevel": 1.0,
+            "eta": 0.05,
+            "steps": 1000,
+            "objective": "reg:squarederror",
+            "eval_metric": "rmse",
+            "tree_method": "hist",
+            "device": "cpu",
+        }
+        self.sample_weight: Optional[Dict[str, float]] = None
+        self.classification_threshold: float = 999
+
+    def __repr__(self) -> str:
+        params = ", ".join(f"{k}={v!r}" for k, v in vars(self).items())
+        return f"{self.__class__.__name__}({params})"
 
     # Catboost
 
@@ -563,6 +585,10 @@ class CatboostTuneParamsConfig:
         """
         return vars(self)
 
+    def __repr__(self) -> str:
+        params = ", ".join(f"{k}={v!r}" for k, v in vars(self).items())
+        return f"{self.__class__.__name__}({params})"
+
 
 class CatboostTuneParamsRegressionConfig:
     """Define hyperparameter tuning search space for CatBoost (regression).
@@ -661,38 +687,50 @@ class CatboostTuneParamsRegressionConfig:
         """
         return vars(self)
 
+    def __repr__(self) -> str:
+        params = ", ".join(f"{k}={v!r}" for k, v in vars(self).items())
+        return f"{self.__class__.__name__}({params})"
+
 
 class CatboostFinalParamConfig:
     """Define final hyperparameters for CatBoost (classification or multiclass) using CatBoost defaults."""
 
-    params = {
-        "iterations": 1000,
-        "depth": 6,
-        "learning_rate": 0.03,
-        "l2_leaf_reg": 3.0,
-        "eval_metric": "MultiClass",
-        "loss_function": "MultiClass",
-        "random_seed": 0,
-        "logging_level": "Silent",
-    }
-    sample_weight: Optional[Dict[str, float]] = None
-    classification_threshold: float = 0.5
+    def __init__(self):
+        self.params = {
+            "iterations": 1000,
+            "depth": 6,
+            "learning_rate": 0.03,
+            "l2_leaf_reg": 3.0,
+            "eval_metric": "MultiClass",
+            "loss_function": "MultiClass",
+            "random_seed": 0,
+            "logging_level": "Silent",
+        }
+        self.sample_weight: Optional[Dict[str, float]] = None
+        self.classification_threshold: float = 0.5
+
+    def __repr__(self) -> str:
+        params = ", ".join(f"{k}={v!r}" for k, v in vars(self).items())
+        return f"{self.__class__.__name__}({params})"
 
 
 class CatboostRegressionFinalParamConfig:
     """Define final hyperparameters for CatBoost (regression) using CatBoost defaults."""
 
-    params = {
-        "iterations": 1000,
-        "depth": 6,
-        "learning_rate": 0.03,
-        "l2_leaf_reg": 3.0,
-        "eval_metric": "RMSE",
-        "loss_function": "RMSE",
-        "random_seed": 0,
-        "logging_level": "Silent",
-    }
-    sample_weight: Optional[Dict[str, float]] = None
-    classification_threshold: float = (
-        999  # Not typically used in regression but kept for compatibility
-    )
+    def __init__(self):
+        self.params = {
+            "iterations": 1000,
+            "depth": 6,
+            "learning_rate": 0.03,
+            "l2_leaf_reg": 3.0,
+            "eval_metric": "RMSE",
+            "loss_function": "RMSE",
+            "random_seed": 0,
+            "logging_level": "Silent",
+        }
+        self.sample_weight: Optional[Dict[str, float]] = None
+        self.classification_threshold: float = 999
+
+    def __repr__(self) -> str:
+        params = ", ".join(f"{k}={v!r}" for k, v in vars(self).items())
+        return f"{self.__class__.__name__}({params})"

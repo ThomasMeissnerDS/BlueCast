@@ -1,14 +1,10 @@
 import re
-from typing import Optional, Tuple
+from typing import Tuple
 
 import numpy as np
 import pandas as pd
 import pytest
-import xgboost as xgb
 from sklearn.ensemble import RandomForestClassifier
-from sklearn.feature_selection import RFECV
-from sklearn.metrics import make_scorer, matthews_corrcoef
-from sklearn.model_selection import StratifiedKFold
 
 from bluecast.blueprints.cast import BlueCast
 from bluecast.config.training_config import TrainingConfig, XgboostTuneParamsConfig
@@ -17,10 +13,15 @@ from bluecast.ml_modelling.base_classes import (
     PredictedClasses,
     PredictedProbas,
 )
-from bluecast.preprocessing.custom import CustomPreprocessing
 from bluecast.tests.make_data.create_data import (
     create_synthetic_dataframe,
     create_synthetic_multiclass_dataframe,
+)
+from bluecast.tests.shared_test_helpers import (
+    MyCustomInFoldPreprocessor,
+    MyCustomLastMilePreprocessing,
+    MyCustomPreprocessor,
+    RFECVSelector,
 )
 
 
@@ -58,37 +59,11 @@ def test_blueprint_xgboost(
     xgboost_param_config.steps_max = 100
     xgboost_param_config.max_depth_max = 3
 
-    # add custom last mile computation
-    class MyCustomLastMilePreprocessing(CustomPreprocessing):
-        def custom_function(self, df: pd.DataFrame) -> pd.DataFrame:
-            df["custom_col"] = 5
-            return df
-
-        def fit_transform(
-            self, df: pd.DataFrame, target: pd.Series
-        ) -> Tuple[pd.DataFrame, pd.Series]:
-            df = self.custom_function(df)
-            df = df.head(1000)
-            target = target.head(1000)
-            return df, target
-
-        def transform(
-            self,
-            df: pd.DataFrame,
-            target: Optional[pd.Series] = None,
-            predicton_mode: bool = False,
-        ) -> Tuple[pd.DataFrame, Optional[pd.Series]]:
-            df = self.custom_function(df)
-            if not predicton_mode and isinstance(target, pd.Series):
-                df = df.head(100)
-                target = target.head(100)
-            return df, target
-
     custom_last_mile_computation = MyCustomLastMilePreprocessing()
 
     automl = BlueCast(
         class_problem="binary",
-        conf_xgboost=xgboost_param_config,
+        conf_tuning=xgboost_param_config,
         custom_last_mile_computation=custom_last_mile_computation,
     )
     automl.conf_training.autotune_on_device = "cpu"
@@ -115,7 +90,7 @@ def test_blueprint_xgboost(
 
     automl = BlueCast(
         class_problem="multiclass",
-        conf_xgboost=xgboost_param_config,
+        conf_tuning=xgboost_param_config,
         custom_last_mile_computation=custom_last_mile_computation,
     )
     # Speed up
@@ -164,7 +139,7 @@ def test_blueprint_xgboost(
 
     automl = BlueCast(
         class_problem="multiclass",
-        conf_xgboost=xgboost_param_config,
+        conf_tuning=xgboost_param_config,
         conf_training=custom_config,
         custom_last_mile_computation=custom_last_mile_computation,
     )
@@ -224,96 +199,18 @@ def test_bluecast_with_custom_model():
     xgboost_param_config.steps_max = 100
     xgboost_param_config.max_depth_max = 3
 
-    # add custom feature selection
-    class RFECVSelector(CustomPreprocessing):
-        def __init__(self, random_state: int = 0):
-            super().__init__()
-            self.selected_features = None
-            self.random_state = random_state
-            self.selection_strategy: RFECV = RFECV(
-                estimator=xgb.XGBClassifier(),
-                step=1,
-                cv=StratifiedKFold(2, random_state=random_state, shuffle=True),
-                min_features_to_select=1,
-                scoring=make_scorer(matthews_corrcoef),
-                n_jobs=2,
-            )
-
-        def fit_transform(
-            self, df: pd.DataFrame, target: pd.Series
-        ) -> Tuple[pd.DataFrame, Optional[pd.Series]]:
-            self.selection_strategy.fit(df, target)
-            self.selected_features = self.selection_strategy.support_
-            df = df.loc[:, self.selected_features]
-            return df, target
-
-        def transform(
-            self,
-            df: pd.DataFrame,
-            target: Optional[pd.Series] = None,
-            predicton_mode: bool = False,
-        ) -> Tuple[pd.DataFrame, Optional[pd.Series]]:
-            df = df.loc[:, self.selected_features]
-            return df, target
-
-    class MyCustomPreprocessor(CustomPreprocessing):
-        def __init__(self, random_state: int = 0):
-            super().__init__()
-            self.selected_features = None
-            self.random_state = random_state
-            self.selection_strategy: RFECV = RFECV(
-                estimator=xgb.XGBClassifier(),
-                step=1,
-                cv=StratifiedKFold(2, random_state=random_state, shuffle=True),
-                min_features_to_select=1,
-                scoring=make_scorer(matthews_corrcoef),
-                n_jobs=2,
-            )
-
-        def fit_transform(
-            self, df: pd.DataFrame, target: pd.Series
-        ) -> Tuple[pd.DataFrame, Optional[pd.Series]]:
-            return df, target
-
-        def transform(
-            self,
-            df: pd.DataFrame,
-            target: Optional[pd.Series] = None,
-            predicton_mode: bool = False,
-        ) -> Tuple[pd.DataFrame, Optional[pd.Series]]:
-            return df, target
-
-    class MyCustomInFoldPreprocessor(CustomPreprocessing):
-        def __init__(self):
-            super().__init__()
-
-        def fit_transform(
-            self, df: pd.DataFrame, target: pd.Series
-        ) -> Tuple[pd.DataFrame, Optional[pd.Series]]:
-            df["leakage"] = target
-            return df, target
-
-        def transform(
-            self,
-            df: pd.DataFrame,
-            target: Optional[pd.Series] = None,
-            predicton_mode: bool = False,
-        ) -> Tuple[pd.DataFrame, Optional[pd.Series]]:
-            df["leakage"] = 0
-            return df, target
-
     custom_feature_selector = RFECVSelector()
-    custum_preproc = MyCustomPreprocessor()
+    custom_preproc = MyCustomPreprocessor()
     custom_infold_preproc = MyCustomInFoldPreprocessor()
 
     # Create an instance of the BlueCast class with the custom model
     bluecast = BlueCast(
         class_problem="binary",
         ml_model=custom_model,
-        conf_xgboost=xgboost_param_config,
+        conf_tuning=xgboost_param_config,
         conf_training=train_config,
         custom_feature_selector=custom_feature_selector,
-        custom_preprocessor=custum_preproc,
+        custom_preprocessor=custom_preproc,
         custom_in_fold_preprocessor=custom_infold_preproc,
     )
 
@@ -358,10 +255,10 @@ def test_bluecast_with_custom_model():
 
     bluecast_no_cust_model = BlueCast(
         class_problem="binary",
-        conf_xgboost=xgboost_param_config,
+        conf_tuning=xgboost_param_config,
         conf_training=train_config,
         custom_feature_selector=custom_feature_selector,
-        custom_preprocessor=custum_preproc,
+        custom_preprocessor=custom_preproc,
         custom_in_fold_preprocessor=custom_infold_preproc,
     )
     bluecast_no_cust_model.conf_training.hypertuning_cv_folds = 2
@@ -422,8 +319,8 @@ def test_missing_xgboost_tune_params_config_warning():
     bluecast_instance_test = BlueCast(class_problem="binary")
     bluecast_instance_test.target_column = "target"
     df = pd.DataFrame({"feature1": [1, 2, 3], "target": [0, 1, 0]})
-    bluecast_instance_test.conf_xgboost = None
-    print(f"Bluecast conf Xgboost is: {bluecast_instance_test.conf_xgboost}")
+    bluecast_instance_test.conf_tuning = None
+    print(f"Bluecast conf Xgboost is: {bluecast_instance_test.conf_tuning}")
     with pytest.warns(
         UserWarning, match="No CatboostTuneParamsConfig has been provided."
     ):
@@ -510,8 +407,8 @@ def test_categorical_encoding_not_supported_by_exact_tree_method(bluecast_instan
     bluecast_instance.conf_training.calculate_shap_values = True
     bluecast_instance.conf_training.cat_encoding_via_ml_algorithm = True
     # Explicitly use XgboostTuneParamsConfig to test XGBoost-specific warning
-    bluecast_instance.conf_xgboost = XgboostTuneParamsConfig()
-    config = bluecast_instance.conf_xgboost
+    bluecast_instance.conf_tuning = XgboostTuneParamsConfig()
+    config = bluecast_instance.conf_tuning
     config.tree_method.remove("exact")
 
     expected_message = re.escape(

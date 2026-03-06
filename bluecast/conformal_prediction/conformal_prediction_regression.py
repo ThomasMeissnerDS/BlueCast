@@ -40,7 +40,7 @@ class ConformalPredictionRegressionWrapper(ConformalPredictionWrapperBaseClass):
         plt.ylabel("Conformity value")
         plt.title("Distribution of non-conformity values")
 
-    def calibrate(self, x_calibration, y_calibration):
+    def calibrate(self, x_calibration: pd.DataFrame, y_calibration: pd.Series):
         """
         Calibrate a model instance given a calibration set.
 

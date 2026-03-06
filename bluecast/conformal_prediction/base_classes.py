@@ -6,9 +6,9 @@ import pandas as pd
 
 
 class ConformalPredictionWrapperBaseClass(ABC):
-    """Base class for the experiment tracker.
+    """Base class for conformal prediction wrappers.
 
-    Enforces the implementation of the add_results and retrieve_results_as_df methods.
+    Enforces the implementation of the calibrate method.
     """
 
     @abstractmethod

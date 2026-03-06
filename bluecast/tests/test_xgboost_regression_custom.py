@@ -1,5 +1,3 @@
-from typing import Optional, Tuple
-
 import numpy as np
 import pandas as pd
 
@@ -9,7 +7,7 @@ from bluecast.config.training_config import (
     XgboostTuneParamsRegressionConfig,
 )
 from bluecast.ml_modelling.xgboost_regression import XgboostModelRegression
-from bluecast.preprocessing.custom import CustomPreprocessing
+from bluecast.tests.shared_test_helpers import MyCustomLastMilePreprocessing
 
 
 def test_bluecast_regression_with_custom_xgboost_no_tuning():
@@ -23,26 +21,6 @@ def test_bluecast_regression_with_custom_xgboost_no_tuning():
     xgboost_param_config.steps_max = 100
     xgboost_param_config.max_depth_max = 3
 
-    class MyCustomLastMilePreprocessing(CustomPreprocessing):
-        def custom_function(self, df: pd.DataFrame) -> pd.DataFrame:
-            df["custom_col"] = 5
-            return df
-
-        def fit_transform(
-            self, df: pd.DataFrame, target: pd.Series
-        ) -> Tuple[pd.DataFrame, pd.Series]:
-            df = self.custom_function(df)
-            return df, target
-
-        def transform(
-            self,
-            df: pd.DataFrame,
-            target: Optional[pd.Series] = None,
-            predicton_mode: bool = False,
-        ) -> Tuple[pd.DataFrame, Optional[pd.Series]]:
-            df = self.custom_function(df)
-            return df, target
-
     bluecast = BlueCastRegression(
         class_problem="regression",
         ml_model=XgboostModelRegression(
@@ -50,7 +28,7 @@ def test_bluecast_regression_with_custom_xgboost_no_tuning():
             conf_training=train_config,
             conf_xgboost=xgboost_param_config,
         ),
-        conf_xgboost=xgboost_param_config,
+        conf_tuning=xgboost_param_config,
         conf_training=train_config,
         custom_last_mile_computation=MyCustomLastMilePreprocessing(),
     )
@@ -106,7 +84,7 @@ def test_bluecast_regression_with_custom_xgboost_with_tuning():
             conf_training=train_config,
             conf_xgboost=xgboost_param_config,
         ),
-        conf_xgboost=xgboost_param_config,
+        conf_tuning=xgboost_param_config,
         conf_training=train_config,
     )
 

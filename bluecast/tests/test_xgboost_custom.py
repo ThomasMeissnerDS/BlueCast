@@ -1,5 +1,3 @@
-from typing import Optional, Tuple
-
 import numpy as np
 import pandas as pd
 
@@ -10,7 +8,7 @@ from bluecast.config.training_config import (
     XgboostTuneParamsConfig,
 )
 from bluecast.ml_modelling.xgboost import XgboostModel
-from bluecast.preprocessing.custom import CustomPreprocessing
+from bluecast.tests.shared_test_helpers import MyCustomLastMilePreprocessing
 
 
 def test_bluecast_with_custom_xgboost_no_tuning():
@@ -31,26 +29,6 @@ def test_bluecast_with_custom_xgboost_no_tuning():
     xgb_final_params.params["num_class"] = 2
     xgb_final_params.params["steps"] = 50
 
-    class MyCustomLastMilePreprocessing(CustomPreprocessing):
-        def custom_function(self, df: pd.DataFrame) -> pd.DataFrame:
-            df["custom_col"] = 5
-            return df
-
-        def fit_transform(
-            self, df: pd.DataFrame, target: pd.Series
-        ) -> Tuple[pd.DataFrame, pd.Series]:
-            df = self.custom_function(df)
-            return df, target
-
-        def transform(
-            self,
-            df: pd.DataFrame,
-            target: Optional[pd.Series] = None,
-            predicton_mode: bool = False,
-        ) -> Tuple[pd.DataFrame, Optional[pd.Series]]:
-            df = self.custom_function(df)
-            return df, target
-
     bluecast = BlueCast(
         class_problem="binary",
         ml_model=XgboostModel(
@@ -59,7 +37,7 @@ def test_bluecast_with_custom_xgboost_no_tuning():
             conf_xgboost=xgboost_param_config,
             conf_params_xgboost=xgb_final_params,
         ),
-        conf_xgboost=xgboost_param_config,
+        conf_tuning=xgboost_param_config,
         conf_training=train_config,
         custom_last_mile_computation=MyCustomLastMilePreprocessing(),
     )
@@ -117,7 +95,7 @@ def test_bluecast_with_custom_xgboost_with_tuning():
             conf_training=train_config,
             conf_xgboost=xgboost_param_config,
         ),
-        conf_xgboost=xgboost_param_config,
+        conf_tuning=xgboost_param_config,
         conf_training=train_config,
     )
 

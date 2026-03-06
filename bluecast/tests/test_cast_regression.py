@@ -1,12 +1,11 @@
 import re
-from typing import Optional, Tuple
+from typing import Tuple
 
 import numpy as np
 import pandas as pd
 import pytest
 import xgboost as xgb
 from sklearn.ensemble import RandomForestRegressor
-from sklearn.feature_selection import RFECV
 from sklearn.metrics import make_scorer, mean_absolute_error
 from sklearn.model_selection import KFold
 
@@ -16,8 +15,13 @@ from bluecast.config.training_config import (
     XgboostTuneParamsRegressionConfig,
 )
 from bluecast.ml_modelling.base_classes import BaseClassMlRegressionModel
-from bluecast.preprocessing.custom import CustomPreprocessing
 from bluecast.tests.make_data.create_data import create_synthetic_dataframe_regression
+from bluecast.tests.shared_test_helpers import (
+    MyCustomInFoldPreprocessor,
+    MyCustomLastMilePreprocessing,
+    MyCustomPreprocessor,
+    RFECVSelector,
+)
 
 
 @pytest.fixture
@@ -43,37 +47,11 @@ def test_blueprint_xgboost(synthetic_train_test_data, synthetic_calibration_data
     xgboost_param_config.steps_max = 100
     xgboost_param_config.max_depth_max = 3
 
-    # add custom last mile computation
-    class MyCustomLastMilePreprocessing(CustomPreprocessing):
-        def custom_function(self, df: pd.DataFrame) -> pd.DataFrame:
-            df["custom_col"] = 5
-            return df
-
-        def fit_transform(
-            self, df: pd.DataFrame, target: pd.Series
-        ) -> Tuple[pd.DataFrame, pd.Series]:
-            df = self.custom_function(df)
-            df = df.head(1000)
-            target = target.head(1000)
-            return df, target
-
-        def transform(
-            self,
-            df: pd.DataFrame,
-            target: Optional[pd.Series] = None,
-            predicton_mode: bool = False,
-        ) -> Tuple[pd.DataFrame, Optional[pd.Series]]:
-            df = self.custom_function(df)
-            if not predicton_mode and isinstance(target, pd.Series):
-                df = df.head(100)
-                target = target.head(100)
-            return df, target
-
     custom_last_mile_computation = MyCustomLastMilePreprocessing()
 
     automl = BlueCastRegression(
         class_problem="regression",
-        conf_xgboost=xgboost_param_config,
+        conf_tuning=xgboost_param_config,
         custom_last_mile_computation=custom_last_mile_computation,
     )
     automl.conf_training.autotune_on_device = "cpu"
@@ -135,96 +113,22 @@ def test_bluecast_with_custom_model():
     xgboost_param_config.steps_max = 100
     xgboost_param_config.max_depth_max = 3
 
-    # add custom feature selection
-    class RFECVSelector(CustomPreprocessing):
-        def __init__(self, random_state: int = 0):
-            super().__init__()
-            self.selected_features = None
-            self.random_state = random_state
-            self.selection_strategy: RFECV = RFECV(
-                estimator=xgb.XGBRegressor(),
-                step=1,
-                cv=KFold(2, random_state=random_state, shuffle=True),
-                min_features_to_select=1,
-                scoring=make_scorer(mean_absolute_error),
-                n_jobs=2,
-            )
-
-        def fit_transform(
-            self, df: pd.DataFrame, target: pd.Series
-        ) -> Tuple[pd.DataFrame, Optional[pd.Series]]:
-            self.selection_strategy.fit(df, target)
-            self.selected_features = self.selection_strategy.support_
-            df = df.loc[:, self.selected_features]
-            return df, target
-
-        def transform(
-            self,
-            df: pd.DataFrame,
-            target: Optional[pd.Series] = None,
-            predicton_mode: bool = False,
-        ) -> Tuple[pd.DataFrame, Optional[pd.Series]]:
-            df = df.loc[:, self.selected_features]
-            return df, target
-
-    class MyCustomPreprocessor(CustomPreprocessing):
-        def __init__(self, random_state: int = 0):
-            super().__init__()
-            self.selected_features = None
-            self.random_state = random_state
-            self.selection_strategy: RFECV = RFECV(
-                estimator=xgb.XGBRegressor(),
-                step=1,
-                cv=KFold(2, random_state=random_state, shuffle=True),
-                min_features_to_select=1,
-                scoring=make_scorer(mean_absolute_error),
-                n_jobs=2,
-            )
-
-        def fit_transform(
-            self, df: pd.DataFrame, target: pd.Series
-        ) -> Tuple[pd.DataFrame, Optional[pd.Series]]:
-            return df, target
-
-        def transform(
-            self,
-            df: pd.DataFrame,
-            target: Optional[pd.Series] = None,
-            predicton_mode: bool = False,
-        ) -> Tuple[pd.DataFrame, Optional[pd.Series]]:
-            return df, target
-
-    class MyCustomInFoldPreprocessor(CustomPreprocessing):
-        def __init__(self):
-            super().__init__()
-
-        def fit_transform(
-            self, df: pd.DataFrame, target: pd.Series
-        ) -> Tuple[pd.DataFrame, Optional[pd.Series]]:
-            df["leakage"] = target
-            return df, target
-
-        def transform(
-            self,
-            df: pd.DataFrame,
-            target: Optional[pd.Series] = None,
-            predicton_mode: bool = False,
-        ) -> Tuple[pd.DataFrame, Optional[pd.Series]]:
-            df["leakage"] = 0
-            return df, target
-
-    custom_feature_selector = RFECVSelector()
-    custum_preproc = MyCustomPreprocessor()
+    custom_feature_selector = RFECVSelector(
+        estimator=xgb.XGBRegressor(),
+        cv=KFold(2, random_state=0, shuffle=True),
+        scoring=make_scorer(mean_absolute_error),
+    )
+    custom_preproc = MyCustomPreprocessor()
     custom_infold_preproc = MyCustomInFoldPreprocessor()
 
     # Create an instance of the BlueCast class with the custom model
     bluecast = BlueCastRegression(
         class_problem="regression",
         ml_model=custom_model,
-        conf_xgboost=xgboost_param_config,
+        conf_tuning=xgboost_param_config,
         conf_training=train_config,
         custom_feature_selector=custom_feature_selector,
-        custom_preprocessor=custum_preproc,
+        custom_preprocessor=custom_preproc,
         custom_in_fold_preprocessor=custom_infold_preproc,
     )
 
@@ -271,10 +175,10 @@ def test_bluecast_with_custom_model():
     bluecast = BlueCastRegression(
         class_problem="regression",
         ml_model=custom_model,
-        conf_xgboost=xgboost_param_config,
+        conf_tuning=xgboost_param_config,
         conf_training=train_config,
         custom_feature_selector=custom_feature_selector,
-        custom_preprocessor=custum_preproc,
+        custom_preprocessor=custom_preproc,
         custom_in_fold_preprocessor=custom_infold_preproc,
     )
 
@@ -319,10 +223,10 @@ def test_bluecast_with_custom_model():
     # test cross-validated model without custom model and with custom infold preproc
     bluecast = BlueCastRegression(
         class_problem="regression",
-        conf_xgboost=xgboost_param_config,
+        conf_tuning=xgboost_param_config,
         conf_training=train_config,
         custom_feature_selector=custom_feature_selector,
-        custom_preprocessor=custum_preproc,
+        custom_preprocessor=custom_preproc,
         custom_in_fold_preprocessor=custom_infold_preproc,
     )
     bluecast.conf_training.use_full_data_for_final_model = True
@@ -367,10 +271,10 @@ def test_bluecast_with_custom_model():
     # test cross-validated model without custom model and with custom infold preproc
     bluecast = BlueCastRegression(
         class_problem="regression",
-        conf_xgboost=xgboost_param_config,
+        conf_tuning=xgboost_param_config,
         conf_training=train_config,
         custom_feature_selector=custom_feature_selector,
-        custom_preprocessor=custum_preproc,
+        custom_preprocessor=custom_preproc,
         custom_in_fold_preprocessor=custom_infold_preproc,
     )
     bluecast.conf_training.use_full_data_for_final_model = True
@@ -416,7 +320,7 @@ def test_bluecast_with_custom_model():
     # test cross-validated model without custom model
     bluecast = BlueCastRegression(
         class_problem="regression",
-        conf_xgboost=xgboost_param_config,
+        conf_tuning=xgboost_param_config,
         conf_training=train_config,
     )
 
@@ -501,7 +405,7 @@ def test_missing_xgboost_tune_params_config_warning():
     df = pd.DataFrame({"feature1": [1, 2, 3], "target": [0, 1, 0]})
     bluecast_instance_test = BlueCastRegression(class_problem="regression")
     bluecast_instance_test.target_column = "target"
-    bluecast_instance_test.conf_xgboost = None
+    bluecast_instance_test.conf_tuning = None
     with pytest.warns(
         UserWarning, match="No CatboostTuneParamsRegressionConfig has been provided."
     ):
@@ -565,8 +469,8 @@ def test_categorical_encoding_not_supported_by_exact_tree_method(bluecast_instan
     bluecast_instance.conf_training.calculate_shap_values = True
     bluecast_instance.conf_training.cat_encoding_via_ml_algorithm = True
     # Explicitly use XgboostTuneParamsRegressionConfig to test XGBoost-specific warning
-    bluecast_instance.conf_xgboost = XgboostTuneParamsRegressionConfig()
-    config = bluecast_instance.conf_xgboost
+    bluecast_instance.conf_tuning = XgboostTuneParamsRegressionConfig()
+    config = bluecast_instance.conf_tuning
     config.tree_method.remove("exact")
 
     expected_message = re.escape(

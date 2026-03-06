@@ -91,7 +91,7 @@ class CatboostModelRegression(CatboostBaseModel):
                 x_train, y_train
             )
             x_test, y_test = self.custom_in_fold_preprocessor.transform(
-                x_test, y_test, predicton_mode=False
+                x_test, y_test, prediction_mode=False
             )
 
         if self.conf_training.use_full_data_for_final_model:
@@ -271,8 +271,8 @@ class CatboostModelRegression(CatboostBaseModel):
             }
 
             if params["bootstrap_type"] in ["Bayesian", "No"]:
-                params["bagging_temperature"] = None
-                params["subsample"] = None
+                params.pop("bagging_temperature", None)
+                params.pop("subsample", None)
 
             params = {**params, **train_on}
 
@@ -502,7 +502,7 @@ class CatboostModelRegression(CatboostBaseModel):
                     )
                 )
                 X_val_fold, y_val_fold = self.custom_in_fold_preprocessor.transform(
-                    X_val_fold, y_val_fold, predicton_mode=False
+                    X_val_fold, y_val_fold, prediction_mode=False
                 )
                 X_test_fold, y_test_fold = self.custom_in_fold_preprocessor.transform(
                     x_test, y_test
@@ -573,7 +573,7 @@ class CatboostModelRegression(CatboostBaseModel):
         logging.info("Start grid search fine tuning of CatBoost regression model.")
 
         def objective(trial):
-            tuned_params = self._get_param_space_fpr_grid_search(trial)
+            tuned_params = self._get_param_space_for_grid_search(trial)
 
             train_pool = Pool(x_train, label=y_train, cat_features=self.cat_columns)
             test_pool = Pool(x_test, label=y_test, cat_features=self.cat_columns)
@@ -650,7 +650,7 @@ class CatboostModelRegression(CatboostBaseModel):
 
         if self.custom_in_fold_preprocessor:
             df, _ = self.custom_in_fold_preprocessor.transform(
-                df, None, predicton_mode=True
+                df, None, prediction_mode=True
             )
 
         # Filter categorical columns to only include those that actually exist in the data

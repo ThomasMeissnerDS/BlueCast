@@ -55,7 +55,7 @@ def test_blueprint_cv_xgboost(synthetic_train_test_data, synthetic_calibration_d
     )
 
     automl_cv = BlueCastCV(
-        conf_xgboost=xgboost_param_config, conf_training=train_config, stratifier=skf
+        conf_tuning=xgboost_param_config, conf_training=train_config, stratifier=skf
     )
     oof_mean, oof_std = automl_cv.fit_eval(
         df_train,
@@ -117,7 +117,7 @@ def test_blueprint_cv_xgboost(synthetic_train_test_data, synthetic_calibration_d
     train_config.early_stopping_rounds = None
 
     automl_cv = BlueCastCV(
-        conf_xgboost=xgboost_param_config, conf_training=train_config, stratifier=None
+        conf_tuning=xgboost_param_config, conf_training=train_config, stratifier=None
     )
     automl_cv.fit_eval(
         df_train,

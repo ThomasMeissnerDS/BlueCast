@@ -90,7 +90,7 @@ class CatboostModel(CatboostBaseModel):
                 x_train, y_train
             )
             x_test, y_test = self.custom_in_fold_preprocessor.transform(
-                x_test, y_test, predicton_mode=False
+                x_test, y_test, prediction_mode=False
             )
 
         # Optionally concatenate train + test if config says so
@@ -279,8 +279,8 @@ class CatboostModel(CatboostBaseModel):
                 ),
             }
             if params["bootstrap_type"] in ["Bayesian", "No"]:
-                params["bagging_temperature"] = None
-                params["subsample"] = None
+                params.pop("bagging_temperature", None)
+                params.pop("subsample", None)
 
             params = {**params, **train_on}
 
@@ -543,7 +543,7 @@ class CatboostModel(CatboostBaseModel):
                     )
                 )
                 X_val_fold, y_val_fold = self.custom_in_fold_preprocessor.transform(
-                    X_val_fold, y_val_fold, predicton_mode=False
+                    X_val_fold, y_val_fold, prediction_mode=False
                 )
                 X_test_fold, y_test_fold = self.custom_in_fold_preprocessor.transform(
                     x_test, y_test
@@ -617,7 +617,7 @@ class CatboostModel(CatboostBaseModel):
         logging.info("Start grid search fine tuning of CatBoost model.")
 
         def objective(trial):
-            tuned_params = self._get_param_space_fpr_grid_search(trial)
+            tuned_params = self._get_param_space_for_grid_search(trial)
 
             if self.conf_params_catboost.sample_weight:
                 weights = class_weight.compute_sample_weight("balanced", y_train)
@@ -720,7 +720,7 @@ class CatboostModel(CatboostBaseModel):
 
         if self.custom_in_fold_preprocessor:
             df, _ = self.custom_in_fold_preprocessor.transform(
-                df, None, predicton_mode=True
+                df, None, prediction_mode=True
             )
 
         if not self.model:
@@ -764,7 +764,7 @@ class CatboostModel(CatboostBaseModel):
 
         if self.custom_in_fold_preprocessor:
             df, _ = self.custom_in_fold_preprocessor.transform(
-                df, None, predicton_mode=True
+                df, None, prediction_mode=True
             )
 
         if not self.model:

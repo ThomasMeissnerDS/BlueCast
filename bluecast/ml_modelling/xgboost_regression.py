@@ -96,7 +96,7 @@ class XgboostModelRegression(XgboostBaseModel):
                 x_train, y_train
             )
             x_test, y_test = self.custom_in_fold_preprocessor.transform(
-                x_test, y_test, predicton_mode=False
+                x_test, y_test, prediction_mode=False
             )
 
         if self.conf_training.use_full_data_for_final_model:
@@ -106,9 +106,14 @@ class XgboostModelRegression(XgboostBaseModel):
                 x_test=x_test,
                 y_test=y_test,
             )
+            x_test = pd.DataFrame()
+            y_test = pd.Series(dtype=y_train.dtype)
 
         d_train, d_test = self._create_d_matrices(x_train, y_train, x_test, y_test)
-        eval_set = [(d_test, "test")]
+        if x_test.empty:
+            eval_set = [(d_train, "train")]
+        else:
+            eval_set = [(d_test, "test")]
 
         steps = self.conf_params_xgboost.params.pop("steps", 300)
 
@@ -251,8 +256,8 @@ class XgboostModelRegression(XgboostBaseModel):
                             d_train, d_test, y_test, params, steps, pruning_callback
                         )
                     except Exception as e:
-                        logging.error(f"Error during training: {e}. Pruning trial")
-                        trial.should_prune()
+                        logging.error(f"Error during training: {e}. Pruning trial.")
+                        raise optuna.TrialPruned()
             elif (
                 self.conf_training.hypertuning_cv_folds > 1
                 and self.conf_training.precise_cv_tuning
@@ -348,7 +353,14 @@ class XgboostModelRegression(XgboostBaseModel):
                 except (ZeroDivisionError, RuntimeError, ValueError):
                     pass
 
-            if study.best_value < self.best_score:
+            improved = (
+                self.conf_xgboost.xgboost_eval_metric_tune_direction == "minimize"
+                and study.best_value < self.best_score
+            ) or (
+                self.conf_xgboost.xgboost_eval_metric_tune_direction == "maximize"
+                and study.best_value > self.best_score
+            )
+            if improved:
                 self.best_score = study.best_value
                 logging.info(
                     f"New best score: {study.best_value} from random seed  {self.conf_training.global_random_state + rst}"
@@ -462,7 +474,7 @@ class XgboostModelRegression(XgboostBaseModel):
                     X_val_fold,
                     y_val_fold,
                 ) = self.custom_in_fold_preprocessor.transform(
-                    X_val_fold, y_val_fold, predicton_mode=False
+                    X_val_fold, y_val_fold, prediction_mode=False
                 )
             else:
                 X_test_fold, y_test_fold = x_test, y_test
@@ -540,7 +552,7 @@ class XgboostModelRegression(XgboostBaseModel):
                 trial, f"test-{self.conf_xgboost.xgboost_eval_metric}"
             )
             # copy best params to not overwrite them
-            tuned_params = self._get_param_space_fpr_grid_search(trial)
+            tuned_params = self._get_param_space_for_grid_search(trial)
 
             steps = tuned_params.pop("steps", 300)
 
@@ -550,8 +562,8 @@ class XgboostModelRegression(XgboostBaseModel):
                         d_train, d_test, y_test, tuned_params, steps, pruning_callback
                     )
                 except Exception as e:
-                    logging.error(f"Error during training: {e}. Pruning trial")
-                    trial.should_prune()
+                    logging.error(f"Error during training: {e}. Pruning trial.")
+                    raise optuna.TrialPruned()
             elif (
                 self.conf_training.hypertuning_cv_folds > 1
                 and self.conf_training.precise_cv_tuning
@@ -630,7 +642,7 @@ class XgboostModelRegression(XgboostBaseModel):
 
         if self.custom_in_fold_preprocessor:
             df, _ = self.custom_in_fold_preprocessor.transform(
-                df, None, predicton_mode=True
+                df, None, prediction_mode=True
             )
 
         d_test = xgb.DMatrix(

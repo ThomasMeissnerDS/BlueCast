@@ -19,7 +19,7 @@ def cast_bool_to_int(df: pd.DataFrame, column_name: str) -> pd.DataFrame:
     :param df: The input DataFrame.
     :param column_name: The name of the column to check and possibly cast.
 
-    returns: The modified DataFrame with the column cast to bool if it was of type int.
+    returns: The modified DataFrame with the column cast to int if it was of type bool.
     """
     if column_name in df.columns:
         if pd.api.types.is_bool_dtype(df[column_name]):
@@ -78,8 +78,8 @@ class TargetLabelEncoder:
 
         if isinstance(targets, pd.Series):
             targets = targets.to_frame()
-        mapping = self.target_label_mapping
-        targets[col] = targets.loc[:, col].apply(lambda x: mapping.get(x, 999))
+        active_mapping = self.target_label_mapping
+        targets[col] = targets.loc[:, col].apply(lambda x: active_mapping.get(x, x))
         targets[col] = targets[col].astype("int")
         return targets
 

@@ -21,7 +21,6 @@ from bluecast.conformal_prediction.conformal_prediction_regression import (
 )
 from bluecast.evaluation.eval_metrics import RegressionEvalWrapper
 from bluecast.experimentation.tracking import ExperimentTracker
-from bluecast.ml_modelling.catboost import CatboostModel
 from bluecast.preprocessing.custom import CustomPreprocessing
 from bluecast.preprocessing.feature_selection import BoostaRootaWrapper
 
@@ -40,14 +39,14 @@ class BlueCastCVRegression:
         BlueCast will infer these automatically.
     :param :time_split_column: Takes a string containing the name of the time split column. If not provided,
         BlueCast will not split the data by time or order, but do a random split instead.
-    :param :ml_model: Takes an instance of a XgboostModelRegression class. If not provided, BlueCast will instantiate one.
+    :param :ml_model: Takes an instance of a CatboostModelRegression class. If not provided, BlueCast will instantiate one.
         This is an API to pass any model class. Inherit the baseclass from ml_modelling.base_model.BaseModel.
-    :param custom_in_fold_preprocessor: Takes an instance of a CustomPreprocessing class. Allows users to eeecute
+    :param custom_in_fold_preprocessor: Takes an instance of a CustomPreprocessing class. Allows users to execute
         preprocessing after the train test split within cv folds. This will be executed only if precise_cv_tuning in
         the conf_Training is True. Custom ML models need to implement this themselves. This step is only useful when
-        the proprocessing step has a high chance of overfitting otherwise (i.e: oversampling techniques).
+        the preprocessing step has a high chance of overfitting otherwise (i.e: oversampling techniques).
     :param custom_preprocessor: Takes an instance of a CustomPreprocessing class. Allows users to inject custom
-        preprocessing steps which take place right after the train test spit.
+        preprocessing steps which take place right after the train test split.
     :param custom_last_mile_computation: Takes an instance of a CustomPreprocessing class. Allows users to inject custom
         preprocessing steps which take place right before the model training.
     :param experiment_tracker: Takes an instance of an ExperimentTracker class. If not provided this will be initialized
@@ -63,10 +62,10 @@ class BlueCastCVRegression:
         cat_columns: Optional[List[Union[str, float, int]]] = None,
         stratifier: Optional[Any] = None,
         conf_training: Optional[TrainingConfig] = None,
-        conf_xgboost: Optional[
+        conf_tuning: Optional[
             Union[XgboostTuneParamsRegressionConfig, CatboostTuneParamsRegressionConfig]
         ] = None,
-        conf_params_xgboost: Optional[
+        conf_params: Optional[
             Union[XgboostRegressionFinalParamConfig, CatboostRegressionFinalParamConfig]
         ] = None,
         experiment_tracker: Optional[ExperimentTracker] = None,
@@ -76,12 +75,12 @@ class BlueCastCVRegression:
         custom_feature_selector: Optional[
             Union[BoostaRootaWrapper, CustomPreprocessing]
         ] = None,
-        ml_model: Optional[Union[CatboostModel, Any]] = None,
+        ml_model: Optional[Any] = None,
         single_fold_eval_metric_func: Optional[RegressionEvalWrapper] = None,
     ):
         self.class_problem = class_problem
-        self.conf_xgboost = conf_xgboost
-        self.conf_params_xgboost = conf_params_xgboost
+        self.conf_tuning = conf_tuning
+        self.conf_params = conf_params
         self.custom_in_fold_preprocessor = custom_in_fold_preprocessor
         self.custom_preprocessor = custom_preprocessor
         self.custom_feature_selector = custom_feature_selector
@@ -104,13 +103,13 @@ class BlueCastCVRegression:
         else:
             self.experiment_tracker = ExperimentTracker()
 
-        if not self.conf_params_xgboost:
-            self.conf_params_xgboost = CatboostRegressionFinalParamConfig()
+        if not self.conf_params:
+            self.conf_params = CatboostRegressionFinalParamConfig()
 
         self.conf_training: TrainingConfig = conf_training or TrainingConfig()
 
-        if not self.conf_xgboost:
-            self.conf_xgboost = CatboostTuneParamsRegressionConfig()
+        if not self.conf_tuning:
+            self.conf_tuning = CatboostTuneParamsRegressionConfig()
 
         if not self.single_fold_eval_metric_func:
             self.single_fold_eval_metric_func = RegressionEvalWrapper(
@@ -134,7 +133,7 @@ class BlueCastCVRegression:
         When calling BlueCastCVRegression's fit_eval function multiple BlueCastRegression
         instances are called and each of them predicts on unseen/oof data.
 
-        This function collects these scores and return mean and average of them.
+        This function collects these scores and returns the mean and standard deviation of them.
 
         :param metric: String indicating which metric shall be returned.
         :return: Tuple with (mean, std) of oof scores
@@ -192,14 +191,14 @@ class BlueCastCVRegression:
                 class_problem=self.class_problem,
                 cat_columns=self.cat_columns,
                 conf_training=self.conf_training,
-                conf_xgboost=self.conf_xgboost,
-                conf_params_xgboost=deepcopy(self.conf_params_xgboost),
+                conf_tuning=self.conf_tuning,
+                conf_params=deepcopy(self.conf_params),
                 experiment_tracker=self.experiment_tracker,
                 custom_in_fold_preprocessor=self.custom_in_fold_preprocessor,
                 custom_preprocessor=self.custom_preprocessor,
                 custom_feature_selector=self.custom_feature_selector,
                 custom_last_mile_computation=self.custom_last_mile_computation,
-                ml_model=self.ml_model,
+                ml_model=deepcopy(self.ml_model) if self.ml_model else None,
                 single_fold_eval_metric_func=self.single_fold_eval_metric_func,
             )
             automl.fit(X_train, target_col=target_col)
@@ -249,14 +248,14 @@ class BlueCastCVRegression:
                 class_problem=self.class_problem,
                 cat_columns=self.cat_columns,
                 conf_training=self.conf_training,
-                conf_xgboost=self.conf_xgboost,
-                conf_params_xgboost=deepcopy(self.conf_params_xgboost),
+                conf_tuning=self.conf_tuning,
+                conf_params=deepcopy(self.conf_params),
                 experiment_tracker=self.experiment_tracker,
                 custom_in_fold_preprocessor=self.custom_in_fold_preprocessor,
                 custom_preprocessor=self.custom_preprocessor,
                 custom_feature_selector=self.custom_feature_selector,
                 custom_last_mile_computation=self.custom_last_mile_computation,
-                ml_model=self.ml_model,
+                ml_model=deepcopy(self.ml_model) if self.ml_model else None,
                 single_fold_eval_metric_func=self.single_fold_eval_metric_func,
             )
             automl.fit_eval(X_train, X_val, y_val, target_col=target_col)

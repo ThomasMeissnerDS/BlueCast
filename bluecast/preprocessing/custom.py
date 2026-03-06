@@ -29,7 +29,7 @@ class CustomPreprocessing(ABC):
         self,
         df: pd.DataFrame,
         target: Optional[pd.Series] = None,
-        predicton_mode: bool = False,
+        prediction_mode: bool = False,
     ) -> Tuple[pd.DataFrame, Optional[pd.Series]]:
         """Use prediction mode to not process the missing target during inference."""
         return df, target

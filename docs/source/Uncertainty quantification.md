@@ -1,7 +1,8 @@
 # Uncertainty quantification
 
-Over the past years conformal prediction gained increasing attention. It allows to
-add uncertainty quantification around every model at the cost of just a bit of
+Over the past years conformal prediction gained increasing attention.
+It allows to add uncertainty quantification around every model at the
+cost of just a bit of
 additional computation.
 
 <!-- toc -->

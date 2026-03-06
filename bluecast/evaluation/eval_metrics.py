@@ -178,8 +178,8 @@ def eval_classifier(
         bll = balanced_log_loss(y_true, y_probs)
         logging.info(f"The balanced logloss is {bll}")
     else:
-        bll = 99
-        logging.info("Skip balanced logloss as number of classes is less than 2.")
+        bll = None
+        logging.info("Skip balanced logloss as number of classes is greater than 2.")
 
     if len(y_probs.shape) == 1:
         roc_auc = roc_auc_score(y_true, y_probs)
@@ -216,7 +216,7 @@ def eval_classifier(
         "log_loss": logloss,
         "balanced_logloss": bll,
         "roc_auc": roc_auc,
-        "classfication_report": full_classification_report,
+        "classification_report": full_classification_report,
         "confusion_matrix": confusion_matrix(y_true, y_classes),
     }
     return evaluation_scores
