@@ -16,7 +16,7 @@ from bluecast.conformal_prediction.evaluation import (
 
 def test_prediction_set_coverage():
     X, y = make_classification(
-        n_samples=1000, n_features=5, random_state=42, n_classes=2
+        n_samples=3000, n_features=5, random_state=42, n_classes=2
     )
     X_train, X_calibrate, y_train, y_calibrate = train_test_split(
         X, y, test_size=0.2, random_state=42
@@ -36,10 +36,8 @@ def test_prediction_set_coverage():
 
     # Create a custom training config and adjust general training parameters
     train_config = TrainingConfig()
-    train_config.hyperparameter_tuning_rounds = 10
-    train_config.autotune_model = (
-        False  # we want to run just normal training, no hyperparameter tuning
-    )
+    train_config.hyperparameter_tuning_rounds = 2
+    train_config.autotune_model = False
 
     automl = BlueCast(
         class_problem="binary",

@@ -4,7 +4,6 @@ import os
 import tempfile
 
 import numpy as np
-import pytest
 
 from bluecast.general_utils.general_utils import load_for_production, save_to_production
 

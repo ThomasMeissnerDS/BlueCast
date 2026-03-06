@@ -9,9 +9,7 @@ import pandas as pd
 import pytest
 
 from bluecast.blueprints.cast import BlueCast
-from bluecast.blueprints.cast_cv import BlueCastCV
 from bluecast.blueprints.cast_regression import BlueCastRegression
-from bluecast.config.training_config import TrainingConfig
 
 
 class TestPredictBeforeFit:

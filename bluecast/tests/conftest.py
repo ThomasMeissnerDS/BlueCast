@@ -9,11 +9,7 @@ import pytest
 
 from bluecast.blueprints.cast import BlueCast
 from bluecast.blueprints.cast_regression import BlueCastRegression
-from bluecast.config.training_config import (
-    CatboostTuneParamsConfig,
-    CatboostTuneParamsRegressionConfig,
-    TrainingConfig,
-)
+from bluecast.config.training_config import TrainingConfig
 from bluecast.tests.make_data.create_data import (
     create_synthetic_dataframe,
     create_synthetic_dataframe_regression,

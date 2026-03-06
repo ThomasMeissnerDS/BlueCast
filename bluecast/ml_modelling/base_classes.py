@@ -284,13 +284,15 @@ class XgboostBaseModel:
 
         return x_train, y_train
 
-    def get_early_stopping_callback(self) -> Optional[List[xgb.callback.EarlyStopping]]:
+    def get_early_stopping_callback(
+        self, data_name: str = "test"
+    ) -> Optional[List[xgb.callback.EarlyStopping]]:
         """Create early stopping callback if configured."""
         if self.conf_training.early_stopping_rounds:
             early_stop = xgb.callback.EarlyStopping(
                 rounds=self.conf_training.early_stopping_rounds,
                 metric_name=self.conf_xgboost.xgboost_eval_metric,
-                data_name="test",
+                data_name=data_name,
                 save_best=self.conf_params_xgboost.params["booster"] != "gblinear",
             )
             callbacks = [early_stop]

@@ -45,9 +45,9 @@ def test_initialization(preprocessing_instance):
 def test_fit_transform(sample_data, preprocessing_instance, monkeypatch):
     df, target = sample_data
 
-    # Mock the remove_correlated_columns function
+    # Mock the remove_correlated_columns function at the usage site
     monkeypatch.setattr(
-        "bluecast.preprocessing.remove_collinearity.remove_correlated_columns",
+        "bluecast.blueprints.preprocessing_recipes.remove_correlated_columns",
         mock_remove_correlated_columns,
     )
 
@@ -71,7 +71,7 @@ def test_transform(sample_data, preprocessing_instance, monkeypatch):
 
     # Fit-transform first to simulate the normal flow
     monkeypatch.setattr(
-        "bluecast.preprocessing.remove_collinearity.remove_correlated_columns",
+        "bluecast.blueprints.preprocessing_recipes.remove_correlated_columns",
         mock_remove_correlated_columns,
     )
     preprocessing_instance.fit_transform(df, target)

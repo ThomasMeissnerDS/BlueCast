@@ -112,8 +112,10 @@ class XgboostModelRegression(XgboostBaseModel):
         d_train, d_test = self._create_d_matrices(x_train, y_train, x_test, y_test)
         if x_test.empty:
             eval_set = [(d_train, "train")]
+            eval_name = "train"
         else:
             eval_set = [(d_test, "test")]
+            eval_name = "test"
 
         steps = self.conf_params_xgboost.params.pop("steps", 300)
 
@@ -125,7 +127,7 @@ class XgboostModelRegression(XgboostBaseModel):
                 early_stopping_rounds=self.conf_training.early_stopping_rounds,
                 evals=eval_set,
                 verbose_eval=self.conf_xgboost.verbosity_during_final_model_training,
-                callbacks=self.get_early_stopping_callback(),
+                callbacks=self.get_early_stopping_callback(data_name=eval_name),
             )
         elif self.conf_xgboost:
             self.model = xgb.train(
@@ -135,7 +137,7 @@ class XgboostModelRegression(XgboostBaseModel):
                 early_stopping_rounds=self.conf_training.early_stopping_rounds,
                 evals=eval_set,
                 verbose_eval=self.conf_xgboost.verbosity_during_final_model_training,
-                callbacks=self.get_early_stopping_callback(),
+                callbacks=self.get_early_stopping_callback(data_name=eval_name),
             )
         logging.info("Finished training")
         return self.model
