@@ -90,8 +90,6 @@ class TestTrainTestSplitTimeFString:
 
     def test_time_split_without_column(self):
         df = pd.DataFrame({"a": range(50), "b": range(50), "target": range(50)})
-        x_train, x_test, y_train, y_test = train_test_split_time(
-            df, "target", "", 0.8
-        )
+        x_train, x_test, y_train, y_test = train_test_split_time(df, "target", "", 0.8)
         assert len(x_train) == 40
         assert len(x_test) == 10
