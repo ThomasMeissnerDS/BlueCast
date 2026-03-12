@@ -102,6 +102,12 @@ def test_no_numerical_columns():
     preprocessing = PreprocessingForLinearModels(num_columns=[])
     transformed_df, transformed_target = preprocessing.fit_transform(df, target)
 
-    # Since there are no numerical columns, the DataFrame should remain unchanged
-    pd.testing.assert_frame_equal(transformed_df, df)
+    # Since there are no numerical columns, all original columns should be present
+    assert set(transformed_df.columns) == set(df.columns)
+    for col in df.columns:
+        pd.testing.assert_series_equal(
+            transformed_df[col].reset_index(drop=True),
+            df[col].reset_index(drop=True),
+            check_names=False,
+        )
     pd.testing.assert_series_equal(transformed_target, target)

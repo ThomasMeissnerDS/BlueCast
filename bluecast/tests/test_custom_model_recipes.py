@@ -132,17 +132,18 @@ def test_linear_predict(regression_data, linear_model):
     X_train, X_test, y_train, y_test = regression_data
     linear_model.fit(X_train, X_test, y_train, y_test)
 
-    predictions = linear_model.predict(X_test)
+    result = linear_model.predict(X_test)
 
-    # Check the types of the returned values
+    # predict returns (preds, preds) tuple to match BaseClassMlModel interface
+    assert isinstance(result, tuple), "Predictions should be a tuple."
+    predictions = result[0]
+
     assert isinstance(predictions, np.ndarray), "Predictions should be a numpy array."
 
-    # Check the shape of the returned values
     assert predictions.shape == (
         X_test.shape[0],
     ), "Predictions should have the correct shape."
 
-    # Optionally, check the values of predictions are finite (not NaN or inf)
     assert np.all(np.isfinite(predictions)), "Predictions should be finite values."
 
 
@@ -150,9 +151,8 @@ def test_linear_predict_range(regression_data, linear_model):
     X_train, X_test, y_train, y_test = regression_data
     linear_model.fit(X_train, X_test, y_train, y_test)
 
-    predictions = linear_model.predict(X_test)
+    predictions, _ = linear_model.predict(X_test)
 
-    # Check if predictions are within a reasonable range
     assert np.all(
         predictions >= y_train.min() - 10
     ), "Predictions should not be too low."
