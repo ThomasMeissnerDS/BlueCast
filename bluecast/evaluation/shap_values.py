@@ -17,44 +17,32 @@ logger = logging.getLogger(__name__)
 def _is_shap_tree_compatible(model) -> bool:
     """Check if the model is compatible with shap.TreeExplainer.
 
-    Known incompatibility: shap's TreeExplainer can segfault on xgb.Booster
-    objects produced by the native xgb.train() API (as opposed to the sklearn
-    wrapper). Since a C-level segfault cannot be caught by Python's try/except,
-    we must detect and skip this case proactively.
+    TreeExplainer can segfault on certain model types (xgb.Booster from native
+    xgb.train() API, and potentially other backends). Since a C-level segfault
+    cannot be caught by Python, we only allow TreeExplainer for CatBoost models
+    where it is known to be stable. All other models use KernelExplainer.
     """
+    try:
+        import catboost
+
+        if isinstance(model, catboost.CatBoost):
+            return True
+    except ImportError:
+        pass
+
     try:
         import xgboost
 
-        # xgb.Booster from xgb.train() is known to segfault in TreeExplainer.
-        # The sklearn wrapper (XGBClassifier/XGBRegressor) is safe because
-        # it has get_booster() and shap handles it differently.
+        # xgb.Booster from xgb.train() segfaults in TreeExplainer
         if isinstance(model, xgboost.Booster):
-            logger.warning(
-                "Skipping TreeExplainer for xgb.Booster (native API). "
-                "TreeExplainer can segfault on Booster objects. "
-                "Falling back to KernelExplainer."
-            )
             return False
-
-        xgb_version = tuple(int(x) for x in xgboost.__version__.split(".")[:2])
-        shap_version = tuple(int(x) for x in shap.__version__.split(".")[:2])
-
-        if xgb_version >= (2, 1) and shap_version < (0, 47):
-            logger.warning(
-                f"Skipping TreeExplainer: shap {shap.__version__} is known to "
-                f"segfault with xgboost {xgboost.__version__}. "
-                f"Upgrade shap to >= 0.47 or use KernelExplainer."
-            )
+        # XGBClassifier/XGBRegressor (sklearn API) — also skip to be safe
+        if isinstance(model, xgboost.XGBModel):
             return False
-
-        if hasattr(model, "get_booster"):
-            return True
-        if hasattr(model, "get_all_params"):
-            return True
-    except Exception:
+    except ImportError:
         pass
 
-    return True
+    return False
 
 
 def shap_explanations(model, df: pd.DataFrame) -> Tuple[np.ndarray, shap.Explainer]:
