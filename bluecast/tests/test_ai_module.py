@@ -32,7 +32,10 @@ class TestAIConfig:
         assert config.checkpoint_dir is None
 
     def test_get_model_name_default(self):
-        assert AIConfig(api_key="t", provider="gemini").get_model_name() == "gemini-2.5-flash"
+        assert (
+            AIConfig(api_key="t", provider="gemini").get_model_name()
+            == "gemini-2.5-flash"
+        )
         assert AIConfig(api_key="t", provider="openai").get_model_name() == "gpt-4o"
         assert (
             AIConfig(api_key="t", provider="anthropic").get_model_name()
@@ -45,9 +48,13 @@ class TestAIConfig:
 
     def test_get_max_iterations(self):
         assert AIConfig(api_key="t", max_iterations=7).get_max_iterations() == 7
-        assert AIConfig(api_key="t", max_iterations=0, mode="fast").get_max_iterations() == 1
         assert (
-            AIConfig(api_key="t", max_iterations=0, mode="precise").get_max_iterations() == 5
+            AIConfig(api_key="t", max_iterations=0, mode="fast").get_max_iterations()
+            == 1
+        )
+        assert (
+            AIConfig(api_key="t", max_iterations=0, mode="precise").get_max_iterations()
+            == 5
         )
 
 
@@ -161,7 +168,9 @@ class TestTools:
         assert "leakage" in result.lower()
 
     def test_create_feature_success(self, sample_df):
-        result = tool_create_feature(sample_df, "df['ratio'] = df['num1'] / (df['num2'] + 1)")
+        result = tool_create_feature(
+            sample_df, "df['ratio'] = df['num1'] / (df['num2'] + 1)"
+        )
         assert result["success"] is True
         assert "ratio" in result["new_columns"]
 

@@ -2,7 +2,6 @@
 
 import numpy as np
 import pandas as pd
-import pytest
 
 from bluecast.conformal_prediction.conformal_prediction import (
     ConformalPredictionWrapper,
@@ -139,9 +138,7 @@ class TestGroupEvaluation:
         )
         groups = np.array(["A", "A", "A", "A", "B", "B", "B", "B"])
 
-        result = prediction_interval_coverage_by_group(
-            y_true, intervals, [0.1], groups
-        )
+        result = prediction_interval_coverage_by_group(y_true, intervals, [0.1], groups)
         assert "A" in result
         assert "B" in result
         assert 0.1 in result["A"]
@@ -167,7 +164,9 @@ class TestConformalFairness:
             "urban": {0.1: 0.91},
             "rural": {0.1: 0.89},
         }
-        result = conformal_fairness_check(coverages, target_coverage=0.9, tolerance=0.05)
+        result = conformal_fairness_check(
+            coverages, target_coverage=0.9, tolerance=0.05
+        )
         assert result["is_fair"] is True
 
     def test_unfair(self):
@@ -175,7 +174,9 @@ class TestConformalFairness:
             "urban": {0.1: 0.92},
             "rural": {0.1: 0.78},
         }
-        result = conformal_fairness_check(coverages, target_coverage=0.9, tolerance=0.05)
+        result = conformal_fairness_check(
+            coverages, target_coverage=0.9, tolerance=0.05
+        )
         assert result["is_fair"] is False
         assert result["coverage_range"] == (0.78, 0.92)
 

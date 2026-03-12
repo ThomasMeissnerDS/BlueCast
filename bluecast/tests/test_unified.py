@@ -1,13 +1,11 @@
 """Tests for the unified BlueCastAuto interface."""
 
-import numpy as np
 import pandas as pd
 import pytest
 from sklearn.datasets import make_classification, make_regression
 
 from bluecast.blueprints.unified import BlueCastAuto
 from bluecast.config.training_config import TrainingConfig
-from bluecast.ensemble.ensemble_config import EnsembleConfig
 
 
 @pytest.fixture
@@ -66,7 +64,9 @@ def test_binary_cv(binary_data, fast_config):
 def test_regression_single_model(regression_data, fast_config):
     from sklearn.model_selection import train_test_split
 
-    df_train, df_eval = train_test_split(regression_data, test_size=0.2, random_state=42)
+    df_train, df_eval = train_test_split(
+        regression_data, test_size=0.2, random_state=42
+    )
     y_eval = df_eval.pop("target")
 
     automl = BlueCastAuto(

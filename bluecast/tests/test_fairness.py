@@ -6,8 +6,6 @@ import pytest
 
 from bluecast.evaluation.fairness import (
     FairnessAuditor,
-    FairnessReport,
-    GroupMetrics,
     _safe_ratio,
 )
 
@@ -140,9 +138,7 @@ def test_fairness_auditor_missing_column(binary_data):
 
 def test_fairness_auditor_reference_group(binary_data):
     y_true, y_pred, y_probs, df = binary_data
-    auditor = FairnessAuditor(
-        sensitive_columns=["gender"], reference_group="female"
-    )
+    auditor = FairnessAuditor(sensitive_columns=["gender"], reference_group="female")
     reports = auditor.audit_classification(y_true, y_pred, y_probs, df)
     report = reports[0]
     for key in report.demographic_parity:
