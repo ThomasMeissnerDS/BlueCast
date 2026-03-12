@@ -235,17 +235,26 @@ if not API_KEY:
 │  EXAMPLE 8: Choosing your LLM provider                            │
 └─────────────────────────────────────────────────────────────────────┘
 
-    # Google Gemini (default)
+    # Google Gemini (default model: gemini-2.5-flash)
     ai = BlueCastAI(api_key="...", provider="gemini")
 
-    # Specific Gemini model
+    # Choose a specific Gemini model
     ai = BlueCastAI(api_key="...", provider="gemini", model="gemini-2.5-pro")
+    ai = BlueCastAI(api_key="...", provider="gemini", model="gemini-2.0-flash-lite")
 
-    # OpenAI GPT-4o
-    ai = BlueCastAI(api_key="...", provider="openai", model="gpt-4o")
+    # OpenAI (default model: gpt-4o)
+    ai = BlueCastAI(api_key="...", provider="openai")
+    ai = BlueCastAI(api_key="...", provider="openai", model="gpt-4o-mini")
 
-    # Anthropic Claude
-    ai = BlueCastAI(api_key="...", provider="anthropic", model="claude-sonnet-4-20250514")
+    # Anthropic (default model: claude-sonnet-4-20250514)
+    ai = BlueCastAI(api_key="...", provider="anthropic")
+    ai = BlueCastAI(api_key="...", provider="anthropic", model="claude-opus-4-20250514")
+
+    # The model= parameter accepts any model name your provider supports.
+    # When omitted, defaults are:
+    #   gemini    -> gemini-2.5-flash
+    #   openai    -> gpt-4o
+    #   anthropic -> claude-sonnet-4-20250514
 
     # Lower temperature for more deterministic results
     ai = BlueCastAI(api_key="...", provider="gemini", temperature=0.1)

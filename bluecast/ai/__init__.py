@@ -66,8 +66,10 @@ class BlueCastAI:
 
     :param api_key: API key for the LLM provider.
     :param provider: LLM provider: 'gemini', 'openai', or 'anthropic'.
-    :param model: Provider-specific model name (e.g. 'gpt-4o', 'claude-sonnet-4-20250514').
-        Uses a sensible default per provider if not specified.
+    :param model: Provider-specific model name. Pass the exact string the provider
+        expects (e.g. 'gemini-2.5-pro', 'gpt-4o-mini', 'claude-sonnet-4-20250514').
+        Defaults per provider when not specified:
+        gemini -> 'gemini-2.5-flash', openai -> 'gpt-4o', anthropic -> 'claude-sonnet-4-20250514'.
     :param enable_web_search: Whether agents can search the web for techniques.
     :param verbose: Whether to print progress to stdout.
     :param temperature: LLM temperature (0.0 = deterministic, 1.0 = creative).

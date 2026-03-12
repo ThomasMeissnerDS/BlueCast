@@ -10,7 +10,10 @@ class AIConfig:
 
     :param api_key: API key for the LLM provider.
     :param provider: LLM provider to use.
-    :param model: Provider-specific model name. If None, uses a sensible default.
+    :param model: Provider-specific model name. Pass the exact string the provider
+        expects (e.g. 'gemini-2.5-pro', 'gpt-4o-mini', 'claude-opus-4-20250514').
+        Defaults: gemini -> 'gemini-2.5-flash', openai -> 'gpt-4o',
+        anthropic -> 'claude-sonnet-4-20250514'.
     :param mode: Controls speed vs thoroughness trade-off.
         'fast' = skip FE, 1 iteration, basic config.
         'balanced' = targeted FE, 2-3 iterations.
