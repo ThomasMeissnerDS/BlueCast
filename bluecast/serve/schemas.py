@@ -1,7 +1,7 @@
 """Auto-generate Pydantic request/response models from a trained BlueCast pipeline."""
 
 import logging
-from typing import Any, Dict, List, Optional, Tuple, Type
+from typing import Any, Dict, List, Optional, Type
 
 logger = logging.getLogger(__name__)
 
@@ -36,15 +36,30 @@ def _extract_column_info(pipeline: Any) -> List[Dict[str, Any]]:
             dtype = detected.get(col, "")
             if col in num_cols or "float" in str(dtype) or "int" in str(dtype):
                 columns.append(
-                    {"name": col, "type": "number", "python_type": "float", "nullable": True}
+                    {
+                        "name": col,
+                        "type": "number",
+                        "python_type": "float",
+                        "nullable": True,
+                    }
                 )
             elif col in date_cols or "datetime" in str(dtype):
                 columns.append(
-                    {"name": col, "type": "string", "python_type": "str", "nullable": True}
+                    {
+                        "name": col,
+                        "type": "string",
+                        "python_type": "str",
+                        "nullable": True,
+                    }
                 )
             else:
                 columns.append(
-                    {"name": col, "type": "string", "python_type": "str", "nullable": True}
+                    {
+                        "name": col,
+                        "type": "string",
+                        "python_type": "str",
+                        "nullable": True,
+                    }
                 )
 
     if not columns and hasattr(inner, "schema_detector") and inner.schema_detector:
@@ -53,7 +68,12 @@ def _extract_column_info(pipeline: Any) -> List[Dict[str, Any]]:
             if col == target_col:
                 continue
             columns.append(
-                {"name": col, "type": "number", "python_type": "float", "nullable": True}
+                {
+                    "name": col,
+                    "type": "number",
+                    "python_type": "float",
+                    "nullable": True,
+                }
             )
 
     return columns

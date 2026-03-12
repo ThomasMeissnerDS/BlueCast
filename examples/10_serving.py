@@ -85,17 +85,17 @@ try:
             print(f"  {f:<25s} {size:>8,} bytes")
 
         # Show generated app.py header
-        with open(os.path.join(output, "app.py")) as f:
-            lines = f.readlines()
+        with open(os.path.join(output, "app.py")) as app_file:
+            lines = app_file.readlines()
         print(f"\nGenerated app.py ({len(lines)} lines):")
         for line in lines[:15]:
             print(f"  {line}", end="")
         print("  ...")
 
         # Show Dockerfile
-        with open(os.path.join(output, "Dockerfile")) as f:
-            print(f"\nDockerfile:")
-            print(f.read())
+        with open(os.path.join(output, "Dockerfile")) as dockerfile:
+            print("\nDockerfile:")
+            print(dockerfile.read())
 
 except ImportError:
     print("bluecast[serve] not installed. Showing usage instead:")

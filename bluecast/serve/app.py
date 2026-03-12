@@ -47,7 +47,9 @@ def _format_batch_prediction(raw_result: Any, class_problem: str) -> Dict[str, A
         if isinstance(raw_result, tuple) and len(raw_result) == 2:
             probs, classes = raw_result
             return {
-                "probabilities": probs.tolist() if hasattr(probs, "tolist") else list(probs),
+                "probabilities": (
+                    probs.tolist() if hasattr(probs, "tolist") else list(probs)
+                ),
                 "predicted_classes": (
                     classes.tolist() if hasattr(classes, "tolist") else list(classes)
                 ),
@@ -107,7 +109,9 @@ def create_app(pipeline: Any) -> Any:
         if hasattr(pipeline, "_inner"):
             eval_metrics = getattr(pipeline._inner, "eval_metrics", eval_metrics)
         if eval_metrics is None:
-            return {"message": "No evaluation metrics available. Use fit_eval() to generate."}
+            return {
+                "message": "No evaluation metrics available. Use fit_eval() to generate."
+            }
         serializable = {}
         for k, v in eval_metrics.items():
             if isinstance(v, (int, float, str, bool)):
@@ -119,7 +123,7 @@ def create_app(pipeline: Any) -> Any:
     @app.post("/predict")
     def predict(request: RequestModel) -> Dict[str, Any]:  # type: ignore[valid-type]
         try:
-            data = request.model_dump()
+            data = request.model_dump()  # type: ignore[attr-defined]
             data = {k: v for k, v in data.items() if k != "_placeholder"}
             df = pd.DataFrame([data])
             result = pipeline.predict(df)
@@ -133,7 +137,7 @@ def create_app(pipeline: Any) -> Any:
         try:
             data_list = []
             for req in requests:
-                d = req.model_dump()
+                d = req.model_dump()  # type: ignore[attr-defined]
                 d = {k: v for k, v in d.items() if k != "_placeholder"}
                 data_list.append(d)
             df = pd.DataFrame(data_list)

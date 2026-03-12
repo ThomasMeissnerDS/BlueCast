@@ -17,11 +17,24 @@ logger = logging.getLogger(__name__)
 def _is_shap_tree_compatible(model) -> bool:
     """Check if the model is compatible with shap.TreeExplainer.
 
-    Known incompatibility: shap < 0.47 with xgboost >= 2.1 can segfault.
-    This pre-check avoids the crash.
+    Known incompatibility: shap's TreeExplainer can segfault on xgb.Booster
+    objects produced by the native xgb.train() API (as opposed to the sklearn
+    wrapper). Since a C-level segfault cannot be caught by Python's try/except,
+    we must detect and skip this case proactively.
     """
     try:
         import xgboost
+
+        # xgb.Booster from xgb.train() is known to segfault in TreeExplainer.
+        # The sklearn wrapper (XGBClassifier/XGBRegressor) is safe because
+        # it has get_booster() and shap handles it differently.
+        if isinstance(model, xgboost.Booster):
+            logger.warning(
+                "Skipping TreeExplainer for xgb.Booster (native API). "
+                "TreeExplainer can segfault on Booster objects. "
+                "Falling back to KernelExplainer."
+            )
+            return False
 
         xgb_version = tuple(int(x) for x in xgboost.__version__.split(".")[:2])
         shap_version = tuple(int(x) for x in shap.__version__.split(".")[:2])
@@ -34,7 +47,6 @@ def _is_shap_tree_compatible(model) -> bool:
             )
             return False
 
-        # Test if the model has a tree structure shap can parse
         if hasattr(model, "get_booster"):
             return True
         if hasattr(model, "get_all_params"):

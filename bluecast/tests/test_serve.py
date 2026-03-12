@@ -18,14 +18,14 @@ from bluecast.serve.schemas import (
 )
 
 try:
-    import pydantic
+    import pydantic  # noqa: F401
 
     HAS_PYDANTIC = True
 except ImportError:
     HAS_PYDANTIC = False
 
 try:
-    import fastapi
+    import fastapi  # noqa: F401
 
     HAS_FASTAPI = True
 except ImportError:

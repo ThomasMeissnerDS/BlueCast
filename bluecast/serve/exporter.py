@@ -73,7 +73,10 @@ def export_api(
 
     # Render README
     example_payload = json.dumps(
-        {col["name"]: 0.0 if col["python_type"] == "float" else "example" for col in columns[:5]},
+        {
+            col["name"]: 0.0 if col["python_type"] == "float" else "example"
+            for col in columns[:5]
+        },
         indent=2,
     )
     readme_template = env.get_template("README.md.j2")
