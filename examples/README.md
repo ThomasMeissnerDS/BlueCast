@@ -15,6 +15,7 @@ synthetic data. No external datasets required.
 | [07_fairness.py](07_fairness.py) | Fairness auditing, demographic parity, equalized odds, conformal fairness |
 | [08_eda.py](08_eda.py) | Univariate/bivariate plots, PCA, t-SNE, correlations, data quality, leakage detection |
 | [09_bluecast_ai.py](09_bluecast_ai.py) | Multi-agent LLM-powered AutoML (requires API key) |
+| [10_serving.py](10_serving.py) | Deploy models as REST APIs, export Dockerfile |
 
 ## Running
 

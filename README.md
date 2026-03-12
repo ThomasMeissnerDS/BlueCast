@@ -197,6 +197,7 @@ using synthetic data that demonstrate BlueCast's full feature set:
 | [07_fairness.py](examples/07_fairness.py) | Fairness auditing, demographic parity, equalized odds, conformal fairness |
 | [08_eda.py](examples/08_eda.py) | Univariate/bivariate plots, PCA, t-SNE, correlations, data quality, leakage detection |
 | [09_bluecast_ai.py](examples/09_bluecast_ai.py) | Multi-agent LLM-powered AutoML (requires API key) |
+| [10_serving.py](examples/10_serving.py) | Deploy models as REST APIs, export Dockerfile |
 
 ### Kaggle competition results
 

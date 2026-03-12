@@ -1,0 +1,133 @@
+"""Auto-generated BlueCast Model API.
+
+Run with:
+    uvicorn app:app --host 0.0.0.0 --port 8080
+
+Swagger docs available at: http://localhost:8080/docs
+"""
+
+import logging
+import os
+import traceback
+from typing import Any, Dict, List, Optional
+
+import dill
+import numpy as np
+import pandas as pd
+from fastapi import FastAPI, HTTPException
+from pydantic import BaseModel
+
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
+
+MODEL_PATH = os.environ.get("MODEL_PATH", "model.pkl")
+
+# Load pipeline
+with open(MODEL_PATH, "rb") as f:
+    pipeline = dill.load(f)
+logger.info(f"Model loaded from {MODEL_PATH}")
+
+
+# --- Request/Response schemas ---
+
+class PredictionRequest(BaseModel):
+{% for col in columns %}
+    {{ col.name }}: Optional[{{ col.python_type }}] = None
+{% endfor %}
+
+
+{% if class_problem in ['binary', 'multiclass'] %}
+class PredictionResponse(BaseModel):
+    probabilities: Any = None
+    predicted_class: Any = None
+
+
+class BatchPredictionResponse(BaseModel):
+    probabilities: Any = None
+    predicted_classes: Any = None
+    count: int = 0
+{% else %}
+class PredictionResponse(BaseModel):
+    prediction: Any = None
+
+
+class BatchPredictionResponse(BaseModel):
+    predictions: Any = None
+    count: int = 0
+{% endif %}
+
+
+# --- FastAPI app ---
+
+app = FastAPI(
+    title="BlueCast Model API",
+    description="Auto-generated API for a BlueCast {{ class_problem }} model.",
+    version="1.0.0",
+)
+
+
+@app.get("/health")
+def health():
+    return {
+        "status": "healthy",
+        "model_type": "{{ class_problem }}",
+    }
+
+
+@app.get("/schema")
+def schema():
+    return {
+        "class_problem": "{{ class_problem }}",
+        "columns": {{ columns_json }},
+    }
+
+
+@app.post("/predict", response_model=PredictionResponse)
+def predict(request: PredictionRequest):
+    try:
+        data = request.model_dump()
+        df = pd.DataFrame([data])
+        result = pipeline.predict(df)
+{% if class_problem in ['binary', 'multiclass'] %}
+        if isinstance(result, tuple) and len(result) == 2:
+            probs, classes = result
+            p = probs.tolist() if hasattr(probs, "tolist") else probs
+            c = classes.tolist() if hasattr(classes, "tolist") else classes
+            if isinstance(p, list) and len(p) == 1:
+                p = p[0]
+            if isinstance(c, list) and len(c) == 1:
+                c = c[0]
+            return {"probabilities": p, "predicted_class": c}
+        return {"probabilities": result}
+{% else %}
+        val = result.tolist() if hasattr(result, "tolist") else result
+        if isinstance(val, list) and len(val) == 1:
+            val = val[0]
+        return {"prediction": val}
+{% endif %}
+    except Exception as e:
+        logger.error(f"Prediction failed: {e}\n{traceback.format_exc()}")
+        raise HTTPException(status_code=400, detail=str(e))
+
+
+@app.post("/predict/batch", response_model=BatchPredictionResponse)
+def predict_batch(requests: List[PredictionRequest]):
+    try:
+        df = pd.DataFrame([r.model_dump() for r in requests])
+        result = pipeline.predict(df)
+{% if class_problem in ['binary', 'multiclass'] %}
+        if isinstance(result, tuple) and len(result) == 2:
+            probs, classes = result
+            return {
+                "probabilities": probs.tolist() if hasattr(probs, "tolist") else list(probs),
+                "predicted_classes": classes.tolist() if hasattr(classes, "tolist") else list(classes),
+                "count": len(probs),
+            }
+        return {"predictions": result, "count": len(result)}
+{% else %}
+        vals = result.tolist() if hasattr(result, "tolist") else list(result)
+        return {"predictions": vals, "count": len(vals)}
+{% endif %}
+    except Exception as e:
+        logger.error(f"Batch prediction failed: {e}\n{traceback.format_exc()}")
+        raise HTTPException(status_code=400, detail=str(e))

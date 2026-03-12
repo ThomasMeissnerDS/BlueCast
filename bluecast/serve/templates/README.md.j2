@@ -1,0 +1,35 @@
+# BlueCast Model API
+
+Auto-generated deployment for a **{{ class_problem }}** model.
+
+## Quick Start
+
+```bash
+pip install -r requirements.txt
+uvicorn app:app --host 0.0.0.0 --port 8080
+```
+
+## Docker
+
+```bash
+docker build -t bluecast-model .
+docker run -p 8080:8080 bluecast-model
+```
+
+## Endpoints
+
+| Endpoint | Method | Description |
+| -------- | ------ | ----------- |
+| `/health` | GET | Health check |
+| `/schema` | GET | Input schema (columns and types) |
+| `/predict` | POST | Single prediction |
+| `/predict/batch` | POST | Batch predictions |
+| `/docs` | GET | Interactive Swagger documentation |
+
+## Example
+
+```bash
+curl -X POST http://localhost:8080/predict \
+  -H "Content-Type: application/json" \
+  -d '{{ example_payload }}'
+```
