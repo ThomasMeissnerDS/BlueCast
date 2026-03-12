@@ -224,23 +224,23 @@ def eval_classifier(
 
 def mean_squared_error_diff_sklearn_versions(y_true, y_preds):
     mean_squared_error_score = mean_squared_error(y_true, y_preds)
-    print(f"The MSE score is {mean_squared_error_score}")
+    logging.info(f"The MSE score is {mean_squared_error_score}")
     return mean_squared_error_score
 
 
 def root_mean_squared_error_diff_sklearn_versions(y_true, y_preds):
     root_mean_squared_error_score = root_mean_squared_error(y_true, y_preds)
-    print(f"The RMSE score is {root_mean_squared_error_score}")
+    logging.info(f"The RMSE score is {root_mean_squared_error_score}")
     return root_mean_squared_error_score
 
 
 def eval_regressor(y_true: np.ndarray, y_preds: np.ndarray) -> Dict[str, Any]:
     r2 = r2_score(y_true, y_preds)
-    print(f"The R2 score is {r2}")
+    logging.info(f"The R2 score is {r2}")
     mean_absolute_error_score = mean_absolute_error(y_true, y_preds)
-    print(f"The MAE score is {mean_absolute_error_score}")
+    logging.info(f"The MAE score is {mean_absolute_error_score}")
     median_absolute_error_score = median_absolute_error(y_true, y_preds)
-    print(f"The Median absolute error score is {median_absolute_error_score}")
+    logging.info(f"The Median absolute error score is {median_absolute_error_score}")
 
     mean_squared_error_score = mean_squared_error_diff_sklearn_versions(y_true, y_preds)
     root_mean_squared_error_score = root_mean_squared_error_diff_sklearn_versions(
@@ -289,7 +289,7 @@ class ClassificationEvalWrapper:
 
         if eval_against not in ["probas_all_classes", "probas_target_class", "classes"]:
             raise ValueError(
-                f"Argument eval_against must be one of ['probas_all_classes', 'probas_best_class', 'classes']. However {self.eval_against} has been provided."
+                f"Argument eval_against must be one of ['probas_all_classes', 'probas_target_class', 'classes']. However {self.eval_against} has been provided."
             )
 
     def classification_eval_func_wrapper(
@@ -361,7 +361,7 @@ class RegressionEvalWrapper:
         y_hat: Union[np.ndarray, pd.Series, list],
     ) -> Union[float, int]:
         """
-        Wrapper function to evaluate classification metrics.
+        Wrapper function to evaluate regression metrics.
 
         :param y_true: Numpy array of true targets.
         :param y_hat: NumPy array of predicted targets.

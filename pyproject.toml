@@ -38,6 +38,9 @@ xgboost = ">=3.0.0"
 numpy           = ">=2.0.0"
 scipy           = ">=1.16.0"
 scikit-learn    = ">=1.6.0"
+google-generativeai = {version = ">=0.8.0", optional = true}
+openai = {version = ">=1.0.0", optional = true}
+anthropic = {version = ">=0.30.0", optional = true}
 
 [tool.poetry.group.dev.dependencies]
 recommonmark = ">=0.7.1"
@@ -62,6 +65,10 @@ sphinx-rtd-theme = "^2.0.0"
 [tool.poetry.extras]
 jupyter = ["ipython", "jupyter_core", "notebook"]
 full = ["ipython", "jupyter_core", "notebook"]
+ai = ["google-generativeai", "openai", "anthropic"]
+ai-gemini = ["google-generativeai"]
+ai-openai = ["openai"]
+ai-anthropic = ["anthropic"]
 
 [build-system]
 requires = ["poetry-core>=1.0.0"]

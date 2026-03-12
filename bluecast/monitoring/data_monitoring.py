@@ -263,7 +263,9 @@ class DataDrift:
         :param train_on_device: Device to train the model on. Options are 'cpu' and 'gpu'. (Default is 'cpu')
         :return: Auc score that indicates similarity and displays feature importance.
         """
-        # add the train/test labels
+        df = df.copy()
+        df_new = df_new.copy()
+
         df["AV_label"] = 0
         df_new["AV_label"] = 1
 

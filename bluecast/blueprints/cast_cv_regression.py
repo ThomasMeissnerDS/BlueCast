@@ -19,6 +19,13 @@ from bluecast.config.training_config import (
 from bluecast.conformal_prediction.conformal_prediction_regression import (
     ConformalPredictionRegressionWrapper,
 )
+from bluecast.ensemble.ensemble_config import EnsembleConfig
+from bluecast.ensemble.hill_climbing import (
+    HillClimbingEnsemble,
+    _default_regression_metric,
+)
+from bluecast.ensemble.mean_blending import blend_predictions_mean
+from bluecast.ensemble.stacking import StackingEnsemble
 from bluecast.evaluation.eval_metrics import RegressionEvalWrapper
 from bluecast.experimentation.tracking import ExperimentTracker
 from bluecast.preprocessing.custom import CustomPreprocessing
@@ -77,6 +84,7 @@ class BlueCastCVRegression:
         ] = None,
         ml_model: Optional[Any] = None,
         single_fold_eval_metric_func: Optional[RegressionEvalWrapper] = None,
+        ensemble_config: Optional[EnsembleConfig] = None,
     ):
         self.class_problem = class_problem
         self.conf_tuning = conf_tuning
@@ -92,6 +100,9 @@ class BlueCastCVRegression:
         self.conformal_prediction_wrapper: Optional[
             ConformalPredictionRegressionWrapper
         ] = None
+        self.ensemble_config = ensemble_config or EnsembleConfig()
+        self.stacking_ensemble: Optional[StackingEnsemble] = None
+        self.hill_climbing_ensemble: Optional[HillClimbingEnsemble] = None
 
         if not cat_columns:
             self.cat_columns = []
@@ -211,7 +222,8 @@ class BlueCastCVRegression:
         """Fit multiple BlueCastRegression instances on different data splits.
 
         Input df is expected the target column. Evaluation is executed on out-of-fold dataset
-        in each split.
+        in each split. When using stacking or hill_climbing ensemble strategies, OOF predictions
+        are collected and used to fit the ensemble meta-learner.
         :param df: Pandas DataFrame that includes the target column
         :param target_col: String indicating the name of the target column
         :returns Tuple of (oof_mean, oof_std) with scores on unseen data during eval
@@ -231,7 +243,15 @@ class BlueCastCVRegression:
                 random_state=self.conf_training.global_random_state,
             )
 
-        for fn, (trn_idx, val_idx) in enumerate(self.stratifier.split(X, y_binned)):
+        needs_oof = self.ensemble_config.ensemble_strategy in (
+            "stacking",
+            "hill_climbing",
+        )
+        oof_preds_per_model: List[np.ndarray] = []
+        oof_indices_per_fold: List[np.ndarray] = []
+        all_splits = list(self.stratifier.split(X, y_binned))
+
+        for fn, (trn_idx, val_idx) in enumerate(all_splits):
             X_train, X_val = X.iloc[trn_idx], X.iloc[val_idx]
             y_train, y_val = y.iloc[trn_idx], y.iloc[val_idx]
 
@@ -261,20 +281,74 @@ class BlueCastCVRegression:
             automl.fit_eval(X_train, X_val, y_val, target_col=target_col)
             self.bluecast_models.append(automl)
 
-            # overwrite experiment tracker to pass it into next iteration
+            if needs_oof:
+                oof_pred = automl.predict(X_val)
+                oof_preds_per_model.append(oof_pred)
+                oof_indices_per_fold.append(val_idx)
+
             self.experiment_tracker = automl.experiment_tracker
+
+        if needs_oof:
+            self._fit_ensemble_from_oof(
+                oof_preds_per_model, oof_indices_per_fold, y, all_splits
+            )
 
         oof_mean, oof_std = self.show_oof_scores()
         return oof_mean, oof_std
+
+    def _fit_ensemble_from_oof(
+        self,
+        oof_preds_per_model: List[np.ndarray],
+        oof_indices_per_fold: List[np.ndarray],
+        y_full: pd.Series,
+        all_splits: list,
+    ) -> None:
+        """Fit stacking or hill climbing ensemble from OOF predictions."""
+        n_samples = len(y_full)
+        n_models = len(self.bluecast_models)
+        oof_matrix = np.full((n_samples, n_models), np.nan)
+
+        for fn in range(n_models):
+            val_idx = oof_indices_per_fold[fn]
+            oof_matrix[val_idx, fn] = oof_preds_per_model[fn]
+
+        valid_mask = ~np.any(np.isnan(oof_matrix), axis=1)
+        oof_valid = oof_matrix[valid_mask]
+        y_valid = y_full.values[valid_mask]
+
+        if self.ensemble_config.ensemble_strategy == "stacking":
+            self.stacking_ensemble = StackingEnsemble(
+                meta_learner=self.ensemble_config.stacking_meta_learner,
+                use_ranks=self.ensemble_config.stacking_use_ranks,
+            )
+            self.stacking_ensemble.fit(oof_valid, y_valid)
+            logging.info("Stacking ensemble fitted on OOF predictions.")
+
+        elif self.ensemble_config.ensemble_strategy == "hill_climbing":
+            eval_metric = (
+                self.ensemble_config.hc_eval_metric or _default_regression_metric
+            )
+            self.hill_climbing_ensemble = HillClimbingEnsemble(
+                weight_min=self.ensemble_config.hc_weight_min,
+                weight_max=self.ensemble_config.hc_weight_max,
+                weight_step=self.ensemble_config.hc_weight_step,
+                tolerance=self.ensemble_config.hc_tolerance,
+                blending_method=self.ensemble_config.hc_blending_method,
+                eval_metric=eval_metric,
+            )
+            oof_list = [oof_valid[:, i] for i in range(n_models)]
+            model_names = [f"model_{i}" for i in range(n_models)]
+            self.hill_climbing_ensemble.fit(oof_list, y_valid, model_names)
+            logging.info("Hill climbing ensemble fitted on OOF predictions.")
 
     def predict(
         self,
         df: pd.DataFrame,
         return_sub_models_preds: bool = False,
         save_shap_values: bool = False,
-        mean_type: Literal[
-            "arithmetic", "median", "geometric", "harmonic"
-        ] = "arithmetic",
+        mean_type: Optional[
+            Literal["arithmetic", "median", "geometric", "harmonic"]
+        ] = None,
     ) -> Union[pd.DataFrame, pd.Series]:
         """Predict on unseen data using multiple trained BlueCastRegression instances.
 
@@ -282,13 +356,13 @@ class BlueCastCVRegression:
         :param return_sub_models_preds: If true will return a DataFrame with the predictions of each model
             stored in separate columns.
         :param save_shap_values: If True, calculates and saves shap values, so they can be used to plot
-            waterfall plots for selected rows o demand.
+            waterfall plots for selected rows on demand.
         :param mean_type: String indicating the type of mean to be used to blend the predictions of the sub models.
-            Possible values are 'arithmetic', 'geometric' and 'harmonic' (default='arithmetic').
+            Only used when ensemble_strategy='mean'. If None, uses ensemble_config.mean_type.
         """
         or_cols = df.columns
         pred_cols: list[str] = []
-        result_df = pd.DataFrame()  # Create an empty DataFrame to store results
+        result_df = pd.DataFrame()
 
         for fn, pipeline in enumerate(self.bluecast_models):
             y_preds = pipeline.predict(
@@ -299,17 +373,26 @@ class BlueCastCVRegression:
 
         if return_sub_models_preds:
             return result_df
+
+        strategy = self.ensemble_config.ensemble_strategy
+
+        if strategy == "stacking" and self.stacking_ensemble is not None:
+            predictions_matrix = result_df.loc[:, pred_cols].values
+            return pd.Series(
+                self.stacking_ensemble.predict(predictions_matrix),
+                index=result_df.index,
+            )
+
+        elif strategy == "hill_climbing" and self.hill_climbing_ensemble is not None:
+            preds_list = [result_df[col].values for col in pred_cols]
+            return pd.Series(
+                self.hill_climbing_ensemble.predict(preds_list),
+                index=result_df.index,
+            )
+
         else:
-            if mean_type == "arithmetic":
-                return result_df.mean(axis=1)
-            elif mean_type == "geometric":
-                return np.exp(np.log(result_df.prod(axis=1)) / result_df.notna().sum(1))
-            elif mean_type == "harmonic":
-                return len(pred_cols) / np.sum(1 / result_df, axis=1)
-            elif mean_type == "median":
-                return result_df.median(axis=1)
-            else:
-                return result_df.mean(axis=1)
+            effective_mean_type = mean_type or self.ensemble_config.mean_type
+            return blend_predictions_mean(result_df, pred_cols, effective_mean_type)
 
     def calibrate(
         self, x_calibration: pd.DataFrame, y_calibration: pd.Series, **kwargs

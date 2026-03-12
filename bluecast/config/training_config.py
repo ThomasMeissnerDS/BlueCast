@@ -72,6 +72,9 @@ class TrainingConfig:
     :param optuna_db_backend_path: Path to the Optuna database backend file. If provided as a string, Optuna will use
         a persistent SQLite database to store hyperparameter tuning progress, allowing resumption if tuning fails.
         If None (default), Optuna will use in-memory storage. Example: "/path/to/optuna_study.db"
+    :param fairness_sensitive_columns: Optional list of column names identifying sensitive attributes for fairness
+        evaluation (e.g. ["gender", "age_group"]). When set, fit_eval will automatically compute fairness metrics
+        alongside standard evaluation metrics. The columns must be present in the evaluation DataFrame.
     """
 
     def __init__(
@@ -112,6 +115,7 @@ class TrainingConfig:
         experiment_name: str = "new experiment",
         out_of_fold_dataset_store_path: Optional[str] = None,
         optuna_db_backend_path: Optional[str] = None,
+        fairness_sensitive_columns: Optional[List[str]] = None,
     ):
         self.global_random_state = global_random_state
         self.increase_random_state_in_bluecast_cv_by = (
@@ -162,6 +166,7 @@ class TrainingConfig:
         self.experiment_name = experiment_name
         self.out_of_fold_dataset_store_path = out_of_fold_dataset_store_path
         self.optuna_db_backend_path = optuna_db_backend_path
+        self.fairness_sensitive_columns = fairness_sensitive_columns
 
     def dict(self):
         """

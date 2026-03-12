@@ -1,9 +1,12 @@
+import logging
 import warnings
 from typing import List, Union
 
 import pandas as pd
 
 from bluecast.eda.analyse import theil_u
+
+logger = logging.getLogger(__name__)
 
 
 def detect_leakage_via_correlation(
@@ -18,18 +21,19 @@ def detect_leakage_via_correlation(
     :param target_column: The name of the target column to check for correlations.
     :param threshold: The correlation threshold. If the absolute correlation value is greater than
       or equal to this threshold, it will be considered as a potential data leakage.
-    :returns: True if data leakage is detected, False if not.
+    :returns: A list of column names with correlation >= threshold to the target.
+        Empty list if no leakage is detected.
     """
     if target_column not in data.columns:
         raise ValueError(
             f"The target column '{target_column}' is not found in the DataFrame."
         )
 
-    correlations = data.corr()[target_column].abs()
+    correlations = data.corr(numeric_only=True)[target_column].abs()
     potential_leakage = correlations[correlations >= threshold].index.tolist()
 
-    # Exclude the target column itself from potential leakage
-    potential_leakage.remove(target_column)
+    if target_column in potential_leakage:
+        potential_leakage.remove(target_column)
 
     if len(potential_leakage) > 0:
         warnings.warn(
@@ -37,7 +41,7 @@ def detect_leakage_via_correlation(
             stacklevel=2,
         )
     else:
-        print("No leakage has been detected")
+        logger.info("No leakage has been detected via correlation.")
 
     return potential_leakage
 
@@ -59,8 +63,9 @@ def detect_categorical_leakage(
         raise ValueError(
             f"The target column '{target_column}' is not found in the DataFrame."
         )
-    else:
-        data[target_column] = data[target_column].astype(str)
+
+    data = data.copy()
+    data[target_column] = data[target_column].astype(str)
 
     leakage_columns = []
     for column in data.columns:
@@ -76,6 +81,6 @@ def detect_categorical_leakage(
             stacklevel=2,
         )
     else:
-        print("No leakage has been detected")
+        logger.info("No leakage has been detected via Theil's U.")
 
     return leakage_columns

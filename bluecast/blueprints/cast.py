@@ -25,6 +25,7 @@ from bluecast.conformal_prediction.conformal_prediction import (
     ConformalPredictionWrapper,
 )
 from bluecast.evaluation.eval_metrics import ClassificationEvalWrapper, eval_classifier
+from bluecast.evaluation.fairness import FairnessAuditor
 from bluecast.evaluation.shap_values import (
     shap_dependence_plots,
     shap_explanations,
@@ -577,6 +578,19 @@ class BlueCast:
                 metric_used=metric,
                 metric_higher_is_better=higher_is_better,
             )
+
+        if (
+            self.conf_training.fairness_sensitive_columns
+            and len(self.conf_training.fairness_sensitive_columns) > 0
+        ):
+            auditor = FairnessAuditor(
+                sensitive_columns=self.conf_training.fairness_sensitive_columns
+            )
+            fairness_reports = auditor.audit_classification(
+                y_true, y_classes, y_probs, df_eval
+            )
+            eval_dict["fairness"] = [r.to_dict() for r in fairness_reports]
+
         return eval_dict
 
     def transform_new_data(self, df: pd.DataFrame) -> pd.DataFrame:

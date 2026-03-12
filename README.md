@@ -40,7 +40,8 @@ Here you can see our test coverage in more detail:
     * [v3.0 Breaking Changes](#v30-breaking-changes)
     * [v2.0 Improvements](#v20-improvements)
   * [Convenience features](#convenience-features)
-  * [Kaggle competition results and example notebooks](#kaggle-competition-results-and-example-notebooks)
+  * [Example scripts](#example-scripts)
+  * [Kaggle competition results](#kaggle-competition-results)
 * [About the code](#about-the-code)
   * [Code quality](#code-quality)
   * [Documentation](#documentation)
@@ -73,17 +74,32 @@ uncertainty quantification.
 ### Basic usage
 
 ```sh
-from bluecast.blueprints.cast import BlueCast
+from bluecast.blueprints.unified import BlueCastAuto
+from bluecast.ensemble.ensemble_config import EnsembleConfig
 
-automl = BlueCast(
-        class_problem="binary",
-    )
-
+# Binary classification - single model
+automl = BlueCastAuto(class_problem="binary")
 automl.fit(df_train, target_col="target")
 y_probs, y_classes = automl.predict(df_val)
 
-# predict_proba is also available (also for BlueCastCV)
-y_probs = automl.predict_proba(df_val)
+# Regression with cross-validation and stacking ensemble
+automl = BlueCastAuto(
+    class_problem="regression",
+    use_cross_validation=True,
+    ensemble_config=EnsembleConfig(ensemble_strategy="stacking"),
+)
+automl.fit(df_train, target_col="target")
+y_preds = automl.predict(df_val)
+```
+
+The original per-class imports still work for users who prefer them:
+
+```sh
+from bluecast.blueprints.cast import BlueCast
+
+automl = BlueCast(class_problem="binary")
+automl.fit(df_train, target_col="target")
+y_probs, y_classes = automl.predict(df_val)
 ```
 
 ### Recent Major Improvements
@@ -164,7 +180,25 @@ y_probs, y_classes = automl.predict(df_val)
 It is important to note that df_train contains the target column while
 df_eval does not. The target column is passed separately as y_eval.
 
-### Kaggle competition results and example notebooks
+### Example scripts
+
+The [examples/](examples/) directory contains self-contained scripts
+using synthetic data that demonstrate BlueCast's full feature set:
+
+| Script | Topics |
+| ------ | ------ |
+| [00_full_showcase.py](examples/00_full_showcase.py) | **End-to-end walkthrough of all features** |
+| [01_quick_start.py](examples/01_quick_start.py) | Binary, multiclass, regression, `fit_eval` |
+| [02_cross_validation_and_ensembles.py](examples/02_cross_validation_and_ensembles.py) | `BlueCastCV`, mean blending, stacking, hill climbing |
+| [03_conformal_prediction.py](examples/03_conformal_prediction.py) | Uncertainty quantification, group-conditional intervals |
+| [04_linear_models.py](examples/04_linear_models.py) | Logistic/Ridge/Lasso regression, configurable preprocessing |
+| [05_unified_interface.py](examples/05_unified_interface.py) | `BlueCastAuto` single entry point for all problem types |
+| [06_advanced_customization.py](examples/06_advanced_customization.py) | Custom preprocessing, XGBoost, drift monitoring, experiment tracking, save/load |
+| [07_fairness.py](examples/07_fairness.py) | Fairness auditing, demographic parity, equalized odds, conformal fairness |
+| [08_eda.py](examples/08_eda.py) | Univariate/bivariate plots, PCA, t-SNE, correlations, data quality, leakage detection |
+| [09_bluecast_ai.py](examples/09_bluecast_ai.py) | Multi-agent LLM-powered AutoML (requires API key) |
+
+### Kaggle competition results
 
 Even though BlueCast has been designed to be a lightweight
 automl framework, it still offers the possibilities to
@@ -182,7 +216,7 @@ feature- and performance-wise.
 and adding conformal prediction ([notebook](https://www.kaggle.com/code/thomasmeiner/bluecast-has-conformal-prediction))
 * 26th place in the Kaggle 24h "AutoMl" GrandPrix July 2024 blitz competition ([notebook](https://www.kaggle.com/code/thomasmeiner/automl-grand-prix-bluecast-26th-place-solution))
 
-Please note that some notebooks ran older versions of BlueCast and
+Please note that some Kaggle notebooks ran older versions of BlueCast and
 might not be compatible with the most recent version anymore.
 
 ## About the code

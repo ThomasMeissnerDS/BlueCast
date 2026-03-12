@@ -305,7 +305,7 @@ class FeatureTypeDetector:
         df_clean = self.cast_rest_columns_to_object(df_clean, bool_cols)
         for key in self.detected_col_types:
             if self.detected_col_types[key] == "datetime[ns]":
-                df_clean[key] = pd.to_datetime(df[key], yearfirst=True)
+                df_clean[key] = pd.to_datetime(df_clean[key], yearfirst=True)
             else:
                 df_clean[key] = df_clean[key].astype(self.detected_col_types[key])
         return df_clean

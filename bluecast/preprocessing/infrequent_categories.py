@@ -42,6 +42,7 @@ class InFrequentCategoryEncoder:
     def transform(self, x: pd.DataFrame) -> pd.DataFrame:
         """Transform categories based on already explored frequencies."""
         logging.info("Start transforming categories with infrequent category encoder.")
+        x = x.copy()
         for col in self.cat_columns:
             x[col] = x[col].mask(
                 x[col].map(self.frequencies[col], na_action="ignore")

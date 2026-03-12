@@ -17,6 +17,10 @@ from bluecast.config.training_config import (
 from bluecast.conformal_prediction.conformal_prediction import (
     ConformalPredictionWrapper,
 )
+from bluecast.ensemble.ensemble_config import EnsembleConfig
+from bluecast.ensemble.hill_climbing import HillClimbingEnsemble
+from bluecast.ensemble.mean_blending import blend_predictions_mean
+from bluecast.ensemble.stacking import StackingEnsemble
 from bluecast.evaluation.eval_metrics import ClassificationEvalWrapper
 from bluecast.experimentation.tracking import ExperimentTracker
 from bluecast.preprocessing.custom import CustomPreprocessing
@@ -74,6 +78,7 @@ class BlueCastCV:
         ] = None,
         ml_model: Optional[Any] = None,
         single_fold_eval_metric_func: Optional[ClassificationEvalWrapper] = None,
+        ensemble_config: Optional[EnsembleConfig] = None,
     ):
         self.class_problem = class_problem
         self.conf_tuning = conf_tuning
@@ -87,6 +92,9 @@ class BlueCastCV:
         self.ml_model = ml_model
         self.single_fold_eval_metric_func = single_fold_eval_metric_func
         self.conformal_prediction_wrapper: Optional[ConformalPredictionWrapper] = None
+        self.ensemble_config = ensemble_config or EnsembleConfig()
+        self.stacking_ensemble: Optional[StackingEnsemble] = None
+        self.hill_climbing_ensemble: Optional[HillClimbingEnsemble] = None
 
         if not cat_columns:
             self.cat_columns = []
@@ -201,8 +209,9 @@ class BlueCastCV:
     def fit_eval(self, df: pd.DataFrame, target_col: str) -> Tuple[float, float]:
         """Fit multiple BlueCast instances on different data splits.
 
-        Input df is expected the target column. Evaluation is executed on out-of-fold dataset.
-        in each split.
+        Input df is expected the target column. Evaluation is executed on out-of-fold dataset
+        in each split. When using stacking or hill_climbing ensemble strategies, OOF predictions
+        are collected and used to fit the ensemble meta-learner.
         :param df: Pandas DataFrame that includes the target column
         :param target_col: String indicating the name of the target column
         :returns Tuple of (oof_mean, oof_std) with scores on unseen data during eval
@@ -219,7 +228,15 @@ class BlueCastCV:
                 random_state=self.conf_training.global_random_state,
             )
 
-        for fn, (trn_idx, val_idx) in enumerate(self.stratifier.split(X, y)):
+        needs_oof = self.ensemble_config.ensemble_strategy in (
+            "stacking",
+            "hill_climbing",
+        )
+        oof_preds_per_model: List[np.ndarray] = []
+        oof_indices_per_fold: List[np.ndarray] = []
+        all_splits = list(self.stratifier.split(X, y))
+
+        for fn, (trn_idx, val_idx) in enumerate(all_splits):
             X_train, X_val = X.iloc[trn_idx], X.iloc[val_idx]
             y_train, y_val = y.iloc[trn_idx], y.iloc[val_idx]
 
@@ -232,7 +249,6 @@ class BlueCastCV:
                 f"Start fitting model number {fn} with random seed {self.conf_training.global_random_state}"
             )
 
-            # Ensure we don't pass target as categorical feature
             safe_cat_cols = [c for c in self.cat_columns if c != target_col]
             automl = BlueCast(
                 class_problem=self.class_problem,
@@ -251,11 +267,70 @@ class BlueCastCV:
             automl.fit_eval(X_train, X_val, y_val, target_col=target_col)
             self.bluecast_models.append(automl)
 
-            # overwrite experiment tracker to pass it into next iteration
+            if needs_oof:
+                oof_probs, _oof_classes = automl.predict(X_val)
+                oof_preds_per_model.append(oof_probs)
+                oof_indices_per_fold.append(val_idx)
+
             self.experiment_tracker = automl.experiment_tracker
+
+        if needs_oof:
+            self._fit_ensemble_from_oof(
+                oof_preds_per_model, oof_indices_per_fold, y, all_splits
+            )
 
         oof_mean, oof_std = self.show_oof_scores()
         return oof_mean, oof_std
+
+    def _fit_ensemble_from_oof(
+        self,
+        oof_preds_per_model: List[np.ndarray],
+        oof_indices_per_fold: List[np.ndarray],
+        y_full: pd.Series,
+        all_splits: list,
+    ) -> None:
+        """Fit stacking or hill climbing ensemble from OOF predictions (binary only)."""
+        n_samples = len(y_full)
+        n_models = len(self.bluecast_models)
+
+        is_1d = all(p.ndim == 1 for p in oof_preds_per_model)
+        if not is_1d:
+            logging.warning(
+                "Stacking/hill climbing for multiclass uses argmax probabilities. "
+                "Consider using mean blending for multiclass."
+            )
+            return
+
+        oof_matrix = np.full((n_samples, n_models), np.nan)
+        for fn in range(n_models):
+            val_idx = oof_indices_per_fold[fn]
+            oof_matrix[val_idx, fn] = oof_preds_per_model[fn]
+
+        valid_mask = ~np.any(np.isnan(oof_matrix), axis=1)
+        oof_valid = oof_matrix[valid_mask]
+        y_valid = y_full.values[valid_mask]
+
+        if self.ensemble_config.ensemble_strategy == "stacking":
+            self.stacking_ensemble = StackingEnsemble(
+                meta_learner=self.ensemble_config.stacking_meta_learner,
+                use_ranks=self.ensemble_config.stacking_use_ranks,
+            )
+            self.stacking_ensemble.fit(oof_valid, y_valid)
+            logging.info("Stacking ensemble fitted on OOF predictions.")
+
+        elif self.ensemble_config.ensemble_strategy == "hill_climbing":
+            self.hill_climbing_ensemble = HillClimbingEnsemble(
+                weight_min=self.ensemble_config.hc_weight_min,
+                weight_max=self.ensemble_config.hc_weight_max,
+                weight_step=self.ensemble_config.hc_weight_step,
+                tolerance=self.ensemble_config.hc_tolerance,
+                blending_method=self.ensemble_config.hc_blending_method,
+                eval_metric=self.ensemble_config.hc_eval_metric,
+            )
+            oof_list = [oof_valid[:, i] for i in range(n_models)]
+            model_names = [f"model_{i}" for i in range(n_models)]
+            self.hill_climbing_ensemble.fit(oof_list, y_valid, model_names)
+            logging.info("Hill climbing ensemble fitted on OOF predictions.")
 
     def predict(
         self,
@@ -334,10 +409,31 @@ class BlueCastCV:
                 else:
                     classification_threshold = 0.5
 
-                y_probs = result_df.loc[:, prob_cols].mean(axis=1)
-                y_classes = (
-                    result_df.loc[:, prob_cols].mean(axis=1) > classification_threshold
-                ).astype(int)
+                strategy = self.ensemble_config.ensemble_strategy
+
+                if strategy == "stacking" and self.stacking_ensemble is not None:
+                    predictions_matrix = result_df.loc[:, prob_cols].values
+                    y_probs = pd.Series(
+                        self.stacking_ensemble.predict(predictions_matrix),
+                        index=result_df.index,
+                    )
+                elif (
+                    strategy == "hill_climbing"
+                    and self.hill_climbing_ensemble is not None
+                ):
+                    preds_list = [result_df[col].values for col in prob_cols]
+                    y_probs = pd.Series(
+                        self.hill_climbing_ensemble.predict(preds_list),
+                        index=result_df.index,
+                    )
+                else:
+                    y_probs = blend_predictions_mean(
+                        result_df,
+                        prob_cols,
+                        self.ensemble_config.mean_type,
+                    )
+
+                y_classes = (y_probs > classification_threshold).astype(int)
 
                 if (
                     self.bluecast_models[0].feat_type_detector

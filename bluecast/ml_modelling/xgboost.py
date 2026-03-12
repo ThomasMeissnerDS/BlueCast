@@ -106,11 +106,14 @@ class XgboostModel(XgboostBaseModel):
             eval_set = [(d_test, "test")]
             eval_name = "test"
 
-        steps = self.conf_params_xgboost.params.pop("steps", 300)
+        steps = self.conf_params_xgboost.params.get("steps", 300)
+        train_params = {
+            k: v for k, v in self.conf_params_xgboost.params.items() if k != "steps"
+        }
 
         if self.conf_training.hypertuning_cv_folds == 1:
             self.model = xgb.train(
-                self.conf_params_xgboost.params,
+                train_params,
                 d_train,
                 num_boost_round=steps,
                 evals=eval_set,
@@ -119,7 +122,7 @@ class XgboostModel(XgboostBaseModel):
             )
         elif self.conf_xgboost:
             self.model = xgb.train(
-                self.conf_params_xgboost.params,
+                train_params,
                 d_train,
                 num_boost_round=steps,
                 early_stopping_rounds=self.conf_training.early_stopping_rounds,
