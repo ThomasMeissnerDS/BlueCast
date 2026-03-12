@@ -37,6 +37,7 @@ This example demonstrates:
 import os
 import sys
 import tempfile
+from typing import Literal
 
 import numpy as np
 import pandas as pd
@@ -49,13 +50,28 @@ from sklearn.datasets import make_classification
 def make_credit_data(n=1500, seed=42):
     rng = np.random.default_rng(seed)
     X, y = make_classification(
-        n_samples=n, n_features=10, n_informative=7,
-        n_redundant=2, random_state=seed, flip_y=0.07,
+        n_samples=n,
+        n_features=10,
+        n_informative=7,
+        n_redundant=2,
+        random_state=seed,
+        flip_y=0.07,
     )
-    df = pd.DataFrame(X, columns=[
-        "income", "credit_score", "age", "debt_ratio", "num_accounts",
-        "utilization", "payment_history", "inquiries", "credit_age", "balance",
-    ])
+    df = pd.DataFrame(
+        X,
+        columns=[
+            "income",
+            "credit_score",
+            "age",
+            "debt_ratio",
+            "num_accounts",
+            "utilization",
+            "payment_history",
+            "inquiries",
+            "credit_age",
+            "balance",
+        ],
+    )
     df["income"] = (df["income"] * 15000 + 55000).clip(15000, 200000).round(0)
     df["credit_score"] = (df["credit_score"] * 50 + 700).clip(300, 850).round(0)
     df["age"] = (df["age"] * 10 + 42).clip(18, 75).round(0)
@@ -78,14 +94,13 @@ API_KEY = (
     or ""
 )
 
+PROVIDER: Literal["gemini", "openai", "anthropic"] = "gemini"
 if os.environ.get("GEMINI_API_KEY"):
     PROVIDER = "gemini"
 elif os.environ.get("OPENAI_API_KEY"):
     PROVIDER = "openai"
 elif os.environ.get("ANTHROPIC_API_KEY"):
     PROVIDER = "anthropic"
-else:
-    PROVIDER = "gemini"
 
 
 # ---------------------------------------------------------------------------
@@ -281,44 +296,46 @@ if not API_KEY:
 
     # Demonstrate that the module imports work even without provider SDKs
     try:
-        from bluecast.ai.config import AIConfig
-        from bluecast.ai.context import SharedContext, AgentLogEntry
-        from bluecast.ai.result import BlueCastAIResult
-        from bluecast.ai.tools import TOOL_DEFINITIONS, tool_describe_data
-        from bluecast.ai.agents.reporter import ReporterAgent
+        from bluecast.ai.agents.reporter import ReporterAgent  # noqa: E402, F401
+        from bluecast.ai.config import AIConfig  # noqa: E402, F401
+        from bluecast.ai.context import AgentLogEntry, SharedContext  # noqa: E402, F401
+        from bluecast.ai.result import BlueCastAIResult  # noqa: E402, F401
+        from bluecast.ai.tools import (  # noqa: E402, F401
+            TOOL_DEFINITIONS,
+            tool_describe_data,
+        )
+
         print("Module imports verified (no provider SDK needed for import).")
     except ImportError as e:
         print(f"Import note: {e}")
 
-    # Show what data profiling looks like (no LLM needed)
-    from bluecast.ai.context import SharedContext
     ctx = SharedContext(
-        df_train=df, target_col="default",
-        user_prompt="test", original_shape=df.shape,
+        df_train=df,
+        target_col="default",
+        user_prompt="test",
+        original_shape=df.shape,
     )
-    print(f"\nData summary preview (auto-generated for LLM):\n")
+    print("\nData summary preview (auto-generated for LLM):\n")
     print(ctx.get_data_summary()[:800])
     print("...")
 
-    # Show available tools
-    from bluecast.ai.tools import TOOL_DEFINITIONS
     print(f"\nAvailable agent tools ({len(TOOL_DEFINITIONS)}):")
     for name, td in TOOL_DEFINITIONS.items():
         print(f"  {name}: {td.description[:70]}...")
 
-    # Show structured logging
-    from bluecast.ai.context import AgentLogEntry
-    ctx.log("Demo", "This is a structured log entry", event_type="info",
-            metadata={"demo": True})
-    print(f"\nStructured log example:")
+    ctx.log(
+        "Demo",
+        "This is a structured log entry",
+        event_type="info",
+        metadata={"demo": True},
+    )
+    print("\nStructured log example:")
     print(f"  {ctx.structured_log[-1]}")
 
-    # Show AIConfig with new fields
-    from bluecast.ai.config import AIConfig
-    print(f"\nAIConfig fields for large datasets and checkpointing:")
-    print(f"  max_rows_for_agents (default):    50,000")
-    print(f"  max_columns_for_agents (default): 200")
-    print(f"  checkpoint_dir (default):         None (disabled)")
+    print("\nAIConfig fields for large datasets and checkpointing:")
+    print("  max_rows_for_agents (default):    50,000")
+    print("  max_columns_for_agents (default): 200")
+    print("  checkpoint_dir (default):         None (disabled)")
 
     print("\nSet an API key environment variable and re-run to see the live demo!")
     sys.exit(0)
@@ -328,7 +345,7 @@ if not API_KEY:
 # LIVE DEMO (runs when API key is available)
 # ===========================================================================
 
-from bluecast.ai import BlueCastAI
+from bluecast.ai import BlueCastAI  # noqa: E402
 
 df = make_credit_data()
 print("=" * 70)
@@ -364,8 +381,9 @@ print("-" * 70)
 
 with tempfile.TemporaryDirectory() as checkpoint_dir:
     ai_ckpt = BlueCastAI(
-        api_key=API_KEY, provider=PROVIDER,
-        checkpoint_dir=checkpoint_dir,   # enables checkpoint save/resume
+        api_key=API_KEY,
+        provider=PROVIDER,
+        checkpoint_dir=checkpoint_dir,  # enables checkpoint save/resume
     )
     result_balanced = ai_ckpt.run(
         df,
@@ -378,7 +396,7 @@ with tempfile.TemporaryDirectory() as checkpoint_dir:
 print(f"\nBalanced mode metrics: {result_balanced.metrics}")
 
 if result_balanced.feature_engineering_code:
-    print(f"\nGenerated feature engineering code:")
+    print("\nGenerated feature engineering code:")
     print(result_balanced.feature_engineering_code[:500])
 
 

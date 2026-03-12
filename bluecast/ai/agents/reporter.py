@@ -67,13 +67,20 @@ Write in Markdown. Be concise but thorough. Use bullet points and tables."""
             )
 
         if self.context.data_profile:
-            sections.append(f"\nData profile:\n{json.dumps(self.context.data_profile, indent=2, default=str)[:3000]}")
+            sections.append(
+                f"\nData profile:\n{json.dumps(self.context.data_profile, indent=2, default=str)[:3000]}"
+            )
 
         if self.context.data_warnings:
-            sections.append("\nWarnings:\n" + "\n".join(f"- {w}" for w in self.context.data_warnings))
+            sections.append(
+                "\nWarnings:\n"
+                + "\n".join(f"- {w}" for w in self.context.data_warnings)
+            )
 
         if self.context.feature_engineering_code:
-            sections.append(f"\nFeature engineering code:\n```python\n{self.context.feature_engineering_code}\n```")
+            sections.append(
+                f"\nFeature engineering code:\n```python\n{self.context.feature_engineering_code}\n```"
+            )
         else:
             sections.append("\nNo feature engineering was applied.")
 
@@ -90,10 +97,14 @@ Write in Markdown. Be concise but thorough. Use bullet points and tables."""
             sections.append(f"\nBest metrics: {self.context.best_metrics}")
 
         if self.context.web_research:
-            sections.append(f"\nWeb research findings:\n{self.context.web_research[:1000]}")
+            sections.append(
+                f"\nWeb research findings:\n{self.context.web_research[:1000]}"
+            )
 
         if self.context.pipeline_code:
-            sections.append(f"\nGenerated pipeline code:\n```python\n{self.context.pipeline_code}\n```")
+            sections.append(
+                f"\nGenerated pipeline code:\n```python\n{self.context.pipeline_code}\n```"
+            )
 
         # Include a selection of the structured log
         log_entries = self.context.structured_log[-30:]

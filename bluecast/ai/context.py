@@ -116,7 +116,7 @@ class SharedContext:
         df = self.get_working_df()
         lines = []
 
-        if self.was_sampled:
+        if self.was_sampled and self.original_shape is not None:
             lines.append(
                 f"NOTE: Working on a stratified sample of {df.shape[0]} rows "
                 f"(original: {self.original_shape[0]} rows x {self.original_shape[1]} cols). "

@@ -437,17 +437,26 @@ class BlueCastRegression:
             )
 
         if self.conf_training and self.conf_training.calculate_shap_values:
-            shap_values, explainer = shap_explanations(self.ml_model.model, x_test)
-            if self.conf_training.store_shap_values_in_instance:
-                self.shap_values = shap_values
-            shap_waterfall_plot(
-                explainer, self.conf_training.shap_waterfall_indices, self.class_problem
-            )
-            shap_dependence_plots(
-                shap_values,
-                x_test,
-                self.conf_training.show_dependence_plots_of_top_n_features,
-            )
+            try:
+                shap_values, explainer = shap_explanations(self.ml_model.model, x_test)
+                if self.conf_training.store_shap_values_in_instance:
+                    self.shap_values = shap_values
+                shap_waterfall_plot(
+                    explainer,
+                    self.conf_training.shap_waterfall_indices,
+                    self.class_problem,
+                )
+                shap_dependence_plots(
+                    shap_values,
+                    x_test,
+                    self.conf_training.show_dependence_plots_of_top_n_features,
+                )
+            except Exception as e:
+                warnings.warn(
+                    f"SHAP value calculation failed: {e}. "
+                    f"Model training and predictions are unaffected.",
+                    stacklevel=2,
+                )
         self.prediction_mode = True
 
     def fit_eval(
@@ -625,9 +634,16 @@ class BlueCastRegression:
         y_preds = self.ml_model.predict(df)
 
         if save_shap_values:
-            self.shap_values, self.explainer = shap_explanations(
-                self.ml_model.model, df
-            )
+            try:
+                self.shap_values, self.explainer = shap_explanations(
+                    self.ml_model.model, df
+                )
+            except Exception as e:
+                warnings.warn(
+                    f"SHAP value calculation failed: {e}. "
+                    f"Predictions are unaffected.",
+                    stacklevel=2,
+                )
 
         return y_preds
 

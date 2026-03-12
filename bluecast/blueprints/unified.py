@@ -10,22 +10,8 @@ from typing import Any, Dict, List, Literal, Optional, Tuple, Union
 import numpy as np
 import pandas as pd
 
-from bluecast.config.training_config import (
-    CatboostFinalParamConfig,
-    CatboostRegressionFinalParamConfig,
-    CatboostTuneParamsConfig,
-    CatboostTuneParamsRegressionConfig,
-    TrainingConfig,
-    XgboostFinalParamConfig,
-    XgboostRegressionFinalParamConfig,
-    XgboostTuneParamsConfig,
-    XgboostTuneParamsRegressionConfig,
-)
+from bluecast.config.training_config import TrainingConfig
 from bluecast.ensemble.ensemble_config import EnsembleConfig
-from bluecast.evaluation.eval_metrics import (
-    ClassificationEvalWrapper,
-    RegressionEvalWrapper,
-)
 from bluecast.experimentation.tracking import ExperimentTracker
 from bluecast.preprocessing.custom import CustomPreprocessing
 from bluecast.preprocessing.feature_selection import BoostaRootaWrapper
@@ -272,9 +258,7 @@ class BlueCastAuto:
                     "df_eval and y_eval are required for single-model fit_eval. "
                     "Use use_cross_validation=True for automatic OOF evaluation."
                 )
-            return self._inner.fit_eval(
-                df, df_eval, y_eval, target_col=target_col
-            )
+            return self._inner.fit_eval(df, df_eval, y_eval, target_col=target_col)
 
     def predict(
         self, df: pd.DataFrame, **kwargs

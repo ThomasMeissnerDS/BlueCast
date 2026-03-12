@@ -10,7 +10,9 @@ from bluecast.ai.tools import TOOL_DEFINITIONS, tool_web_search
 class ResearcherAgent(BaseAgent):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.register_tool_impl("web_search", lambda query, **kw: tool_web_search(query))
+        self.register_tool_impl(
+            "web_search", lambda query, **kw: tool_web_search(query)
+        )
 
     @property
     def name(self) -> str:

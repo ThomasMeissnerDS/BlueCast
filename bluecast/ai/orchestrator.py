@@ -7,7 +7,6 @@ import time
 from typing import Optional
 
 import dill
-import numpy as np
 import pandas as pd
 
 from bluecast.ai.agents.data_analyst import DataAnalystAgent
@@ -116,14 +115,20 @@ class Orchestrator:
             target = self.context.target_col
             if target in df.columns and df[target].nunique() <= 20:
                 # Stratified sampling for classification
-                sample_df = df.groupby(target, group_keys=False).apply(
-                    lambda x: x.sample(
-                        n=min(len(x), max(1, int(max_rows * len(x) / n_rows))),
-                        random_state=42,
+                sample_df = (
+                    df.groupby(target, group_keys=False)
+                    .apply(
+                        lambda x: x.sample(
+                            n=min(len(x), max(1, int(max_rows * len(x) / n_rows))),
+                            random_state=42,
+                        )
                     )
-                ).reset_index(drop=True)
+                    .reset_index(drop=True)
+                )
             else:
-                sample_df = df.sample(n=max_rows, random_state=42).reset_index(drop=True)
+                sample_df = df.sample(n=max_rows, random_state=42).reset_index(
+                    drop=True
+                )
 
             msg = (
                 f"Dataset sampled: {n_rows} -> {len(sample_df)} rows "
@@ -167,7 +172,8 @@ class Orchestrator:
             with open(path, "wb") as f:
                 dill.dump(self.context, f)
             self.context.log(
-                "Orchestrator", f"Checkpoint saved after '{step_name}'",
+                "Orchestrator",
+                f"Checkpoint saved after '{step_name}'",
                 event_type="checkpoint",
             )
             if self.config.verbose:
@@ -202,8 +208,13 @@ class Orchestrator:
 
             # Re-attach context to all agents
             for agent in [
-                self.planner, self.analyst, self.engineer,
-                self.builder, self.evaluator, self.researcher, self.reporter,
+                self.planner,
+                self.analyst,
+                self.engineer,
+                self.builder,
+                self.evaluator,
+                self.researcher,
+                self.reporter,
             ]:
                 agent.context = self.context
 
@@ -233,7 +244,7 @@ class Orchestrator:
             print("BlueCastAI - Multi-Agent AutoML Pipeline")
             print("=" * 60)
 
-        resumed = self._load_checkpoint()
+        self._load_checkpoint()
 
         # --- Step 0: Smart sampling ---
         if not self._is_step_done("sampling"):
@@ -273,7 +284,9 @@ class Orchestrator:
 
         # --- Step 5: Build-Evaluate-Improve loop ---
         if not self._is_step_done("build_loop"):
-            max_iterations = plan.get("max_iterations", self.config.get_max_iterations())
+            max_iterations = plan.get(
+                "max_iterations", self.config.get_max_iterations()
+            )
             self._step_build_loop(plan, max_iterations)
             self._save_checkpoint("build_loop")
 
@@ -324,8 +337,10 @@ class Orchestrator:
 
         self.context.class_problem = plan.get("class_problem", "binary")
         self.context.log(
-            "Orchestrator", f"Plan: {json.dumps(plan, indent=2)}",
-            event_type="plan", metadata={"plan": plan},
+            "Orchestrator",
+            f"Plan: {json.dumps(plan, indent=2)}",
+            event_type="plan",
+            metadata={"plan": plan},
         )
 
         if self.config.verbose:
@@ -341,7 +356,11 @@ class Orchestrator:
     def _reconstruct_plan(self) -> dict:
         """Reconstruct the plan from structured log metadata."""
         for entry in self.context.structured_log:
-            if entry.event_type == "plan" and entry.metadata and "plan" in entry.metadata:
+            if (
+                entry.event_type == "plan"
+                and entry.metadata
+                and "plan" in entry.metadata
+            ):
                 return entry.metadata["plan"]
         return self.planner._default_plan()
 
@@ -362,7 +381,14 @@ class Orchestrator:
         )
         self.context.data_profile = {"summary": result}
 
-        for keyword in ["leakage", "imbalance", "missing", "null", "duplicate", "constant"]:
+        for keyword in [
+            "leakage",
+            "imbalance",
+            "missing",
+            "null",
+            "duplicate",
+            "constant",
+        ]:
             if keyword in result.lower():
                 self.context.data_warnings.append(
                     f"Data analyst flagged: {keyword} detected"
@@ -373,7 +399,9 @@ class Orchestrator:
             print("\nStep 4: Engineering features...")
 
         hints = plan.get("feature_engineering_hints", [])
-        hint_text = "\n".join(f"- {h}" for h in hints) if hints else "Use your judgment."
+        hint_text = (
+            "\n".join(f"- {h}" for h in hints) if hints else "Use your judgment."
+        )
 
         task = (
             f"Create useful features for this {self.context.class_problem} problem.\n"
@@ -383,7 +411,11 @@ class Orchestrator:
         self.engineer.run(task)
 
         if self.context.engineered_df is not None and self.config.verbose:
-            orig_cols = len(self.context.df_train.columns)
+            orig_cols = (
+                len(self.context.df_train.columns)
+                if self.context.df_train is not None
+                else 0
+            )
             new_cols = len(self.context.engineered_df.columns)
             print(f"  Features: {orig_cols} -> {new_cols} columns")
 
@@ -398,7 +430,9 @@ class Orchestrator:
             build_task = self._create_build_task(plan, iteration)
             self.builder.run(build_task)
 
-            latest_run = self.context.run_history[-1] if self.context.run_history else None
+            latest_run = (
+                self.context.run_history[-1] if self.context.run_history else None
+            )
             if latest_run and self.config.verbose:
                 status = "OK" if latest_run["success"] else "FAILED"
                 print(f"    Result [{status}]: {latest_run.get('metrics', {})}")

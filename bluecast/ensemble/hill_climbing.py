@@ -135,9 +135,7 @@ class HillClimbingEnsemble:
                 local_best_score = 0.0
 
                 for w in weight_candidates:
-                    combined = np.clip(
-                        ensemble * (1.0 - w) + candidate * w, 0.0, 1.0
-                    )
+                    combined = np.clip(ensemble * (1.0 - w) + candidate * w, 0.0, 1.0)
                     score = self.eval_metric(y, combined)
                     improvement = score - ensemble_score
 
@@ -155,7 +153,9 @@ class HillClimbingEnsemble:
                         0.0,
                         1.0,
                     )
-                    new_w = {k: v * (1.0 - local_best_w) for k, v in self.weights_map.items()}
+                    new_w = {
+                        k: v * (1.0 - local_best_w) for k, v in self.weights_map.items()
+                    }
                     new_w[idx] = local_best_w
                     best_new_weights = new_w
 

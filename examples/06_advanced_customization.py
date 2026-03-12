@@ -48,8 +48,11 @@ fast_config = TrainingConfig(
 
 def make_data(n=1500, seed=42):
     X, y = make_classification(
-        n_samples=n, n_features=12, n_informative=8,
-        n_redundant=2, random_state=seed,
+        n_samples=n,
+        n_features=12,
+        n_informative=8,
+        n_redundant=2,
+        random_state=seed,
     )
     rng = np.random.default_rng(seed)
     df = pd.DataFrame(X, columns=[f"feat_{i}" for i in range(12)])
@@ -123,7 +126,7 @@ print("=" * 60)
 print("2. XGBOOST BACKEND WITH CUSTOM CONFIG")
 print("=" * 60)
 
-from bluecast.ml_modelling.xgboost import XgboostModel
+from bluecast.ml_modelling.xgboost import XgboostModel  # noqa: E402
 
 xgb_tune = XgboostTuneParamsConfig(
     max_depth_min=2,
@@ -172,17 +175,21 @@ print("3. DATA DRIFT MONITORING")
 print("=" * 60)
 
 rng = np.random.default_rng(42)
-df_baseline = pd.DataFrame({
-    "revenue": rng.normal(1000, 200, 500),
-    "clicks": rng.poisson(50, 500),
-    "conversion_rate": rng.beta(2, 8, 500),
-})
+df_baseline = pd.DataFrame(
+    {
+        "revenue": rng.normal(1000, 200, 500),
+        "clicks": rng.poisson(50, 500),
+        "conversion_rate": rng.beta(2, 8, 500),
+    }
+)
 
-df_new = pd.DataFrame({
-    "revenue": rng.normal(1050, 250, 500),  # shifted distribution
-    "clicks": rng.poisson(55, 500),         # slightly shifted
-    "conversion_rate": rng.beta(2, 8, 500), # same distribution
-})
+df_new = pd.DataFrame(
+    {
+        "revenue": rng.normal(1050, 250, 500),  # shifted distribution
+        "clicks": rng.poisson(55, 500),  # slightly shifted
+        "conversion_rate": rng.beta(2, 8, 500),  # same distribution
+    }
+)
 
 drift_monitor = DataDrift()
 
@@ -213,7 +220,7 @@ tracker = ExperimentTracker()
 
 tracker.add_results(
     experiment_id=0,
-    score_category="tuning",
+    score_category="oof_score",
     training_config=fast_config,
     model_parameters={"max_depth": 5, "eta": 0.1},
     eval_scores=0.85,
@@ -223,7 +230,7 @@ tracker.add_results(
 
 tracker.add_results(
     experiment_id=1,
-    score_category="tuning",
+    score_category="oof_score",
     training_config=fast_config,
     model_parameters={"max_depth": 8, "eta": 0.05},
     eval_scores=0.87,
@@ -236,10 +243,7 @@ if results_df is not None:
     print(f"Tracked experiments: {len(results_df)} rows")
     print(f"Columns: {results_df.columns.tolist()}")
 
-best = tracker.get_best_score(
-    target_metric="roc_auc",
-    direction="maximize",
-)
+best = tracker.get_best_score(target_metric="roc_auc")
 print(f"Best score: {best}")
 print()
 
@@ -251,7 +255,7 @@ print("=" * 60)
 print("5. CUSTOM EVALUATION METRIC")
 print("=" * 60)
 
-from sklearn.metrics import f1_score
+from sklearn.metrics import f1_score  # noqa: E402
 
 custom_metric = ClassificationEvalWrapper(
     higher_is_better=True,
@@ -272,7 +276,7 @@ automl_custom_eval = BlueCast(
     date_columns=["timestamp"],
 )
 automl_custom_eval.fit(df_train, target_col="target")
-print(f"Model trained with custom F1 metric for hyperparameter tuning")
+print("Model trained with custom F1 metric for hyperparameter tuning")
 print()
 
 
@@ -293,14 +297,15 @@ automl_save = BlueCast(
 )
 automl_save.fit(df_train, target_col="target")
 
-y_probs_before, y_classes_before = automl_save.predict(
-    df_test.drop("target", axis=1)
-)
+y_probs_before, y_classes_before = automl_save.predict(df_test.drop("target", axis=1))
 
 with tempfile.TemporaryDirectory() as tmpdir:
     filepath = os.path.join(tmpdir, "bluecast_model.p")
 
-    from bluecast.general_utils.general_utils import save_to_production, load_for_production
+    from bluecast.general_utils.general_utils import (  # noqa: E402
+        load_for_production,
+        save_to_production,
+    )
 
     save_to_production(automl_save, filepath)
     print(f"Model saved to {filepath}")

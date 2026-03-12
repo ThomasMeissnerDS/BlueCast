@@ -477,12 +477,21 @@ class BlueCast:
             )
 
         if self.conf_training and self.conf_training.calculate_shap_values:
-            shap_values, explainer = shap_explanations(self.ml_model.model, x_test)
-            if self.conf_training.store_shap_values_in_instance:
-                self.shap_values = shap_values
-            shap_waterfall_plot(
-                explainer, self.conf_training.shap_waterfall_indices, self.class_problem
-            )
+            try:
+                shap_values, explainer = shap_explanations(self.ml_model.model, x_test)
+                if self.conf_training.store_shap_values_in_instance:
+                    self.shap_values = shap_values
+                shap_waterfall_plot(
+                    explainer,
+                    self.conf_training.shap_waterfall_indices,
+                    self.class_problem,
+                )
+            except Exception as e:
+                warnings.warn(
+                    f"SHAP value calculation failed: {e}. "
+                    f"Model training and predictions are unaffected.",
+                    stacklevel=2,
+                )
             shap_dependence_plots(
                 shap_values,
                 x_test,
@@ -698,9 +707,16 @@ class BlueCast:
         logging.info("Predicting...")
         y_probs, y_classes = self.ml_model.predict(df)
         if save_shap_values:
-            self.shap_values, self.explainer = shap_explanations(
-                self.ml_model.model, df
-            )
+            try:
+                self.shap_values, self.explainer = shap_explanations(
+                    self.ml_model.model, df
+                )
+            except Exception as e:
+                warnings.warn(
+                    f"SHAP value calculation failed: {e}. "
+                    f"Predictions are unaffected.",
+                    stacklevel=2,
+                )
 
         if return_original_labels and self.target_label_encoder:
             y_classes = self.target_label_encoder.label_encoder_reverse_transform(
@@ -734,9 +750,16 @@ class BlueCast:
         logging.info("Predicting...")
         y_probs, _y_classes = self.ml_model.predict(df)
         if save_shap_values:
-            self.shap_values, self.explainer = shap_explanations(
-                self.ml_model.model, df
-            )
+            try:
+                self.shap_values, self.explainer = shap_explanations(
+                    self.ml_model.model, df
+                )
+            except Exception as e:
+                warnings.warn(
+                    f"SHAP value calculation failed: {e}. "
+                    f"Predictions are unaffected.",
+                    stacklevel=2,
+                )
 
         return y_probs
 

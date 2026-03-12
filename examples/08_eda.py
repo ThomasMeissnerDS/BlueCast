@@ -49,13 +49,26 @@ def make_eda_dataset(n=1000, seed=42):
     """Create a realistic synthetic dataset with mixed types and data quality issues."""
     rng = np.random.default_rng(seed)
     X, y = make_classification(
-        n_samples=n, n_features=8, n_informative=5,
-        n_redundant=2, random_state=seed, flip_y=0.05,
+        n_samples=n,
+        n_features=8,
+        n_informative=5,
+        n_redundant=2,
+        random_state=seed,
+        flip_y=0.05,
     )
-    df = pd.DataFrame(X, columns=[
-        "income", "credit_score", "age", "debt_ratio",
-        "num_accounts", "utilization", "payment_history", "inquiries",
-    ])
+    df = pd.DataFrame(
+        X,
+        columns=[
+            "income",
+            "credit_score",
+            "age",
+            "debt_ratio",
+            "num_accounts",
+            "utilization",
+            "payment_history",
+            "inquiries",
+        ],
+    )
 
     # Scale to realistic ranges
     df["income"] = (df["income"] * 15000 + 60000).clip(20000, 200000).round(0)
@@ -65,7 +78,9 @@ def make_eda_dataset(n=1000, seed=42):
 
     # Categorical features
     df["employment"] = rng.choice(
-        ["employed", "self_employed", "unemployed", "retired"], size=n, p=[0.6, 0.2, 0.1, 0.1]
+        ["employed", "self_employed", "unemployed", "retired"],
+        size=n,
+        p=[0.6, 0.2, 0.1, 0.1],
     )
     df["region"] = rng.choice(["north", "south", "east", "west"], size=n)
     df["loan_type"] = rng.choice(["mortgage", "auto", "personal", "student"], size=n)
@@ -84,8 +99,16 @@ def make_eda_dataset(n=1000, seed=42):
 SHOW = False
 
 df = make_eda_dataset()
-num_cols = ["income", "credit_score", "age", "debt_ratio",
-            "num_accounts", "utilization", "payment_history", "inquiries"]
+num_cols = [
+    "income",
+    "credit_score",
+    "age",
+    "debt_ratio",
+    "num_accounts",
+    "utilization",
+    "payment_history",
+    "inquiries",
+]
 cat_cols = ["employment", "region", "loan_type"]
 
 print(f"Dataset: {df.shape[0]} rows, {df.shape[1]} columns")
@@ -116,7 +139,9 @@ print("=" * 60)
 print("2. BIVARIATE ANALYSIS (VIOLIN PLOTS BY TARGET)")
 print("=" * 60)
 
-fig = bi_variate_plots(df[num_cols + ["target"]], target="target", num_cols_grid=4, show=SHOW)
+fig = bi_variate_plots(
+    df[num_cols + ["target"]], target="target", num_cols_grid=4, show=SHOW
+)
 print(f"Bivariate plot: {type(fig).__name__}")
 print()
 
@@ -131,7 +156,9 @@ print("=" * 60)
 fig_heatmap = correlation_heatmap(df[num_cols], show=SHOW)
 print(f"Correlation heatmap: {type(fig_heatmap).__name__}")
 
-fig_target = correlation_to_target(df[num_cols + ["target"]], target="target", show=SHOW)
+fig_target = correlation_to_target(
+    df[num_cols + ["target"]], target="target", show=SHOW
+)
 print(f"Correlation to target: {type(fig_target).__name__}")
 print()
 
@@ -151,8 +178,10 @@ print(f"PCA cumulative variance: {type(fig_var).__name__}")
 
 # t-SNE (handles NaN rows automatically)
 fig_tsne = plot_tsne(
-    df[num_cols + ["target"]].dropna(), target="target",
-    perplexity=30, show=SHOW,
+    df[num_cols + ["target"]].dropna(),
+    target="target",
+    perplexity=30,
+    show=SHOW,
 )
 print(f"t-SNE: {type(fig_tsne).__name__}")
 print()
@@ -210,7 +239,9 @@ print(f"  Correlation-based leakage: {leaky_cols if leaky_cols else 'none detect
 leaky_cat = detect_categorical_leakage(
     df[cat_cols + ["target"]], target_column="target", threshold=0.9
 )
-print(f"  Categorical leakage (Theil's U): {leaky_cat if leaky_cat else 'none detected'}")
+print(
+    f"  Categorical leakage (Theil's U): {leaky_cat if leaky_cat else 'none detected'}"
+)
 print()
 
 
@@ -222,8 +253,10 @@ print("7. MUTUAL INFORMATION")
 print("=" * 60)
 
 fig_mi = mutual_info_to_target(
-    df[num_cols + ["target"]].dropna(), target="target",
-    class_problem="binary", show=SHOW,
+    df[num_cols + ["target"]].dropna(),
+    target="target",
+    class_problem="binary",
+    show=SHOW,
 )
 print(f"Mutual information plot: {type(fig_mi).__name__}")
 print()
@@ -252,8 +285,10 @@ print("9. ANDREWS CURVES")
 print("=" * 60)
 
 fig_andrews = plot_andrews_curve(
-    df[num_cols[:4] + ["target"]], target="target",
-    n_samples=100, show=SHOW,
+    df[num_cols[:4] + ["target"]],
+    target="target",
+    n_samples=100,
+    show=SHOW,
 )
 print(f"Andrews curve: {type(fig_andrews).__name__}")
 print()

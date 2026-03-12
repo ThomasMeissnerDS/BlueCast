@@ -41,9 +41,7 @@ class BlueCastAIResult:
     report_markdown: str = ""
     structured_log: List[Any] = field(default_factory=list)
 
-    def predict(
-        self, df: pd.DataFrame
-    ) -> Union[np.ndarray, pd.Series]:
+    def predict(self, df: pd.DataFrame) -> Union[np.ndarray, pd.Series]:
         """Predict using the trained pipeline."""
         if self.pipeline is None:
             raise RuntimeError("No trained pipeline available.")
@@ -85,13 +83,15 @@ class BlueCastAIResult:
         """
         entries = []
         for entry in self.structured_log:
-            entries.append({
-                "timestamp": getattr(entry, "timestamp", 0),
-                "agent": getattr(entry, "agent", ""),
-                "event_type": getattr(entry, "event_type", ""),
-                "content": getattr(entry, "content", ""),
-                "metadata": getattr(entry, "metadata", None),
-            })
+            entries.append(
+                {
+                    "timestamp": getattr(entry, "timestamp", 0),
+                    "agent": getattr(entry, "agent", ""),
+                    "event_type": getattr(entry, "event_type", ""),
+                    "content": getattr(entry, "content", ""),
+                    "metadata": getattr(entry, "metadata", None),
+                }
+            )
         with open(path, "w") as f:
             json.dump(entries, f, indent=2, default=str)
         logger.info(f"Structured log saved to {path}")
@@ -108,7 +108,7 @@ class BlueCastAIResult:
         print(f"Problem type: {self.class_problem}")
 
         if self.metrics:
-            print(f"\nBest metrics:")
+            print("\nBest metrics:")
             for k, v in self.metrics.items():
                 if isinstance(v, float):
                     print(f"  {k}: {v:.4f}")
@@ -123,9 +123,9 @@ class BlueCastAIResult:
                 print(f"  Run {i + 1} [{status}]: {m}")
 
         if self.feature_engineering_code:
-            print(f"\nFeature engineering applied: Yes")
+            print("\nFeature engineering applied: Yes")
         else:
-            print(f"\nFeature engineering applied: No")
+            print("\nFeature engineering applied: No")
 
         if self.pipeline_code:
             print(f"\nGenerated pipeline code: {len(self.pipeline_code)} chars")

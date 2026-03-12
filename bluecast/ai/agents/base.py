@@ -6,7 +6,12 @@ from abc import ABC, abstractmethod
 from typing import Any, Callable, Dict, List, Optional
 
 from bluecast.ai.context import SharedContext
-from bluecast.ai.providers.base import BaseLLMProvider, LLMResponse, Message, ToolDefinition
+from bluecast.ai.providers.base import (
+    BaseLLMProvider,
+    LLMResponse,
+    Message,
+    ToolDefinition,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -36,15 +41,15 @@ class BaseAgent(ABC):
     @property
     @abstractmethod
     def name(self) -> str:
-        ...
+        pass
 
     @abstractmethod
     def system_prompt(self) -> str:
-        ...
+        pass
 
     @abstractmethod
     def get_tools(self) -> List[ToolDefinition]:
-        ...
+        pass
 
     def register_tool_impl(self, name: str, func: Callable) -> None:
         self._tool_implementations[name] = func
@@ -75,7 +80,9 @@ class BaseAgent(ABC):
             print(f"  [{self.name}] Starting: {task[:80]}...")
 
         self.context.log(
-            self.name, task[:500], event_type="task",
+            self.name,
+            task[:500],
+            event_type="task",
             metadata={"full_task_length": len(task)},
         )
 
@@ -87,7 +94,7 @@ class BaseAgent(ABC):
         tools = self.get_tools()
         response: Optional[LLMResponse] = None
 
-        for iteration in range(MAX_TOOL_ITERATIONS):
+        for _iteration in range(MAX_TOOL_ITERATIONS):
             response = self.llm.chat(messages, tools=tools if tools else None)
 
             if response.has_tool_calls:
@@ -145,7 +152,9 @@ class BaseAgent(ABC):
 
         final_text = response.text if response else "Agent reached max tool iterations."
         self.context.log(
-            self.name, final_text[:300], event_type="error",
+            self.name,
+            final_text[:300],
+            event_type="error",
             metadata={"reason": "max_iterations_reached"},
         )
         return final_text

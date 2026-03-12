@@ -1,6 +1,5 @@
 """Pipeline builder agent: generates and runs BlueCast pipelines."""
 
-import json
 from typing import List
 
 from bluecast.ai.agents.base import BaseAgent
@@ -17,7 +16,11 @@ class PipelineBuilderAgent(BaseAgent):
         )
 
     def _build_wrapper(self, **config):
-        df = self.context.engineered_df if self.context.engineered_df is not None else self.context.df_train
+        df = (
+            self.context.engineered_df
+            if self.context.engineered_df is not None
+            else self.context.df_train
+        )
         result = tool_build_and_run_pipeline(df, self.context.target_col, config)
 
         run_record = {
@@ -77,7 +80,9 @@ class PipelineBuilderAgent(BaseAgent):
 
         strategy = config.get("ensemble_strategy", "mean")
         if config.get("use_cv", True):
-            lines.append(f"ensemble_config = EnsembleConfig(ensemble_strategy=\"{strategy}\")")
+            lines.append(
+                f'ensemble_config = EnsembleConfig(ensemble_strategy="{strategy}")'
+            )
             lines.append("")
 
         lines.append("pipeline = BlueCastAuto(")
@@ -88,7 +93,9 @@ class PipelineBuilderAgent(BaseAgent):
             lines.append("    ensemble_config=ensemble_config,")
         lines.append(")")
         lines.append("")
-        lines.append(f"pipeline.fit_eval(df_train, target_col=\"{self.context.target_col}\")")
+        lines.append(
+            f'pipeline.fit_eval(df_train, target_col="{self.context.target_col}")'
+        )
 
         self.context.pipeline_code = "\n".join(lines)
 

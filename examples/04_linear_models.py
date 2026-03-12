@@ -40,8 +40,11 @@ fast_config = TrainingConfig(
 # --- Create synthetic data ---
 def make_cls_data(n=1500, seed=42):
     X, y = make_classification(
-        n_samples=n, n_features=10, n_informative=6,
-        n_redundant=3, random_state=seed,
+        n_samples=n,
+        n_features=10,
+        n_informative=6,
+        n_redundant=3,
+        random_state=seed,
     )
     df = pd.DataFrame(X, columns=[f"feat_{i}" for i in range(10)])
     rng = np.random.default_rng(seed)
@@ -55,8 +58,11 @@ def make_cls_data(n=1500, seed=42):
 
 def make_reg_data(n=1500, seed=42):
     X, y = make_regression(
-        n_samples=n, n_features=10, n_informative=6,
-        noise=15.0, random_state=seed,
+        n_samples=n,
+        n_features=10,
+        n_informative=6,
+        noise=15.0,
+        random_state=seed,
     )
     df = pd.DataFrame(X, columns=[f"feat_{i}" for i in range(10)])
     rng = np.random.default_rng(seed)
@@ -194,7 +200,7 @@ for scaler_name in ["standard", "power", "robust", "minmax"]:
 
     preproc_s = PreprocessingForLinearModels(
         num_columns=num_cols,
-        config=LinearModelPreprocessingConfig(scaler=scaler_name),
+        config=LinearModelPreprocessingConfig(scaler=scaler_name),  # type: ignore[arg-type]
     )
     lr = LogisticRegressionModel(scoring="roc_auc", cv_folds=3)
     automl_s = BlueCast(

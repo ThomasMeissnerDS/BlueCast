@@ -21,8 +21,11 @@ from bluecast.ensemble.ensemble_config import EnsembleConfig
 
 def make_data(n=2000, seed=42):
     X, y = make_classification(
-        n_samples=n, n_features=15, n_informative=10,
-        n_redundant=3, random_state=seed,
+        n_samples=n,
+        n_features=15,
+        n_informative=10,
+        n_redundant=3,
+        random_state=seed,
     )
     df = pd.DataFrame(X, columns=[f"feat_{i}" for i in range(15)])
     df["sector"] = np.random.default_rng(seed).choice(
@@ -72,8 +75,8 @@ print("=" * 60)
 
 ensemble_stacking = EnsembleConfig(
     ensemble_strategy="stacking",
-    stacking_use_ranks=True,       # rank-transform before stacking
-    stacking_meta_learner=None,    # default: Ridge(alpha=10.0)
+    stacking_use_ranks=True,  # rank-transform before stacking
+    stacking_meta_learner=None,  # default: Ridge(alpha=10.0)
 )
 
 automl_stack = BlueCastCV(
@@ -98,7 +101,7 @@ print("=" * 60)
 ensemble_hc = EnsembleConfig(
     ensemble_strategy="hill_climbing",
     hc_blending_method="rank",
-    hc_weight_min=0.0,       # no negative weights for simplicity
+    hc_weight_min=0.0,  # no negative weights for simplicity
     hc_weight_max=0.5,
     hc_weight_step=0.05,
     hc_tolerance=1e-6,
@@ -115,8 +118,10 @@ print(f"Hill climbing OOF score: {oof_mean:.4f} +/- {oof_std:.4f}")
 if automl_hc.hill_climbing_ensemble:
     print(f"Models selected: {len(automl_hc.hill_climbing_ensemble.selected_indices)}")
     for entry in automl_hc.hill_climbing_ensemble.history:
-        print(f"  Step {entry['iteration']}: {entry['model']} "
-              f"(weight={entry['weight']:+.3f}, score={entry['score']:.6f})")
+        print(
+            f"  Step {entry['iteration']}: {entry['model']} "
+            f"(weight={entry['weight']:+.3f}, score={entry['score']:.6f})"
+        )
 print()
 
 
@@ -125,7 +130,7 @@ print("=" * 60)
 print("4. STACKING WITH CUSTOM META-LEARNER")
 print("=" * 60)
 
-from sklearn.linear_model import LogisticRegression
+from sklearn.linear_model import LogisticRegression  # noqa: E402
 
 ensemble_custom = EnsembleConfig(
     ensemble_strategy="stacking",

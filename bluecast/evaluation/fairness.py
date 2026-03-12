@@ -19,7 +19,6 @@ from sklearn.metrics import (
     mean_squared_error,
     precision_score,
     r2_score,
-    recall_score,
     roc_auc_score,
 )
 
@@ -310,7 +309,9 @@ class FairnessAuditor:
         reports = []
         for col in self.sensitive_columns:
             if col not in df_sensitive.columns:
-                logger.warning(f"Sensitive column '{col}' not found in DataFrame, skipping.")
+                logger.warning(
+                    f"Sensitive column '{col}' not found in DataFrame, skipping."
+                )
                 continue
 
             groups = df_sensitive[col]
@@ -371,7 +372,9 @@ class FairnessAuditor:
         reports = []
         for col in self.sensitive_columns:
             if col not in df_sensitive.columns:
-                logger.warning(f"Sensitive column '{col}' not found in DataFrame, skipping.")
+                logger.warning(
+                    f"Sensitive column '{col}' not found in DataFrame, skipping."
+                )
                 continue
 
             groups = df_sensitive[col]
@@ -429,7 +432,9 @@ class FairnessAuditor:
             import plotly.graph_objects as go
             from plotly.subplots import make_subplots
         except ImportError:
-            logger.warning("plotly is required for fairness dashboard. Install with: pip install plotly")
+            logger.warning(
+                "plotly is required for fairness dashboard. Install with: pip install plotly"
+            )
             return
 
         summary = report.summary_df()
@@ -441,7 +446,8 @@ class FairnessAuditor:
             metric_cols = [c for c in ["MAE", "RMSE", "R2"] if c in summary.columns]
             n_metrics = len(metric_cols)
             fig = make_subplots(
-                rows=1, cols=n_metrics,
+                rows=1,
+                cols=n_metrics,
                 subplot_titles=metric_cols,
             )
             for i, metric in enumerate(metric_cols, 1):
@@ -453,7 +459,8 @@ class FairnessAuditor:
                         text=[f"{v:.4f}" for v in summary[metric].values],
                         textposition="auto",
                     ),
-                    row=1, col=i,
+                    row=1,
+                    col=i,
                 )
         else:
             metric_cols = ["positive_rate", "TPR", "FPR", "precision", "F1"]
@@ -464,7 +471,8 @@ class FairnessAuditor:
             n_cols = min(3, n_metrics)
             n_rows = (n_metrics + n_cols - 1) // n_cols
             fig = make_subplots(
-                rows=n_rows, cols=n_cols,
+                rows=n_rows,
+                cols=n_cols,
                 subplot_titles=metric_cols,
             )
             for idx, metric in enumerate(metric_cols):
@@ -478,7 +486,8 @@ class FairnessAuditor:
                         text=[f"{v:.4f}" for v in summary[metric].values],
                         textposition="auto",
                     ),
-                    row=r, col=c,
+                    row=r,
+                    col=c,
                 )
 
         fig.update_layout(

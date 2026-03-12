@@ -46,11 +46,16 @@ def make_grouped_regression_data(n=3000, seed=42):
     """Create data where different groups have different noise levels."""
     rng = np.random.default_rng(seed)
     X, y_base = make_regression(
-        n_samples=n, n_features=10, n_informative=7,
-        noise=5.0, random_state=seed,
+        n_samples=n,
+        n_features=10,
+        n_informative=7,
+        noise=5.0,
+        random_state=seed,
     )
 
-    groups = rng.choice(["electronics", "clothing", "food"], size=n, p=[0.4, 0.35, 0.25])
+    groups = rng.choice(
+        ["electronics", "clothing", "food"], size=n, p=[0.4, 0.35, 0.25]
+    )
 
     # Add group-specific noise to simulate varying difficulty
     noise_scales = {"electronics": 1.0, "clothing": 3.0, "food": 5.0}
@@ -66,8 +71,11 @@ def make_grouped_regression_data(n=3000, seed=42):
 
 def make_grouped_classification_data(n=3000, seed=42):
     X, y = make_classification(
-        n_samples=n, n_features=10, n_informative=7,
-        n_redundant=2, random_state=seed,
+        n_samples=n,
+        n_features=10,
+        n_informative=7,
+        n_redundant=2,
+        random_state=seed,
     )
     rng = np.random.default_rng(seed)
     groups = rng.choice(["premium", "standard", "budget"], size=n)
@@ -158,7 +166,7 @@ automl_reg2 = BlueCastRegression(class_problem="regression", conf_training=fast_
 automl_reg2.fit(df_train, target_col="target")
 
 # Calibrate WITH group columns
-from bluecast.conformal_prediction.conformal_prediction_regression import (
+from bluecast.conformal_prediction.conformal_prediction_regression import (  # noqa: E402
     ConformalPredictionRegressionWrapper,
 )
 
@@ -203,7 +211,7 @@ automl_cls2 = BlueCast(class_problem="binary", conf_training=fast_config)
 automl_cls2.fit(df_train, target_col="target")
 
 # Calibrate with groups
-from bluecast.conformal_prediction.conformal_prediction import (
+from bluecast.conformal_prediction.conformal_prediction import (  # noqa: E402
     ConformalPredictionWrapper,
 )
 

@@ -23,7 +23,6 @@ from bluecast.blueprints.unified import BlueCastAuto
 from bluecast.config.training_config import TrainingConfig
 from bluecast.ensemble.ensemble_config import EnsembleConfig
 
-
 fast_config = TrainingConfig(
     hyperparameter_tuning_rounds=10,
     hyperparameter_tuning_max_runtime_secs=30,
@@ -38,13 +37,20 @@ fast_config = TrainingConfig(
 def make_data(problem="binary", n=1500, seed=42):
     rng = np.random.default_rng(seed)
     if problem == "regression":
-        X, y = make_regression(n_samples=n, n_features=10, n_informative=7,
-                               noise=10.0, random_state=seed)
+        X, y = make_regression(
+            n_samples=n, n_features=10, n_informative=7, noise=10.0, random_state=seed
+        )
     else:
         n_classes = 4 if problem == "multiclass" else 2
-        X, y = make_classification(n_samples=n, n_features=10, n_informative=7,
-                                   n_redundant=2, n_classes=n_classes,
-                                   n_clusters_per_class=1, random_state=seed)
+        X, y = make_classification(
+            n_samples=n,
+            n_features=10,
+            n_informative=7,
+            n_redundant=2,
+            n_classes=n_classes,
+            n_clusters_per_class=1,
+            random_state=seed,
+        )
     df = pd.DataFrame(X, columns=[f"feat_{i}" for i in range(10)])
     df["category"] = rng.choice(["A", "B", "C"], size=n)
     df["target"] = y
@@ -114,10 +120,12 @@ automl_reg = BlueCastAuto(
     conf_training=fast_config,
 )
 metrics = automl_reg.fit_eval(
-    df_train, target_col="target",
-    df_eval=df_test, y_eval=y_test,
+    df_train,
+    target_col="target",
+    df_eval=df_test,
+    y_eval=y_test,
 )
-print(f"R2: {metrics.get('r2_score', 'N/A'):.4f}")
+print(f"R2: {metrics.get('r2_score', 'N/A'):.4f}")  # type: ignore[union-attr]
 print(f"Backend: {type(automl_reg.inner_model).__name__}")
 print()
 

@@ -26,23 +26,40 @@ import pandas as pd
 from sklearn.datasets import make_classification, make_regression
 from sklearn.model_selection import train_test_split
 
+from bluecast.config.training_config import TrainingConfig
+
 logging.basicConfig(level=logging.WARNING)
 
 # ---------------------------------------------------------------------------
 # Synthetic dataset: credit risk with realistic structure
 # ---------------------------------------------------------------------------
 
+
 def make_credit_data(n=2000, seed=42):
     rng = np.random.default_rng(seed)
     X, y = make_classification(
-        n_samples=n, n_features=10, n_informative=7,
-        n_redundant=2, random_state=seed, flip_y=0.08,
+        n_samples=n,
+        n_features=10,
+        n_informative=7,
+        n_redundant=2,
+        random_state=seed,
+        flip_y=0.08,
     )
-    df = pd.DataFrame(X, columns=[
-        "income", "credit_score", "age", "debt_ratio",
-        "num_accounts", "utilization", "payment_history",
-        "inquiries", "credit_age", "monthly_balance",
-    ])
+    df = pd.DataFrame(
+        X,
+        columns=[
+            "income",
+            "credit_score",
+            "age",
+            "debt_ratio",
+            "num_accounts",
+            "utilization",
+            "payment_history",
+            "inquiries",
+            "credit_age",
+            "monthly_balance",
+        ],
+    )
 
     df["income"] = (df["income"] * 15000 + 55000).clip(15000, 250000).round(0)
     df["credit_score"] = (df["credit_score"] * 50 + 700).clip(300, 850).round(0)
@@ -51,7 +68,8 @@ def make_credit_data(n=2000, seed=42):
 
     df["employment"] = rng.choice(
         ["employed", "self_employed", "unemployed", "retired"],
-        size=n, p=[0.55, 0.25, 0.1, 0.1],
+        size=n,
+        p=[0.55, 0.25, 0.1, 0.1],
     )
     df["region"] = rng.choice(["north", "south", "east", "west"], size=n)
     df["gender"] = rng.choice(["male", "female"], size=n, p=[0.55, 0.45])
@@ -64,7 +82,7 @@ def make_credit_data(n=2000, seed=42):
     return df
 
 
-fast_config_kwargs = dict(
+fast_config = TrainingConfig(
     hyperparameter_tuning_rounds=10,
     hyperparameter_tuning_max_runtime_secs=30,
     enable_feature_selection=False,
@@ -91,7 +109,7 @@ print("-" * 70)
 print("1. EDA & DATA QUALITY")
 print("-" * 70)
 
-from bluecast.eda import (
+from bluecast.eda import (  # noqa: E402
     correlation_to_target,
     detect_leakage_via_correlation,
     mutual_info_to_target,
@@ -107,16 +125,22 @@ print(f"  Univariate plots generated: {len(figs)}")
 fig_nulls = plot_null_percentage(df, show=False)
 print(f"  Null percentage plot: OK ({df.isnull().sum().sum()} total nulls)")
 
-fig_corr = correlation_to_target(df[num_cols + ["default"]], target="default", show=False)
-print(f"  Correlation-to-target plot: OK")
+fig_corr = correlation_to_target(
+    df[num_cols + ["default"]], target="default", show=False
+)
+print("  Correlation-to-target plot: OK")
 
 fig_mi = mutual_info_to_target(
-    df[num_cols + ["default"]].dropna(), target="default",
-    class_problem="binary", show=False,
+    df[num_cols + ["default"]].dropna(),
+    target="default",
+    class_problem="binary",
+    show=False,
 )
-print(f"  Mutual information plot: OK")
+print("  Mutual information plot: OK")
 
-leaky = detect_leakage_via_correlation(df[num_cols + ["default"]], "default", threshold=0.95)
+leaky = detect_leakage_via_correlation(
+    df[num_cols + ["default"]], "default", threshold=0.95
+)
 print(f"  Leakage check: {'NONE detected' if not leaky else leaky}")
 
 
@@ -127,8 +151,7 @@ print("\n" + "-" * 70)
 print("2. UNIFIED INTERFACE (BlueCastAuto)")
 print("-" * 70)
 
-from bluecast.blueprints.unified import BlueCastAuto
-from bluecast.config.training_config import TrainingConfig
+from bluecast.blueprints.unified import BlueCastAuto  # noqa: E402
 
 df_train, df_test = train_test_split(df, test_size=0.25, random_state=42)
 y_test = df_test.pop("default")
@@ -136,16 +159,18 @@ y_test = df_test.pop("default")
 automl = BlueCastAuto(
     class_problem="binary",
     use_cross_validation=False,
-    conf_training=TrainingConfig(**fast_config_kwargs),
+    conf_training=fast_config,
 )
 
 metrics = automl.fit_eval(
-    df_train, target_col="default",
-    df_eval=df_test, y_eval=y_test,
+    df_train,
+    target_col="default",
+    df_eval=df_test,
+    y_eval=y_test,
 )
-print(f"  ROC AUC:  {metrics.get('roc_auc', 'N/A'):.4f}")
-print(f"  Accuracy: {metrics.get('accuracy', 'N/A'):.4f}")
-print(f"  F1 (weighted): {metrics.get('f1_score_weighted', 'N/A'):.4f}")
+print(f"  ROC AUC:  {metrics.get('roc_auc', 'N/A'):.4f}")  # type: ignore[union-attr]
+print(f"  Accuracy: {metrics.get('accuracy', 'N/A'):.4f}")  # type: ignore[union-attr]
+print(f"  F1 (weighted): {metrics.get('f1_score_weighted', 'N/A'):.4f}")  # type: ignore[union-attr]
 
 
 # =====================================================================
@@ -155,10 +180,16 @@ print("\n" + "-" * 70)
 print("3. CROSS-VALIDATION (MEAN BLENDING)")
 print("-" * 70)
 
-from bluecast.ensemble.ensemble_config import EnsembleConfig
+from bluecast.ensemble.ensemble_config import EnsembleConfig  # noqa: E402
 
 cv_config = TrainingConfig(
-    **fast_config_kwargs,
+    hyperparameter_tuning_rounds=10,
+    hyperparameter_tuning_max_runtime_secs=30,
+    enable_feature_selection=False,
+    calculate_shap_values=False,
+    plot_hyperparameter_tuning_overview=False,
+    hypertuning_cv_folds=2,
+    train_size=0.8,
     bluecast_cv_train_n_model=(3, 1),
 )
 
@@ -186,7 +217,9 @@ automl_stack = BlueCastAuto(
     class_problem="binary",
     use_cross_validation=True,
     conf_training=cv_config,
-    ensemble_config=EnsembleConfig(ensemble_strategy="stacking", stacking_use_ranks=True),
+    ensemble_config=EnsembleConfig(
+        ensemble_strategy="stacking", stacking_use_ranks=True
+    ),
 )
 oof_mean, oof_std = automl_stack.fit_eval(df, target_col="default")
 print(f"  OOF Matthews (stacking): {oof_mean:.4f} +/- {oof_std:.4f}")
@@ -216,7 +249,9 @@ print(f"  OOF Matthews (hill climbing): {oof_mean:.4f} +/- {oof_std:.4f}")
 
 hc = automl_hc.inner_model.hill_climbing_ensemble
 if hc:
-    print(f"  Models selected: {len(hc.selected_indices)} / {len(automl_hc.bluecast_models)}")
+    print(
+        f"  Models selected: {len(hc.selected_indices)} / {len(automl_hc.bluecast_models)}"  # type: ignore[arg-type]
+    )
 
 
 # =====================================================================
@@ -226,16 +261,17 @@ print("\n" + "-" * 70)
 print("6. CONFORMAL PREDICTION")
 print("-" * 70)
 
-from bluecast.blueprints.cast import BlueCast
-from bluecast.conformal_prediction.conformal_prediction import ConformalPredictionWrapper
-from bluecast.conformal_prediction.evaluation import prediction_set_coverage
+from bluecast.blueprints.cast import BlueCast  # noqa: E402
+from bluecast.conformal_prediction.evaluation import (  # noqa: E402
+    prediction_set_coverage,
+)
 
 df_train_cp, df_temp = train_test_split(df, test_size=0.4, random_state=42)
 df_cal, df_test_cp = train_test_split(df_temp, test_size=0.5, random_state=42)
 y_cal = df_cal.pop("default")
 y_test_cp = df_test_cp.pop("default")
 
-model_cp = BlueCast(class_problem="binary", conf_training=TrainingConfig(**fast_config_kwargs))
+model_cp = BlueCast(class_problem="binary", conf_training=fast_config)
 model_cp.fit(df_train_cp, target_col="default")
 
 model_cp.calibrate(df_cal, y_cal)
@@ -253,12 +289,14 @@ print("\n" + "-" * 70)
 print("7. FAIRNESS AUDITING")
 print("-" * 70)
 
-from bluecast.evaluation.fairness import FairnessAuditor
+from bluecast.evaluation.fairness import FairnessAuditor  # noqa: E402
 
 y_probs_fair, y_classes_fair = model_cp.predict(df_test_cp)
 
 auditor = FairnessAuditor(sensitive_columns=["gender", "region"])
-reports = auditor.audit_classification(y_test_cp, y_classes_fair, y_probs_fair, df_test_cp)
+reports = auditor.audit_classification(
+    y_test_cp, y_classes_fair, y_probs_fair, df_test_cp
+)
 
 for report in reports:
     print(f"\n  --- {report.sensitive_column} ---")
@@ -283,13 +321,24 @@ print("\n" + "-" * 70)
 print("8. AUTOMATIC FAIRNESS IN FIT_EVAL")
 print("-" * 70)
 
-fair_config = TrainingConfig(**fast_config_kwargs, fairness_sensitive_columns=["gender"])
+fair_config = TrainingConfig(
+    hyperparameter_tuning_rounds=10,
+    hyperparameter_tuning_max_runtime_secs=30,
+    enable_feature_selection=False,
+    calculate_shap_values=False,
+    plot_hyperparameter_tuning_overview=False,
+    hypertuning_cv_folds=2,
+    train_size=0.8,
+    fairness_sensitive_columns=["gender"],
+)
 
 df_train_f, df_eval_f = train_test_split(df, test_size=0.25, random_state=42)
 y_eval_f = df_eval_f.pop("default")
 
 automl_fair = BlueCast(class_problem="binary", conf_training=fair_config)
-metrics_fair = automl_fair.fit_eval(df_train_f, df_eval_f, y_eval_f, target_col="default")
+metrics_fair = automl_fair.fit_eval(
+    df_train_f, df_eval_f, y_eval_f, target_col="default"
+)
 
 if "fairness" in metrics_fair:
     fr = metrics_fair["fairness"][0]
@@ -308,8 +357,10 @@ print("\n" + "-" * 70)
 print("9. LINEAR MODEL BASELINE")
 print("-" * 70)
 
-from bluecast.blueprints.custom_model_recipes import LogisticRegressionModel
-from bluecast.blueprints.preprocessing_recipes import (
+from bluecast.blueprints.custom_model_recipes import (  # noqa: E402
+    LogisticRegressionModel,
+)
+from bluecast.blueprints.preprocessing_recipes import (  # noqa: E402
     LinearModelPreprocessingConfig,
     PreprocessingForLinearModels,
 )
@@ -323,7 +374,16 @@ preproc = PreprocessingForLinearModels(
 )
 lr_model = LogisticRegressionModel(scoring="roc_auc", cv_folds=3)
 
-lr_config = TrainingConfig(**fast_config_kwargs, cat_encoding_via_ml_algorithm=False)
+lr_config = TrainingConfig(
+    hyperparameter_tuning_rounds=10,
+    hyperparameter_tuning_max_runtime_secs=30,
+    enable_feature_selection=False,
+    calculate_shap_values=False,
+    plot_hyperparameter_tuning_overview=False,
+    hypertuning_cv_folds=2,
+    train_size=0.8,
+    cat_encoding_via_ml_algorithm=False,
+)
 
 df_train_lr, df_eval_lr = train_test_split(df, test_size=0.25, random_state=42)
 y_eval_lr = df_eval_lr.pop("default")
@@ -334,7 +394,9 @@ automl_lr = BlueCast(
     ml_model=lr_model,
     custom_preprocessor=preproc,
 )
-metrics_lr = automl_lr.fit_eval(df_train_lr, df_eval_lr, y_eval_lr, target_col="default")
+metrics_lr = automl_lr.fit_eval(
+    df_train_lr, df_eval_lr, y_eval_lr, target_col="default"
+)
 print(f"  Logistic Regression ROC AUC: {metrics_lr.get('roc_auc', 'N/A'):.4f}")
 
 
@@ -345,27 +407,33 @@ print("\n" + "-" * 70)
 print("10. EXPERIMENT TRACKING")
 print("-" * 70)
 
-from bluecast.experimentation.tracking import ExperimentTracker
+from bluecast.experimentation.tracking import ExperimentTracker  # noqa: E402
 
 tracker = ExperimentTracker()
 tracker.add_results(
-    experiment_id=0, score_category="evaluation",
-    training_config=TrainingConfig(**fast_config_kwargs),
-    model_parameters={"model": "CatBoost"}, eval_scores=0.87,
-    metric_used="roc_auc", metric_higher_is_better=True,
+    experiment_id=0,
+    score_category="oof_score",
+    training_config=fast_config,
+    model_parameters={"model": "CatBoost"},
+    eval_scores=0.87,
+    metric_used="roc_auc",
+    metric_higher_is_better=True,
 )
 tracker.add_results(
-    experiment_id=1, score_category="evaluation",
-    training_config=TrainingConfig(**fast_config_kwargs),
-    model_parameters={"model": "LogisticRegression"}, eval_scores=0.82,
-    metric_used="roc_auc", metric_higher_is_better=True,
+    experiment_id=1,
+    score_category="oof_score",
+    training_config=fast_config,
+    model_parameters={"model": "LogisticRegression"},
+    eval_scores=0.82,
+    metric_used="roc_auc",
+    metric_higher_is_better=True,
 )
 
 results_df = tracker.retrieve_results_as_df()
 if results_df is not None:
     print(f"  Tracked experiments: {len(results_df)} rows")
 
-best = tracker.get_best_score(target_metric="roc_auc", direction="maximize")
+best = tracker.get_best_score(target_metric="roc_auc")
 print(f"  Best ROC AUC: {best}")
 
 
@@ -376,7 +444,10 @@ print("\n" + "-" * 70)
 print("11. SAVE & LOAD PIPELINE")
 print("-" * 70)
 
-from bluecast.general_utils.general_utils import load_for_production, save_to_production
+from bluecast.general_utils.general_utils import (  # noqa: E402
+    load_for_production,
+    save_to_production,
+)
 
 with tempfile.TemporaryDirectory() as tmpdir:
     path = os.path.join(tmpdir, "model.p")
@@ -396,22 +467,26 @@ print("\n" + "-" * 70)
 print("12. DATA DRIFT MONITORING")
 print("-" * 70)
 
-from bluecast.monitoring.data_monitoring import DataDrift
+from bluecast.monitoring.data_monitoring import DataDrift  # noqa: E402
 
 rng = np.random.default_rng(42)
-baseline = pd.DataFrame({
-    "income": rng.normal(55000, 15000, 500),
-    "credit_score": rng.normal(700, 50, 500),
-})
-shifted = pd.DataFrame({
-    "income": rng.normal(60000, 18000, 500),
-    "credit_score": rng.normal(700, 50, 500),
-})
+baseline = pd.DataFrame(
+    {
+        "income": rng.normal(55000, 15000, 500),
+        "credit_score": rng.normal(700, 50, 500),
+    }
+)
+shifted = pd.DataFrame(
+    {
+        "income": rng.normal(60000, 18000, 500),
+        "credit_score": rng.normal(700, 50, 500),
+    }
+)
 
 drift = DataDrift()
 drift.kolmogorov_smirnov_test(baseline, shifted)
-for col, flag in drift.kolmogorov_smirnov_flags.items():
-    print(f"  K-S {col}: {'DRIFT' if flag else 'stable'}")
+for col, drifted in drift.kolmogorov_smirnov_flags.items():
+    print(f"  K-S {col}: {'DRIFT' if drifted else 'stable'}")
 
 
 # =====================================================================
@@ -421,16 +496,18 @@ print("\n" + "-" * 70)
 print("BONUS: REGRESSION")
 print("-" * 70)
 
-from bluecast.blueprints.cast_regression import BlueCastRegression
+from bluecast.blueprints.cast_regression import BlueCastRegression  # noqa: E402
 
-X_r, y_r = make_regression(n_samples=1000, n_features=8, n_informative=5, noise=10, random_state=42)
+X_r, y_r = make_regression(
+    n_samples=1000, n_features=8, n_informative=5, noise=10, random_state=42
+)
 df_r = pd.DataFrame(X_r, columns=[f"f_{i}" for i in range(8)])
 df_r["target"] = y_r
 
 df_train_r, df_eval_r = train_test_split(df_r, test_size=0.2, random_state=42)
 y_eval_r = df_eval_r.pop("target")
 
-reg = BlueCastRegression(class_problem="regression", conf_training=TrainingConfig(**fast_config_kwargs))
+reg = BlueCastRegression(class_problem="regression", conf_training=fast_config)
 m_r = reg.fit_eval(df_train_r, df_eval_r, y_eval_r, target_col="target")
 print(f"  R2:   {m_r.get('r2_score', 'N/A'):.4f}")
 print(f"  RMSE: {m_r.get('RMSE', 'N/A'):.4f}")
@@ -438,7 +515,10 @@ print(f"  RMSE: {m_r.get('RMSE', 'N/A'):.4f}")
 # Conformal intervals for regression
 reg.calibrate(df_eval_r, y_eval_r)
 intervals = reg.predict_interval(df_eval_r, alphas=[0.1])
-from bluecast.conformal_prediction.evaluation import prediction_interval_coverage
+from bluecast.conformal_prediction.evaluation import (  # noqa: E402
+    prediction_interval_coverage,
+)
+
 cov = prediction_interval_coverage(y_eval_r, intervals, [0.1])
 print(f"  Regression interval coverage at alpha=0.1: {cov[0.1]:.3f}")
 

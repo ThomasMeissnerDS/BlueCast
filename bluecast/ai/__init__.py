@@ -35,15 +35,26 @@ def _create_provider(config: AIConfig):
 
     if config.provider == "gemini":
         from bluecast.ai.providers.gemini import GeminiProvider
-        return GeminiProvider(api_key=config.api_key, model=model, temperature=config.temperature)
+
+        return GeminiProvider(
+            api_key=config.api_key, model=model, temperature=config.temperature
+        )
     elif config.provider == "openai":
         from bluecast.ai.providers.openai_provider import OpenAIProvider
-        return OpenAIProvider(api_key=config.api_key, model=model, temperature=config.temperature)
+
+        return OpenAIProvider(
+            api_key=config.api_key, model=model, temperature=config.temperature
+        )
     elif config.provider == "anthropic":
         from bluecast.ai.providers.anthropic_provider import AnthropicProvider
-        return AnthropicProvider(api_key=config.api_key, model=model, temperature=config.temperature)
+
+        return AnthropicProvider(
+            api_key=config.api_key, model=model, temperature=config.temperature
+        )
     else:
-        raise ValueError(f"Unknown provider: {config.provider}. Use 'gemini', 'openai', or 'anthropic'.")
+        raise ValueError(
+            f"Unknown provider: {config.provider}. Use 'gemini', 'openai', or 'anthropic'."
+        )
 
 
 class BlueCastAI:

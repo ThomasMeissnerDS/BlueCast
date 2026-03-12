@@ -33,27 +33,33 @@ class OpenAIProvider(BaseLLMProvider):
         converted = []
         for msg in messages:
             if msg.role == "tool_result":
-                converted.append({
-                    "role": "tool",
-                    "tool_call_id": msg.tool_call_id or "",
-                    "content": msg.content,
-                })
+                converted.append(
+                    {
+                        "role": "tool",
+                        "tool_call_id": msg.tool_call_id or "",
+                        "content": msg.content,
+                    }
+                )
             elif msg.role == "assistant" and msg.tool_calls:
                 oai_tool_calls = []
                 for tc in msg.tool_calls:
-                    oai_tool_calls.append({
-                        "id": tc.id,
-                        "type": "function",
-                        "function": {
-                            "name": tc.name,
-                            "arguments": json.dumps(tc.arguments),
-                        },
-                    })
-                converted.append({
-                    "role": "assistant",
-                    "content": msg.content or None,
-                    "tool_calls": oai_tool_calls,
-                })
+                    oai_tool_calls.append(
+                        {
+                            "id": tc.id,
+                            "type": "function",
+                            "function": {
+                                "name": tc.name,
+                                "arguments": json.dumps(tc.arguments),
+                            },
+                        }
+                    )
+                converted.append(
+                    {  # type: ignore[dict-item]
+                        "role": "assistant",
+                        "content": msg.content or None,  # type: ignore[dict-item]
+                        "tool_calls": oai_tool_calls,  # type: ignore[dict-item]
+                    }
+                )
             else:
                 converted.append({"role": msg.role, "content": msg.content})
         return converted

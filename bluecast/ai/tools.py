@@ -5,11 +5,10 @@ tool-use / function-calling interface. Tools provide deterministic,
 safe operations on data and pipelines.
 """
 
-import json
 import logging
 import traceback
 from io import StringIO
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict
 
 import numpy as np
 import pandas as pd
@@ -23,6 +22,7 @@ logger = logging.getLogger(__name__)
 # Data analysis tools
 # ---------------------------------------------------------------------------
 
+
 def tool_describe_data(df: pd.DataFrame, target_col: str) -> str:
     """Generate a comprehensive data profile."""
     buf = StringIO()
@@ -30,30 +30,42 @@ def tool_describe_data(df: pd.DataFrame, target_col: str) -> str:
     buf.write("Dtypes:\n")
     buf.write(df.dtypes.to_string())
     buf.write(f"\n\nNull counts:\n{df.isnull().sum().to_string()}")
-    buf.write(f"\n\nNull percentages:\n{(df.isnull().mean() * 100).round(2).to_string()}")
+    buf.write(
+        f"\n\nNull percentages:\n{(df.isnull().mean() * 100).round(2).to_string()}"
+    )
 
     num_cols = df.select_dtypes(include=["number"]).columns.tolist()
     if num_cols:
-        buf.write(f"\n\nNumeric describe:\n{df[num_cols].describe().round(4).to_string()}")
+        buf.write(
+            f"\n\nNumeric describe:\n{df[num_cols].describe().round(4).to_string()}"
+        )
 
     cat_cols = df.select_dtypes(include=["object", "category"]).columns.tolist()
     for col in cat_cols[:10]:
-        buf.write(f"\n\n'{col}' value counts (top 10):\n{df[col].value_counts().head(10).to_string()}")
+        buf.write(
+            f"\n\n'{col}' value counts (top 10):\n{df[col].value_counts().head(10).to_string()}"
+        )
 
     if target_col in df.columns:
-        buf.write(f"\n\nTarget '{target_col}' distribution:\n{df[target_col].value_counts().to_string()}")
+        buf.write(
+            f"\n\nTarget '{target_col}' distribution:\n{df[target_col].value_counts().to_string()}"
+        )
         n_unique = df[target_col].nunique()
         if n_unique <= 2:
             buf.write("\n\nDetected problem: binary classification")
         elif n_unique <= 20:
-            buf.write(f"\n\nDetected problem: multiclass classification ({n_unique} classes)")
+            buf.write(
+                f"\n\nDetected problem: multiclass classification ({n_unique} classes)"
+            )
         else:
             buf.write("\n\nDetected problem: regression")
 
     return buf.getvalue()
 
 
-def tool_check_correlations(df: pd.DataFrame, target_col: str, threshold: float = 0.8) -> str:
+def tool_check_correlations(
+    df: pd.DataFrame, target_col: str, threshold: float = 0.8
+) -> str:
     """Check for high correlations among features and with target."""
     num_df = df.select_dtypes(include=["number"])
     if num_df.empty:
@@ -63,12 +75,13 @@ def tool_check_correlations(df: pd.DataFrame, target_col: str, threshold: float 
     lines = []
 
     if target_col in corr.columns:
-        target_corr = corr[target_col].drop(target_col).abs().sort_values(ascending=False)
+        target_corr = (
+            corr[target_col].drop(target_col).abs().sort_values(ascending=False)
+        )
         lines.append(f"Top correlations with target '{target_col}':")
         for col, val in target_corr.head(10).items():
             lines.append(f"  {col}: {val:.4f}")
 
-    mask = np.triu(np.ones_like(corr, dtype=bool), k=1)
     high_corr_pairs = []
     for i in range(len(corr.columns)):
         for j in range(i + 1, len(corr.columns)):
@@ -107,7 +120,9 @@ def tool_check_leakage(df: pd.DataFrame, target_col: str) -> str:
     cat_cols = df.select_dtypes(include=["object", "category"]).columns.tolist()
     if cat_cols and target_col in df.columns:
         try:
-            cat_leaky = detect_categorical_leakage(df[cat_cols + [target_col]], target_col, threshold=0.95)
+            cat_leaky = detect_categorical_leakage(
+                df[cat_cols + [target_col]], target_col, threshold=0.95
+            )
             if cat_leaky:
                 results.append(f"Categorical leakage suspects: {cat_leaky}")
             else:
@@ -121,6 +136,7 @@ def tool_check_leakage(df: pd.DataFrame, target_col: str) -> str:
 # ---------------------------------------------------------------------------
 # Feature engineering tools
 # ---------------------------------------------------------------------------
+
 
 def tool_create_feature(
     df: pd.DataFrame,
@@ -155,6 +171,7 @@ def tool_create_feature(
 # ---------------------------------------------------------------------------
 # Pipeline tools
 # ---------------------------------------------------------------------------
+
 
 def tool_build_and_run_pipeline(
     df: pd.DataFrame,
@@ -220,11 +237,14 @@ def tool_build_and_run_pipeline(
                 metrics = result
         else:
             from sklearn.model_selection import train_test_split
+
             df_train, df_eval = train_test_split(df, test_size=0.2, random_state=42)
             y_eval = df_eval.pop(target_col)
-            metrics = pipeline.fit_eval(
-                df_train, target_col=target_col,
-                df_eval=df_eval, y_eval=y_eval,
+            metrics = pipeline.fit_eval(  # type: ignore[assignment]
+                df_train,
+                target_col=target_col,
+                df_eval=df_eval,
+                y_eval=y_eval,
             )
 
         return {
@@ -268,13 +288,15 @@ def _serialize_metrics(metrics) -> Dict[str, Any]:
 # Web search tool
 # ---------------------------------------------------------------------------
 
+
 def tool_web_search(query: str) -> str:
     """Search the web for data science techniques and domain knowledge."""
     try:
         import requests
+
         response = requests.get(
             "https://www.googleapis.com/customsearch/v1",
-            params={"q": query, "num": 3},
+            params={"q": query, "num": 3},  # type: ignore[arg-type]
             timeout=10,
         )
         if response.ok:
@@ -328,7 +350,7 @@ TOOL_DEFINITIONS: Dict[str, ToolDefinition] = {
     "create_feature": ToolDefinition(
         name="create_feature",
         description="Execute Python feature engineering code that modifies the DataFrame 'df'. "
-                    "The code can use 'df', 'np', and 'pd'. Example: df['ratio'] = df['a'] / (df['b'] + 1)",
+        "The code can use 'df', 'np', and 'pd'. Example: df['ratio'] = df['a'] / (df['b'] + 1)",
         parameters={
             "type": "object",
             "properties": {
@@ -364,10 +386,22 @@ TOOL_DEFINITIONS: Dict[str, ToolDefinition] = {
                     "enum": ["mean", "stacking", "hill_climbing"],
                     "description": "How to combine CV fold predictions.",
                 },
-                "n_folds": {"type": "integer", "description": "Number of CV folds. Default 5."},
-                "n_repeats": {"type": "integer", "description": "Number of CV repeats. Default 1."},
-                "tuning_rounds": {"type": "integer", "description": "Hyperparameter tuning rounds. Default 50."},
-                "tuning_max_runtime": {"type": "integer", "description": "Max tuning time in seconds. Default 120."},
+                "n_folds": {
+                    "type": "integer",
+                    "description": "Number of CV folds. Default 5.",
+                },
+                "n_repeats": {
+                    "type": "integer",
+                    "description": "Number of CV repeats. Default 1.",
+                },
+                "tuning_rounds": {
+                    "type": "integer",
+                    "description": "Hyperparameter tuning rounds. Default 50.",
+                },
+                "tuning_max_runtime": {
+                    "type": "integer",
+                    "description": "Max tuning time in seconds. Default 120.",
+                },
                 "autotune_on_device": {
                     "type": "string",
                     "enum": ["cpu", "gpu"],

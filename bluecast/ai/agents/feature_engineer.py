@@ -1,6 +1,5 @@
 """Feature engineer agent: creates new features based on data analysis."""
 
-import json
 from typing import List
 
 from bluecast.ai.agents.base import BaseAgent
@@ -19,8 +18,15 @@ class FeatureEngineerAgent(BaseAgent):
     def _create_feature_wrapper(self, feature_code: str, description: str = "", **kw):
         if self.context.engineered_df is not None:
             df = self.context.engineered_df
-        else:
+        elif self.context.df_train is not None:
             df = self.context.df_train.copy()
+        else:
+            return {
+                "success": False,
+                "new_columns": [],
+                "shape": [],
+                "error": "No training data available.",
+            }
 
         result = tool_create_feature(df, feature_code)
         if result["success"]:
@@ -40,7 +46,9 @@ class FeatureEngineerAgent(BaseAgent):
         profile = self.context.data_profile or "Not yet profiled."
         hints = ""
         if self.context.data_warnings:
-            hints = "\nData warnings:\n" + "\n".join(f"- {w}" for w in self.context.data_warnings)
+            hints = "\nData warnings:\n" + "\n".join(
+                f"- {w}" for w in self.context.data_warnings
+            )
 
         return f"""You are a feature engineer for the BlueCast AutoML framework.
 

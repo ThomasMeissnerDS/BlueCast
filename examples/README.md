@@ -4,7 +4,7 @@ Self-contained example scripts that demonstrate BlueCast's feature set using
 synthetic data. No external datasets required.
 
 | Script | Topics |
-|--------|--------|
+| ------ | ------ |
 | [00_full_showcase.py](00_full_showcase.py) | **End-to-end walkthrough of all features** |
 | [01_quick_start.py](01_quick_start.py) | Binary classification, multiclass, regression, `fit_eval` |
 | [02_cross_validation_and_ensembles.py](02_cross_validation_and_ensembles.py) | `BlueCastCV`, mean blending, stacking, hill climbing |

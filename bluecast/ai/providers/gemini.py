@@ -1,8 +1,6 @@
 """Google Gemini LLM provider."""
 
-import json
 import logging
-import uuid
 from typing import List, Optional
 
 from bluecast.ai.providers.base import (
@@ -19,7 +17,9 @@ logger = logging.getLogger(__name__)
 class GeminiProvider(BaseLLMProvider):
     """Google Gemini provider using the google-generativeai SDK."""
 
-    def __init__(self, api_key: str, model: str = "gemini-2.5-flash", temperature: float = 0.2):
+    def __init__(
+        self, api_key: str, model: str = "gemini-2.5-flash", temperature: float = 0.2
+    ):
         super().__init__(api_key, model, temperature)
         try:
             import google.generativeai as genai
@@ -37,11 +37,13 @@ class GeminiProvider(BaseLLMProvider):
         for tool in tools:
             params = tool.parameters.copy()
             params.pop("additionalProperties", None)
-            declarations.append({
-                "name": tool.name,
-                "description": tool.description,
-                "parameters": params,
-            })
+            declarations.append(
+                {
+                    "name": tool.name,
+                    "description": tool.description,
+                    "parameters": params,
+                }
+            )
         return declarations
 
     def _convert_messages(self, messages: List[Message]) -> tuple:
@@ -52,30 +54,36 @@ class GeminiProvider(BaseLLMProvider):
             if msg.role == "system":
                 system_instruction = msg.content
             elif msg.role == "user":
-                contents.append({"role": "user", "parts": [{"text": msg.content}]})
+                contents.append({"role": "user", "parts": [{"text": msg.content}]})  # type: ignore[dict-item]
             elif msg.role == "assistant":
                 parts = []
                 if msg.content:
                     parts.append({"text": msg.content})
                 if msg.tool_calls:
                     for tc in msg.tool_calls:
-                        parts.append({
-                            "function_call": {
-                                "name": tc.name,
-                                "args": tc.arguments,
+                        parts.append(
+                            {
+                                "function_call": {  # type: ignore[dict-item]
+                                    "name": tc.name,
+                                    "args": tc.arguments,
+                                }
                             }
-                        })
-                contents.append({"role": "model", "parts": parts})
+                        )
+                contents.append({"role": "model", "parts": parts})  # type: ignore[dict-item]
             elif msg.role == "tool_result":
-                contents.append({
-                    "role": "user",
-                    "parts": [{
-                        "function_response": {
-                            "name": msg.tool_call_id or "",
-                            "response": {"result": msg.content},
-                        }
-                    }],
-                })
+                contents.append(
+                    {  # type: ignore[dict-item]
+                        "role": "user",
+                        "parts": [
+                            {
+                                "function_response": {
+                                    "name": msg.tool_call_id or "",
+                                    "response": {"result": msg.content},
+                                }
+                            }
+                        ],
+                    }
+                )
         return system_instruction, contents
 
     def chat(
@@ -121,8 +129,12 @@ class GeminiProvider(BaseLLMProvider):
         usage = None
         if hasattr(response, "usage_metadata") and response.usage_metadata:
             usage = {
-                "prompt_tokens": getattr(response.usage_metadata, "prompt_token_count", 0),
-                "completion_tokens": getattr(response.usage_metadata, "candidates_token_count", 0),
+                "prompt_tokens": getattr(
+                    response.usage_metadata, "prompt_token_count", 0
+                ),
+                "completion_tokens": getattr(
+                    response.usage_metadata, "candidates_token_count", 0
+                ),
             }
 
         return LLMResponse(text=text, tool_calls=tool_calls, usage=usage)

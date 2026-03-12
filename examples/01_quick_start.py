@@ -18,8 +18,11 @@ from bluecast.config.training_config import TrainingConfig
 
 def make_binary_data(n=2000, seed=42):
     X, y = make_classification(
-        n_samples=n, n_features=12, n_informative=8,
-        n_redundant=2, random_state=seed,
+        n_samples=n,
+        n_features=12,
+        n_informative=8,
+        n_redundant=2,
+        random_state=seed,
     )
     df = pd.DataFrame(X, columns=[f"feat_{i}" for i in range(12)])
     df["category"] = np.random.default_rng(seed).choice(
@@ -31,8 +34,12 @@ def make_binary_data(n=2000, seed=42):
 
 def make_multiclass_data(n=2000, seed=42):
     X, y = make_classification(
-        n_samples=n, n_features=12, n_informative=10,
-        n_redundant=2, n_classes=4, n_clusters_per_class=1,
+        n_samples=n,
+        n_features=12,
+        n_informative=10,
+        n_redundant=2,
+        n_classes=4,
+        n_clusters_per_class=1,
         random_state=seed,
     )
     df = pd.DataFrame(X, columns=[f"feat_{i}" for i in range(12)])
@@ -45,8 +52,11 @@ def make_multiclass_data(n=2000, seed=42):
 
 def make_regression_data(n=2000, seed=42):
     X, y = make_regression(
-        n_samples=n, n_features=12, n_informative=8,
-        noise=10.0, random_state=seed,
+        n_samples=n,
+        n_features=12,
+        n_informative=8,
+        noise=10.0,
+        random_state=seed,
     )
     df = pd.DataFrame(X, columns=[f"feat_{i}" for i in range(12)])
     df["size_category"] = np.random.default_rng(seed).choice(

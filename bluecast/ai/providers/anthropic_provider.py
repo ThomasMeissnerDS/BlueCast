@@ -1,6 +1,5 @@
 """Anthropic (Claude) LLM provider."""
 
-import json
 import logging
 from typing import List, Optional
 
@@ -49,22 +48,28 @@ class AnthropicProvider(BaseLLMProvider):
                     content_blocks.append({"type": "text", "text": msg.content})
                 if msg.tool_calls:
                     for tc in msg.tool_calls:
-                        content_blocks.append({
-                            "type": "tool_use",
-                            "id": tc.id,
-                            "name": tc.name,
-                            "input": tc.arguments,
-                        })
-                converted.append({"role": "assistant", "content": content_blocks})
+                        content_blocks.append(
+                            {
+                                "type": "tool_use",
+                                "id": tc.id,
+                                "name": tc.name,
+                                "input": tc.arguments,  # type: ignore[dict-item]
+                            }
+                        )
+                converted.append({"role": "assistant", "content": content_blocks})  # type: ignore[dict-item]
             elif msg.role == "tool_result":
-                converted.append({
-                    "role": "user",
-                    "content": [{
-                        "type": "tool_result",
-                        "tool_use_id": msg.tool_call_id or "",
-                        "content": msg.content,
-                    }],
-                })
+                converted.append(
+                    {  # type: ignore[dict-item]
+                        "role": "user",
+                        "content": [  # type: ignore[dict-item]
+                            {
+                                "type": "tool_result",
+                                "tool_use_id": msg.tool_call_id or "",
+                                "content": msg.content,
+                            }
+                        ],
+                    }
+                )
         return system_prompt, converted
 
     def _convert_tools(self, tools: List[ToolDefinition]) -> List[dict]:

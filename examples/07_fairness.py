@@ -36,8 +36,12 @@ def make_biased_classification_data(n=3000, seed=42):
     """Create data where the model might behave differently across groups."""
     rng = np.random.default_rng(seed)
     X, y = make_classification(
-        n_samples=n, n_features=10, n_informative=6,
-        n_redundant=2, random_state=seed, flip_y=0.1,
+        n_samples=n,
+        n_features=10,
+        n_informative=6,
+        n_redundant=2,
+        random_state=seed,
+        flip_y=0.1,
     )
     df = pd.DataFrame(X, columns=[f"feat_{i}" for i in range(10)])
 
@@ -57,8 +61,11 @@ def make_biased_classification_data(n=3000, seed=42):
 def make_biased_regression_data(n=3000, seed=42):
     rng = np.random.default_rng(seed)
     X, y = make_regression(
-        n_samples=n, n_features=10, n_informative=6,
-        noise=10.0, random_state=seed,
+        n_samples=n,
+        n_features=10,
+        n_informative=6,
+        noise=10.0,
+        random_state=seed,
     )
     df = pd.DataFrame(X, columns=[f"feat_{i}" for i in range(10)])
     df["region"] = rng.choice(["urban", "suburban", "rural"], size=n)
@@ -172,10 +179,10 @@ print("=" * 60)
 print("4. CONFORMAL PREDICTION FAIRNESS CHECK")
 print("=" * 60)
 
-from bluecast.conformal_prediction.conformal_prediction_regression import (
+from bluecast.conformal_prediction.conformal_prediction_regression import (  # noqa: E402
     ConformalPredictionRegressionWrapper,
 )
-from bluecast.conformal_prediction.evaluation import (
+from bluecast.conformal_prediction.evaluation import (  # noqa: E402
     conformal_fairness_check,
     prediction_interval_coverage_by_group,
 )
