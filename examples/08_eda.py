@@ -308,10 +308,17 @@ All EDA functions:
   - Handle missing values gracefully
 
 For interactive dashboards, use:
-  from bluecast.eda.analyse import create_eda_dashboard_classification
-  create_eda_dashboard_classification(df, target_col="target")
+  from bluecast.eda import create_eda_dashboard
 
-This launches a full Dash-based EDA dashboard in your browser.
+  # Auto-detects regression vs classification from the target column
+  create_eda_dashboard(df, target_col="target")
+
+  # Or use the specific variants directly:
+  from bluecast.eda.analyse import create_eda_dashboard_classification
+  from bluecast.eda.analyse import create_eda_dashboard_regression
+
+This launches a full Dash-based EDA dashboard in your browser
+with 14 interactive plot types, data filtering, and outlier detection.
 """)
 
 print("All EDA examples completed successfully!")

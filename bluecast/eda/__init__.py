@@ -26,6 +26,7 @@ from bluecast.eda.analyse import (
     plot_tsne,
     univariate_plots,
 )
+from bluecast.eda.dashboard import create_eda_dashboard
 from bluecast.eda.data_leakage_checks import (
     detect_categorical_leakage,
     detect_leakage_via_correlation,
@@ -35,6 +36,7 @@ __all__ = [
     "bi_variate_plots",
     "correlation_heatmap",
     "correlation_to_target",
+    "create_eda_dashboard",
     "detect_categorical_leakage",
     "detect_leakage_via_correlation",
     "mutual_info_to_target",
