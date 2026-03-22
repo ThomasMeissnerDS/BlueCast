@@ -18,8 +18,14 @@ logger = logging.getLogger(__name__)
 class OpenAIProvider(BaseLLMProvider):
     """OpenAI provider using the openai SDK."""
 
-    def __init__(self, api_key: str, model: str = "gpt-4o", temperature: float = 0.2):
-        super().__init__(api_key, model, temperature)
+    def __init__(
+        self,
+        api_key: str,
+        model: str = "gpt-4o",
+        temperature: float = 0.2,
+        delay_in_seconds: float = 0.0,
+    ):
+        super().__init__(api_key, model, temperature, delay_in_seconds)
         try:
             import openai
         except ImportError:
@@ -82,6 +88,11 @@ class OpenAIProvider(BaseLLMProvider):
         messages: List[Message],
         tools: Optional[List[ToolDefinition]] = None,
     ) -> LLMResponse:
+        if self.delay_in_seconds > 0:
+            import time
+
+            time.sleep(self.delay_in_seconds)
+
         oai_messages = self._convert_messages(messages)
 
         kwargs = {

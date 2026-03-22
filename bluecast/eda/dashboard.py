@@ -5,7 +5,7 @@ entry point that auto-detects regression vs classification.
 """
 
 import logging
-from typing import Any, Callable, Dict, List, Optional
+from typing import Any, Dict, List, Optional
 
 import numpy as np
 import pandas as pd
@@ -499,7 +499,9 @@ def create_eda_dashboard(
     else:
         problem_type = "classification"
 
-    logger.info(f"Auto-detected problem type: {problem_type} (target has {n_unique} unique values)")
+    logger.info(
+        f"Auto-detected problem type: {problem_type} (target has {n_unique} unique values)"
+    )
 
     if problem_type == "regression":
         from bluecast.eda.analyse import create_eda_dashboard_regression

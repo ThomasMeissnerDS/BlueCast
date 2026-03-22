@@ -37,19 +37,28 @@ def _create_provider(config: AIConfig):
         from bluecast.ai.providers.gemini import GeminiProvider
 
         return GeminiProvider(
-            api_key=config.api_key, model=model, temperature=config.temperature
+            api_key=config.api_key,
+            model=model,
+            temperature=config.temperature,
+            delay_in_seconds=config.llm_sleep_time,
         )
     elif config.provider == "openai":
         from bluecast.ai.providers.openai_provider import OpenAIProvider
 
         return OpenAIProvider(
-            api_key=config.api_key, model=model, temperature=config.temperature
+            api_key=config.api_key,
+            model=model,
+            temperature=config.temperature,
+            delay_in_seconds=config.llm_sleep_time,
         )
     elif config.provider == "anthropic":
         from bluecast.ai.providers.anthropic_provider import AnthropicProvider
 
         return AnthropicProvider(
-            api_key=config.api_key, model=model, temperature=config.temperature
+            api_key=config.api_key,
+            model=model,
+            temperature=config.temperature,
+            delay_in_seconds=config.llm_sleep_time,
         )
     else:
         raise ValueError(
@@ -76,6 +85,8 @@ class BlueCastAI:
     :param checkpoint_dir: Directory for saving checkpoints. If a run crashes,
         the next call to .run() with the same checkpoint_dir resumes from where
         it left off. Set to None to disable checkpointing.
+    :param llm_sleep_time: Time in seconds to sleep prior to an LLM provider call
+        to prevent hitting rate limits.
 
     Usage::
 
@@ -108,6 +119,7 @@ class BlueCastAI:
         verbose: bool = True,
         temperature: float = 0.2,
         checkpoint_dir: Optional[str] = None,
+        llm_sleep_time: float = 0.0,
     ):
         self.config = AIConfig(
             api_key=api_key,
@@ -117,6 +129,7 @@ class BlueCastAI:
             verbose=verbose,
             temperature=temperature,
             checkpoint_dir=checkpoint_dir,
+            llm_sleep_time=llm_sleep_time,
         )
         self._llm = _create_provider(self.config)
 

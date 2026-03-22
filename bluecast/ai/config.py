@@ -30,6 +30,7 @@ class AIConfig:
         beyond this are summarized but not individually analyzed.
     :param checkpoint_dir: Directory to save/resume checkpoints. If None, no
         checkpoints are saved.
+    :param llm_sleep_time: Pause in seconds before each LLM call to avoid API rate limits.
     """
 
     api_key: str = ""
@@ -44,6 +45,7 @@ class AIConfig:
     max_rows_for_agents: int = 50_000
     max_columns_for_agents: int = 200
     checkpoint_dir: Optional[str] = None
+    llm_sleep_time: float = 0.0
 
     def get_model_name(self) -> str:
         if self.model:

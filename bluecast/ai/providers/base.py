@@ -57,10 +57,17 @@ class BaseLLMProvider(ABC):
     and tool-calling scenarios.
     """
 
-    def __init__(self, api_key: str, model: str, temperature: float = 0.2):
+    def __init__(
+        self,
+        api_key: str,
+        model: str,
+        temperature: float = 0.2,
+        delay_in_seconds: float = 0.0,
+    ):
         self.api_key = api_key
         self.model = model
         self.temperature = temperature
+        self.delay_in_seconds = delay_in_seconds
 
     @abstractmethod
     def chat(

@@ -18,9 +18,13 @@ class GeminiProvider(BaseLLMProvider):
     """Google Gemini provider using the google-generativeai SDK."""
 
     def __init__(
-        self, api_key: str, model: str = "gemini-2.5-flash", temperature: float = 0.2
+        self,
+        api_key: str,
+        model: str = "gemini-2.5-flash",
+        temperature: float = 0.2,
+        delay_in_seconds: float = 0.0,
     ):
-        super().__init__(api_key, model, temperature)
+        super().__init__(api_key, model, temperature, delay_in_seconds)
         try:
             import google.generativeai as genai
         except ImportError:
@@ -91,6 +95,11 @@ class GeminiProvider(BaseLLMProvider):
         messages: List[Message],
         tools: Optional[List[ToolDefinition]] = None,
     ) -> LLMResponse:
+        if self.delay_in_seconds > 0:
+            import time
+
+            time.sleep(self.delay_in_seconds)
+
         system_instruction, contents = self._convert_messages(messages)
 
         model_kwargs = {}

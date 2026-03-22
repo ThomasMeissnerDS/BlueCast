@@ -142,7 +142,19 @@ if not API_KEY:
     )
 
 ┌─────────────────────────────────────────────────────────────────────┐
-│  EXAMPLE 3: Precise Mode — maximum performance                    │
+│  EXAMPLE 3: Free Tier Rate Limit Handling                         │
+└─────────────────────────────────────────────────────────────────────┘
+
+    # Introduce a 10-second sleep constraint between sequential LLM calls
+    ai = BlueCastAI(api_key="...", provider="gemini", llm_sleep_time=10)
+    result = ai.run(
+        df_train,
+        target_col="default",
+        prompt="Build a good model within rate limits",
+    )
+
+┌─────────────────────────────────────────────────────────────────────┐
+│  EXAMPLE 4: Precise Mode — maximum performance                    │
 └─────────────────────────────────────────────────────────────────────┘
 
     result = ai.run(
@@ -155,7 +167,7 @@ if not API_KEY:
     )
 
 ┌─────────────────────────────────────────────────────────────────────┐
-│  EXAMPLE 4: With domain context files                             │
+│  EXAMPLE 5: With domain context files                             │
 └─────────────────────────────────────────────────────────────────────┘
 
     result = ai.run(
@@ -169,7 +181,7 @@ if not API_KEY:
     )
 
 ┌─────────────────────────────────────────────────────────────────────┐
-│  EXAMPLE 5: Checkpointing — resume after crashes                  │
+│  EXAMPLE 6: Checkpointing — resume after crashes                  │
 └─────────────────────────────────────────────────────────────────────┘
 
     # If a long run crashes, it resumes from the last completed step
@@ -185,7 +197,7 @@ if not API_KEY:
     # steps 1-3 are skipped, execution resumes at step 4.
 
 ┌─────────────────────────────────────────────────────────────────────┐
-│  EXAMPLE 6: Smart sampling for large datasets                     │
+│  EXAMPLE 7: Smart sampling for large datasets                     │
 └─────────────────────────────────────────────────────────────────────┘
 
     # 1M-row dataset: agents analyze a 50k stratified sample,
@@ -202,7 +214,7 @@ if not API_KEY:
     config = AIConfig(api_key="...", max_rows_for_agents=20_000)
 
 ┌─────────────────────────────────────────────────────────────────────┐
-│  EXAMPLE 7: Inspecting results + reports                          │
+│  EXAMPLE 8: Inspecting results + reports                          │
 └─────────────────────────────────────────────────────────────────────┘
 
     # LLM-written Markdown report (from the Reporter agent)
@@ -232,7 +244,7 @@ if not API_KEY:
         print(f"[{entry.agent}] ({entry.event_type}) {entry.content[:80]}")
 
 ┌─────────────────────────────────────────────────────────────────────┐
-│  EXAMPLE 8: Choosing your LLM provider                            │
+│  EXAMPLE 9: Choosing your LLM provider                            │
 └─────────────────────────────────────────────────────────────────────┘
 
     # Google Gemini (default model: gemini-2.5-flash)
