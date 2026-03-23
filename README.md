@@ -162,6 +162,10 @@ with the following features:
   - ROC AUC curves & lift charts
   - Enhanced statistical insights with error distributions and residual analysis
   - Interactive visualizations for better model understanding
+* **LLM-Powered Multi-Agent Pipeline Builder (`BlueCastAI`)**:
+  - Automatically analyze data, engineer features, and train models via natural language
+  - Supports Google Gemini, OpenAI/GPT-4, and Anthropic Claude
+  - Includes debugging transparency through UI callbacks, token budgeting, and exponential backoff retry loops for API limits
 * **Quality Assurance**: Built-in warnings for potential misconfigurations
 
 The fit_eval method can be used like this:

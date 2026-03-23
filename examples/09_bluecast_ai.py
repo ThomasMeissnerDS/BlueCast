@@ -145,7 +145,9 @@ if not API_KEY:
 │  EXAMPLE 3: Free Tier Rate Limit Handling                         │
 └─────────────────────────────────────────────────────────────────────┘
 
-    # Introduce a 10-second sleep constraint between sequential LLM calls
+    # LLM providers (Gemini, OpenAI, Anthropic) automatically use exponential
+    # backoff to handle 429 Too Many Requests errors natively.
+    # You can also introduce a sleep constraint between sequential LLM calls:
     ai = BlueCastAI(api_key="...", provider="gemini", llm_sleep_time=10)
     result = ai.run(
         df_train,
@@ -209,9 +211,18 @@ if not API_KEY:
         prompt="Build a good model",
     )
 
-    # Custom sample size via AIConfig:
+    # Custom configuration via AIConfig (tokens budget, UI callbacks, etc.):
     from bluecast.ai.config import AIConfig
-    config = AIConfig(api_key="...", max_rows_for_agents=20_000)
+
+    def my_callback(agent, message, event_type, metadata):
+        print(f"UI update from {agent}: {message[:30]}")
+
+    config = AIConfig(
+        api_key="...",
+        max_rows_for_agents=20_000,
+        max_tokens_budget=50_000,
+        callbacks=[my_callback]
+    )
 
 ┌─────────────────────────────────────────────────────────────────────┐
 │  EXAMPLE 8: Inspecting results + reports                          │
@@ -353,10 +364,12 @@ if not API_KEY:
     print("\nStructured log example:")
     print(f"  {ctx.structured_log[-1]}")
 
-    print("\nAIConfig fields for large datasets and checkpointing:")
+    print("\nAIConfig fields for extensive customization:")
     print("  max_rows_for_agents (default):    50,000")
     print("  max_columns_for_agents (default): 200")
     print("  checkpoint_dir (default):         None (disabled)")
+    print("  max_tokens_budget (default):      None (no limit)")
+    print("  callbacks (default):              [] (no external hooks)")
 
     print("\nSet an API key environment variable and re-run to see the live demo!")
     sys.exit(0)

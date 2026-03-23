@@ -67,6 +67,19 @@ Guidelines:
 - Keep feature names descriptive and unique
 - If a feature creation fails, try a different approach
 
+Provided Framework Tools:
+You can import and use these pre-built BlueCast stateless functions to save time and reduce errors:
+- `from bluecast.preprocessing.feature_creation import add_groupby_agg_feats`
+  Signature: add_groupby_agg_feats(df, groupby_cols=['...'], to_group_cols=['...'], num_col_prefix='agg', target_col='target', aggregations=['min', 'max', 'mean'])
+- `from bluecast.preprocessing.feature_creation import add_polynomial_features`
+  Signature: add_polynomial_features(df, cols=['...'], degree=2)
+- `from bluecast.preprocessing.feature_creation import add_interaction_features`
+  Signature: add_interaction_features(df, cols_a=['...'], cols_b=['...'], operations=['mul', 'div', 'add', 'sub'])
+- `from bluecast.preprocessing.feature_creation import add_binned_features`
+  Signature: add_binned_features(df, cols=['...'], num_bins=5)
+- `from bluecast.preprocessing.feature_creation import add_datetime_features`
+  Signature: add_datetime_features(df, date_cols=['...'])
+
 Dataset overview:
 {data_summary}
 

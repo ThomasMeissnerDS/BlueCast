@@ -10,6 +10,7 @@ from bluecast.ai.providers.base import (
     BaseLLMProvider,
     LLMResponse,
     Message,
+    ToolCall,
     ToolDefinition,
 )
 
@@ -61,8 +62,12 @@ class BaseAgent(ABC):
         try:
             result = impl(**arguments)
             if isinstance(result, dict):
-                return json.dumps(result, indent=2, default=str)
-            return str(result)
+                res_str = json.dumps(result, indent=2, default=str)
+            else:
+                res_str = str(result)
+            if len(res_str) > 5000:
+                return res_str[:5000] + "\n...[Output truncated due to length]..."
+            return res_str
         except Exception as e:
             logger.error(f"Tool '{tool_name}' failed: {e}")
             return f"Error executing '{tool_name}': {e}"
@@ -93,12 +98,33 @@ class BaseAgent(ABC):
 
         tools = self.get_tools()
         response: Optional[LLMResponse] = None
+        previous_tool_calls: List[ToolCall] = []
 
         for _iteration in range(MAX_TOOL_ITERATIONS):
             response = self.llm.chat(messages, tools=tools if tools else None)
 
+            if response and response.usage:
+                self.context.prompt_tokens += response.usage.get("prompt_tokens", 0)
+                self.context.completion_tokens += response.usage.get(
+                    "completion_tokens", 0
+                )
+
             if response.has_tool_calls:
                 tool_results_text = []
+
+                current_calls_signature = [
+                    (tc.name, json.dumps(tc.arguments, sort_keys=True))
+                    for tc in response.tool_calls
+                ]
+                previous_calls_signature = [
+                    (tc.name, json.dumps(tc.arguments, sort_keys=True))
+                    for tc in previous_tool_calls
+                ]
+                is_looping = (
+                    current_calls_signature == previous_calls_signature
+                ) and len(current_calls_signature) > 0
+                previous_tool_calls = response.tool_calls
+
                 for tc in response.tool_calls:
                     if self.verbose:
                         print(f"    [{self.name}] Calling tool: {tc.name}")
@@ -110,7 +136,15 @@ class BaseAgent(ABC):
                         metadata={"tool": tc.name, "arguments": tc.arguments},
                     )
 
-                    result = self.execute_tool(tc.name, tc.arguments)
+                    if is_looping:
+                        result = "ERROR: You just tried this exact tool call and it failed or looped. You MUST try a completely different approach or exit tools."
+                        if self.verbose:
+                            print(
+                                f"    [{self.name}] Intercepted infinite iteration loop."
+                            )
+                    else:
+                        result = self.execute_tool(tc.name, tc.arguments)
+
                     tool_results_text.append(f"Result of {tc.name}: {result[:3000]}")
 
                     self.context.log(

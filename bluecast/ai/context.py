@@ -1,10 +1,13 @@
 """Shared context that accumulates knowledge across agents."""
 
+import logging
 import time
 from dataclasses import dataclass, field
-from typing import Any, Dict, List, Optional
+from typing import Any, Callable, Dict, List, Optional
 
 import pandas as pd
+
+logger = logging.getLogger(__name__)
 
 
 @dataclass
@@ -41,6 +44,11 @@ class SharedContext:
     df_sample: Optional[pd.DataFrame] = None
     was_sampled: bool = False
     original_shape: Optional[tuple] = None
+
+    # execution metadata
+    prompt_tokens: int = 0
+    completion_tokens: int = 0
+    callbacks: List[Callable] = field(default_factory=list)
 
     # Detected by DataAnalyst
     class_problem: Optional[str] = None
@@ -93,6 +101,12 @@ class SharedContext:
             metadata=metadata,
         )
         self.structured_log.append(entry)
+
+        for cb in self.callbacks:
+            try:
+                cb(entry)
+            except Exception as e:
+                logger.warning(f"Callback failed for agent {agent_name}: {e}")
 
     def get_working_df(self) -> pd.DataFrame:
         """Return the appropriate DataFrame for agent work (sampled if large)."""

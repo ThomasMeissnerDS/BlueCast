@@ -224,9 +224,9 @@ class FeatureClusteringScorer:
     ):
         self.random_state = random_state  # control randomness
         self.cluster_settings = cluster_settings  # settings for each feature
-        self.scalers: Dict[str, MinMaxScaler] = {}  # storing scalers per feature
-        self.cluster_classes: Dict[str, KMeans] = {}  # storing Kmeans class per feature
-        self.cluster_mappings: Dict[str, Dict[int, int]] = (
+        self.scalers: dict[str, MinMaxScaler] = {}  # storing scalers per feature
+        self.cluster_classes: dict[str, KMeans] = {}  # storing Kmeans class per feature
+        self.cluster_mappings: dict[str, dict[int, int]] = (
             {}
         )  # storing reindex mapping for cluster ids
 
@@ -399,3 +399,98 @@ class FeatureClusteringScorer:
             self.cluster_settings.keys()
         ].sum(axis=1)
         return cluster_results_df
+
+
+# ---------------------------------------------------------------------------
+# Stateless Feature Engineering Utilities (LLM-Friendly)
+# ---------------------------------------------------------------------------
+
+
+def add_polynomial_features(
+    df: pd.DataFrame, cols: List[str], degree: int = 2
+) -> pd.DataFrame:
+    """
+    Statelessly adds polynomial features (power) for selected columns.
+    Great for non-linear regression relationships.
+    """
+    df_out = df.copy()
+    for col in cols:
+        if col in df_out.columns:
+            for d in range(2, degree + 1):
+                df_out[f"{col}_pow_{d}"] = df_out[col] ** d
+    return df_out
+
+
+def add_interaction_features(
+    df: pd.DataFrame,
+    cols_a: List[str],
+    cols_b: List[str],
+    operations: Optional[List[str]] = None,
+) -> pd.DataFrame:
+    """
+    Creates interaction features among two lists of numeric columns.
+    Supported ops: 'mul', 'div', 'add', 'sub'.
+    """
+    if operations is None:
+        operations = ["mul", "div"]
+    df_out = df.copy()
+    for col1 in cols_a:
+        for col2 in cols_b:
+            if col1 == col2:
+                continue
+            if "mul" in operations:
+                df_out[f"{col1}_mul_{col2}"] = df_out[col1] * df_out[col2]
+            if "add" in operations:
+                df_out[f"{col1}_add_{col2}"] = df_out[col1] + df_out[col2]
+            if "sub" in operations:
+                df_out[f"{col1}_sub_{col2}"] = df_out[col1] - df_out[col2]
+            if "div" in operations:
+                # Add a small epsilon to avoid division by zero
+                df_out[f"{col1}_div_{col2}"] = df_out[col1] / (df_out[col2] + 1e-6)
+    return df_out
+
+
+def add_binned_features(
+    df: pd.DataFrame, cols: List[str], num_bins: int = 5
+) -> pd.DataFrame:
+    """
+    Statelessly bin continuous features into equal-width bins.
+    Uses pd.cut. Note: When used in training and testing separately,
+    test splits might have slightly different bin edges, meaning it behaves best
+    with tree-based models like CatBoost.
+    """
+    df_out = df.copy()
+    for col in cols:
+        if col in df_out.columns:
+            try:
+                # drop duplicates to avoid bin edge issues
+                df_out[f"{col}_binned"] = pd.qcut(
+                    df_out[col], q=num_bins, labels=False, duplicates="drop"
+                )
+            except Exception:
+                df_out[f"{col}_binned"] = pd.cut(
+                    df_out[col], bins=num_bins, labels=False
+                )
+    return df_out
+
+
+def add_datetime_features(df: pd.DataFrame, date_cols: List[str]) -> pd.DataFrame:
+    """
+    A lightweight stateless datetime extractor for pandas.
+    Extracts year, month, day, dayofweek, and hour.
+    """
+    df_out = df.copy()
+    for col in date_cols:
+        if col in df_out.columns:
+            # Attempt to convert to datetime if it's not already
+            try:
+                dt_series = pd.to_datetime(df_out[col], errors="coerce")
+                df_out[f"{col}_year"] = dt_series.dt.year
+                df_out[f"{col}_month"] = dt_series.dt.month
+                df_out[f"{col}_day"] = dt_series.dt.day
+                df_out[f"{col}_dayofweek"] = dt_series.dt.dayofweek
+                df_out[f"{col}_hour"] = dt_series.dt.hour
+                df_out = df_out.drop(columns=[col])
+            except Exception:
+                pass
+    return df_out

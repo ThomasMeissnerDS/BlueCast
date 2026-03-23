@@ -1,7 +1,7 @@
 """Configuration for the BlueCastAI multi-agent system."""
 
 from dataclasses import dataclass, field
-from typing import List, Literal, Optional
+from typing import Callable, List, Literal, Optional
 
 
 @dataclass
@@ -31,6 +31,8 @@ class AIConfig:
     :param checkpoint_dir: Directory to save/resume checkpoints. If None, no
         checkpoints are saved.
     :param llm_sleep_time: Pause in seconds before each LLM call to avoid API rate limits.
+    :param max_tokens_budget: Hard limit on total LLM tokens used. 0 means unlimited.
+    :param callbacks: List of callable functions to trigger during agent execution.
     """
 
     api_key: str = ""
@@ -46,6 +48,8 @@ class AIConfig:
     max_columns_for_agents: int = 200
     checkpoint_dir: Optional[str] = None
     llm_sleep_time: float = 0.0
+    max_tokens_budget: int = 0
+    callbacks: List[Callable] = field(default_factory=list)
 
     def get_model_name(self) -> str:
         if self.model:

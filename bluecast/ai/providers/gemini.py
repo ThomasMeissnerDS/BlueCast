@@ -115,7 +115,24 @@ class GeminiProvider(BaseLLMProvider):
             gemini_tools = self._convert_tools(tools)
             call_kwargs["tools"] = [{"function_declarations": gemini_tools}]
 
-        response = model.generate_content(contents, **call_kwargs)
+        max_retries = 5
+        base_delay = 2.0
+
+        for attempt in range(max_retries):
+            try:
+                response = model.generate_content(contents, **call_kwargs)
+                break
+            except Exception as e:
+                import random
+                import time
+
+                if attempt == max_retries - 1:
+                    raise e
+                delay = base_delay * (2**attempt) + random.uniform(0, 1)
+                logger.warning(
+                    f"API Error (attempt {attempt + 1}): {e}. Retrying in {delay:.1f}s"
+                )
+                time.sleep(delay)
 
         text = ""
         tool_calls = []

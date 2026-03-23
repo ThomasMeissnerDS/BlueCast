@@ -349,8 +349,9 @@ TOOL_DEFINITIONS: Dict[str, ToolDefinition] = {
     ),
     "create_feature": ToolDefinition(
         name="create_feature",
-        description="Execute Python feature engineering code that modifies the DataFrame 'df'. "
-        "The code can use 'df', 'np', and 'pd'. Example: df['ratio'] = df['a'] / (df['b'] + 1)",
+        description="Execute Python feature engineering code that modifies or re-assigns the DataFrame 'df'. "
+        "The code has access to 'df', 'np', 'pd', and can import from 'bluecast.preprocessing'. "
+        "Example: \nfrom bluecast.preprocessing.feature_creation import add_binned_features\ndf = add_binned_features(df, ['a'])",
         parameters={
             "type": "object",
             "properties": {

@@ -103,7 +103,24 @@ class OpenAIProvider(BaseLLMProvider):
         if tools:
             kwargs["tools"] = self._convert_tools(tools)
 
-        response = self._client.chat.completions.create(**kwargs)
+        max_retries = 5
+        base_delay = 2.0
+
+        for attempt in range(max_retries):
+            try:
+                response = self._client.chat.completions.create(**kwargs)
+                break
+            except Exception as e:
+                import random
+                import time
+
+                if attempt == max_retries - 1:
+                    raise e
+                delay = base_delay * (2**attempt) + random.uniform(0, 1)
+                logger.warning(
+                    f"API Error (attempt {attempt + 1}): {e}. Retrying in {delay:.1f}s"
+                )
+                time.sleep(delay)
         choice = response.choices[0]
 
         text = choice.message.content or ""

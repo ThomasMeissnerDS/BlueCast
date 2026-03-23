@@ -24,8 +24,14 @@ from sklearn.metrics import (
     recall_score,
     roc_auc_score,
     roc_curve,
-    root_mean_squared_error,
 )
+
+try:
+    from sklearn.metrics import root_mean_squared_error
+except ImportError:
+
+    def root_mean_squared_error(y_true, y_pred, **kwargs):
+        return mean_squared_error(y_true, y_pred, squared=False, **kwargs)
 
 
 def plot_lift_chart(y_probs: np.array, y_true: np.array, num_bins: int = 20) -> None:

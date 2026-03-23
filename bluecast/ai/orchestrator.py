@@ -1,5 +1,6 @@
 """Orchestrator: coordinates agents with sampling, checkpoints, and reporting."""
 
+import concurrent.futures
 import json
 import logging
 import os
@@ -62,6 +63,7 @@ class Orchestrator:
             user_prompt=prompt,
             mode=config.mode,
             original_shape=df.shape,
+            callbacks=config.callbacks,
         )
 
         for path in config.context_files:
@@ -259,19 +261,33 @@ class Orchestrator:
             # Reconstruct plan from context log for downstream steps
             plan = self._reconstruct_plan()
 
-        # --- Step 2: Research (optional) ---
-        if (
+        # --- Step 2 & 3: Research and Analyze Data Concurrent ---
+        needs_research = (
             not self._is_step_done("research")
             and plan.get("needs_web_research")
             and self.config.enable_web_search
-        ):
-            self._step_research(plan.get("research_queries", []))
-            self._save_checkpoint("research")
+        )
+        needs_analyze = not self._is_step_done("analyze")
 
-        # --- Step 3: Analyze data ---
-        if not self._is_step_done("analyze"):
-            self._step_analyze()
-            self._save_checkpoint("analyze")
+        if needs_research or needs_analyze:
+            with concurrent.futures.ThreadPoolExecutor(max_workers=2) as executor:
+                futures = {}
+                if needs_research:
+                    futures[
+                        executor.submit(
+                            self._step_research, plan.get("research_queries", [])
+                        )
+                    ] = "research"
+                if needs_analyze:
+                    futures[executor.submit(self._step_analyze)] = "analyze"
+
+                for future in concurrent.futures.as_completed(futures):
+                    step_name = futures[future]
+                    try:
+                        future.result()
+                        self._save_checkpoint(step_name)
+                    except Exception as e:
+                        logger.error(f"Error during {step_name}: {e}")
 
         # --- Step 4: Feature engineering (optional) ---
         if (
@@ -303,6 +319,11 @@ class Orchestrator:
             event_type="info",
             metadata={"elapsed_seconds": elapsed},
         )
+
+        if self.config.verbose:
+            print(
+                f"  Tokens usage: Prompt={self.context.prompt_tokens}, Completion={self.context.completion_tokens}"
+            )
 
         result = self._assemble_result()
 
