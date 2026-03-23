@@ -60,9 +60,20 @@ def _create_provider(config: AIConfig):
             temperature=config.temperature,
             delay_in_seconds=config.llm_sleep_time,
         )
+    elif config.provider == "vertexai":
+        from bluecast.ai.providers.vertexai_provider import VertexAIProvider
+
+        return VertexAIProvider(
+            api_key=config.api_key,
+            model=model,
+            temperature=config.temperature,
+            delay_in_seconds=config.llm_sleep_time,
+            project_id=config.project_id,
+            location=config.location,
+        )
     else:
         raise ValueError(
-            f"Unknown provider: {config.provider}. Use 'gemini', 'openai', or 'anthropic'."
+            f"Unknown provider: {config.provider}. Use 'gemini', 'openai', 'anthropic', or 'vertexai'."
         )
 
 
@@ -74,11 +85,11 @@ class BlueCastAI:
     evaluate it, and iteratively improve it -- all guided by LLM agents.
 
     :param api_key: API key for the LLM provider.
-    :param provider: LLM provider: 'gemini', 'openai', or 'anthropic'.
+    :param provider: LLM provider: 'gemini', 'openai', 'anthropic', or 'vertexai'.
     :param model: Provider-specific model name. Pass the exact string the provider
         expects (e.g. 'gemini-2.5-pro', 'gpt-4o-mini', 'claude-sonnet-4-20250514').
         Defaults per provider when not specified:
-        gemini -> 'gemini-2.5-flash', openai -> 'gpt-4o', anthropic -> 'claude-sonnet-4-20250514'.
+        gemini/vertexai -> 'gemini-2.5-flash', openai -> 'gpt-4o', anthropic -> 'claude-sonnet-4-20250514'.
     :param enable_web_search: Whether agents can search the web for techniques.
     :param verbose: Whether to print progress to stdout.
     :param temperature: LLM temperature (0.0 = deterministic, 1.0 = creative).
@@ -87,6 +98,8 @@ class BlueCastAI:
         it left off. Set to None to disable checkpointing.
     :param llm_sleep_time: Time in seconds to sleep prior to an LLM provider call
         to prevent hitting rate limits.
+    :param project_id: Optional Project ID when using Vertex AI (GCP).
+    :param location: Optional Region/Location when using Vertex AI (GCP).
 
     Usage::
 
@@ -113,13 +126,15 @@ class BlueCastAI:
     def __init__(
         self,
         api_key: str,
-        provider: Literal["gemini", "openai", "anthropic"] = "gemini",
+        provider: Literal["gemini", "openai", "anthropic", "vertexai"] = "gemini",
         model: Optional[str] = None,
         enable_web_search: bool = False,
         verbose: bool = True,
         temperature: float = 0.2,
         checkpoint_dir: Optional[str] = None,
         llm_sleep_time: float = 0.0,
+        project_id: Optional[str] = None,
+        location: Optional[str] = None,
     ):
         self.config = AIConfig(
             api_key=api_key,
@@ -130,6 +145,8 @@ class BlueCastAI:
             temperature=temperature,
             checkpoint_dir=checkpoint_dir,
             llm_sleep_time=llm_sleep_time,
+            project_id=project_id,
+            location=location,
         )
         self._llm = _create_provider(self.config)
 

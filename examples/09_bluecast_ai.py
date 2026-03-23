@@ -142,7 +142,29 @@ if not API_KEY:
     )
 
 ┌─────────────────────────────────────────────────────────────────────┐
-│  EXAMPLE 3: Free Tier Rate Limit Handling                         │
+│  EXAMPLE 3: Kaggle & Google Cloud/Vertex AI Native Support        │
+└─────────────────────────────────────────────────────────────────────┘
+
+    # When using Kaggle's "Enable Google Cloud Services", you don't even
+    # need an API key! It will automatically use ADC & bill to your project.
+
+    ai = BlueCastAI(api_key="", provider="vertexai", model="gemini-2.5-flash")
+
+┌─────────────────────────────────────────────────────────────────────┐
+│  EXAMPLE 4: Third-Party Proxies (OpenRouter, LiteLLM, Ollama)     │
+└─────────────────────────────────────────────────────────────────────┘
+
+    from bluecast.ai.providers.openai_provider import OpenAIProvider
+
+    # You can route through high-rate-limit proxies using OpenAI standard
+    ai = BlueCastAI(api_key="your-openrouter-key", provider="openai")
+    ai.llm = OpenAIProvider(
+        api_key=ai.config.api_key,
+        base_url="https://openrouter.ai/api/v1"
+    )
+
+┌─────────────────────────────────────────────────────────────────────┐
+│  EXAMPLE 5: Free Tier Rate Limit Handling                         │
 └─────────────────────────────────────────────────────────────────────┘
 
     # LLM providers (Gemini, OpenAI, Anthropic) automatically use exponential

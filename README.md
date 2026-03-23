@@ -164,7 +164,7 @@ with the following features:
   - Interactive visualizations for better model understanding
 * **LLM-Powered Multi-Agent Pipeline Builder (`BlueCastAI`)**:
   - Automatically analyze data, engineer features, and train models via natural language
-  - Supports Google Gemini, OpenAI/GPT-4, and Anthropic Claude
+  - Supports Google Gemini, Vertex AI (GCP Native), OpenAI/GPT-4 (incl. proxies like OpenRouter), and Anthropic Claude
   - Includes debugging transparency through UI callbacks, token budgeting, and exponential backoff retry loops for API limits
 * **Quality Assurance**: Built-in warnings for potential misconfigurations
 

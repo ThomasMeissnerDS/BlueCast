@@ -13,7 +13,7 @@ class AIConfig:
     :param model: Provider-specific model name. Pass the exact string the provider
         expects (e.g. 'gemini-2.5-pro', 'gpt-4o-mini', 'claude-opus-4-20250514').
         Defaults: gemini -> 'gemini-2.5-flash', openai -> 'gpt-4o',
-        anthropic -> 'claude-sonnet-4-20250514'.
+        anthropic -> 'claude-sonnet-4-20250514', vertexai -> 'gemini-2.5-flash'.
     :param mode: Controls speed vs thoroughness trade-off.
         'fast' = skip FE, 1 iteration, basic config.
         'balanced' = targeted FE, 2-3 iterations.
@@ -33,10 +33,12 @@ class AIConfig:
     :param llm_sleep_time: Pause in seconds before each LLM call to avoid API rate limits.
     :param max_tokens_budget: Hard limit on total LLM tokens used. 0 means unlimited.
     :param callbacks: List of callable functions to trigger during agent execution.
+    :param project_id: Optional GCP Project ID (only used when provider='vertexai').
+    :param location: Optional GCP Location/Region (only used when provider='vertexai').
     """
 
     api_key: str = ""
-    provider: Literal["gemini", "openai", "anthropic"] = "gemini"
+    provider: Literal["gemini", "openai", "anthropic", "vertexai"] = "gemini"
     model: Optional[str] = None
     mode: Literal["fast", "balanced", "precise"] = "balanced"
     max_iterations: int = 3
@@ -50,6 +52,8 @@ class AIConfig:
     llm_sleep_time: float = 0.0
     max_tokens_budget: int = 0
     callbacks: List[Callable] = field(default_factory=list)
+    project_id: Optional[str] = None
+    location: Optional[str] = None
 
     def get_model_name(self) -> str:
         if self.model:
@@ -58,6 +62,7 @@ class AIConfig:
             "gemini": "gemini-2.5-flash",
             "openai": "gpt-4o",
             "anthropic": "claude-sonnet-4-20250514",
+            "vertexai": "gemini-2.5-flash",
         }
         return defaults.get(self.provider, "gemini-2.5-flash")
 
