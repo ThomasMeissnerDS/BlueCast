@@ -198,16 +198,18 @@ def tool_build_and_run_pipeline(
     use_cv = config.get("use_cv", True)
 
     training_config = TrainingConfig(
-        hyperparameter_tuning_rounds=config.get("tuning_rounds", 50),
-        hyperparameter_tuning_max_runtime_secs=config.get("tuning_max_runtime", 120),
-        enable_feature_selection=config.get("enable_feature_selection", False),
+        hyperparameter_tuning_rounds=int(config.get("tuning_rounds", 50)),
+        hyperparameter_tuning_max_runtime_secs=int(
+            config.get("tuning_max_runtime", 120)
+        ),
+        enable_feature_selection=bool(config.get("enable_feature_selection", False)),
         calculate_shap_values=False,
         plot_hyperparameter_tuning_overview=False,
-        hypertuning_cv_folds=config.get("hypertuning_cv_folds", 3),
+        hypertuning_cv_folds=int(config.get("hypertuning_cv_folds", 3)),
         autotune_on_device=config.get("autotune_on_device", "cpu"),
         bluecast_cv_train_n_model=(
-            config.get("n_folds", 5),
-            config.get("n_repeats", 1),
+            int(config.get("n_folds", 5)),
+            int(config.get("n_repeats", 1)),
         ),
     )
 

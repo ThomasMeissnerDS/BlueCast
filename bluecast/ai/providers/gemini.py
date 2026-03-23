@@ -65,14 +65,17 @@ class GeminiProvider(BaseLLMProvider):
                     parts.append({"text": msg.content})
                 if msg.tool_calls:
                     for tc in msg.tool_calls:
-                        parts.append(
-                            {
-                                "function_call": {  # type: ignore[dict-item]
-                                    "name": tc.name,
-                                    "args": tc.arguments,
+                        if getattr(tc, "raw_tool_call", None) is not None:
+                            parts.append(tc.raw_tool_call)
+                        else:
+                            parts.append(
+                                {
+                                    "function_call": {  # type: ignore[dict-item]
+                                        "name": tc.name,
+                                        "args": tc.arguments,
+                                    }
                                 }
-                            }
-                        )
+                            )
                 contents.append({"role": "model", "parts": parts})  # type: ignore[dict-item]
             elif msg.role == "tool_result":
                 contents.append(
@@ -149,6 +152,7 @@ class GeminiProvider(BaseLLMProvider):
                             id=fc.name,
                             name=fc.name,
                             arguments=args,
+                            raw_tool_call=part,
                         )
                     )
 

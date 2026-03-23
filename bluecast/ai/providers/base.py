@@ -35,6 +35,7 @@ class ToolCall:
     id: str
     name: str
     arguments: Dict[str, Any]
+    raw_tool_call: Any = None
 
 
 @dataclass
