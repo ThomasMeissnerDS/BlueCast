@@ -57,6 +57,7 @@ class SharedContext:
 
     # Created by FeatureEngineer
     feature_engineering_code: Optional[str] = None
+    feature_code_snippets: List[str] = field(default_factory=list)
     engineered_df: Optional[pd.DataFrame] = None
 
     # Created by PipelineBuilder

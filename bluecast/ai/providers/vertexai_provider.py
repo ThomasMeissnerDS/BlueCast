@@ -7,7 +7,7 @@ try:
     # PRE-IMPORT WORKAROUND: In Kaggle notebooks, kaggle_gcp.py intercepts google.cloud imports.
     # If vertexai is imported first, it triggers a circular import on aiplatform.init().
     # Importing google.cloud.storage first forces Kaggle to patch aiplatform safely.
-    import google.cloud.storage  
+    import google.cloud.storage  # noqa: F401
     import vertexai
     import vertexai.generative_models as generative_models
 except ImportError:
@@ -38,13 +38,13 @@ class VertexAIProvider(BaseLLMProvider):
         location: Optional[str] = None,
     ):
         super().__init__(api_key, model, temperature, delay_in_seconds)
-        
+
         if vertexai is None:
             raise ImportError(
                 "google-cloud-aiplatform is required for the Vertex AI provider. "
                 "Install with: pip install google-cloud-aiplatform"
             )
-        
+
         # In Kaggle or GCP, calling init() without args will use default credentials
         if project_id or location:
             vertexai.init(project=project_id, location=location)
@@ -63,7 +63,7 @@ class VertexAIProvider(BaseLLMProvider):
         for tool in tools:
             params = tool.parameters.copy()
             params.pop("additionalProperties", None)
-            
+
             declarations.append(
                 self._generative_models.FunctionDeclaration(
                     name=tool.name,
@@ -71,20 +71,37 @@ class VertexAIProvider(BaseLLMProvider):
                     parameters=params,
                 )
             )
-            
+
         if not declarations:
             return []
-            
+
         return [self._generative_models.Tool(function_declarations=declarations)]
 
     def _convert_messages(self, messages: List[Message]) -> tuple:
         """Convert messages to Vertex AI format, extracting system instruction."""
         if not self._generative_models:
             return None, []
-            
+
         system_instruction = None
         contents = []
+
+        # Buffer to group consecutive tool responses into a single Content block
+        tool_response_parts: list = []
+
+        def flush_tool_responses():
+            if tool_response_parts:
+                contents.append(
+                    self._generative_models.Content(
+                        role="user", parts=tool_response_parts.copy()
+                    )
+                )
+                tool_response_parts.clear()
+
         for msg in messages:
+            # If we hit a non-tool message, flush any pending tool responses first
+            if msg.role != "tool_result":
+                flush_tool_responses()
+
             if msg.role == "system":
                 system_instruction = msg.content
             elif msg.role == "user":
@@ -106,18 +123,27 @@ class VertexAIProvider(BaseLLMProvider):
                                     name=tc.name, args=tc.arguments
                                 )
                             )
-                contents.append(self._generative_models.Content(role="model", parts=parts))
+                if parts:  # Only append if there are actually parts
+                    contents.append(
+                        self._generative_models.Content(role="model", parts=parts)
+                    )
             elif msg.role == "tool_result":
-                response_dict = {"result": msg.content}
+                # Ensure the response is always a dictionary
+                response_dict = (
+                    msg.content
+                    if isinstance(msg.content, dict)
+                    else {"result": str(msg.content)}
+                )
+
                 part = self._generative_models.Part.from_function_response(
-                    name=msg.tool_call_id or "",
-                    response=response_dict
+                    name=msg.tool_call_id or "", response=response_dict
                 )
-                # Vertex AI tool responses are passed as user content
-                contents.append(
-                    self._generative_models.Content(role="user", parts=[part])
-                )
-                
+                # Append to buffer instead of directly to contents
+                tool_response_parts.append(part)
+
+        # Flush any remaining tool responses at the very end of the message history
+        flush_tool_responses()
+
         return system_instruction, contents
 
     def chat(
@@ -138,7 +164,9 @@ class VertexAIProvider(BaseLLMProvider):
 
         model = self._generative_models.GenerativeModel(self.model, **model_kwargs)
 
-        gen_config = self._generative_models.GenerationConfig(temperature=self.temperature)
+        gen_config = self._generative_models.GenerationConfig(
+            temperature=self.temperature
+        )
 
         call_kwargs = {"generation_config": gen_config}
         if tools:

@@ -177,6 +177,7 @@ def tool_build_and_run_pipeline(
     df: pd.DataFrame,
     target_col: str,
     config: Dict[str, Any],
+    custom_preprocessor=None,
 ) -> Dict[str, Any]:
     """Build and evaluate a BlueCast pipeline from a config dict.
 
@@ -228,6 +229,7 @@ def tool_build_and_run_pipeline(
             use_cross_validation=use_cv,
             conf_training=training_config,
             ensemble_config=ensemble_config,
+            custom_preprocessor=custom_preprocessor,
         )
 
         if use_cv:

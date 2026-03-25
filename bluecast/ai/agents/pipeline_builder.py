@@ -16,12 +16,24 @@ class PipelineBuilderAgent(BaseAgent):
         )
 
     def _build_wrapper(self, **config):
-        df = (
-            self.context.engineered_df
-            if self.context.engineered_df is not None
-            else self.context.df_train
+        # Always use the original training data.
+        # Feature engineering is replayed via the custom preprocessor.
+        df = self.context.df_train
+
+        preprocessor = None
+        if self.context.feature_code_snippets:
+            from bluecast.ai.fe_preprocessor import AIFeaturePreprocessor
+
+            preprocessor = AIFeaturePreprocessor(
+                list(self.context.feature_code_snippets)
+            )
+
+        result = tool_build_and_run_pipeline(
+            df,
+            self.context.target_col,
+            config,
+            custom_preprocessor=preprocessor,
         )
-        result = tool_build_and_run_pipeline(df, self.context.target_col, config)
 
         run_record = {
             "success": result["success"],
@@ -62,21 +74,44 @@ class PipelineBuilderAgent(BaseAgent):
     def _generate_pipeline_code(self, config: dict) -> None:
         """Generate Python code that reproduces this pipeline."""
         lines = [
+            "import numpy as np",
+            "import pandas as pd",
+            "",
             "from bluecast.blueprints.unified import BlueCastAuto",
             "from bluecast.config.training_config import TrainingConfig",
             "from bluecast.ensemble.ensemble_config import EnsembleConfig",
-            "",
-            "training_config = TrainingConfig(",
-            f"    hyperparameter_tuning_rounds={config.get('tuning_rounds', 50)},",
-            f"    hyperparameter_tuning_max_runtime_secs={config.get('tuning_max_runtime', 120)},",
-            f"    hypertuning_cv_folds={config.get('hypertuning_cv_folds', 3)},",
-            f"    autotune_on_device=\"{config.get('autotune_on_device', 'cpu')}\",",
-            f"    bluecast_cv_train_n_model=({config.get('n_folds', 5)}, {config.get('n_repeats', 1)}),",
-            "    calculate_shap_values=False,",
-            "    plot_hyperparameter_tuning_overview=False,",
-            ")",
-            "",
         ]
+
+        # Include FE preprocessor if snippets were used
+        if self.context.feature_code_snippets:
+            lines.append(
+                "from bluecast.ai.fe_preprocessor import AIFeaturePreprocessor"
+            )
+            lines.append("")
+            lines.append("# Feature engineering code captured from AI agents")
+            lines.append("fe_code_snippets = [")
+            for snippet in self.context.feature_code_snippets:
+                escaped = snippet.replace("\\", "\\\\").replace('"', '\\"')
+                lines.append(f'    """{escaped}""",')
+            lines.append("]")
+            lines.append("")
+            lines.append("preprocessor = AIFeaturePreprocessor(fe_code_snippets)")
+
+        lines.append("")
+        lines.extend(
+            [
+                "training_config = TrainingConfig(",
+                f"    hyperparameter_tuning_rounds={config.get('tuning_rounds', 50)},",
+                f"    hyperparameter_tuning_max_runtime_secs={config.get('tuning_max_runtime', 120)},",
+                f"    hypertuning_cv_folds={config.get('hypertuning_cv_folds', 3)},",
+                f'    autotune_on_device="{config.get("autotune_on_device", "cpu")}",',
+                f"    bluecast_cv_train_n_model=({config.get('n_folds', 5)}, {config.get('n_repeats', 1)}),",
+                "    calculate_shap_values=False,",
+                "    plot_hyperparameter_tuning_overview=False,",
+                ")",
+                "",
+            ]
+        )
 
         strategy = config.get("ensemble_strategy", "mean")
         if config.get("use_cv", True):
@@ -91,6 +126,8 @@ class PipelineBuilderAgent(BaseAgent):
         lines.append("    conf_training=training_config,")
         if config.get("use_cv", True):
             lines.append("    ensemble_config=ensemble_config,")
+        if self.context.feature_code_snippets:
+            lines.append("    custom_preprocessor=preprocessor,")
         lines.append(")")
         lines.append("")
         lines.append(

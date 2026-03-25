@@ -31,6 +31,7 @@ class FeatureEngineerAgent(BaseAgent):
         result = tool_create_feature(df, feature_code)
         if result["success"]:
             self.context.engineered_df = df
+            self.context.feature_code_snippets.append(feature_code)
             existing_code = self.context.feature_engineering_code or ""
             self.context.feature_engineering_code = (
                 existing_code + f"\n# {description}\n{feature_code}\n"
