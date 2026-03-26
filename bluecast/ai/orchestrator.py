@@ -66,14 +66,7 @@ class Orchestrator:
             callbacks=config.callbacks,
         )
 
-        for path in config.context_files:
-            try:
-                with open(path, "r") as f:
-                    self.context.context_file_contents.append(
-                        f"--- {path} ---\n{f.read()[:5000]}"
-                    )
-            except Exception as e:
-                logger.warning(f"Could not load context file {path}: {e}")
+        self._load_context_files()
 
         verbose = config.verbose
 
@@ -84,6 +77,92 @@ class Orchestrator:
         self.evaluator = EvaluatorAgent(llm, self.context, verbose=verbose)
         self.researcher = ResearcherAgent(llm, self.context, verbose=verbose)
         self.reporter = ReporterAgent(llm, self.context, verbose=verbose)
+
+    # ------------------------------------------------------------------
+    # Context file loading (PDF, docx, CSV, txt, md)
+    # ------------------------------------------------------------------
+
+    def _load_context_files(self) -> None:
+        """Load domain knowledge files into context.
+
+        Supports: .pdf (via PyPDF2), .docx (via python-docx),
+        .csv/.tsv (first 100 rows), .txt/.md/.rst (raw text).
+        """
+        from pathlib import Path
+
+        for file_path in self.config.context_files:
+            try:
+                p = Path(file_path)
+                ext = p.suffix.lower()
+                name = p.name
+
+                if ext == ".pdf":
+                    text = self._extract_pdf_text(file_path)
+                elif ext == ".docx":
+                    text = self._extract_docx_text(file_path)
+                elif ext in (".csv", ".tsv"):
+                    sep = "\t" if ext == ".tsv" else ","
+                    df = pd.read_csv(file_path, nrows=100, sep=sep)
+                    text = f"CSV/TSV sample ({len(df)} rows):\n{df.to_string()}"
+                else:
+                    with open(file_path, "r", errors="replace") as f:
+                        text = f.read()
+
+                self.context.context_file_contents.append(
+                    f"--- Domain knowledge from {name} ---\n{text[:10000]}"
+                )
+
+                if self.config.verbose:
+                    print(f"  Loaded context file: {name} ({len(text)} chars)")
+
+            except Exception as e:
+                logger.warning(f"Could not load context file {file_path}: {e}")
+
+    @staticmethod
+    def _extract_pdf_text(path: str) -> str:
+        """Extract text from a PDF file."""
+        try:
+            import PyPDF2
+
+            with open(path, "rb") as f:
+                reader = PyPDF2.PdfReader(f)
+                pages = [page.extract_text() or "" for page in reader.pages]
+            return "\n\n".join(pages)
+        except ImportError:
+            raise ImportError(
+                "PyPDF2 is required for PDF support. "
+                "Install it with: pip install PyPDF2"
+            )
+
+    @staticmethod
+    def _extract_docx_text(path: str) -> str:
+        """Extract text from a Word document."""
+        try:
+            import docx
+
+            doc = docx.Document(path)
+            return "\n".join(p.text for p in doc.paragraphs if p.text.strip())
+        except ImportError:
+            raise ImportError(
+                "python-docx is required for .docx support. "
+                "Install it with: pip install python-docx"
+            )
+
+    def _get_critique_rounds(self) -> int:
+        """Return the number of critique rounds based on mode."""
+        if self.config.critique_max_rounds <= 0:
+            return 0
+
+        mode_rounds = {
+            "fast": 0,
+            "balanced": 1,
+            "precise": 2,
+            "ultimate": 2,
+        }
+        return min(
+            mode_rounds.get(self.config.mode, 0),
+            self.config.critique_max_rounds,
+        )
 
     # ------------------------------------------------------------------
     # Smart sampling
@@ -295,20 +374,40 @@ class Orchestrator:
             and plan.get("needs_feature_engineering", False)
             and self.config.mode != "fast"
         ):
-            self._step_feature_engineer(plan)
-            self._save_checkpoint("feature_engineering")
+            try:
+                self._step_feature_engineer(plan)
+                self._save_checkpoint("feature_engineering")
+            except Exception as e:
+                logger.warning(f"Feature engineering failed, skipping: {e}")
+                if self.config.verbose:
+                    print(f"  ⚠️ Feature engineering skipped due to error: {e}")
+                self._save_checkpoint("feature_engineering")
 
         # --- Step 5: Build-Evaluate-Improve loop ---
         if not self._is_step_done("build_loop"):
-            max_iterations = plan.get(
-                "max_iterations", self.config.get_max_iterations()
-            )
-            self._step_build_loop(plan, max_iterations)
-            self._save_checkpoint("build_loop")
+            try:
+                if self.config.mode == "ultimate":
+                    self._step_ultimate_build_loop(plan)
+                else:
+                    max_iterations = plan.get(
+                        "max_iterations", self.config.get_max_iterations()
+                    )
+                    self._step_build_loop(plan, max_iterations)
+                self._save_checkpoint("build_loop")
+            except Exception as e:
+                logger.warning(f"Build loop failed: {e}")
+                if self.config.verbose:
+                    print(f"  ⚠️ Build loop encountered an error: {e}")
+                self._save_checkpoint("build_loop")
 
         # --- Step 6: Report ---
         if not self._is_step_done("report"):
-            self._step_report()
+            try:
+                self._step_report()
+            except Exception as e:
+                logger.warning(f"Report generation failed, skipping: {e}")
+                if self.config.verbose:
+                    print(f"  ⚠️ Report skipped due to error: {e}")
             self._save_checkpoint("report")
 
         elapsed = time.time() - start_time
@@ -353,8 +452,19 @@ class Orchestrator:
             f"{context_info}"
         )
 
-        response = self.planner.run(task)
-        plan = self.planner.parse_plan(response)
+        try:
+            response = self.planner.run(task)
+            plan = self.planner.parse_plan(response)
+        except Exception as e:
+            logger.warning(
+                f"Planner failed, using default plan: {type(e).__name__}: {e}"
+            )
+            if self.config.verbose:
+                print(
+                    f"  ⚠️ Planner encountered an error: {type(e).__name__}. "
+                    f"Using default plan."
+                )
+            plan = self.planner._default_plan()
 
         self.context.class_problem = plan.get("class_problem", "binary")
         self.context.log(
@@ -396,10 +506,33 @@ class Orchestrator:
     def _step_analyze(self) -> None:
         if self.config.verbose:
             print("\nStep 3: Analyzing data...")
-        result = self.analyst.run(
+
+        task = (
             "Thoroughly profile this dataset. Use all your tools to understand "
-            "the data quality, distributions, correlations, and potential issues."
+            "the data quality, distributions, correlations, potential issues, "
+            "outliers, cardinality, and temporal patterns. "
+            "Look for anything unusual or unexpected."
         )
+
+        critique_rounds = self._get_critique_rounds()
+
+        if critique_rounds > 0:
+            from bluecast.ai.critique import CritiqueLoop
+
+            critic = CritiqueLoop(
+                self.llm,
+                self.context,
+                max_rounds=critique_rounds,
+                verbose=self.config.verbose,
+            )
+            result = critic.run_with_critique(
+                agent=self.analyst,
+                agent_task=task,
+                mode=self.config.mode,
+            )
+        else:
+            result = self.analyst.run(task)
+
         self.context.data_profile = {"summary": result}
 
         for keyword in [
@@ -409,6 +542,7 @@ class Orchestrator:
             "null",
             "duplicate",
             "constant",
+            "outlier",
         ]:
             if keyword in result.lower():
                 self.context.data_warnings.append(
@@ -427,9 +561,28 @@ class Orchestrator:
         task = (
             f"Create useful features for this {self.context.class_problem} problem.\n"
             f"Hints from the planner:\n{hint_text}\n\n"
-            f"Create 3-5 strong features. Call create_feature for each one."
+            f"Create 3-5 strong features. Call create_feature for each one.\n"
+            f"If any column contains free text, use create_tfidf_features."
         )
-        self.engineer.run(task)
+
+        critique_rounds = self._get_critique_rounds()
+
+        if critique_rounds > 0 and self.config.mode in ("precise", "ultimate"):
+            from bluecast.ai.critique import CritiqueLoop
+
+            critic = CritiqueLoop(
+                self.llm,
+                self.context,
+                max_rounds=critique_rounds,
+                verbose=self.config.verbose,
+            )
+            critic.run_with_critique(
+                agent=self.engineer,
+                agent_task=task,
+                mode=self.config.mode,
+            )
+        else:
+            self.engineer.run(task)
 
         if self.context.engineered_df is not None and self.config.verbose:
             orig_cols = (
@@ -473,6 +626,226 @@ class Orchestrator:
                     plan.update(suggestions)
             except (json.JSONDecodeError, IndexError):
                 pass
+
+    def _step_ultimate_build_loop(self, plan: dict) -> None:
+        """Train multiple model architectures with per-arch iterative improvement."""
+        from bluecast.ai.architectures import get_architectures_for_problem
+
+        problem = self.context.class_problem or "binary"
+        archs = get_architectures_for_problem(problem)
+        iters = self.config.ultimate_iterations_per_arch
+        total_archs = len(archs)
+
+        if self.config.verbose:
+            print(
+                f"\nStep 5: Ultimate build loop "
+                f"({total_archs} architectures × {iters} iterations)..."
+            )
+
+        arch_best: dict = {}  # arch_name -> {pipeline, metrics, config}
+
+        for arch_idx, (arch_name, arch_info) in enumerate(archs.items(), 1):
+            if self.config.verbose:
+                print(f"\n  [{arch_idx}/{total_archs}] " f"=== {arch_info['name']} ===")
+
+            ml_model = arch_info["factory"](problem)
+
+            # XGBoost uses BlueCast's native pipeline, not ml_model injection.
+            # For XGBoost, we set use_xgboost_native in the config so the
+            # tool knows to pass conf_xgboost instead.
+            use_xgboost = arch_info.get("use_xgboost_native", False)
+
+            arch_config = self._build_arch_config(plan, arch_name)
+
+            for iteration in range(iters):
+                if self.config.verbose:
+                    print(f"    Iteration {iteration + 1}/{iters}:")
+
+                # Build the pipeline config
+                config = dict(arch_config)  # copy
+                if not use_xgboost:
+                    config["ml_model"] = ml_model
+
+                result = self._build_single_arch(config, arch_name, use_xgboost)
+
+                if not result["success"]:
+                    if self.config.verbose:
+                        print(f"      FAILED: {result.get('error', 'unknown')}")
+                    break
+
+                if self.config.verbose:
+                    print(f"      Metrics: {result['metrics']}")
+
+                # Track best result for this architecture
+                arch_best[arch_name] = {
+                    "pipeline": result["pipeline"],
+                    "metrics": result["metrics"],
+                    "config": result["config_used"],
+                }
+
+                # Record in run history
+                self.context.run_history.append(
+                    {
+                        "success": True,
+                        "metrics": result["metrics"],
+                        "config": result["config_used"],
+                        "architecture": arch_name,
+                        "iteration": iteration + 1,
+                    }
+                )
+
+                # Ask Evaluator for arch-specific improvements (unless last)
+                if iteration < iters - 1:
+                    suggestions = self._evaluate_for_arch(
+                        arch_name, arch_info["name"], result
+                    )
+                    arch_config.update(suggestions)
+
+        # Select the best pipeline across all architectures
+        self._select_best_from_archs(arch_best)
+
+    def _build_arch_config(self, plan: dict, arch_name: str) -> dict:
+        """Build a base pipeline config for a specific architecture."""
+        config = {
+            "class_problem": plan.get(
+                "class_problem", self.context.class_problem or "binary"
+            ),
+            "use_cv": plan.get("use_cv", True),
+            "ensemble_strategy": plan.get("ensemble_strategy", "mean"),
+            "n_folds": plan.get("n_folds", 5),
+            "n_repeats": plan.get("n_repeats", 1),
+            "tuning_rounds": plan.get("tuning_rounds", 50),
+            "tuning_max_runtime": plan.get("tuning_max_runtime", 120),
+        }
+
+        # Linear models don't benefit from gradient boosting tuning
+        if arch_name == "linear":
+            config["tuning_rounds"] = 1
+            config["tuning_max_runtime"] = 30
+
+        return config
+
+    def _build_single_arch(
+        self, config: dict, arch_name: str, use_xgboost: bool
+    ) -> dict:
+        """Build a single architecture pipeline."""
+        from bluecast.ai.tools import tool_build_and_run_pipeline
+
+        preprocessor = None
+        if self.context.feature_code_snippets:
+            from bluecast.ai.fe_preprocessor import AIFeaturePreprocessor
+
+            preprocessor = AIFeaturePreprocessor(
+                list(self.context.feature_code_snippets)
+            )
+
+        ml_model = config.pop("ml_model", None)
+
+        # For XGBoost, let BlueCast handle it natively by passing
+        # conf_xgboost/conf_params_xgboost (via the default non-catboost path).
+        # We leave ml_model=None which means BlueCast will use its CatBoost
+        # default — but for xgboost we need to create the XgboostBaseModel.
+        if use_xgboost:
+            from bluecast.ml_modelling.xgboost import XgboostModel
+            from bluecast.ml_modelling.xgboost_regression import XgboostModelRegression
+
+            problem = config.get(
+                "class_problem", self.context.class_problem or "binary"
+            )
+            if problem == "regression":
+                ml_model = XgboostModelRegression(class_problem="regression")
+            else:
+                ml_model = XgboostModel(class_problem=problem)
+
+        return tool_build_and_run_pipeline(
+            self.context.df_train,
+            self.context.target_col,
+            config,
+            custom_preprocessor=preprocessor,
+            ml_model=ml_model,
+        )
+
+    def _evaluate_for_arch(
+        self, arch_name: str, arch_display_name: str, result: dict
+    ) -> dict:
+        """Ask the Evaluator for architecture-specific improvements."""
+        arch_context = (
+            f"You are evaluating the **{arch_display_name}** architecture track.\n"
+            f"Current metrics: {result['metrics']}\n\n"
+            f"Available levers for this architecture:\n"
+            f"- enable_feature_selection: true/false (recursive feature elimination)\n"
+            f"- tuning_rounds: integer (hyperparameter tuning iterations)\n"
+            f"- n_folds / n_repeats: cross-validation settings\n"
+            f"- ensemble_strategy: mean / stacking / hill_climbing\n\n"
+            f"Suggest specific improvements as a JSON dict."
+        )
+
+        eval_result = self.evaluator.run(arch_context)
+
+        suggestions: dict = {}
+        try:
+            if "```json" in eval_result:
+                json_text = eval_result.split("```json")[1].split("```")[0]
+                suggestions = json.loads(json_text)
+        except (json.JSONDecodeError, IndexError):
+            pass
+
+        return suggestions
+
+    def _select_best_from_archs(self, arch_best: dict) -> None:
+        """Select the best pipeline from across all architecture tracks."""
+        best_arch = None
+        best_score = None
+        higher_is_better = True
+
+        for arch_name, info in arch_best.items():
+            metrics = info["metrics"]
+            score = None
+
+            for key in ["roc_auc", "r2_score"]:
+                if key in metrics:
+                    score = metrics[key]
+                    higher_is_better = True
+                    break
+
+            if score is None and "oof_mean" in metrics:
+                score = abs(metrics["oof_mean"])
+                higher_is_better = False
+
+            if score is None:
+                continue
+
+            if best_score is None:
+                best_score = score
+                best_arch = arch_name
+            elif higher_is_better and score > best_score:
+                best_score = score
+                best_arch = arch_name
+            elif not higher_is_better and score < best_score:
+                best_score = score
+                best_arch = arch_name
+
+        if best_arch and best_arch in arch_best:
+            winner = arch_best[best_arch]
+            self.context.best_pipeline = winner["pipeline"]
+            self.context.best_metrics = winner["metrics"]
+
+            if self.config.verbose:
+                print(
+                    f"\n  [Ultimate] Best architecture: {best_arch} "
+                    f"(score={best_score})"
+                )
+
+            self.context.log(
+                "Orchestrator",
+                f"Ultimate mode selected {best_arch} "
+                f"with metrics: {winner['metrics']}",
+                event_type="info",
+                metadata={
+                    "best_architecture": best_arch,
+                    "all_results": {k: v["metrics"] for k, v in arch_best.items()},
+                },
+            )
 
     def _step_report(self) -> None:
         """Have the Reporter agent write a polished summary."""

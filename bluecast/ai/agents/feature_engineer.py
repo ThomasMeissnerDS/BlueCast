@@ -4,7 +4,11 @@ from typing import List
 
 from bluecast.ai.agents.base import BaseAgent
 from bluecast.ai.providers.base import ToolDefinition
-from bluecast.ai.tools import TOOL_DEFINITIONS, tool_create_feature
+from bluecast.ai.tools import (
+    TOOL_DEFINITIONS,
+    tool_create_feature,
+    tool_create_tfidf_features,
+)
 
 
 class FeatureEngineerAgent(BaseAgent):
@@ -13,6 +17,10 @@ class FeatureEngineerAgent(BaseAgent):
         self.register_tool_impl(
             "create_feature",
             self._create_feature_wrapper,
+        )
+        self.register_tool_impl(
+            "create_tfidf_features",
+            self._create_tfidf_wrapper,
         )
 
     def _create_feature_wrapper(self, feature_code: str, description: str = "", **kw):
@@ -35,6 +43,38 @@ class FeatureEngineerAgent(BaseAgent):
             existing_code = self.context.feature_engineering_code or ""
             self.context.feature_engineering_code = (
                 existing_code + f"\n# {description}\n{feature_code}\n"
+            )
+        return result
+
+    def _create_tfidf_wrapper(self, text_col: str, max_features: int = 50, **kw):
+        if self.context.engineered_df is not None:
+            df = self.context.engineered_df
+        elif self.context.df_train is not None:
+            df = self.context.df_train.copy()
+        else:
+            return {
+                "success": False,
+                "new_columns": [],
+                "error": "No training data available.",
+            }
+
+        result = tool_create_tfidf_features(df, text_col, max_features)
+        if result["success"]:
+            self.context.engineered_df = df
+            # Store the TFIDF code snippet for replay at inference
+            tfidf_code = (
+                f"from sklearn.feature_extraction.text import TfidfVectorizer\n"
+                f"_vec = TfidfVectorizer(max_features={max_features}, stop_words='english')\n"
+                f"_tfidf = _vec.fit_transform(df['{text_col}'].fillna('').astype(str))\n"
+                f"_names = [f'tfidf_{text_col}_{{w}}' for w in _vec.get_feature_names_out()]\n"
+                f"_tfidf_df = pd.DataFrame(_tfidf.toarray(), columns=_names, index=df.index)\n"
+                f"for _c in _tfidf_df.columns:\n"
+                f"    df[_c] = _tfidf_df[_c]\n"
+            )
+            self.context.feature_code_snippets.append(tfidf_code)
+            existing_code = self.context.feature_engineering_code or ""
+            self.context.feature_engineering_code = (
+                existing_code + f"\n# TF-IDF on '{text_col}'\n{tfidf_code}\n"
             )
         return result
 
@@ -68,6 +108,17 @@ Guidelines:
 - Keep feature names descriptive and unique
 - If a feature creation fails, try a different approach
 
+Text Data:
+- If a column contains free text (long strings, descriptions, names), use
+  create_tfidf_features to extract word-level features automatically
+- This is much better than ignoring text columns
+
+Preprocessing Logic:
+- If a categorical column has too many rare categories, group them:
+  df['col'] = df['col'].where(df['col'].map(df['col'].value_counts()) > 10, 'other')
+- Create hierarchical groupings when categories have semantic structure
+- Map ordinal categories to numbers when appropriate
+
 Provided Framework Tools:
 You can import and use these pre-built BlueCast stateless functions to save time and reduce errors:
 - `from bluecast.preprocessing.feature_creation import add_groupby_agg_feats`
@@ -89,4 +140,7 @@ Analysis findings:
 {hints}"""
 
     def get_tools(self) -> List[ToolDefinition]:
-        return [TOOL_DEFINITIONS["create_feature"]]
+        return [
+            TOOL_DEFINITIONS["create_feature"],
+            TOOL_DEFINITIONS["create_tfidf_features"],
+        ]

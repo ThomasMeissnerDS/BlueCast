@@ -101,7 +101,28 @@ class BaseAgent(ABC):
         previous_tool_calls: List[ToolCall] = []
 
         for _iteration in range(MAX_TOOL_ITERATIONS):
-            response = self.llm.chat(messages, tools=tools if tools else None)
+            try:
+                response = self.llm.chat(messages, tools=tools if tools else None)
+            except Exception as e:
+                error_msg = (
+                    f"LLM API call failed: {type(e).__name__}: " f"{str(e)[:200]}"
+                )
+                logger.warning(f"[{self.name}] {error_msg}")
+                if self.verbose:
+                    print(f"  [{self.name}] ⚠️ {error_msg}")
+                self.context.log(
+                    self.name,
+                    error_msg,
+                    event_type="error",
+                )
+                # Return a fallback so the pipeline can continue
+                final = (
+                    f"Agent {self.name} encountered an API error and could "
+                    f"not complete this step. Error: {error_msg}"
+                )
+                if self.verbose:
+                    print(f"  [{self.name}] Done (with errors).")
+                return final
 
             if response and response.usage:
                 self.context.prompt_tokens += response.usage.get("prompt_tokens", 0)

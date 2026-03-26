@@ -18,6 +18,9 @@ class AIConfig:
         'fast' = skip FE, 1 iteration, basic config.
         'balanced' = targeted FE, 2-3 iterations.
         'precise' = full FE, ensemble, 5+ iterations, web search.
+        'ultimate' = trains multiple architectures (CatBoost, XGBoost,
+            linear, HistGradientBoosting) with per-arch iterative
+            improvement, then selects the best pipeline.
     :param max_iterations: Maximum build-evaluate-improve cycles.
     :param enable_web_search: Whether the Researcher agent can search the web.
     :param verbose: Whether to print progress to stdout.
@@ -40,7 +43,7 @@ class AIConfig:
     api_key: str = ""
     provider: Literal["gemini", "openai", "anthropic", "vertexai"] = "gemini"
     model: Optional[str] = None
-    mode: Literal["fast", "balanced", "precise"] = "balanced"
+    mode: Literal["fast", "balanced", "precise", "ultimate"] = "balanced"
     max_iterations: int = 3
     enable_web_search: bool = False
     verbose: bool = True
@@ -54,6 +57,8 @@ class AIConfig:
     callbacks: List[Callable] = field(default_factory=list)
     project_id: Optional[str] = None
     location: Optional[str] = None
+    ultimate_iterations_per_arch: int = 2
+    critique_max_rounds: int = 2
 
     def get_model_name(self) -> str:
         if self.model:
@@ -69,5 +74,5 @@ class AIConfig:
     def get_max_iterations(self) -> int:
         if self.max_iterations > 0:
             return self.max_iterations
-        mode_defaults = {"fast": 1, "balanced": 3, "precise": 5}
+        mode_defaults = {"fast": 1, "balanced": 3, "precise": 5, "ultimate": 1}
         return mode_defaults.get(self.mode, 3)

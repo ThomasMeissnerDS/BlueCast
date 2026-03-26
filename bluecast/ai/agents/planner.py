@@ -39,6 +39,9 @@ Guidelines:
 - If the user says "fast", use n_folds=3, tuning_rounds=20, max_iterations=1, no FE
 - If the user says "precise" or "best performance", use hill_climbing, n_folds=5, n_repeats=2, tuning_rounds=200, max_iterations=5, enable FE
 - Default to "balanced": stacking, n_folds=5, tuning_rounds=50, max_iterations=3
+- If mode is "ultimate": enable FE, use hill_climbing, n_folds=5. The orchestrator will
+  automatically train multiple architectures (CatBoost, XGBoost, Linear, HistGB) so
+  max_iterations=1 is fine (per-architecture iteration is handled separately).
 - Detect class_problem from the target column distribution in the data summary
 - If user mentions GPU, set a note about it"""
 

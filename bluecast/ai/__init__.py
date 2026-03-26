@@ -156,7 +156,7 @@ class BlueCastAI:
         target_col: str,
         prompt: str = "Build a good model",
         context_files: Optional[List[str]] = None,
-        mode: Literal["fast", "balanced", "precise"] = "balanced",
+        mode: Literal["fast", "balanced", "precise", "ultimate"] = "balanced",
         max_iterations: int = 0,
     ) -> BlueCastAIResult:
         """Run the multi-agent pipeline on the dataset.
@@ -169,10 +169,14 @@ class BlueCastAI:
             - "Build a precise binary classifier with stacking ensemble"
             - "Maximize ROC AUC using hill climbing and feature engineering"
         :param context_files: Optional list of file paths containing domain knowledge.
+            Supports .pdf, .docx, .csv, .tsv, .txt, .md, .rst files.
+            PDF requires ``pip install PyPDF2``; docx requires ``pip install python-docx``.
         :param mode: Speed vs thoroughness trade-off:
             'fast' = skip FE, 1 iteration (~2 min),
-            'balanced' = targeted FE, 3 iterations (~10 min),
-            'precise' = full FE, ensemble, 5+ iterations (~30 min).
+            'balanced' = targeted FE, critic on data analysis, 3 iterations (~10 min),
+            'precise' = full FE with critic, ensemble, 5+ iterations (~30 min),
+            'ultimate' = multi-architecture (CatBoost, XGBoost, Linear, HistGB)
+                with per-arch iteration and critique (~60 min).
         :param max_iterations: Override the number of build-evaluate-improve cycles.
             If 0, uses the mode default.
         :returns: BlueCastAIResult with trained pipeline, code, metrics, and logs.

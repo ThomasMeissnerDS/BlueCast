@@ -168,6 +168,221 @@ def tool_create_feature(
         }
 
 
+def tool_create_tfidf_features(
+    df: pd.DataFrame, text_col: str, max_features: int = 50
+) -> Dict[str, Any]:
+    """Apply TF-IDF to a text column, adding top-N features to df."""
+    from sklearn.feature_extraction.text import TfidfVectorizer
+
+    if text_col not in df.columns:
+        return {
+            "success": False,
+            "new_columns": [],
+            "error": f"Column '{text_col}' not found.",
+        }
+
+    try:
+        vec = TfidfVectorizer(max_features=max_features, stop_words="english")
+        tfidf_matrix = vec.fit_transform(df[text_col].fillna("").astype(str))
+        feature_names = [f"tfidf_{text_col}_{w}" for w in vec.get_feature_names_out()]
+        tfidf_df = pd.DataFrame(
+            tfidf_matrix.toarray(), columns=feature_names, index=df.index
+        )
+        for col in tfidf_df.columns:
+            df[col] = tfidf_df[col]
+        return {
+            "success": True,
+            "new_columns": feature_names,
+            "shape": list(df.shape),
+            "error": None,
+        }
+    except Exception as e:
+        return {"success": False, "new_columns": [], "error": str(e)}
+
+
+# ---------------------------------------------------------------------------
+# Advanced data analysis tools
+# ---------------------------------------------------------------------------
+
+
+def tool_check_uniqueness(df: pd.DataFrame) -> str:
+    """Cardinality analysis for every column."""
+    lines = ["Column cardinality analysis:\n"]
+    for col in df.columns:
+        n = df[col].nunique()
+        pct = n / max(len(df), 1) * 100
+        dtype = str(df[col].dtype)
+        is_id = pct > 95 and n > 100
+        flag = " ⚠️ LIKELY ID/KEY" if is_id else ""
+        lines.append(f"  {col}: {n} unique ({pct:.1f}%), dtype={dtype}{flag}")
+    return "\n".join(lines)
+
+
+def tool_check_outliers(
+    df: pd.DataFrame, n_show: int = 5, contamination: float = 0.05
+) -> str:
+    """Detect outliers via IsolationForest on numeric features."""
+    from sklearn.ensemble import IsolationForest
+
+    num_df = df.select_dtypes(include=["number"]).dropna(axis=1)
+    if num_df.empty or len(num_df) < 10:
+        return "Not enough numeric data for outlier detection."
+
+    try:
+        iso = IsolationForest(contamination=contamination, random_state=42, n_jobs=-1)
+        scores = iso.fit_predict(num_df)
+        outlier_mask = scores == -1
+        n_outliers = int(outlier_mask.sum())
+
+        lines = [
+            f"IsolationForest detected {n_outliers} outliers "
+            f"({n_outliers / len(df) * 100:.1f}% of rows, "
+            f"contamination={contamination}).\n"
+        ]
+
+        if n_outliers > 0:
+            outlier_idx = num_df.index[outlier_mask]
+            sample_idx = outlier_idx[:n_show]
+            lines.append(f"Sample outlier rows (first {len(sample_idx)}):\n")
+            lines.append(df.loc[sample_idx].to_string())
+
+            # Show which features differ most for outliers vs normal
+            normal_means = num_df.loc[~outlier_mask].mean()
+            outlier_means = num_df.loc[outlier_mask].mean()
+            diff = (
+                ((outlier_means - normal_means) / normal_means.replace(0, np.nan))
+                .dropna()
+                .abs()
+            )
+            top_diff = diff.sort_values(ascending=False).head(5)
+            lines.append("\nFeatures with largest outlier deviation:")
+            for col_name, val in top_diff.items():
+                lines.append(f"  {col_name}: {val:.2%} deviation from normal mean")
+
+        return "\n".join(lines)
+    except Exception as e:
+        return f"Outlier detection failed: {e}"
+
+
+def tool_inspect_rows(df: pd.DataFrame, indices: str = "", condition: str = "") -> str:
+    """Inspect specific rows by index list or pandas query condition."""
+    try:
+        if condition:
+            subset = df.query(condition)
+        elif indices:
+            idx_list = [int(i.strip()) for i in indices.split(",")]
+            subset = df.iloc[idx_list]
+        else:
+            return "Provide either 'indices' (comma-separated) or 'condition' (pandas query)."
+
+        if len(subset) > 20:
+            return (
+                f"Query returned {len(subset)} rows (showing first 20):\n"
+                + subset.head(20).to_string()
+            )
+        return f"Query returned {len(subset)} rows:\n" + subset.to_string()
+    except Exception as e:
+        return f"Row inspection failed: {e}"
+
+
+def tool_run_sql_query(df: pd.DataFrame, query: str) -> str:
+    """Run SQL against the DataFrame using pandasql."""
+    try:
+        import pandasql
+    except ImportError:
+        # Fallback: use pandas operations
+        return (
+            "pandasql not installed. Use tool_inspect_rows with a pandas query "
+            "condition instead, or ask the user to install pandasql."
+        )
+
+    try:
+        result = pandasql.sqldf(query, {"df": df})
+        if len(result) > 50:
+            return (
+                f"Query returned {len(result)} rows (showing first 50):\n"
+                + result.head(50).to_string()
+            )
+        return f"Query returned {len(result)} rows:\n" + result.to_string()
+    except Exception as e:
+        return f"SQL query failed: {e}"
+
+
+def tool_check_temporal_patterns(df: pd.DataFrame, target_col: str) -> str:
+    """Detect datetime columns and check for temporal patterns."""
+    dt_cols = df.select_dtypes(include=["datetime", "datetime64"]).columns.tolist()
+
+    # Also try to parse object columns that look like dates
+    for col in df.select_dtypes(include=["object"]).columns:
+        sample = df[col].dropna().head(20)
+        try:
+            pd.to_datetime(sample)
+            dt_cols.append(col)
+        except (ValueError, TypeError):
+            pass
+
+    if not dt_cols:
+        return "No datetime or date-like columns detected."
+
+    lines = [f"Datetime columns found: {dt_cols}\n"]
+
+    for col in dt_cols[:3]:  # Limit to first 3
+        try:
+            dt_series = pd.to_datetime(df[col])
+            lines.append(f"\n--- {col} ---")
+            lines.append(f"  Range: {dt_series.min()} to {dt_series.max()}")
+            lines.append(f"  Nulls: {dt_series.isna().sum()}")
+
+            # Check for gaps
+            sorted_dt = dt_series.dropna().sort_values()
+            if len(sorted_dt) > 1:
+                diffs = sorted_dt.diff().dropna()
+                lines.append(
+                    f"  Median interval: {diffs.median()}, " f"Max gap: {diffs.max()}"
+                )
+
+            # Target drift over time (if numeric target)
+            if target_col in df.columns and df[target_col].dtype in [
+                "float64",
+                "int64",
+            ]:
+                temp_df = df[[col, target_col]].dropna()
+                temp_df["_dt"] = pd.to_datetime(temp_df[col])
+                temp_df["_month"] = temp_df["_dt"].dt.to_period("M")
+                monthly = temp_df.groupby("_month")[target_col].mean()
+                if len(monthly) > 1:
+                    lines.append("  Target mean by month (last 6):")
+                    for period, val in monthly.tail(6).items():
+                        lines.append(f"    {period}: {val:.4f}")
+        except Exception as e:
+            lines.append(f"  Error analyzing {col}: {e}")
+
+    return "\n".join(lines)
+
+
+def tool_check_group_statistics(df: pd.DataFrame, group_col: str, agg_col: str) -> str:
+    """Group-by statistics for a categorical × numeric pair."""
+    if group_col not in df.columns:
+        return f"Column '{group_col}' not found."
+    if agg_col not in df.columns:
+        return f"Column '{agg_col}' not found."
+
+    try:
+        grouped = df.groupby(group_col)[agg_col].agg(
+            ["count", "mean", "std", "min", "max"]
+        )
+        grouped = grouped.sort_values("count", ascending=False)
+        if len(grouped) > 30:
+            return (
+                f"Group statistics for {agg_col} by {group_col} "
+                f"({len(grouped)} groups, showing top 30):\n"
+                + grouped.head(30).to_string()
+            )
+        return f"Group statistics for {agg_col} by {group_col}:\n" + grouped.to_string()
+    except Exception as e:
+        return f"Group statistics failed: {e}"
+
+
 # ---------------------------------------------------------------------------
 # Pipeline tools
 # ---------------------------------------------------------------------------
@@ -178,6 +393,7 @@ def tool_build_and_run_pipeline(
     target_col: str,
     config: Dict[str, Any],
     custom_preprocessor=None,
+    ml_model=None,
 ) -> Dict[str, Any]:
     """Build and evaluate a BlueCast pipeline from a config dict.
 
@@ -230,6 +446,7 @@ def tool_build_and_run_pipeline(
             conf_training=training_config,
             ensemble_config=ensemble_config,
             custom_preprocessor=custom_preprocessor,
+            ml_model=ml_model,
         )
 
         if use_cv:
@@ -428,6 +645,110 @@ TOOL_DEFINITIONS: Dict[str, ToolDefinition] = {
                 },
             },
             "required": ["query"],
+        },
+    ),
+    "check_uniqueness": ToolDefinition(
+        name="check_uniqueness",
+        description="Analyze the cardinality (number of unique values) of every column. Flags likely ID columns. Use this to understand feature types and detect columns that should be dropped.",
+        parameters={
+            "type": "object",
+            "properties": {},
+            "required": [],
+        },
+    ),
+    "check_outliers": ToolDefinition(
+        name="check_outliers",
+        description="Detect outliers using IsolationForest on all numeric columns. Returns outlier rows and most-deviating features. Useful for understanding data quality.",
+        parameters={
+            "type": "object",
+            "properties": {
+                "n_show": {
+                    "type": "integer",
+                    "description": "Number of outlier rows to display. Default 5.",
+                },
+                "contamination": {
+                    "type": "number",
+                    "description": "Expected proportion of outliers (0.01-0.2). Default 0.05.",
+                },
+            },
+            "required": [],
+        },
+    ),
+    "inspect_rows": ToolDefinition(
+        name="inspect_rows",
+        description="Inspect specific rows by index or condition. Use this to drill into suspicious rows identified by other tools.",
+        parameters={
+            "type": "object",
+            "properties": {
+                "indices": {
+                    "type": "string",
+                    "description": "Comma-separated row indices to inspect (e.g. '0,5,10').",
+                },
+                "condition": {
+                    "type": "string",
+                    "description": "Pandas query condition (e.g. 'age > 100').",
+                },
+            },
+            "required": [],
+        },
+    ),
+    "run_sql_query": ToolDefinition(
+        name="run_sql_query",
+        description="Run a SQL query against the DataFrame (table name is 'df'). Use for complex aggregations, joins, or custom analysis.",
+        parameters={
+            "type": "object",
+            "properties": {
+                "query": {
+                    "type": "string",
+                    "description": "SQL query. The DataFrame is available as table 'df'.",
+                },
+            },
+            "required": ["query"],
+        },
+    ),
+    "check_temporal_patterns": ToolDefinition(
+        name="check_temporal_patterns",
+        description="Auto-detect datetime columns and analyze temporal patterns: date ranges, gaps, target drift over time.",
+        parameters={
+            "type": "object",
+            "properties": {},
+            "required": [],
+        },
+    ),
+    "check_group_statistics": ToolDefinition(
+        name="check_group_statistics",
+        description="Compute group-by statistics (count, mean, std, min, max) for a numeric column grouped by a categorical column.",
+        parameters={
+            "type": "object",
+            "properties": {
+                "group_col": {
+                    "type": "string",
+                    "description": "Categorical column to group by.",
+                },
+                "agg_col": {
+                    "type": "string",
+                    "description": "Numeric column to aggregate.",
+                },
+            },
+            "required": ["group_col", "agg_col"],
+        },
+    ),
+    "create_tfidf_features": ToolDefinition(
+        name="create_tfidf_features",
+        description="Apply TF-IDF vectorization to a text column, adding the top-N most important word features to the DataFrame.",
+        parameters={
+            "type": "object",
+            "properties": {
+                "text_col": {
+                    "type": "string",
+                    "description": "Name of the text column to vectorize.",
+                },
+                "max_features": {
+                    "type": "integer",
+                    "description": "Maximum number of TF-IDF features. Default 50.",
+                },
+            },
+            "required": ["text_col"],
         },
     ),
 }

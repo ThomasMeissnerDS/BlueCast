@@ -28,11 +28,15 @@ class PipelineBuilderAgent(BaseAgent):
                 list(self.context.feature_code_snippets)
             )
 
+        # Pop ml_model out of config so it doesn't go to TrainingConfig
+        ml_model = config.pop("ml_model", None)
+
         result = tool_build_and_run_pipeline(
             df,
             self.context.target_col,
             config,
             custom_preprocessor=preprocessor,
+            ml_model=ml_model,
         )
 
         run_record = {

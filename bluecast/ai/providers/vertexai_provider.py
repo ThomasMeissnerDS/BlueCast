@@ -177,6 +177,14 @@ class VertexAIProvider(BaseLLMProvider):
         max_retries = 5
         base_delay = 2.0
 
+        # Circuit breaker: if auth is already known broken, fail fast
+        if getattr(self, "_auth_broken", False):
+            raise RuntimeError(
+                "Vertex AI authentication is unavailable. "
+                "The GCE metadata server could not be reached. "
+                "Please restart the kernel or check your credentials."
+            )
+
         for attempt in range(max_retries):
             try:
                 response = model.generate_content(contents, **call_kwargs)
@@ -185,11 +193,33 @@ class VertexAIProvider(BaseLLMProvider):
                 import random
                 import time
 
+                error_str = str(e)
+
+                # Detect auth/credential errors — do NOT retry these
+                is_auth_error = any(
+                    keyword in error_str
+                    for keyword in [
+                        "metadata.google.internal",
+                        "RefreshError",
+                        "AuthMetadataPlugin",
+                        "credentials",
+                        "Could not automatically determine",
+                    ]
+                )
+
+                if is_auth_error:
+                    self._auth_broken = True  # type: ignore[attr-defined]
+                    logger.warning(
+                        f"Authentication error (not retrying): {error_str[:200]}"
+                    )
+                    raise
+
                 if attempt == max_retries - 1:
                     raise e
                 delay = base_delay * (2**attempt) + random.uniform(0, 1)
                 logger.warning(
-                    f"API Error (attempt {attempt + 1}): {e}. Retrying in {delay:.1f}s"
+                    f"API Error (attempt {attempt + 1}): {e}. "
+                    f"Retrying in {delay:.1f}s"
                 )
                 time.sleep(delay)
 
