@@ -330,6 +330,10 @@ class BlueCast:
                 y_test = y_test.reset_index(drop=True)
             if target_col in feat_type_detector.cat_columns:
                 feat_type_detector.cat_columns.remove(target_col)
+            
+            self.feat_type_detector = feat_type_detector
+            self.cat_columns = self.feat_type_detector.cat_columns
+            self.date_columns = self.feat_type_detector.date_columns
 
         x_train, x_test = fill_infinite_values(x_train), fill_infinite_values(x_test)
         self.date_part_extractor = DatePartExtractor(

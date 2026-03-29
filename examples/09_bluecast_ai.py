@@ -434,13 +434,15 @@ print("\n" + "-" * 70)
 print(" Run 2: BALANCED MODE (FE + stacking + checkpointing)")
 print("-" * 70)
 
-with tempfile.TemporaryDirectory() as checkpoint_dir:
-    ai_ckpt = BlueCastAI(
-        api_key=API_KEY,
-        provider=PROVIDER,
-        checkpoint_dir=checkpoint_dir,  # enables checkpoint save/resume
-    )
-    result_balanced = ai_ckpt.run(
+checkpoint_dir = "bluecast_ai_checkpoints"
+os.makedirs(checkpoint_dir, exist_ok=True)
+
+ai_ckpt = BlueCastAI(
+    api_key=API_KEY,
+    provider=PROVIDER,
+    checkpoint_dir=checkpoint_dir,  # enables checkpoint save/resume
+)
+result_balanced = ai_ckpt.run(
         df,
         target_col="default",
         prompt="Build a good binary classifier with feature engineering and stacking",
