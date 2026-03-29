@@ -51,6 +51,7 @@ class HillClimbingEnsemble:
         tolerance: float = 1e-7,
         blending_method: str = "rank",
         eval_metric: Optional[Callable] = None,
+        is_classification: bool = True,
     ):
         self.weight_min = weight_min
         self.weight_max = weight_max
@@ -58,6 +59,7 @@ class HillClimbingEnsemble:
         self.tolerance = tolerance
         self.blending_method = blending_method
         self.eval_metric = eval_metric or _default_classification_metric
+        self.is_classification = is_classification
 
         self.selected_indices: List[int] = []
         self.weights_map: Dict[int, float] = {}
@@ -135,7 +137,10 @@ class HillClimbingEnsemble:
                 local_best_score = 0.0
 
                 for w in weight_candidates:
-                    combined = np.clip(ensemble * (1.0 - w) + candidate * w, 0.0, 1.0)
+                    if self.is_classification:
+                        combined = np.clip(ensemble * (1.0 - w) + candidate * w, 0.0, 1.0)
+                    else:
+                        combined = ensemble * (1.0 - w) + candidate * w
                     score = self.eval_metric(y, combined)
                     improvement = score - ensemble_score
 
@@ -148,11 +153,14 @@ class HillClimbingEnsemble:
                     best_improvement = local_best_imp
                     best_info = (idx, local_best_w, model_names[idx])
                     best_score = local_best_score
-                    best_combined = np.clip(
-                        ensemble * (1.0 - local_best_w) + candidate * local_best_w,
-                        0.0,
-                        1.0,
-                    )
+                    if self.is_classification:
+                        best_combined = np.clip(
+                            ensemble * (1.0 - local_best_w) + candidate * local_best_w,
+                            0.0,
+                            1.0,
+                        )
+                    else:
+                        best_combined = ensemble * (1.0 - local_best_w) + candidate * local_best_w
                     new_w = {
                         k: v * (1.0 - local_best_w) for k, v in self.weights_map.items()
                     }
@@ -204,7 +212,9 @@ class HillClimbingEnsemble:
         for idx, weight in self.weights_map.items():
             ensemble += weight * preds[idx]
 
-        return np.clip(ensemble, 0.0, 1.0)
+        if self.is_classification:
+            return np.clip(ensemble, 0.0, 1.0)
+        return ensemble
 
     def get_selected_model_info(self) -> List[Dict]:
         """Return information about selected models and their weights."""

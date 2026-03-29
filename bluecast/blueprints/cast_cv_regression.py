@@ -335,6 +335,7 @@ class BlueCastCVRegression:
                 tolerance=self.ensemble_config.hc_tolerance,
                 blending_method=self.ensemble_config.hc_blending_method,
                 eval_metric=eval_metric,
+                is_classification=False,
             )
             oof_list = [oof_valid[:, i] for i in range(n_models)]
             model_names = [f"model_{i}" for i in range(n_models)]

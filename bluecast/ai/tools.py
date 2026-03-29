@@ -429,6 +429,9 @@ def tool_build_and_run_pipeline(
             int(config.get("n_repeats", 1)),
         ),
     )
+    
+    if "cat_encoding_via_ml_algorithm" in config:
+        training_config.cat_encoding_via_ml_algorithm = config["cat_encoding_via_ml_algorithm"]
 
     ensemble_config = None
     if use_cv:
@@ -438,6 +441,8 @@ def tool_build_and_run_pipeline(
             ensemble_config.hc_weight_min = config.get("hc_weight_min", -0.3)
             ensemble_config.hc_weight_max = config.get("hc_weight_max", 0.5)
             ensemble_config.hc_weight_step = config.get("hc_weight_step", 0.01)
+            if class_problem == "regression":
+                ensemble_config.hc_blending_method = "probability"
 
     try:
         pipeline = BlueCastAuto(
