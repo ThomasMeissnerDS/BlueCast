@@ -64,17 +64,27 @@ def get_params_based_on_device_xgboost(
     if conf_training.autotune_on_device in ["auto"]:
         train_on = check_gpu_support()
         conf_params_xgboost.params["device"] = train_on.get("device", None)
-        if "exact" in conf_xgboost.tree_method and conf_params_xgboost.params[
-            "device"
-        ] in ["gpu", "cuda"]:
+        
+        # Exact tree method does not support GPU or enable_categorical=True
+        if "exact" in conf_xgboost.tree_method and (
+            conf_params_xgboost.params.get("device") in ["gpu", "cuda"]
+            or conf_training.cat_encoding_via_ml_algorithm
+        ):
             conf_xgboost.tree_method = [
                 m for m in conf_xgboost.tree_method if m != "exact"
             ]
+            if train_on.get("tree_method") == "exact":
+                train_on["tree_method"] = "hist"
     elif conf_training.autotune_on_device == "gpu":
         train_on = {"tree_method": "hist", "device": "cuda"}
         conf_xgboost.tree_method = [m for m in conf_xgboost.tree_method if m != "exact"]
     else:
-        train_on = {"tree_method": "exact", "device": "cpu"}
+        # On CPU, default to exact unless categorical features dictate otherwise
+        if conf_training.cat_encoding_via_ml_algorithm:
+            train_on = {"tree_method": "hist", "device": "cpu"}
+            conf_xgboost.tree_method = [m for m in conf_xgboost.tree_method if m != "exact"]
+        else:
+            train_on = {"tree_method": "exact", "device": "cpu"}
     return train_on
 
 

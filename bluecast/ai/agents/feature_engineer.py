@@ -39,11 +39,14 @@ class FeatureEngineerAgent(BaseAgent):
         result = tool_create_feature(df, feature_code)
         if result["success"]:
             self.context.engineered_df = df
-            self.context.feature_code_snippets.append(feature_code)
+            if feature_code not in self.context.feature_code_snippets:
+                self.context.feature_code_snippets.append(feature_code)
+
             existing_code = self.context.feature_engineering_code or ""
-            self.context.feature_engineering_code = (
-                existing_code + f"\n# {description}\n{feature_code}\n"
-            )
+            if feature_code not in existing_code:
+                self.context.feature_engineering_code = (
+                    existing_code + f"\n# {description}\n{feature_code}\n"
+                )
         return result
 
     def _create_tfidf_wrapper(self, text_col: str, max_features: int = 50, **kw):
@@ -61,15 +64,15 @@ class FeatureEngineerAgent(BaseAgent):
         result = tool_create_tfidf_features(df, text_col, max_features)
         if result["success"]:
             self.context.engineered_df = df
-            # Store the TFIDF code snippet for replay at inference
+            # Store the state-aware TFIDF code snippet for replay at inference
             tfidf_code = (
-                f"from sklearn.feature_extraction.text import TfidfVectorizer\n"
-                f"_vec = TfidfVectorizer(max_features={max_features}, stop_words='english')\n"
-                f"_tfidf = _vec.fit_transform(df['{text_col}'].fillna('').astype(str))\n"
-                f"_names = [f'tfidf_{text_col}_{{w}}' for w in _vec.get_feature_names_out()]\n"
-                f"_tfidf_df = pd.DataFrame(_tfidf.toarray(), columns=_names, index=df.index)\n"
-                f"for _c in _tfidf_df.columns:\n"
-                f"    df[_c] = _tfidf_df[_c]\n"
+                f"from bluecast.preprocessing.feature_creation import TfIdfTextEncoder\n"
+                f"if 'tfidf_{text_col}' not in state:\n"
+                f"    state['tfidf_{text_col}'] = TfIdfTextEncoder(max_features={max_features})\n"
+                f"if is_fit:\n"
+                f"    df = state['tfidf_{text_col}'].fit_transform(df, '{text_col}')\n"
+                f"else:\n"
+                f"    df = state['tfidf_{text_col}'].transform(df, '{text_col}')\n"
             )
             self.context.feature_code_snippets.append(tfidf_code)
             existing_code = self.context.feature_engineering_code or ""
@@ -102,11 +105,23 @@ Guidelines:
 - Create ratio features from related numerical columns
 - Create interaction features (products, differences)
 - Bin continuous features into categories
-- Create frequency-encoded features from categoricals
-- Handle missing values if needed (fill or create indicator columns)
+- Create frequency-encoded features from categoricals (Warning: stateless only, e.g. mapping dictionaries, not groupbys)
+- Handle missing values if needed (fill with constants or create indicator columns)
 - Do NOT drop existing columns (the model may need them)
 - Keep feature names descriptive and unique
 - If a feature creation fails, try a different approach
+- STRICT: DO NOT use stateful transformations manually (e.g. StandardScaler, Target Encoding, global means via groupby). These leak validation targets during CV or crash on single-row test sets during inference. Stick to stateless row-by-row math.
+
+CRITICAL PIPELINE EXECUTION CONSTRAINTS:
+1. Moreso than ever, YOU MUST SEPARATE YOUR FEATURE ENGINEERING INTO MULTIPLE INDEPENDENT SNIPPETS! Call `create_feature` separately for each new feature you invent. DO NOT combine them into one massive code block. This prevents a single failed line of code from dropping all your other valid features.
+2. DO NOT use or attempt to encode columns that have ZERO VARIANCE (only 1 unique value) or are entirely missing. The BlueCast pipeline automatically DROPS these columns before your features run. If you reference them, your snippet will crash with a ColumnNotFoundError!
+
+CRITICAL ARCHITECTURE CONSTRAINTS:
+If the overarching plan involves XGBoost, HistGB, or Linear models (e.g., in 'ultimate' mode):
+1. You MUST LEAVE CATEGORICAL COLUMNS UNENCODED (do NOT use `.cat.codes` or `factorize()`). The BlueCast pipeline has powerful native Target Encoding that will automatically handle `object` and `category` text data if you leave them alone. If you convert them to integers, BlueCast will treat them as continuous variables and performance will be ruined!
+2. You MUST impute ALL missing values with simple constants (e.g., `fillna(0)`).
+3. If Linear models are used, you SHOULD scale numerical features statelessly (e.g., `df['col'] = df['col'] / df['col'].max()` where max is a hardcoded constant, NOT a dynamic `.max()`).
+(CatBoost is the only model that handles unencoded categories natively. But BlueCast Auto natively handles them for the rest!).
 
 Text Data:
 - If a column contains free text (long strings, descriptions, names), use

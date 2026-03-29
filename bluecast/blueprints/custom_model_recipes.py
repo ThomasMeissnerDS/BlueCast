@@ -20,6 +20,7 @@ from bluecast.ml_modelling.base_classes import (
 )
 from bluecast.ml_modelling.base_classes import (
     BaseClassMlModel,
+    BaseClassMlRegressionModel,
 )
 
 
@@ -116,7 +117,7 @@ class LogisticRegressionModel(BaseClassMlModel):
             raise ValueError("No fitted model has been found.")
 
 
-class RegularizedRegressionModel(BaseClassMlModel):
+class RegularizedRegressionModel(BaseClassMlRegressionModel):
     """Regularized regression model with GridSearchCV-based hyperparameter tuning.
 
     Searches over Ridge, Lasso, and ElasticNet with various alpha values.
@@ -205,15 +206,15 @@ class RegularizedRegressionModel(BaseClassMlModel):
     ) -> None:
         self.autotune(x_train, x_test, y_train, y_test)
 
-    def predict(self, df: pd.DataFrame) -> Tuple[PredictedProbas, PredictedClasses]:
+    def predict(self, df: pd.DataFrame) -> np.ndarray:
         if self.model is not None:
             preds = self.model.predict(df)
-            return preds, preds
+            return preds
         else:
             raise ValueError("No fitted model has been found.")
 
 
-class LinearRegressionModel(BaseClassMlModel):
+class LinearRegressionModel(BaseClassMlRegressionModel):
     """Plain OLS linear regression (no regularization). For regularized models, use
     RegularizedRegressionModel instead."""
 
@@ -240,10 +241,10 @@ class LinearRegressionModel(BaseClassMlModel):
     ) -> None:
         self.autotune(x_train, x_test, y_train, y_test)
 
-    def predict(self, df: pd.DataFrame) -> Tuple[PredictedProbas, PredictedClasses]:
+    def predict(self, df: pd.DataFrame) -> np.ndarray:
         if isinstance(self.model, LinearRegression):
             preds = self.model.predict(df)
-            return preds, preds
+            return preds
         else:
             raise ValueError("No fitted model has been found.")
 

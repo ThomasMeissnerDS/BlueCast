@@ -134,6 +134,18 @@ class CritiqueLoop:
         :param mode: The current BlueCastAI mode (for mode-aware critique).
         :returns: The final (possibly refined) agent output.
         """
+        # Snapshot FE state before the first run so that critique rounds
+        # do not triply-accumulate snippets.
+        is_fe_agent = agent.name == "FeatureEngineer"
+        if is_fe_agent:
+            pre_snippets = list(self.context.feature_code_snippets)
+            pre_code = self.context.feature_engineering_code
+            pre_df = (
+                self.context.engineered_df.copy()
+                if self.context.engineered_df is not None
+                else None
+            )
+
         # Step 1: Agent produces initial output
         initial_output = agent.run(agent_task)
 
@@ -179,6 +191,15 @@ class CritiqueLoop:
 
             if self.verbose:
                 print(f"    [Critique] Requesting refinement from {agent_name}...")
+
+            # Reset FE state before refinement so that the new round
+            # replaces (not appends to) the previous round's snippets.
+            if is_fe_agent:
+                self.context.feature_code_snippets = list(pre_snippets)
+                self.context.feature_engineering_code = pre_code
+                self.context.engineered_df = (
+                    pre_df.copy() if pre_df is not None else None
+                )
 
             # Step 3: Agent refines based on critique
             refinement_task = (

@@ -15,7 +15,10 @@ from sklearn.ensemble import (
 )
 from sklearn.model_selection import GridSearchCV, KFold, StratifiedKFold
 
-from bluecast.ml_modelling.base_classes import BaseClassMlModel
+from bluecast.ml_modelling.base_classes import (
+    BaseClassMlModel,
+    BaseClassMlRegressionModel,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -96,7 +99,7 @@ class HistGBClassificationModel(BaseClassMlModel):
         return probas, classes
 
 
-class HistGBRegressionModel(BaseClassMlModel):
+class HistGBRegressionModel(BaseClassMlRegressionModel):
     """Sklearn HistGradientBoostingRegressor with GridSearchCV tuning.
 
     :param scoring: Scoring metric for GridSearchCV.
@@ -159,11 +162,11 @@ class HistGBRegressionModel(BaseClassMlModel):
     ) -> None:
         self.autotune(x_train, x_test, y_train, y_test)
 
-    def predict(self, df: pd.DataFrame) -> Tuple[np.ndarray, np.ndarray]:
+    def predict(self, df: pd.DataFrame) -> np.ndarray:
         if self.model is None:
             raise ValueError("No fitted model has been found.")
         preds = self.model.predict(df)
-        return preds, preds
+        return preds
 
 
 # ---------------------------------------------------------------------------

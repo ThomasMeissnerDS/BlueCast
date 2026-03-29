@@ -42,6 +42,10 @@ Guidelines:
 - If mode is "ultimate": enable FE, use hill_climbing, n_folds=5. The orchestrator will
   automatically train multiple architectures (CatBoost, XGBoost, Linear, HistGB) so
   max_iterations=1 is fine (per-architecture iteration is handled separately).
+  CRITICAL: In ultimate mode, explicitly instruct the feature engineer to perform full
+  numerical encoding (e.g. Target Encoding, Frequency Encoding, OHE) for ALL categorical columns
+  and to impute ALL missing values. XGBoost, HistGB, and Linear models strictly require numerical
+  inputs and will crash otherwise. Also advise feature scaling (e.g., StandardScaler) for Linear models.
 - Detect class_problem from the target column distribution in the data summary
 - If user mentions GPU, set a note about it"""
 

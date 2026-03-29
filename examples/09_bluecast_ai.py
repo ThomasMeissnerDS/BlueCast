@@ -120,7 +120,7 @@ if not API_KEY:
 
     from bluecast.ai import BlueCastAI
 
-    ai = BlueCastAI(api_key="your-key", provider="gemini")
+    ai = BlueCastAI(api_key="your-key", provider="gemini", checkpoint_dir="/tmp/bluecast_ai_checkpoints")
     result = ai.run(
         df_train,
         target_col="default",
@@ -187,7 +187,6 @@ if not API_KEY:
         prompt="Maximize ROC AUC using hill climbing ensemble, extensive "
                "feature engineering, and thorough hyperparameter tuning",
         mode="precise",        # full FE, 5+ iterations, hill climbing
-        max_iterations=5,
     )
 
 ┌─────────────────────────────────────────────────────────────────────┐

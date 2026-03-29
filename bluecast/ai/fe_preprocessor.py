@@ -1,11 +1,14 @@
 """Dynamic CustomPreprocessing that replays LLM-generated feature code."""
 
+import logging
 from typing import List, Optional, Tuple
 
 import numpy as np
 import pandas as pd
 
 from bluecast.preprocessing.custom import CustomPreprocessing
+
+logger = logging.getLogger(__name__)
 
 
 class AIFeaturePreprocessor(CustomPreprocessing):
@@ -23,19 +26,37 @@ class AIFeaturePreprocessor(CustomPreprocessing):
     def __init__(self, code_snippets: Optional[List[str]] = None):
         super().__init__()
         self.code_snippets: List[str] = code_snippets or []
+        self.state: dict = {}
 
-    def _apply_snippets(self, df: pd.DataFrame) -> pd.DataFrame:
-        """Execute every stored snippet against *df* in order."""
-        for code in self.code_snippets:
-            local_vars = {"df": df, "np": np, "pd": pd}
-            exec(code, {}, local_vars)  # noqa: S102
-            df = local_vars.get("df", df)
+    def _apply_snippets(self, df: pd.DataFrame, is_fit: bool) -> pd.DataFrame:
+        """Execute every stored snippet against *df* in order.
+
+        Each snippet is wrapped in try/except so that a single broken
+        snippet does not crash the entire pipeline.  The snippet is
+        skipped and a warning is logged.
+        """
+        for i, code in enumerate(self.code_snippets):
+            try:
+                local_vars = {
+                    "df": df,
+                    "np": np,
+                    "pd": pd,
+                    "state": self.state,
+                    "is_fit": is_fit,
+                }
+                exec(code, {}, local_vars)  # noqa: S102
+                df = local_vars.get("df", df)
+            except Exception as e:
+                logger.warning(
+                    f"FE snippet {i + 1}/{len(self.code_snippets)} "
+                    f"failed ({type(e).__name__}: {e}), skipping."
+                )
         return df
 
     def fit_transform(
         self, df: pd.DataFrame, target: pd.Series
     ) -> Tuple[pd.DataFrame, pd.Series]:
-        df = self._apply_snippets(df)
+        df = self._apply_snippets(df, is_fit=True)
         return df, target
 
     def transform(
@@ -44,5 +65,5 @@ class AIFeaturePreprocessor(CustomPreprocessing):
         target: Optional[pd.Series] = None,
         prediction_mode: bool = False,
     ) -> Tuple[pd.DataFrame, Optional[pd.Series]]:
-        df = self._apply_snippets(df)
+        df = self._apply_snippets(df, is_fit=False)
         return df, target

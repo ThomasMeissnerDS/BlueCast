@@ -226,9 +226,9 @@ class FeatureClusteringScorer:
         self.cluster_settings = cluster_settings  # settings for each feature
         self.scalers: dict[str, MinMaxScaler] = {}  # storing scalers per feature
         self.cluster_classes: dict[str, KMeans] = {}  # storing Kmeans class per feature
-        self.cluster_mappings: dict[str, dict[int, int]] = (
-            {}
-        )  # storing reindex mapping for cluster ids
+        self.cluster_mappings: dict[
+            str, dict[int, int]
+        ] = {}  # storing reindex mapping for cluster ids
 
     def _fit_reindex_clusters_by_mean(
         self, temp_df: pd.DataFrame, feature_name: str, higher_is_better: bool = True
@@ -494,3 +494,58 @@ def add_datetime_features(df: pd.DataFrame, date_cols: List[str]) -> pd.DataFram
             except Exception:
                 pass
     return df_out
+
+
+class TfIdfTextEncoder:
+    """
+    Stateful TF-IDF encoder for seamless integration into AIFeaturePreprocessor.
+    Safely separates fit_transform (training data) from transform (inference data).
+    """
+
+    def __init__(self, max_features: int = 50, stop_words: str = "english"):
+        from sklearn.feature_extraction.text import TfidfVectorizer
+
+        self.vectorizer = TfidfVectorizer(
+            max_features=max_features, stop_words=stop_words
+        )
+        self.is_fitted = False
+        self.feature_names = []
+
+    def fit_transform(self, df: pd.DataFrame, text_col: str) -> pd.DataFrame:
+        if text_col not in df.columns:
+            return df
+
+        text_series = df[text_col].fillna("").astype(str)
+        tfidf_matrix = self.vectorizer.fit_transform(text_series)
+        self.is_fitted = True
+
+        try:
+            words = self.vectorizer.get_feature_names_out()
+        except AttributeError:
+            words = self.vectorizer.get_feature_names()
+
+        self.feature_names = [f"tfidf_{text_col}_{w}" for w in words]
+        tfidf_df = pd.DataFrame(
+            tfidf_matrix.toarray(), columns=self.feature_names, index=df.index
+        )
+
+        for col in self.feature_names:
+            df[col] = tfidf_df[col]
+
+        return df
+
+    def transform(self, df: pd.DataFrame, text_col: str) -> pd.DataFrame:
+        if text_col not in df.columns or not self.is_fitted:
+            return df
+
+        text_series = df[text_col].fillna("").astype(str)
+        tfidf_matrix = self.vectorizer.transform(text_series)
+
+        tfidf_df = pd.DataFrame(
+            tfidf_matrix.toarray(), columns=self.feature_names, index=df.index
+        )
+
+        for col in self.feature_names:
+            df[col] = tfidf_df[col]
+
+        return df

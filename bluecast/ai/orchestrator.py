@@ -8,6 +8,7 @@ import time
 from typing import Optional
 
 import dill
+import numpy as np
 import pandas as pd
 
 from bluecast.ai.agents.data_analyst import DataAnalystAgent
@@ -584,18 +585,43 @@ class Orchestrator:
         else:
             self.engineer.run(task)
 
-        if self.context.engineered_df is not None and self.config.verbose:
-            orig_cols = (
-                len(self.context.df_train.columns)
-                if self.context.df_train is not None
-                else 0
-            )
-            new_cols = len(self.context.engineered_df.columns)
-            print(f"  Features: {orig_cols} -> {new_cols} columns")
+        if self.context.feature_code_snippets and self.context.df_train is not None:
+            if self.config.verbose:
+                print("  [Validation] Verifying feature engineering snippets...")
+
+            df_test = self.context.df_train.copy()
+            valid_snippets = []
+
+            for i, code in enumerate(self.context.feature_code_snippets):
+                try:
+                    local_vars = {"df": df_test, "np": np, "pd": pd}
+                    exec(code, {}, local_vars)  # noqa: S102
+                    df_test = local_vars.get("df", df_test)
+                    valid_snippets.append(code)
+                except Exception as e:
+                    if self.config.verbose:
+                        print(
+                            f"    Warning: FE snippet {i + 1} failed validation ({e}). Pruning."
+                        )
+
+            self.context.feature_code_snippets = valid_snippets
+            self.context.engineered_df = df_test
+
+            if self.config.verbose:
+                orig_cols = len(self.context.df_train.columns)
+                new_cols = len(self.context.engineered_df.columns)
+                print(
+                    f"  Features finalized: {orig_cols} -> {new_cols} columns ({len(valid_snippets)} snippets)"
+                )
 
     def _step_build_loop(self, plan: dict, max_iterations: int) -> None:
         if self.config.verbose:
             print(f"\nStep 5: Building pipeline (up to {max_iterations} iterations)...")
+
+        original_plan_limits = {
+            "tuning_rounds": plan.get("tuning_rounds", 200),
+            "tuning_max_runtime": plan.get("tuning_max_runtime", 1800),
+        }
 
         for iteration in range(max_iterations):
             if self.config.verbose:
@@ -624,6 +650,7 @@ class Orchestrator:
                     json_text = eval_result.split("```json")[1].split("```")[0]
                     suggestions = json.loads(json_text)
                     plan.update(suggestions)
+                    plan = self._enforce_config_constraints(plan, original_plan_limits)
             except (json.JSONDecodeError, IndexError):
                 pass
 
@@ -642,9 +669,14 @@ class Orchestrator:
                 f"({total_archs} architectures × {iters} iterations)..."
             )
 
-        arch_best: dict = {}  # arch_name -> {pipeline, metrics, config}
-
         for arch_idx, (arch_name, arch_info) in enumerate(archs.items(), 1):
+            if self._is_step_done(f"build_arch_{arch_name}"):
+                if self.config.verbose:
+                    print(
+                        f"\n  [{arch_idx}/{total_archs}] Skipping {arch_info['name']} (Loaded from checkpoint)"
+                    )
+                continue
+
             if self.config.verbose:
                 print(f"\n  [{arch_idx}/{total_archs}] " f"=== {arch_info['name']} ===")
 
@@ -676,12 +708,30 @@ class Orchestrator:
                 if self.config.verbose:
                     print(f"      Metrics: {result['metrics']}")
 
-                # Track best result for this architecture
-                arch_best[arch_name] = {
-                    "pipeline": result["pipeline"],
-                    "metrics": result["metrics"],
-                    "config": result["config_used"],
-                }
+                # Update global best pipeline
+                is_better = False
+                if self.context.best_metrics is None:
+                    is_better = True
+                else:
+                    new_m = result["metrics"]
+                    old_m = self.context.best_metrics
+                    for key in ["roc_auc", "oof_mean", "r2_score"]:
+                        if key in new_m and key in old_m:
+                            if key == "oof_mean":
+                                is_better = abs(new_m[key]) < abs(old_m[key])
+                            else:
+                                is_better = new_m[key] > old_m[key]
+                            break
+                    if not is_better and not old_m:
+                        is_better = True
+
+                if is_better:
+                    self.context.best_pipeline = result["pipeline"]
+                    self.context.best_metrics = result["metrics"]
+                    if self.config.verbose:
+                        print(
+                            f"      [Best so far] New best pipeline: {arch_name} with {result['metrics']}"
+                        )
 
                 # Record in run history
                 self.context.run_history.append(
@@ -700,9 +750,24 @@ class Orchestrator:
                         arch_name, arch_info["name"], result
                     )
                     arch_config.update(suggestions)
+                    arch_config = self._enforce_config_constraints(arch_config, plan)
 
-        # Select the best pipeline across all architectures
-        self._select_best_from_archs(arch_best)
+            self._save_checkpoint(f"build_arch_{arch_name}")
+
+    def _enforce_config_constraints(self, config: dict, original_plan: dict) -> dict:
+        """Enforce strict bounds on tuning rounds and runtime to prevent runaway LLM configs."""
+        max_rounds = original_plan.get("tuning_rounds", 200)
+        max_runtime = original_plan.get("tuning_max_runtime", 1800)
+
+        if "tuning_rounds" in config:
+            config["tuning_rounds"] = min(
+                config.get("tuning_rounds", max_rounds), max_rounds
+            )
+        if "tuning_max_runtime" in config:
+            config["tuning_max_runtime"] = min(
+                config.get("tuning_max_runtime", max_runtime), max_runtime
+            )
+        return config
 
     def _build_arch_config(self, plan: dict, arch_name: str) -> dict:
         """Build a base pipeline config for a specific architecture."""
@@ -722,6 +787,7 @@ class Orchestrator:
         if arch_name == "linear":
             config["tuning_rounds"] = 1
             config["tuning_max_runtime"] = 30
+            config["cat_encoding_via_ml_algorithm"] = False
 
         return config
 
@@ -769,6 +835,12 @@ class Orchestrator:
         self, arch_name: str, arch_display_name: str, result: dict
     ) -> dict:
         """Ask the Evaluator for architecture-specific improvements."""
+        extra_info = ""
+        if arch_name == "linear":
+            extra_info = "\nWARNING: Linear models strictly require rigorous missing value imputation, categorical encoding, and feature scaling to perform well."
+        elif arch_name in ("histgb", "xgboost"):
+            extra_info = "\nWARNING: This architecture strictly requires categorical features to be numerically encoded and missing values to be imputed."
+
         arch_context = (
             f"You are evaluating the **{arch_display_name}** architecture track.\n"
             f"Current metrics: {result['metrics']}\n\n"
@@ -776,7 +848,8 @@ class Orchestrator:
             f"- enable_feature_selection: true/false (recursive feature elimination)\n"
             f"- tuning_rounds: integer (hyperparameter tuning iterations)\n"
             f"- n_folds / n_repeats: cross-validation settings\n"
-            f"- ensemble_strategy: mean / stacking / hill_climbing\n\n"
+            f"- ensemble_strategy: mean / stacking / hill_climbing\n"
+            f"{extra_info}\n\n"
             f"Suggest specific improvements as a JSON dict."
         )
 
@@ -791,61 +864,6 @@ class Orchestrator:
             pass
 
         return suggestions
-
-    def _select_best_from_archs(self, arch_best: dict) -> None:
-        """Select the best pipeline from across all architecture tracks."""
-        best_arch = None
-        best_score = None
-        higher_is_better = True
-
-        for arch_name, info in arch_best.items():
-            metrics = info["metrics"]
-            score = None
-
-            for key in ["roc_auc", "r2_score"]:
-                if key in metrics:
-                    score = metrics[key]
-                    higher_is_better = True
-                    break
-
-            if score is None and "oof_mean" in metrics:
-                score = abs(metrics["oof_mean"])
-                higher_is_better = False
-
-            if score is None:
-                continue
-
-            if best_score is None:
-                best_score = score
-                best_arch = arch_name
-            elif higher_is_better and score > best_score:
-                best_score = score
-                best_arch = arch_name
-            elif not higher_is_better and score < best_score:
-                best_score = score
-                best_arch = arch_name
-
-        if best_arch and best_arch in arch_best:
-            winner = arch_best[best_arch]
-            self.context.best_pipeline = winner["pipeline"]
-            self.context.best_metrics = winner["metrics"]
-
-            if self.config.verbose:
-                print(
-                    f"\n  [Ultimate] Best architecture: {best_arch} "
-                    f"(score={best_score})"
-                )
-
-            self.context.log(
-                "Orchestrator",
-                f"Ultimate mode selected {best_arch} "
-                f"with metrics: {winner['metrics']}",
-                event_type="info",
-                metadata={
-                    "best_architecture": best_arch,
-                    "all_results": {k: v["metrics"] for k, v in arch_best.items()},
-                },
-            )
 
     def _step_report(self) -> None:
         """Have the Reporter agent write a polished summary."""

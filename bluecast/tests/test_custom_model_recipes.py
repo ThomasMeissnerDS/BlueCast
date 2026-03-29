@@ -132,11 +132,7 @@ def test_linear_predict(regression_data, linear_model):
     X_train, X_test, y_train, y_test = regression_data
     linear_model.fit(X_train, X_test, y_train, y_test)
 
-    result = linear_model.predict(X_test)
-
-    # predict returns (preds, preds) tuple to match BaseClassMlModel interface
-    assert isinstance(result, tuple), "Predictions should be a tuple."
-    predictions = result[0]
+    predictions = linear_model.predict(X_test)
 
     assert isinstance(predictions, np.ndarray), "Predictions should be a numpy array."
 
@@ -151,7 +147,7 @@ def test_linear_predict_range(regression_data, linear_model):
     X_train, X_test, y_train, y_test = regression_data
     linear_model.fit(X_train, X_test, y_train, y_test)
 
-    predictions, _ = linear_model.predict(X_test)
+    predictions = linear_model.predict(X_test)
 
     assert np.all(
         predictions >= y_train.min() - 10
