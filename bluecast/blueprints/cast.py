@@ -319,7 +319,9 @@ class BlueCast:
                 x_test, y_test, prediction_mode=False
             )
             feat_type_detector = FeatureTypeDetector(
-                cat_columns=[], num_columns=[], date_columns=[]
+                cat_columns=self.cat_columns,
+                num_columns=getattr(self, "num_columns", []),
+                date_columns=self.date_columns,
             )
             _ = feat_type_detector.fit_transform_feature_types(x_train)
             x_train = x_train.reset_index(drop=True)
@@ -331,9 +333,8 @@ class BlueCast:
             if target_col in feat_type_detector.cat_columns:
                 feat_type_detector.cat_columns.remove(target_col)
             
-            self.feat_type_detector = feat_type_detector
-            self.cat_columns = self.feat_type_detector.cat_columns
-            self.date_columns = self.feat_type_detector.date_columns
+            self.cat_columns = feat_type_detector.cat_columns
+            self.date_columns = feat_type_detector.date_columns
 
         x_train, x_test = fill_infinite_values(x_train), fill_infinite_values(x_test)
         self.date_part_extractor = DatePartExtractor(

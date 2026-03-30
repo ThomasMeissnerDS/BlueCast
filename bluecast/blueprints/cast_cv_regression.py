@@ -100,7 +100,10 @@ class BlueCastCVRegression:
         self.conformal_prediction_wrapper: Optional[
             ConformalPredictionRegressionWrapper
         ] = None
-        self.ensemble_config = ensemble_config or EnsembleConfig()
+        self.ensemble_config = ensemble_config or EnsembleConfig(
+            hc_blending_method="probability",
+            stacking_use_ranks=False,
+        )
         self.stacking_ensemble: Optional[StackingEnsemble] = None
         self.hill_climbing_ensemble: Optional[HillClimbingEnsemble] = None
 
