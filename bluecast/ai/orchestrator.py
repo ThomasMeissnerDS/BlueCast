@@ -750,11 +750,11 @@ class Orchestrator:
                         arch_name, arch_info["name"], result
                     )
                     arch_config.update(suggestions)
-                    arch_config = self._enforce_config_constraints(arch_config, plan)
+                    arch_config = self._enforce_config_constraints(arch_config, plan, arch_name)
 
             self._save_checkpoint(f"build_arch_{arch_name}")
 
-    def _enforce_config_constraints(self, config: dict, original_plan: dict) -> dict:
+    def _enforce_config_constraints(self, config: dict, original_plan: dict, arch_name: str = "") -> dict:
         """Enforce strict bounds on tuning rounds and runtime to prevent runaway LLM configs."""
         max_rounds = original_plan.get("tuning_rounds", 200)
         max_runtime = original_plan.get("tuning_max_runtime", 1800)
@@ -767,6 +767,10 @@ class Orchestrator:
             config["tuning_max_runtime"] = min(
                 config.get("tuning_max_runtime", max_runtime), max_runtime
             )
+            
+        if arch_name == "linear":
+            config["cat_encoding_via_ml_algorithm"] = False
+            
         return config
 
     def _build_arch_config(self, plan: dict, arch_name: str) -> dict:

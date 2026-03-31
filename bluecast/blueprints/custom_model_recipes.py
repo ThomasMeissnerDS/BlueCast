@@ -10,6 +10,8 @@ from sklearn.linear_model import (
     LogisticRegression,
     Ridge,
 )
+from sklearn.exceptions import ConvergenceWarning
+import warnings
 from sklearn.model_selection import GridSearchCV, KFold, StratifiedKFold
 
 from bluecast.ml_modelling.base_classes import (
@@ -172,24 +174,26 @@ class RegularizedRegressionModel(BaseClassMlRegressionModel):
         best_score = -np.inf
         best_gs = None
 
-        for name, (estimator, param_grid) in candidates.items():
-            gs = GridSearchCV(
-                estimator=estimator,
-                param_grid=param_grid,
-                n_jobs=-1,
-                cv=kfold,
-                scoring=self.scoring,
-                verbose=0,
-            )
-            gs.fit(x_train, y_train)
-            logging.info(
-                f"{name} best score: {gs.best_score_:.4f}, "
-                f"params: {gs.best_params_}"
-            )
-            if gs.best_score_ > best_score:
-                best_score = gs.best_score_
-                best_gs = gs
-                self.best_model_type = name
+        with warnings.catch_warnings():
+            warnings.filterwarnings("ignore", category=ConvergenceWarning)
+            for name, (estimator, param_grid) in candidates.items():
+                gs = GridSearchCV(
+                    estimator=estimator,
+                    param_grid=param_grid,
+                    n_jobs=-1,
+                    cv=kfold,
+                    scoring=self.scoring,
+                    verbose=0,
+                )
+                gs.fit(x_train, y_train)
+                logging.info(
+                    f"{name} best score: {gs.best_score_:.4f}, "
+                    f"params: {gs.best_params_}"
+                )
+                if gs.best_score_ > best_score:
+                    best_score = gs.best_score_
+                    best_gs = gs
+                    self.best_model_type = name
 
         self.model = best_gs
         logging.info(
