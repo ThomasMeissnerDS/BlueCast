@@ -54,10 +54,20 @@ class PipelineBuilderAgent(BaseAgent):
             else:
                 new_m = result["metrics"]
                 old_m = self.context.best_metrics
-                # Compare OOF scores or classification metrics
-                for key in ["roc_auc", "oof_mean", "r2_score"]:
+                # Compare OOF scores, classification metrics, or regression metrics
+                eval_metrics = [
+                    "roc_auc", "oof_mean", "r2_score", "mae", "rmse",
+                    "mse", "mean_absolute_error", "mean_squared_error",
+                    "median_absolute_error", "mean_squared_log_error"
+                ]
+                error_metrics = [
+                    "oof_mean", "mae", "rmse", "mse", "mean_absolute_error",
+                    "mean_squared_error", "median_absolute_error",
+                    "mean_squared_log_error"
+                ]
+                for key in eval_metrics:
                     if key in new_m and key in old_m:
-                        if key == "oof_mean":
+                        if key in error_metrics:
                             is_better = abs(new_m[key]) < abs(old_m[key])
                         else:
                             is_better = new_m[key] > old_m[key]
@@ -112,10 +122,13 @@ class PipelineBuilderAgent(BaseAgent):
                 f"    bluecast_cv_train_n_model=({config.get('n_folds', 5)}, {config.get('n_repeats', 1)}),",
                 "    calculate_shap_values=False,",
                 "    plot_hyperparameter_tuning_overview=False,",
-                ")",
-                "",
             ]
         )
+
+        if "out_of_fold_dataset_store_path" in config:
+            lines.append(f'    out_of_fold_dataset_store_path="{config["out_of_fold_dataset_store_path"]}",')
+        lines.append(")")
+        lines.append("")
 
         strategy = config.get("ensemble_strategy", "mean")
         if config.get("use_cv", True):
@@ -169,6 +182,7 @@ Available parameters:
 - tuning_rounds: hyperparameter tuning rounds (20-200)
 - tuning_max_runtime: max tuning time in seconds
 - autotune_on_device: "cpu" or "gpu"
+- out_of_fold_dataset_store_path: (optional) path to save OOF parquet predictions
 
 After running the pipeline, analyze the results and suggest improvements.
 {history}

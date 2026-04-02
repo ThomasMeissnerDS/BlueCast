@@ -100,6 +100,8 @@ class BlueCastAI:
         to prevent hitting rate limits.
     :param project_id: Optional Project ID when using Vertex AI (GCP).
     :param location: Optional Region/Location when using Vertex AI (GCP).
+    :param global_tuning_budget: Optional global time budget for hyperparameter tuning in seconds.
+        If provided, the orchestrator divides this evenly across all folds, iterations, and architectures.
 
     Usage::
 
@@ -135,6 +137,7 @@ class BlueCastAI:
         llm_sleep_time: float = 0.0,
         project_id: Optional[str] = None,
         location: Optional[str] = None,
+        global_tuning_budget: Optional[int] = None,
     ):
         self.config = AIConfig(
             api_key=api_key,
@@ -147,6 +150,7 @@ class BlueCastAI:
             llm_sleep_time=llm_sleep_time,
             project_id=project_id,
             location=location,
+            global_tuning_budget=global_tuning_budget,
         )
         self._llm = _create_provider(self.config)
 
@@ -185,6 +189,8 @@ class BlueCastAI:
         self.config.context_files = context_files or []
         if max_iterations > 0:
             self.config.max_iterations = max_iterations
+            if mode == "ultimate":
+                self.config.ultimate_iterations_per_arch = max_iterations
 
         from bluecast.ai.orchestrator import Orchestrator
 

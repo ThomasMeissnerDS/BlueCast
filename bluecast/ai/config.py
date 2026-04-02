@@ -38,6 +38,8 @@ class AIConfig:
     :param callbacks: List of callable functions to trigger during agent execution.
     :param project_id: Optional GCP Project ID (only used when provider='vertexai').
     :param location: Optional GCP Location/Region (only used when provider='vertexai').
+    :param global_tuning_budget: Optional global time budget for hyperparameter tuning in seconds.
+        If provided, the orchestrator divides this evenly across all folds, iterations, and architectures.
     """
 
     api_key: str = ""
@@ -59,6 +61,7 @@ class AIConfig:
     location: Optional[str] = None
     ultimate_iterations_per_arch: int = 2
     critique_max_rounds: int = 2
+    global_tuning_budget: Optional[int] = None
 
     def get_model_name(self) -> str:
         if self.model:

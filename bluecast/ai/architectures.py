@@ -12,6 +12,8 @@ import pandas as pd
 from sklearn.ensemble import (
     HistGradientBoostingClassifier,
     HistGradientBoostingRegressor,
+    RandomForestClassifier,
+    RandomForestRegressor,
 )
 from sklearn.model_selection import GridSearchCV, KFold, StratifiedKFold
 
@@ -134,9 +136,11 @@ class HistGBRegressionModel(BaseClassMlRegressionModel):
             "max_depth": [4, 6, 8],
             "min_samples_leaf": [10, 20, 50],
         }
+        loss = "absolute_error" if "absolute_error" in self.scoring else "squared_error"
         gs = GridSearchCV(
             estimator=HistGradientBoostingRegressor(
                 random_state=self.random_state,
+                loss=loss,
                 early_stopping=True,
                 validation_fraction=0.1,
             ),
@@ -163,6 +167,149 @@ class HistGBRegressionModel(BaseClassMlRegressionModel):
         self.autotune(x_train, x_test, y_train, y_test)
 
     def predict(self, df: pd.DataFrame) -> np.ndarray:
+        if self.model is None:
+            raise ValueError("No fitted model has been found.")
+        preds = self.model.predict(df)
+        return preds
+
+
+class RandomForestClassificationModel(BaseClassMlModel):
+    """Sklearn RandomForestClassifier with GridSearchCV tuning.
+
+    :param scoring: Scoring metric for GridSearchCV.
+    :param cv_folds: Number of cross-validation folds.
+    :param random_state: Random seed.
+    """
+
+    def __init__(
+        self,
+        scoring: str = "roc_auc",
+        cv_folds: int = 5,
+        random_state: int = 300,
+    ):
+        self.model: Optional[GridSearchCV] = None
+        self.scoring = scoring
+        self.cv_folds = cv_folds
+        self.random_state = random_state
+
+    def autotune(
+        self,
+        x_train: pd.DataFrame,
+        x_test: pd.DataFrame,
+        y_train: pd.Series,
+        y_test: pd.Series,
+    ) -> None:
+        x_train = x_train.fillna(0)
+        skfold = StratifiedKFold(
+            n_splits=self.cv_folds, shuffle=True, random_state=self.random_state
+        )
+        param_grid = {
+            "n_estimators": [100, 200],
+            "max_depth": [4, 6, 8, None],
+            "min_samples_leaf": [1, 10, 20],
+        }
+        gs = GridSearchCV(
+            estimator=RandomForestClassifier(
+                random_state=self.random_state,
+                n_jobs=-1,
+            ),
+            param_grid=param_grid,
+            n_jobs=-1,
+            cv=skfold,
+            scoring=self.scoring,
+            verbose=0,
+        )
+        gs.fit(x_train, y_train)
+        logger.info(
+            f"RandomForest classification best params: {gs.best_params_} "
+            f"(score: {gs.best_score_:.4f})"
+        )
+        self.model = gs
+
+    def fit(
+        self,
+        x_train: pd.DataFrame,
+        x_test: pd.DataFrame,
+        y_train: pd.Series,
+        y_test: pd.Series,
+    ) -> None:
+        self.autotune(x_train, x_test, y_train, y_test)
+
+    def predict(self, df: pd.DataFrame) -> Tuple[np.ndarray, np.ndarray]:
+        df = df.fillna(0)
+        if self.model is None:
+            raise ValueError("No fitted model has been found.")
+        probas = self.model.predict_proba(df)[:, 1]
+        classes = self.model.predict(df)
+        return probas, classes
+
+
+class RandomForestRegressionModel(BaseClassMlRegressionModel):
+    """Sklearn RandomForestRegressor with GridSearchCV tuning.
+
+    :param scoring: Scoring metric for GridSearchCV.
+    :param cv_folds: Number of cross-validation folds.
+    :param random_state: Random seed.
+    """
+
+    def __init__(
+        self,
+        scoring: str = "neg_mean_absolute_error",
+        cv_folds: int = 5,
+        random_state: int = 300,
+    ):
+        self.model: Optional[GridSearchCV] = None
+        self.scoring = scoring
+        self.cv_folds = cv_folds
+        self.random_state = random_state
+
+    def autotune(
+        self,
+        x_train: pd.DataFrame,
+        x_test: pd.DataFrame,
+        y_train: pd.Series,
+        y_test: pd.Series,
+    ) -> None:
+        x_train = x_train.fillna(0)
+        kfold = KFold(
+            n_splits=self.cv_folds, shuffle=True, random_state=self.random_state
+        )
+        param_grid = {
+            "n_estimators": [100, 200],
+            "max_depth": [4, 6, 8, None],
+            "min_samples_leaf": [1, 10, 20],
+        }
+        criterion = "absolute_error" if "absolute_error" in self.scoring else "squared_error"
+        gs = GridSearchCV(
+            estimator=RandomForestRegressor(
+                random_state=self.random_state,
+                criterion=criterion,
+                n_jobs=-1,
+            ),
+            param_grid=param_grid,
+            n_jobs=-1,
+            cv=kfold,
+            scoring=self.scoring,
+            verbose=0,
+        )
+        gs.fit(x_train, y_train)
+        logger.info(
+            f"RandomForest regression best params: {gs.best_params_} "
+            f"(score: {gs.best_score_:.4f})"
+        )
+        self.model = gs
+
+    def fit(
+        self,
+        x_train: pd.DataFrame,
+        x_test: pd.DataFrame,
+        y_train: pd.Series,
+        y_test: pd.Series,
+    ) -> None:
+        self.autotune(x_train, x_test, y_train, y_test)
+
+    def predict(self, df: pd.DataFrame) -> np.ndarray:
+        df = df.fillna(0)
         if self.model is None:
             raise ValueError("No fitted model has been found.")
         preds = self.model.predict(df)
@@ -196,6 +343,14 @@ def _make_histgb(problem: str) -> BaseClassMlModel:
         return HistGBClassificationModel()
 
 
+def _make_random_forest(problem: str) -> BaseClassMlModel:
+    """Create a RandomForest model appropriate for the problem type."""
+    if problem == "regression":
+        return RandomForestRegressionModel()
+    else:
+        return RandomForestClassificationModel()
+
+
 ArchInfo = Dict[str, Any]
 
 ARCHITECTURE_REGISTRY: Dict[str, ArchInfo] = {
@@ -218,6 +373,11 @@ ARCHITECTURE_REGISTRY: Dict[str, ArchInfo] = {
     "histgb": {
         "name": "HistGradientBoosting (sklearn)",
         "factory": _make_histgb,
+        "supports": ["binary", "multiclass", "regression"],
+    },
+    "randomforest": {
+        "name": "RandomForest (sklearn)",
+        "factory": _make_random_forest,
         "supports": ["binary", "multiclass", "regression"],
     },
 }

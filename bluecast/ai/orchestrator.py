@@ -618,6 +618,13 @@ class Orchestrator:
         if self.config.verbose:
             print(f"\nStep 5: Building pipeline (up to {max_iterations} iterations)...")
 
+        override_max_runtime = None
+        if self.config.global_tuning_budget and self.config.global_tuning_budget > 0:
+            n_folds_expected = plan.get("n_folds", 5)
+            total_jobs = max_iterations * n_folds_expected
+            override_max_runtime = max(10, int(self.config.global_tuning_budget / total_jobs))
+            plan["tuning_max_runtime"] = override_max_runtime
+
         original_plan_limits = {
             "tuning_rounds": plan.get("tuning_rounds", 200),
             "tuning_max_runtime": plan.get("tuning_max_runtime", 1800),
@@ -662,6 +669,14 @@ class Orchestrator:
         archs = get_architectures_for_problem(problem)
         iters = self.config.ultimate_iterations_per_arch
         total_archs = len(archs)
+        
+        override_max_runtime = None
+        if self.config.global_tuning_budget and self.config.global_tuning_budget > 0:
+            n_folds_expected = plan.get("n_folds", 5)
+            # Rough estimation: divide budget evenly across all tunable jobs
+            tunable_archs = max(1, total_archs - 1)  # Linear models usually don't tune heavily
+            total_jobs = tunable_archs * iters * n_folds_expected
+            override_max_runtime = max(10, int(self.config.global_tuning_budget / total_jobs))
 
         if self.config.verbose:
             print(
@@ -687,7 +702,7 @@ class Orchestrator:
             # tool knows to pass conf_xgboost instead.
             use_xgboost = arch_info.get("use_xgboost_native", False)
 
-            arch_config = self._build_arch_config(plan, arch_name)
+            arch_config = self._build_arch_config(plan, arch_name, override_max_runtime)
 
             for iteration in range(iters):
                 if self.config.verbose:
@@ -715,9 +730,19 @@ class Orchestrator:
                 else:
                     new_m = result["metrics"]
                     old_m = self.context.best_metrics
-                    for key in ["roc_auc", "oof_mean", "r2_score"]:
+                    eval_metrics = [
+                        "roc_auc", "oof_mean", "r2_score", "mae", "rmse",
+                        "mse", "mean_absolute_error", "mean_squared_error",
+                        "median_absolute_error", "mean_squared_log_error"
+                    ]
+                    error_metrics = [
+                        "oof_mean", "mae", "rmse", "mse", "mean_absolute_error",
+                        "mean_squared_error", "median_absolute_error",
+                        "mean_squared_log_error"
+                    ]
+                    for key in eval_metrics:
                         if key in new_m and key in old_m:
-                            if key == "oof_mean":
+                            if key in error_metrics:
                                 is_better = abs(new_m[key]) < abs(old_m[key])
                             else:
                                 is_better = new_m[key] > old_m[key]
@@ -768,12 +793,12 @@ class Orchestrator:
                 config.get("tuning_max_runtime", max_runtime), max_runtime
             )
             
-        if arch_name == "linear":
+        if arch_name in ["linear", "randomforest"]:
             config["cat_encoding_via_ml_algorithm"] = False
             
         return config
 
-    def _build_arch_config(self, plan: dict, arch_name: str) -> dict:
+    def _build_arch_config(self, plan: dict, arch_name: str, override_max_runtime: Optional[int] = None) -> dict:
         """Build a base pipeline config for a specific architecture."""
         config = {
             "class_problem": plan.get(
@@ -784,13 +809,15 @@ class Orchestrator:
             "n_folds": plan.get("n_folds", 5),
             "n_repeats": plan.get("n_repeats", 1),
             "tuning_rounds": plan.get("tuning_rounds", 50),
-            "tuning_max_runtime": plan.get("tuning_max_runtime", 120),
+            "tuning_max_runtime": override_max_runtime if override_max_runtime else plan.get("tuning_max_runtime", 120),
         }
 
         # Linear models don't benefit from gradient boosting tuning
         if arch_name == "linear":
             config["tuning_rounds"] = 1
             config["tuning_max_runtime"] = 30
+            
+        if arch_name in ["linear", "randomforest"]:
             config["cat_encoding_via_ml_algorithm"] = False
 
         return config

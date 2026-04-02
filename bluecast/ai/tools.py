@@ -430,6 +430,9 @@ def tool_build_and_run_pipeline(
         ),
     )
     
+    if "out_of_fold_dataset_store_path" in config:
+        training_config.out_of_fold_dataset_store_path = config["out_of_fold_dataset_store_path"]
+
     if "cat_encoding_via_ml_algorithm" in config:
         training_config.cat_encoding_via_ml_algorithm = config["cat_encoding_via_ml_algorithm"]
 
@@ -442,7 +445,7 @@ def tool_build_and_run_pipeline(
             ensemble_config.hc_weight_max = config.get("hc_weight_max", 0.5)
             ensemble_config.hc_weight_step = config.get("hc_weight_step", 0.01)
             if class_problem == "regression":
-                ensemble_config.hc_blending_method = "probability"
+                ensemble_config.hc_blending_method = "rank"  # regression shouldn't use probability
 
     try:
         pipeline = BlueCastAuto(
@@ -633,6 +636,10 @@ TOOL_DEFINITIONS: Dict[str, ToolDefinition] = {
                     "type": "string",
                     "enum": ["cpu", "gpu"],
                     "description": "Device for training. Default cpu.",
+                },
+                "out_of_fold_dataset_store_path": {
+                    "type": "string",
+                    "description": "Path to save out-of-fold predictions. Omit to not save.",
                 },
             },
             "required": ["class_problem"],

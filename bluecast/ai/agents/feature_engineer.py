@@ -87,7 +87,11 @@ class FeatureEngineerAgent(BaseAgent):
 
     def system_prompt(self) -> str:
         data_summary = self.context.get_data_summary()
-        profile = self.context.data_profile or "Not yet profiled."
+        profile_data = self.context.data_profile or "Not yet profiled."
+        if isinstance(profile_data, dict):
+            profile = profile_data.get("summary", str(profile_data))
+        else:
+            profile = str(profile_data)
         hints = ""
         if self.context.data_warnings:
             hints = "\nData warnings:\n" + "\n".join(

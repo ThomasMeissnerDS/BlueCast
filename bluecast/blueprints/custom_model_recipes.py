@@ -59,6 +59,7 @@ class LogisticRegressionModel(BaseClassMlModel):
         y_train: pd.Series,
         y_test: pd.Series,
     ):
+        x_train = x_train.fillna(0)
         skfold = StratifiedKFold(
             n_splits=self.cv_folds, shuffle=True, random_state=self.random_state
         )
@@ -111,6 +112,7 @@ class LogisticRegressionModel(BaseClassMlModel):
         self.autotune(x_train, x_test, y_train, y_test)
 
     def predict(self, df: pd.DataFrame) -> Tuple[PredictedProbas, PredictedClasses]:
+        df = df.fillna(0)
         if isinstance(self.model, GridSearchCV):
             probas = self.model.predict_proba(df)[:, 1]
             classes = self.model.predict(df)
@@ -148,6 +150,7 @@ class RegularizedRegressionModel(BaseClassMlRegressionModel):
         y_train: pd.Series,
         y_test: pd.Series,
     ):
+        x_train = x_train.fillna(0)
         kfold = KFold(
             n_splits=self.cv_folds, shuffle=True, random_state=self.random_state
         )
@@ -211,6 +214,7 @@ class RegularizedRegressionModel(BaseClassMlRegressionModel):
         self.autotune(x_train, x_test, y_train, y_test)
 
     def predict(self, df: pd.DataFrame) -> np.ndarray:
+        df = df.fillna(0)
         if self.model is not None:
             preds = self.model.predict(df)
             return preds
@@ -233,6 +237,7 @@ class LinearRegressionModel(BaseClassMlRegressionModel):
         y_train: pd.Series,
         y_test: pd.Series,
     ):
+        x_train = x_train.fillna(0)
         self.linear_regression_model.fit(x_train, y_train)
         self.model = self.linear_regression_model
 
@@ -246,6 +251,7 @@ class LinearRegressionModel(BaseClassMlRegressionModel):
         self.autotune(x_train, x_test, y_train, y_test)
 
     def predict(self, df: pd.DataFrame) -> np.ndarray:
+        df = df.fillna(0)
         if isinstance(self.model, LinearRegression):
             preds = self.model.predict(df)
             return preds

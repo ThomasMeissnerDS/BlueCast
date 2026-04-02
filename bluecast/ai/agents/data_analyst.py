@@ -114,7 +114,8 @@ After analysis, provide a comprehensive structured summary with:
 - Cardinality analysis: which columns are IDs, which are useful categoricals
 - Temporal patterns: is there data drift over time?
 - Group-level insights: do certain groups behave differently?
-- Recommendations for feature engineering
+- Specific recommendations for tree-based models (which handle missing values and unencoded categories naturally).
+- Specific recommendations for linear models (which strictly require missing value imputation, scaling, and categorical encoding).
 - Warnings about leakage, class imbalance, or other issues
 
 Be thorough. Look for oddities the model might struggle with.
