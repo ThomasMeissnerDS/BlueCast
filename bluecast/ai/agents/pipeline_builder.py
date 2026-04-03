@@ -181,6 +181,10 @@ Available parameters:
 - n_repeats: CV repeats (1-3)
 - tuning_rounds: hyperparameter tuning rounds (20-200)
 - tuning_max_runtime: max tuning time in seconds
+- enable_feature_selection: boolean (can disable to speed up evaluation)
+- columns_to_drop: list of string column names to drop to eliminate noise
+- rf_max_depth_min, rf_max_depth_max, rf_estimators_min, rf_estimators_max: integer bounds for RandomForest
+- histgb_max_iter_max, histgb_depth_max: integer bounds for HistGradientBoosting
 - autotune_on_device: "cpu" or "gpu"
 - out_of_fold_dataset_store_path: (optional) path to save OOF parquet predictions
 

@@ -321,9 +321,16 @@ class Orchestrator:
         """Execute the full multi-agent pipeline."""
         start_time = time.time()
 
+        # Enable incremental log flushing so logs survive crashes / timeouts
+        if not self.context.log_file_path:
+            log_dir = os.getcwd()
+            self.context.log_file_path = os.path.join(log_dir, "bluecastai_agent_log.jsonl")
+            logger.info(f"Incremental log file: {self.context.log_file_path}")
+
         if self.config.verbose:
             print("=" * 60)
             print("BlueCastAI - Multi-Agent AutoML Pipeline")
+            print(f"  Log file: {self.context.log_file_path}")
             print("=" * 60)
 
         self._load_checkpoint()
@@ -781,17 +788,31 @@ class Orchestrator:
 
     def _enforce_config_constraints(self, config: dict, original_plan: dict, arch_name: str = "") -> dict:
         """Enforce strict bounds on tuning rounds and runtime to prevent runaway LLM configs."""
-        max_rounds = original_plan.get("tuning_rounds", 200)
-        max_runtime = original_plan.get("tuning_max_runtime", 1800)
+        max_rounds = original_plan.get("tuning_rounds")
+        if max_rounds is None:
+            max_rounds = 200
+            
+        max_runtime = original_plan.get("tuning_max_runtime")
+        if max_runtime is None:
+            max_runtime = 1800
 
         if "tuning_rounds" in config:
-            config["tuning_rounds"] = min(
-                config.get("tuning_rounds", max_rounds), max_rounds
-            )
+            val = config.get("tuning_rounds")
+            if val is None:
+                val = max_rounds
+            if isinstance(val, int) and isinstance(max_rounds, int):
+                config["tuning_rounds"] = min(val, max_rounds)
+            else:
+                config["tuning_rounds"] = max_rounds
+
         if "tuning_max_runtime" in config:
-            config["tuning_max_runtime"] = min(
-                config.get("tuning_max_runtime", max_runtime), max_runtime
-            )
+            val = config.get("tuning_max_runtime")
+            if val is None:
+                val = max_runtime
+            if isinstance(val, int) and isinstance(max_runtime, int):
+                config["tuning_max_runtime"] = min(val, max_runtime)
+            else:
+                config["tuning_max_runtime"] = max_runtime
             
         if arch_name in ["linear", "randomforest"]:
             config["cat_encoding_via_ml_algorithm"] = False

@@ -33,9 +33,9 @@ Provide your response as a structured analysis:
 2. What worked well in the current run
 3. Specific suggestions for improvement:
    - Should we change ensemble_strategy? (mean -> stacking -> hill_climbing)
-   - Should we increase tuning_rounds or n_folds?
-   - Should we add more repeats for diversity?
-   - Are there feature engineering opportunities?
+   - Should we adjust tuning_rounds, n_folds, or CV repeats?
+   - Should we set columns_to_drop to remove noisy or irrelevant features?
+   - Should we enable_feature_selection or loosen Optuna bounds (e.g. rf_max_depth_max) if underfitting?
 4. Recommended configuration changes as a JSON dict
 
 Be concrete. Instead of "try more tuning", say "increase tuning_rounds from 50 to 150".

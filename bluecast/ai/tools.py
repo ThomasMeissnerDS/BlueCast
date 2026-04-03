@@ -435,6 +435,9 @@ def tool_build_and_run_pipeline(
 
     if "cat_encoding_via_ml_algorithm" in config:
         training_config.cat_encoding_via_ml_algorithm = config["cat_encoding_via_ml_algorithm"]
+        
+    if "enable_feature_selection" in config:
+        training_config.enable_feature_selection = config["enable_feature_selection"]
 
     ensemble_config = None
     if use_cv:
@@ -447,6 +450,9 @@ def tool_build_and_run_pipeline(
             if class_problem == "regression":
                 ensemble_config.hc_blending_method = "rank"  # regression shouldn't use probability
 
+    if ml_model is not None:
+        ml_model.conf_tuning = config
+
     try:
         pipeline = BlueCastAuto(
             class_problem=class_problem,
@@ -456,6 +462,9 @@ def tool_build_and_run_pipeline(
             custom_preprocessor=custom_preprocessor,
             ml_model=ml_model,
         )
+
+        if "columns_to_drop" in config and isinstance(config["columns_to_drop"], list):
+            df = df.drop(columns=config["columns_to_drop"], errors="ignore")
 
         if use_cv:
             result = pipeline.fit_eval(df, target_col=target_col)
@@ -640,6 +649,39 @@ TOOL_DEFINITIONS: Dict[str, ToolDefinition] = {
                 "out_of_fold_dataset_store_path": {
                     "type": "string",
                     "description": "Path to save out-of-fold predictions. Omit to not save.",
+                },
+                "enable_feature_selection": {
+                    "type": "boolean",
+                    "description": "Enable automatic feature selection. Default false.",
+                },
+                "columns_to_drop": {
+                    "type": "array",
+                    "items": {"type": "string"},
+                    "description": "List of explicit column names to drop.",
+                },
+                "rf_max_depth_min": {
+                    "type": "integer",
+                    "description": "RandomForest Min Depth. Default 3.",
+                },
+                "rf_max_depth_max": {
+                    "type": "integer",
+                    "description": "RandomForest Max Depth. Default 15.",
+                },
+                "rf_estimators_min": {
+                    "type": "integer",
+                    "description": "RandomForest Min Estimators. Default 50.",
+                },
+                "rf_estimators_max": {
+                    "type": "integer",
+                    "description": "RandomForest Max Estimators. Default 300.",
+                },
+                "histgb_max_iter_max": {
+                    "type": "integer",
+                    "description": "HistGradientBoosting Max Iterations. Default 500.",
+                },
+                "histgb_depth_max": {
+                    "type": "integer",
+                    "description": "HistGradientBoosting Max Depth. Default 9.",
                 },
             },
             "required": ["class_problem"],

@@ -56,33 +56,38 @@ class HistGBClassificationModel(BaseClassMlModel):
         y_train: pd.Series,
         y_test: pd.Series,
     ) -> None:
-        skfold = StratifiedKFold(
-            n_splits=self.cv_folds, shuffle=True, random_state=self.random_state
+        import optuna
+        from optuna.samplers import TPESampler
+        from sklearn.model_selection import cross_val_score
+
+        conf_tuning = getattr(self, "conf_tuning", {})
+        tuning_rounds = conf_tuning.get("tuning_rounds", 15)
+
+        def objective(trial):
+            params = {
+                "max_iter": trial.suggest_int("max_iter", conf_tuning.get("histgb_max_iter_min", 100), conf_tuning.get("histgb_max_iter_max", 500)),
+                "learning_rate": trial.suggest_float("learning_rate", conf_tuning.get("histgb_lr_min", 0.01), conf_tuning.get("histgb_lr_max", 0.1), log=True),
+                "max_depth": trial.suggest_int("max_depth", conf_tuning.get("histgb_depth_min", 3), conf_tuning.get("histgb_depth_max", 9)),
+                "min_samples_leaf": trial.suggest_int("min_samples_leaf", conf_tuning.get("histgb_min_samples_min", 10), conf_tuning.get("histgb_min_samples_max", 50)),
+            }
+            model = HistGradientBoostingClassifier(
+                random_state=self.random_state, early_stopping=True, validation_fraction=0.1, **params
+            )
+            skfold = StratifiedKFold(n_splits=self.cv_folds, shuffle=True, random_state=self.random_state)
+            scores = cross_val_score(model, x_train, y_train, cv=skfold, scoring=self.scoring, n_jobs=-1)
+            return scores.mean()
+
+        tuning_timeout = conf_tuning.get("tuning_max_runtime", 120)
+
+        optuna.logging.set_verbosity(optuna.logging.WARNING)
+        study = optuna.create_study(direction="maximize", sampler=TPESampler(seed=self.random_state))
+        study.optimize(objective, n_trials=tuning_rounds, timeout=tuning_timeout)
+
+        logger.info(f"HistGB classification best params: {study.best_params} (score: {study.best_value:.4f})")
+        self.model = HistGradientBoostingClassifier(
+            random_state=self.random_state, early_stopping=True, validation_fraction=0.1, **study.best_params
         )
-        param_grid = {
-            "max_iter": [200, 500],
-            "learning_rate": [0.01, 0.05, 0.1],
-            "max_depth": [4, 6, 8],
-            "min_samples_leaf": [10, 20, 50],
-        }
-        gs = GridSearchCV(
-            estimator=HistGradientBoostingClassifier(
-                random_state=self.random_state,
-                early_stopping=True,
-                validation_fraction=0.1,
-            ),
-            param_grid=param_grid,
-            n_jobs=-1,
-            cv=skfold,
-            scoring=self.scoring,
-            verbose=0,
-        )
-        gs.fit(x_train, y_train)
-        logger.info(
-            f"HistGB classification best params: {gs.best_params_} "
-            f"(score: {gs.best_score_:.4f})"
-        )
-        self.model = gs
+        self.model.fit(x_train, y_train)
 
     def fit(
         self,
@@ -127,35 +132,40 @@ class HistGBRegressionModel(BaseClassMlRegressionModel):
         y_train: pd.Series,
         y_test: pd.Series,
     ) -> None:
-        kfold = KFold(
-            n_splits=self.cv_folds, shuffle=True, random_state=self.random_state
-        )
-        param_grid = {
-            "max_iter": [200, 500],
-            "learning_rate": [0.01, 0.05, 0.1],
-            "max_depth": [4, 6, 8],
-            "min_samples_leaf": [10, 20, 50],
-        }
+        import optuna
+        from optuna.samplers import TPESampler
+        from sklearn.model_selection import cross_val_score
+
+        conf_tuning = getattr(self, "conf_tuning", {})
+        tuning_rounds = conf_tuning.get("tuning_rounds", 15)
+
+        def objective(trial):
+            params = {
+                "max_iter": trial.suggest_int("max_iter", conf_tuning.get("histgb_max_iter_min", 100), conf_tuning.get("histgb_max_iter_max", 500)),
+                "learning_rate": trial.suggest_float("learning_rate", conf_tuning.get("histgb_lr_min", 0.01), conf_tuning.get("histgb_lr_max", 0.1), log=True),
+                "max_depth": trial.suggest_int("max_depth", conf_tuning.get("histgb_depth_min", 3), conf_tuning.get("histgb_depth_max", 9)),
+                "min_samples_leaf": trial.suggest_int("min_samples_leaf", conf_tuning.get("histgb_min_samples_min", 10), conf_tuning.get("histgb_min_samples_max", 50)),
+            }
+            loss = "absolute_error" if "absolute_error" in self.scoring else "squared_error"
+            model = HistGradientBoostingRegressor(
+                random_state=self.random_state, loss=loss, early_stopping=True, validation_fraction=0.1, **params
+            )
+            kfold = KFold(n_splits=self.cv_folds, shuffle=True, random_state=self.random_state)
+            scores = cross_val_score(model, x_train, y_train, cv=kfold, scoring=self.scoring, n_jobs=-1)
+            return scores.mean()
+
+        tuning_timeout = conf_tuning.get("tuning_max_runtime", 120)
+
+        optuna.logging.set_verbosity(optuna.logging.WARNING)
+        study = optuna.create_study(direction="maximize", sampler=TPESampler(seed=self.random_state))
+        study.optimize(objective, n_trials=tuning_rounds, timeout=tuning_timeout)
+
+        logger.info(f"HistGB regression best params: {study.best_params} (score: {study.best_value:.4f})")
         loss = "absolute_error" if "absolute_error" in self.scoring else "squared_error"
-        gs = GridSearchCV(
-            estimator=HistGradientBoostingRegressor(
-                random_state=self.random_state,
-                loss=loss,
-                early_stopping=True,
-                validation_fraction=0.1,
-            ),
-            param_grid=param_grid,
-            n_jobs=-1,
-            cv=kfold,
-            scoring=self.scoring,
-            verbose=0,
+        self.model = HistGradientBoostingRegressor(
+            random_state=self.random_state, loss=loss, early_stopping=True, validation_fraction=0.1, **study.best_params
         )
-        gs.fit(x_train, y_train)
-        logger.info(
-            f"HistGB regression best params: {gs.best_params_} "
-            f"(score: {gs.best_score_:.4f})"
-        )
-        self.model = gs
+        self.model.fit(x_train, y_train)
 
     def fit(
         self,
@@ -199,32 +209,34 @@ class RandomForestClassificationModel(BaseClassMlModel):
         y_train: pd.Series,
         y_test: pd.Series,
     ) -> None:
+        import optuna
+        from optuna.samplers import TPESampler
+        from sklearn.model_selection import cross_val_score
+        
         x_train = x_train.fillna(0)
-        skfold = StratifiedKFold(
-            n_splits=self.cv_folds, shuffle=True, random_state=self.random_state
-        )
-        param_grid = {
-            "n_estimators": [100, 200],
-            "max_depth": [4, 6, 8, None],
-            "min_samples_leaf": [1, 10, 20],
-        }
-        gs = GridSearchCV(
-            estimator=RandomForestClassifier(
-                random_state=self.random_state,
-                n_jobs=-1,
-            ),
-            param_grid=param_grid,
-            n_jobs=-1,
-            cv=skfold,
-            scoring=self.scoring,
-            verbose=0,
-        )
-        gs.fit(x_train, y_train)
-        logger.info(
-            f"RandomForest classification best params: {gs.best_params_} "
-            f"(score: {gs.best_score_:.4f})"
-        )
-        self.model = gs
+        conf_tuning = getattr(self, "conf_tuning", {})
+        tuning_rounds = conf_tuning.get("tuning_rounds", 15)
+
+        def objective(trial):
+            params = {
+                "n_estimators": trial.suggest_int("n_estimators", conf_tuning.get("rf_estimators_min", 50), conf_tuning.get("rf_estimators_max", 300)),
+                "max_depth": trial.suggest_int("max_depth", conf_tuning.get("rf_max_depth_min", 3), conf_tuning.get("rf_max_depth_max", 15)),
+                "min_samples_leaf": trial.suggest_int("min_samples_leaf", conf_tuning.get("rf_min_samples_min", 1), conf_tuning.get("rf_min_samples_max", 20)),
+            }
+            model = RandomForestClassifier(random_state=self.random_state, n_jobs=-1, **params)
+            skfold = StratifiedKFold(n_splits=self.cv_folds, shuffle=True, random_state=self.random_state)
+            scores = cross_val_score(model, x_train, y_train, cv=skfold, scoring=self.scoring, n_jobs=-1)
+            return scores.mean()
+
+        tuning_timeout = conf_tuning.get("tuning_max_runtime", 120)
+
+        optuna.logging.set_verbosity(optuna.logging.WARNING)
+        study = optuna.create_study(direction="maximize", sampler=TPESampler(seed=self.random_state))
+        study.optimize(objective, n_trials=tuning_rounds, timeout=tuning_timeout)
+
+        logger.info(f"RandomForest classification best params: {study.best_params} (score: {study.best_value:.4f})")
+        self.model = RandomForestClassifier(random_state=self.random_state, n_jobs=-1, **study.best_params)
+        self.model.fit(x_train, y_train)
 
     def fit(
         self,
@@ -270,34 +282,36 @@ class RandomForestRegressionModel(BaseClassMlRegressionModel):
         y_train: pd.Series,
         y_test: pd.Series,
     ) -> None:
+        import optuna
+        from optuna.samplers import TPESampler
+        from sklearn.model_selection import cross_val_score
+        
         x_train = x_train.fillna(0)
-        kfold = KFold(
-            n_splits=self.cv_folds, shuffle=True, random_state=self.random_state
-        )
-        param_grid = {
-            "n_estimators": [100, 200],
-            "max_depth": [4, 6, 8, None],
-            "min_samples_leaf": [1, 10, 20],
-        }
+        conf_tuning = getattr(self, "conf_tuning", {})
+        tuning_rounds = conf_tuning.get("tuning_rounds", 15)
+
+        def objective(trial):
+            params = {
+                "n_estimators": trial.suggest_int("n_estimators", conf_tuning.get("rf_estimators_min", 50), conf_tuning.get("rf_estimators_max", 300)),
+                "max_depth": trial.suggest_int("max_depth", conf_tuning.get("rf_max_depth_min", 3), conf_tuning.get("rf_max_depth_max", 15)),
+                "min_samples_leaf": trial.suggest_int("min_samples_leaf", conf_tuning.get("rf_min_samples_min", 1), conf_tuning.get("rf_min_samples_max", 20)),
+            }
+            criterion = "absolute_error" if "absolute_error" in self.scoring else "squared_error"
+            model = RandomForestRegressor(random_state=self.random_state, criterion=criterion, n_jobs=-1, **params)
+            kfold = KFold(n_splits=self.cv_folds, shuffle=True, random_state=self.random_state)
+            scores = cross_val_score(model, x_train, y_train, cv=kfold, scoring=self.scoring, n_jobs=-1)
+            return scores.mean()
+
+        tuning_timeout = conf_tuning.get("tuning_max_runtime", 120)
+
+        optuna.logging.set_verbosity(optuna.logging.WARNING)
+        study = optuna.create_study(direction="maximize", sampler=TPESampler(seed=self.random_state))
+        study.optimize(objective, n_trials=tuning_rounds, timeout=tuning_timeout)
+
+        logger.info(f"RandomForest regression best params: {study.best_params} (score: {study.best_value:.4f})")
         criterion = "absolute_error" if "absolute_error" in self.scoring else "squared_error"
-        gs = GridSearchCV(
-            estimator=RandomForestRegressor(
-                random_state=self.random_state,
-                criterion=criterion,
-                n_jobs=-1,
-            ),
-            param_grid=param_grid,
-            n_jobs=-1,
-            cv=kfold,
-            scoring=self.scoring,
-            verbose=0,
-        )
-        gs.fit(x_train, y_train)
-        logger.info(
-            f"RandomForest regression best params: {gs.best_params_} "
-            f"(score: {gs.best_score_:.4f})"
-        )
-        self.model = gs
+        self.model = RandomForestRegressor(random_state=self.random_state, criterion=criterion, n_jobs=-1, **study.best_params)
+        self.model.fit(x_train, y_train)
 
     def fit(
         self,

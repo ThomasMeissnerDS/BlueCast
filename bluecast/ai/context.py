@@ -1,5 +1,6 @@
 """Shared context that accumulates knowledge across agents."""
 
+import json
 import logging
 import time
 from dataclasses import dataclass, field
@@ -82,6 +83,9 @@ class SharedContext:
     completed_steps: List[str] = field(default_factory=list)
     current_step: Optional[str] = None
 
+    # Incremental log flushing
+    log_file_path: Optional[str] = None
+
     @property
     def agent_log(self) -> List[str]:
         """Backward-compatible flat log as list of strings."""
@@ -102,12 +106,30 @@ class SharedContext:
             metadata=metadata,
         )
         self.structured_log.append(entry)
+        self._flush_log_entry(entry)
 
         for cb in self.callbacks:
             try:
                 cb(entry)
             except Exception as e:
                 logger.warning(f"Callback failed for agent {agent_name}: {e}")
+
+    def _flush_log_entry(self, entry: AgentLogEntry) -> None:
+        """Append a single log entry to the JSONL file on disk."""
+        if not self.log_file_path:
+            return
+        try:
+            record = {
+                "timestamp": entry.timestamp,
+                "agent": entry.agent,
+                "event_type": entry.event_type,
+                "content": entry.content,
+                "metadata": entry.metadata,
+            }
+            with open(self.log_file_path, "a") as f:
+                f.write(json.dumps(record, default=str) + "\n")
+        except Exception as e:
+            logger.warning(f"Failed to flush log entry: {e}")
 
     def get_working_df(self) -> pd.DataFrame:
         """Return the appropriate DataFrame for agent work (sampled if large)."""
