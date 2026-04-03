@@ -150,20 +150,24 @@ class Orchestrator:
             )
 
     def _get_critique_rounds(self) -> int:
-        """Return the number of critique rounds based on mode."""
-        if self.config.critique_max_rounds <= 0:
-            return 0
+        """Return the number of critique rounds based on mode.
 
-        mode_rounds = {
+        If the user set ``critique_max_rounds`` explicitly, that value is
+        used directly.  Otherwise mode-based defaults apply:
+        fast=0, balanced=1, precise=2, ultimate=5.
+        """
+        mode_defaults = {
             "fast": 0,
             "balanced": 1,
             "precise": 2,
-            "ultimate": 2,
+            "ultimate": 5,
         }
-        return min(
-            mode_rounds.get(self.config.mode, 0),
-            self.config.critique_max_rounds,
-        )
+
+        if self.config.critique_max_rounds is not None:
+            # User explicitly set the value — honour it
+            return max(0, self.config.critique_max_rounds)
+
+        return mode_defaults.get(self.config.mode, 1)
 
     # ------------------------------------------------------------------
     # Smart sampling
@@ -613,6 +617,29 @@ class Orchestrator:
 
             self.context.feature_code_snippets = valid_snippets
             self.context.engineered_df = df_test
+
+            # Prune snippets referencing constant columns (nunique <= 1).
+            # These columns are typically dropped by BlueCast's internal
+            # pipeline, causing KeyError during CV folds.
+            const_cols = [
+                c
+                for c in self.context.df_train.columns
+                if c != self.context.target_col
+                and self.context.df_train[c].nunique() <= 1
+            ]
+            if const_cols:
+                pruned = []
+                for code in valid_snippets:
+                    refs = [c for c in const_cols if c in code]
+                    if refs:
+                        if self.config.verbose:
+                            print(
+                                f"    Pruning FE snippet referencing constant column(s): {refs}"
+                            )
+                    else:
+                        pruned.append(code)
+                valid_snippets = pruned
+                self.context.feature_code_snippets = valid_snippets
 
             if self.config.verbose:
                 orig_cols = len(self.context.df_train.columns)

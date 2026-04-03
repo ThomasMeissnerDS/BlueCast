@@ -40,6 +40,9 @@ class AIConfig:
     :param location: Optional GCP Location/Region (only used when provider='vertexai').
     :param global_tuning_budget: Optional global time budget for hyperparameter tuning in seconds.
         If provided, the orchestrator divides this evenly across all folds, iterations, and architectures.
+    :param critique_max_rounds: Optional override for the number of critique-refine rounds.
+        If None, mode-based defaults are used (fast=0, balanced=1, precise=2, ultimate=5).
+        Set to 0 to disable critique entirely.
     """
 
     api_key: str = ""
@@ -60,7 +63,7 @@ class AIConfig:
     project_id: Optional[str] = None
     location: Optional[str] = None
     ultimate_iterations_per_arch: int = 2
-    critique_max_rounds: int = 2
+    critique_max_rounds: Optional[int] = None
     global_tuning_budget: Optional[int] = None
 
     def get_model_name(self) -> str:

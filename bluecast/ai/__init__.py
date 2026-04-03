@@ -102,6 +102,9 @@ class BlueCastAI:
     :param location: Optional Region/Location when using Vertex AI (GCP).
     :param global_tuning_budget: Optional global time budget for hyperparameter tuning in seconds.
         If provided, the orchestrator divides this evenly across all folds, iterations, and architectures.
+    :param critique_max_rounds: Optional override for the number of critique-refine rounds per agent.
+        If None, mode-based defaults are used (fast=0, balanced=1, precise=2, ultimate=5).
+        Set to 0 to disable critique entirely.
 
     Usage::
 
@@ -138,6 +141,7 @@ class BlueCastAI:
         project_id: Optional[str] = None,
         location: Optional[str] = None,
         global_tuning_budget: Optional[int] = None,
+        critique_max_rounds: Optional[int] = None,
     ):
         self.config = AIConfig(
             api_key=api_key,
@@ -151,6 +155,7 @@ class BlueCastAI:
             project_id=project_id,
             location=location,
             global_tuning_budget=global_tuning_budget,
+            critique_max_rounds=critique_max_rounds,
         )
         self._llm = _create_provider(self.config)
 
