@@ -97,11 +97,12 @@ def get_params_based_on_device_catboost(
 ) -> Dict[str, Any]:
     """Get parameters based on available or chosen device."""
     if conf_training.autotune_on_device in ["auto"]:
-        warnings.warn(
-            """Automatic GPU detection is not supported yet. Falling back to CPU. If a GPU is available, please set autotune_on_device = 'gpu'""",
-            stacklevel=2,
-        )
-        train_on = {"task_type": "CPU"}
+        train_on = check_gpu_support()
+        # If GPU was detected (XGBoost logic), use it for CatBoost too
+        if train_on.get("device") in ["gpu", "cuda"] or "gpu" in str(train_on.get("tree_method")).lower():
+            train_on = {"task_type": "GPU"}
+        else:
+            train_on = {"task_type": "CPU"}
     elif conf_training.autotune_on_device == "gpu":
         train_on = {"task_type": "GPU"}
     else:

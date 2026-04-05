@@ -63,6 +63,10 @@ class LogisticRegressionModel(BaseClassMlModel):
         from optuna.samplers import TPESampler
         from sklearn.model_selection import cross_val_score
 
+        # Auto-detect multiclass and fix scoring
+        if y_train.nunique() > 2 and self.scoring == "roc_auc":
+            self.scoring = "roc_auc_ovr"
+
         x_train = x_train.fillna(0)
         conf_tuning = getattr(self, "conf_tuning", {})
         tuning_rounds = conf_tuning.get("tuning_rounds", 15)
@@ -95,22 +99,27 @@ class LogisticRegressionModel(BaseClassMlModel):
 
         optuna.logging.set_verbosity(optuna.logging.WARNING)
         study = optuna.create_study(direction="maximize", sampler=TPESampler(seed=self.random_state))
-        
+
         with warnings.catch_warnings():
             warnings.filterwarnings("ignore", category=ConvergenceWarning)
             study.optimize(objective, n_trials=tuning_rounds, timeout=tuning_timeout)
 
-        logging.info(f"Best LogisticRegression params: {study.best_params} (score: {study.best_value:.4f})")
-        
-        best_params = study.best_params.copy()
-        penalty = best_params.get("penalty")
-        if penalty == "l1":
-            best_params["solver"] = "saga"
-        elif penalty == "elasticnet":
-            best_params["solver"] = "saga"
-        
-        if "l1_ratio" in best_params and penalty != "elasticnet":
-            del best_params["l1_ratio"]
+        # Guard against no completed trials
+        completed = [t for t in study.trials if t.state == optuna.trial.TrialState.COMPLETE]
+        if not completed:
+            logging.warning("LogisticRegression: all Optuna trials failed, using defaults.")
+            best_params: dict = {}
+        else:
+            logging.info(f"Best LogisticRegression params: {study.best_params} (score: {study.best_value:.4f})")
+            best_params = study.best_params.copy()
+            penalty = best_params.get("penalty")
+            if penalty == "l1":
+                best_params["solver"] = "saga"
+            elif penalty == "elasticnet":
+                best_params["solver"] = "saga"
+
+            if "l1_ratio" in best_params and penalty != "elasticnet":
+                del best_params["l1_ratio"]
 
         self.model = LogisticRegression(random_state=self.random_state, max_iter=1000, **best_params)
         self.model.fit(x_train, y_train)
@@ -126,12 +135,13 @@ class LogisticRegressionModel(BaseClassMlModel):
 
     def predict(self, df: pd.DataFrame) -> Tuple[PredictedProbas, PredictedClasses]:
         df = df.fillna(0)
-        if isinstance(self.model, GridSearchCV):
-            probas = self.model.predict_proba(df)[:, 1]
-            classes = self.model.predict(df)
-            return probas, classes
-        else:
+        if self.model is None:
             raise ValueError("No fitted model has been found.")
+        proba_matrix = self.model.predict_proba(df)
+        classes = self.model.predict(df)
+        if proba_matrix.shape[1] == 2:
+            return proba_matrix[:, 1], classes
+        return proba_matrix, classes
 
 
 class RegularizedRegressionModel(BaseClassMlRegressionModel):

@@ -120,7 +120,7 @@ class CatboostModel(CatboostBaseModel):
 
         # If we detect XGBoost parameters, it means configuration got corrupted
         # Fall back to safe CatBoost defaults
-        if "objective" in final_params or "booster" in final_params:
+        if "booster" in final_params:
             print(
                 "WARNING: Detected XGBoost parameters in CatBoost config. Using safe defaults."
             )
@@ -219,7 +219,7 @@ class CatboostModel(CatboostBaseModel):
         def objective(trial):
             # Example: Build CatBoost param dictionary from conf_catboost
             params = {
-                "objective": self.conf_catboost.catboost_objective,
+                "loss_function": self.conf_catboost.catboost_loss_function,
                 "eval_metric": self.conf_catboost.catboost_eval_metric,
                 "random_seed": self.conf_training.global_random_state,
                 "learning_rate": trial.suggest_float(
@@ -441,7 +441,7 @@ class CatboostModel(CatboostBaseModel):
                 best_param = study.best_trial.params
 
                 final_best_params = {
-                    "objective": self.conf_catboost.catboost_objective,
+                    "loss_function": self.conf_catboost.catboost_loss_function,
                     "eval_metric": self.conf_catboost.catboost_eval_metric,
                     "random_seed": self.conf_training.global_random_state,
                     "depth": best_param["depth"],

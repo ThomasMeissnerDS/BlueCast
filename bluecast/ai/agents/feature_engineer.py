@@ -114,7 +114,9 @@ Guidelines:
 - Do NOT drop existing columns (the model may need them)
 - Keep feature names descriptive and unique
 - If a feature creation fails, try a different approach
-- STRICT: DO NOT use stateful transformations manually (e.g. StandardScaler, Target Encoding, global means via groupby). These leak validation targets during CV or crash on single-row test sets during inference. Stick to stateless row-by-row math.
+- STRICT: DO NOT use stateful transformations manually (e.g. StandardScaler, Target Encoding, global means via groupby). These leak validation targets during CV or crash on single-row test sets during inference. 
+- Use the 'state' dictionary to store and retrieve data-dependent parameters (like means, counts, or scalers) between 'fit' and 'transform' phases.
+- The code runs inside a framework that provides 'is_fit' (bool) and 'state' (dict) in the local scope.
 
 CRITICAL PIPELINE EXECUTION CONSTRAINTS:
 1. Moreso than ever, YOU MUST SEPARATE YOUR FEATURE ENGINEERING INTO MULTIPLE INDEPENDENT SNIPPETS! Call `create_feature` separately for each new feature you invent. DO NOT combine them into one massive code block. This prevents a single failed line of code from dropping all your other valid features.
@@ -150,6 +152,14 @@ You can import and use these pre-built BlueCast stateless functions to save time
   Signature: add_binned_features(df, cols=['...'], num_bins=5)
 - `from bluecast.preprocessing.feature_creation import add_datetime_features`
   Signature: add_datetime_features(df, date_cols=['...'])
+- `from bluecast.preprocessing.feature_creation import StateAwareGroupbyAggregator`
+  Usage:
+  if 'my_agg' not in state:
+      state['my_agg'] = StateAwareGroupbyAggregator(groupby_cols=['cat_col'], agg_cols=['num_col'], aggregations=['mean'])
+  if is_fit:
+      df = state['my_agg'].fit_transform(df)
+  else:
+      df = state['my_agg'].transform(df)
 
 Dataset overview:
 {data_summary}

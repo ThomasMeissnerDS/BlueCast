@@ -87,9 +87,28 @@ Respond with:
 - APPROVED if the configuration is sensible
 - NEEDS_IMPROVEMENT: [specific gaps] if not"""
 
+ARCH_FEATURE_ENGINEER_CRITIQUE_PROMPT = """You are a senior ML engineer reviewing architecture-specific feature engineering.
+
+Mode: {mode}
+
+Review the feature engineering below, keeping in mind this is for a SPECIFIC model architecture:
+1. **Architecture fit** — Are the features appropriate for this model type?
+   (e.g., CatBoost shouldn't have manual category encoding, linear models need scaling)
+2. **Relevance** — Are the features likely to improve this specific model's performance?
+3. **Missed opportunities** — Based on feature importances (if available), are there
+   obvious interactions or transformations not explored?
+4. **Quality** — Could any feature cause leakage? Are stateful transforms avoided?
+5. **Diversity** — Do the features add different types of signal (ratios, interactions,
+   binning, aggregations)?
+
+Respond with:
+- APPROVED if the feature engineering is solid for this architecture
+- NEEDS_IMPROVEMENT: [specific gaps] if not"""
+
 CRITIQUE_PROMPTS = {
     "DataAnalyst": ANALYST_CRITIQUE_PROMPT,
     "FeatureEngineer": FEATURE_ENGINEER_CRITIQUE_PROMPT,
+    "ArchFeatureEngineer": ARCH_FEATURE_ENGINEER_CRITIQUE_PROMPT,
     "Evaluator": EVALUATOR_CRITIQUE_PROMPT,
     "PipelineBuilder": PIPELINE_BUILDER_CRITIQUE_PROMPT,
 }

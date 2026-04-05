@@ -42,10 +42,41 @@ class BlueCastAIResult:
     structured_log: List[Any] = field(default_factory=list)
 
     def predict(self, df: pd.DataFrame) -> Union[np.ndarray, pd.Series]:
-        """Predict using the trained pipeline."""
+        """Predict using the trained pipeline.
+
+        For classification pipelines this returns class labels (not probabilities).
+        For regression pipelines this returns continuous predictions.
+        """
         if self.pipeline is None:
             raise RuntimeError("No trained pipeline available.")
-        return self.pipeline.predict(df)
+
+        preds = self.pipeline.predict(df)
+
+        # BlueCast and BlueCastCV (classification) return a (probas, classes) tuple.
+        # BlueCastRegression and BlueCastCVRegression return a single object (Series/ndarray).
+        if isinstance(preds, tuple) and len(preds) == 2:
+            return preds[1]  # Return class labels
+
+        return preds
+
+    def predict_proba(self, df: pd.DataFrame) -> Union[np.ndarray, pd.Series]:
+        """Predict class probabilities using the trained pipeline.
+
+        Only applicable for classification problems.
+        """
+        if self.pipeline is None:
+            raise RuntimeError("No trained pipeline available.")
+
+        # If the pipeline has predict_proba, use it (standard for BlueCast/CastCV)
+        if hasattr(self.pipeline, "predict_proba"):
+            return self.pipeline.predict_proba(df)
+
+        # Fallback for pipelines where predict returns the (probas, classes) tuple
+        preds = self.pipeline.predict(df)
+        if isinstance(preds, tuple) and len(preds) == 2:
+            return preds[0]  # Return probabilities
+
+        raise AttributeError("The underlying pipeline does not support probability prediction.")
 
     def save_code(self, path: str) -> None:
         """Save the generated pipeline code to a .py file."""

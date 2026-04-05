@@ -62,9 +62,9 @@ class AIConfig:
     callbacks: List[Callable] = field(default_factory=list)
     project_id: Optional[str] = None
     location: Optional[str] = None
-    ultimate_iterations_per_arch: int = 2
     critique_max_rounds: Optional[int] = None
     global_tuning_budget: Optional[int] = None
+    autotune_on_device: Literal["cpu", "gpu", "auto"] = "cpu"
 
     def get_model_name(self) -> str:
         if self.model:

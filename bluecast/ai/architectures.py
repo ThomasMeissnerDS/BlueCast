@@ -15,6 +15,7 @@ from sklearn.ensemble import (
     RandomForestClassifier,
     RandomForestRegressor,
 )
+from sklearn.impute import SimpleImputer
 from sklearn.model_selection import GridSearchCV, KFold, StratifiedKFold
 
 from bluecast.ml_modelling.base_classes import (
@@ -60,15 +61,20 @@ class HistGBClassificationModel(BaseClassMlModel):
         from optuna.samplers import TPESampler
         from sklearn.model_selection import cross_val_score
 
+        # Auto-detect multiclass and fix scoring
+        if y_train.nunique() > 2 and self.scoring == "roc_auc":
+            self.scoring = "roc_auc_ovr"
+
         conf_tuning = getattr(self, "conf_tuning", {})
         tuning_rounds = conf_tuning.get("tuning_rounds", 15)
 
         def objective(trial):
             params = {
-                "max_iter": trial.suggest_int("max_iter", conf_tuning.get("histgb_max_iter_min", 100), conf_tuning.get("histgb_max_iter_max", 500)),
+                "max_iter": trial.suggest_int("max_iter", conf_tuning.get("histgb_max_iter_min", 100), conf_tuning.get("histgb_max_iter_max", 1000)),
                 "learning_rate": trial.suggest_float("learning_rate", conf_tuning.get("histgb_lr_min", 0.01), conf_tuning.get("histgb_lr_max", 0.1), log=True),
                 "max_depth": trial.suggest_int("max_depth", conf_tuning.get("histgb_depth_min", 3), conf_tuning.get("histgb_depth_max", 9)),
                 "min_samples_leaf": trial.suggest_int("min_samples_leaf", conf_tuning.get("histgb_min_samples_min", 10), conf_tuning.get("histgb_min_samples_max", 50)),
+                "l2_regularization": trial.suggest_float("l2_regularization", conf_tuning.get("histgb_l2_min", 1e-6), conf_tuning.get("histgb_l2_max", 10.0), log=True),
             }
             model = HistGradientBoostingClassifier(
                 random_state=self.random_state, early_stopping=True, validation_fraction=0.1, **params
@@ -83,9 +89,17 @@ class HistGBClassificationModel(BaseClassMlModel):
         study = optuna.create_study(direction="maximize", sampler=TPESampler(seed=self.random_state))
         study.optimize(objective, n_trials=tuning_rounds, timeout=tuning_timeout)
 
-        logger.info(f"HistGB classification best params: {study.best_params} (score: {study.best_value:.4f})")
+        # Guard against no completed trials
+        completed = [t for t in study.trials if t.state == optuna.trial.TrialState.COMPLETE]
+        if not completed:
+            logger.warning("HistGB: all Optuna trials failed, using defaults.")
+            best_params: dict = {}
+        else:
+            best_params = study.best_params
+            logger.info(f"HistGB classification best params: {best_params} (score: {study.best_value:.4f})")
+
         self.model = HistGradientBoostingClassifier(
-            random_state=self.random_state, early_stopping=True, validation_fraction=0.1, **study.best_params
+            random_state=self.random_state, early_stopping=True, validation_fraction=0.1, **best_params
         )
         self.model.fit(x_train, y_train)
 
@@ -101,9 +115,13 @@ class HistGBClassificationModel(BaseClassMlModel):
     def predict(self, df: pd.DataFrame) -> Tuple[np.ndarray, np.ndarray]:
         if self.model is None:
             raise ValueError("No fitted model has been found.")
-        probas = self.model.predict_proba(df)[:, 1]
+        proba_matrix = self.model.predict_proba(df)
         classes = self.model.predict(df)
-        return probas, classes
+        if proba_matrix.shape[1] == 2:
+            # Binary: return positive-class probabilities
+            return proba_matrix[:, 1], classes
+        # Multiclass: return full probability matrix
+        return proba_matrix, classes
 
 
 class HistGBRegressionModel(BaseClassMlRegressionModel):
@@ -141,10 +159,11 @@ class HistGBRegressionModel(BaseClassMlRegressionModel):
 
         def objective(trial):
             params = {
-                "max_iter": trial.suggest_int("max_iter", conf_tuning.get("histgb_max_iter_min", 100), conf_tuning.get("histgb_max_iter_max", 500)),
+                "max_iter": trial.suggest_int("max_iter", conf_tuning.get("histgb_max_iter_min", 100), conf_tuning.get("histgb_max_iter_max", 1000)),
                 "learning_rate": trial.suggest_float("learning_rate", conf_tuning.get("histgb_lr_min", 0.01), conf_tuning.get("histgb_lr_max", 0.1), log=True),
                 "max_depth": trial.suggest_int("max_depth", conf_tuning.get("histgb_depth_min", 3), conf_tuning.get("histgb_depth_max", 9)),
                 "min_samples_leaf": trial.suggest_int("min_samples_leaf", conf_tuning.get("histgb_min_samples_min", 10), conf_tuning.get("histgb_min_samples_max", 50)),
+                "l2_regularization": trial.suggest_float("l2_regularization", conf_tuning.get("histgb_l2_min", 1e-6), conf_tuning.get("histgb_l2_max", 10.0), log=True),
             }
             loss = "absolute_error" if "absolute_error" in self.scoring else "squared_error"
             model = HistGradientBoostingRegressor(
@@ -212,8 +231,13 @@ class RandomForestClassificationModel(BaseClassMlModel):
         import optuna
         from optuna.samplers import TPESampler
         from sklearn.model_selection import cross_val_score
-        
-        x_train = x_train.fillna(0)
+
+        # Auto-detect multiclass and fix scoring
+        if y_train.nunique() > 2 and self.scoring == "roc_auc":
+            self.scoring = "roc_auc_ovr"
+
+        self.imputer = SimpleImputer(strategy="median")
+        x_train = pd.DataFrame(self.imputer.fit_transform(x_train), columns=x_train.columns)
         conf_tuning = getattr(self, "conf_tuning", {})
         tuning_rounds = conf_tuning.get("tuning_rounds", 15)
 
@@ -222,6 +246,7 @@ class RandomForestClassificationModel(BaseClassMlModel):
                 "n_estimators": trial.suggest_int("n_estimators", conf_tuning.get("rf_estimators_min", 50), conf_tuning.get("rf_estimators_max", 300)),
                 "max_depth": trial.suggest_int("max_depth", conf_tuning.get("rf_max_depth_min", 3), conf_tuning.get("rf_max_depth_max", 15)),
                 "min_samples_leaf": trial.suggest_int("min_samples_leaf", conf_tuning.get("rf_min_samples_min", 1), conf_tuning.get("rf_min_samples_max", 20)),
+                "max_features": trial.suggest_float("max_features", conf_tuning.get("rf_max_features_min", 0.1), conf_tuning.get("rf_max_features_max", 1.0)),
             }
             model = RandomForestClassifier(random_state=self.random_state, n_jobs=-1, **params)
             skfold = StratifiedKFold(n_splits=self.cv_folds, shuffle=True, random_state=self.random_state)
@@ -234,8 +259,16 @@ class RandomForestClassificationModel(BaseClassMlModel):
         study = optuna.create_study(direction="maximize", sampler=TPESampler(seed=self.random_state))
         study.optimize(objective, n_trials=tuning_rounds, timeout=tuning_timeout)
 
-        logger.info(f"RandomForest classification best params: {study.best_params} (score: {study.best_value:.4f})")
-        self.model = RandomForestClassifier(random_state=self.random_state, n_jobs=-1, **study.best_params)
+        # Guard against no completed trials
+        completed = [t for t in study.trials if t.state == optuna.trial.TrialState.COMPLETE]
+        if not completed:
+            logger.warning("RandomForest: all Optuna trials failed, using defaults.")
+            best_params: dict = {}
+        else:
+            best_params = study.best_params
+            logger.info(f"RandomForest classification best params: {best_params} (score: {study.best_value:.4f})")
+
+        self.model = RandomForestClassifier(random_state=self.random_state, n_jobs=-1, **best_params)
         self.model.fit(x_train, y_train)
 
     def fit(
@@ -248,12 +281,14 @@ class RandomForestClassificationModel(BaseClassMlModel):
         self.autotune(x_train, x_test, y_train, y_test)
 
     def predict(self, df: pd.DataFrame) -> Tuple[np.ndarray, np.ndarray]:
-        df = df.fillna(0)
+        df = pd.DataFrame(self.imputer.transform(df), columns=df.columns)
         if self.model is None:
             raise ValueError("No fitted model has been found.")
-        probas = self.model.predict_proba(df)[:, 1]
+        proba_matrix = self.model.predict_proba(df)
         classes = self.model.predict(df)
-        return probas, classes
+        if proba_matrix.shape[1] == 2:
+            return proba_matrix[:, 1], classes
+        return proba_matrix, classes
 
 
 class RandomForestRegressionModel(BaseClassMlRegressionModel):
@@ -286,7 +321,8 @@ class RandomForestRegressionModel(BaseClassMlRegressionModel):
         from optuna.samplers import TPESampler
         from sklearn.model_selection import cross_val_score
         
-        x_train = x_train.fillna(0)
+        self.imputer = SimpleImputer(strategy="median")
+        x_train = pd.DataFrame(self.imputer.fit_transform(x_train), columns=x_train.columns)
         conf_tuning = getattr(self, "conf_tuning", {})
         tuning_rounds = conf_tuning.get("tuning_rounds", 15)
 
@@ -295,6 +331,7 @@ class RandomForestRegressionModel(BaseClassMlRegressionModel):
                 "n_estimators": trial.suggest_int("n_estimators", conf_tuning.get("rf_estimators_min", 50), conf_tuning.get("rf_estimators_max", 300)),
                 "max_depth": trial.suggest_int("max_depth", conf_tuning.get("rf_max_depth_min", 3), conf_tuning.get("rf_max_depth_max", 15)),
                 "min_samples_leaf": trial.suggest_int("min_samples_leaf", conf_tuning.get("rf_min_samples_min", 1), conf_tuning.get("rf_min_samples_max", 20)),
+                "max_features": trial.suggest_float("max_features", conf_tuning.get("rf_max_features_min", 0.1), conf_tuning.get("rf_max_features_max", 1.0)),
             }
             criterion = "absolute_error" if "absolute_error" in self.scoring else "squared_error"
             model = RandomForestRegressor(random_state=self.random_state, criterion=criterion, n_jobs=-1, **params)
@@ -323,7 +360,7 @@ class RandomForestRegressionModel(BaseClassMlRegressionModel):
         self.autotune(x_train, x_test, y_train, y_test)
 
     def predict(self, df: pd.DataFrame) -> np.ndarray:
-        df = df.fillna(0)
+        df = pd.DataFrame(self.imputer.transform(df), columns=df.columns)
         if self.model is None:
             raise ValueError("No fitted model has been found.")
         preds = self.model.predict(df)

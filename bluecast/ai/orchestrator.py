@@ -11,6 +11,7 @@ import dill
 import numpy as np
 import pandas as pd
 
+from bluecast.ai.agents.arch_feature_engineer import ArchFeatureEngineerAgent
 from bluecast.ai.agents.data_analyst import DataAnalystAgent
 from bluecast.ai.agents.evaluator import EvaluatorAgent
 from bluecast.ai.agents.feature_engineer import FeatureEngineerAgent
@@ -78,6 +79,9 @@ class Orchestrator:
         self.evaluator = EvaluatorAgent(llm, self.context, verbose=verbose)
         self.researcher = ResearcherAgent(llm, self.context, verbose=verbose)
         self.reporter = ReporterAgent(llm, self.context, verbose=verbose)
+        self.arch_engineer = ArchFeatureEngineerAgent(
+            llm, self.context, verbose=verbose
+        )
 
     # ------------------------------------------------------------------
     # Context file loading (PDF, docx, CSV, txt, md)
@@ -696,21 +700,30 @@ class Orchestrator:
                 pass
 
     def _step_ultimate_build_loop(self, plan: dict) -> None:
-        """Train multiple model architectures with per-arch iterative improvement."""
+        """Train multiple architectures with coupled FE + model iteration.
+
+        For each architecture:
+          1. Architecture-specific FE agent creates model-tailored features
+          2. Model is built + tuned
+          3. Evaluator reviews metrics + feature importances
+          4. Critique recommends changes → next iteration rebuilds FE
+        """
         from bluecast.ai.architectures import get_architectures_for_problem
+        from bluecast.ai.fe_preprocessor import AIFeaturePreprocessor
 
         problem = self.context.class_problem or "binary"
         archs = get_architectures_for_problem(problem)
         iters = self.config.ultimate_iterations_per_arch
         total_archs = len(archs)
-        
+
         override_max_runtime = None
         if self.config.global_tuning_budget and self.config.global_tuning_budget > 0:
             n_folds_expected = plan.get("n_folds", 5)
-            # Rough estimation: divide budget evenly across all tunable jobs
-            tunable_archs = max(1, total_archs - 1)  # Linear models usually don't tune heavily
+            tunable_archs = max(1, total_archs - 1)
             total_jobs = tunable_archs * iters * n_folds_expected
-            override_max_runtime = max(10, int(self.config.global_tuning_budget / total_jobs))
+            override_max_runtime = max(
+                10, int(self.config.global_tuning_budget / total_jobs)
+            )
 
         if self.config.verbose:
             print(
@@ -722,74 +735,104 @@ class Orchestrator:
             if self._is_step_done(f"build_arch_{arch_name}"):
                 if self.config.verbose:
                     print(
-                        f"\n  [{arch_idx}/{total_archs}] Skipping {arch_info['name']} (Loaded from checkpoint)"
+                        f"\n  [{arch_idx}/{total_archs}] Skipping "
+                        f"{arch_info['name']} (Loaded from checkpoint)"
                     )
                 continue
 
             if self.config.verbose:
-                print(f"\n  [{arch_idx}/{total_archs}] " f"=== {arch_info['name']} ===")
+                print(
+                    f"\n  [{arch_idx}/{total_archs}] "
+                    f"=== {arch_info['name']} ==="
+                )
 
             ml_model = arch_info["factory"](problem)
-
-            # XGBoost uses BlueCast's native pipeline, not ml_model injection.
-            # For XGBoost, we set use_xgboost_native in the config so the
-            # tool knows to pass conf_xgboost instead.
             use_xgboost = arch_info.get("use_xgboost_native", False)
+            arch_config = self._build_arch_config(
+                plan, arch_name, override_max_runtime
+            )
 
-            arch_config = self._build_arch_config(plan, arch_name, override_max_runtime)
+            # Reset arch FE state for this architecture
+            self.context.arch_feature_snippets[arch_name] = []
+            self.arch_engineer.set_architecture(arch_name, arch_info["name"])
 
             for iteration in range(iters):
                 if self.config.verbose:
                     print(f"    Iteration {iteration + 1}/{iters}:")
 
-                # Build the pipeline config
-                config = dict(arch_config)  # copy
+                # --- 1. Architecture-specific Feature Engineering ---
+                arch_fe_task = self._create_arch_fe_task(
+                    arch_name, arch_info["name"], iteration
+                )
+
+                # Reset engineered_df so the arch FE starts from raw data
+                self.context.engineered_df = None
+                self.context.arch_feature_snippets[arch_name] = []
+
+                self.arch_engineer.run(arch_fe_task)
+
+                if self.config.verbose:
+                    n_arch_snippets = len(
+                        self.context.arch_feature_snippets.get(arch_name, [])
+                    )
+                    print(
+                        f"      Arch FE: {n_arch_snippets} snippets created"
+                    )
+
+                # --- 2. Combine base + arch snippets → preprocessor ---
+                combined_snippets = list(self.context.feature_code_snippets) + list(
+                    self.context.arch_feature_snippets.get(arch_name, [])
+                )
+                preprocessor = (
+                    AIFeaturePreprocessor(combined_snippets)
+                    if combined_snippets
+                    else None
+                )
+
+                # --- 3. Build + tune model ---
+                config = dict(arch_config)
                 if not use_xgboost:
                     config["ml_model"] = ml_model
 
-                result = self._build_single_arch(config, arch_name, use_xgboost)
+                result = self._build_single_arch(
+                    config, arch_name, use_xgboost, preprocessor=preprocessor
+                )
 
                 if not result["success"]:
+                    error_msg = result.get("error", "unknown")
                     if self.config.verbose:
-                        print(f"      FAILED: {result.get('error', 'unknown')}")
-                    break
+                        print(f"      FAILED: {error_msg}")
+                    
+                    # Record the error for this architecture to provide feedback
+                    self.context.arch_errors[arch_name] = str(error_msg)
+                    
+                    # Record in run history
+                    self.context.run_history.append(
+                        {
+                            "success": False,
+                            "error": str(error_msg),
+                            "architecture": arch_name,
+                            "iteration": iteration + 1,
+                            "config": result.get("config_used", config),
+                        }
+                    )
+                    continue  # Move to next architecture or iteration instead of breaking
 
                 if self.config.verbose:
                     print(f"      Metrics: {result['metrics']}")
 
-                # Update global best pipeline
-                is_better = False
-                if self.context.best_metrics is None:
-                    is_better = True
-                else:
-                    new_m = result["metrics"]
-                    old_m = self.context.best_metrics
-                    eval_metrics = [
-                        "roc_auc", "oof_mean", "r2_score", "mae", "rmse",
-                        "mse", "mean_absolute_error", "mean_squared_error",
-                        "median_absolute_error", "mean_squared_log_error"
-                    ]
-                    error_metrics = [
-                        "oof_mean", "mae", "rmse", "mse", "mean_absolute_error",
-                        "mean_squared_error", "median_absolute_error",
-                        "mean_squared_log_error"
-                    ]
-                    for key in eval_metrics:
-                        if key in new_m and key in old_m:
-                            if key in error_metrics:
-                                is_better = abs(new_m[key]) < abs(old_m[key])
-                            else:
-                                is_better = new_m[key] > old_m[key]
-                            break
-                    if not is_better and not old_m:
-                        is_better = True
+                # --- 4. Extract feature importances ---
+                self._extract_feature_importances(arch_name, result)
 
+                # --- 5. Update global best pipeline ---
+                is_better = self._is_result_better(result)
                 if is_better:
                     self.context.best_pipeline = result["pipeline"]
                     self.context.best_metrics = result["metrics"]
                     if self.config.verbose:
                         print(
-                            f"      [Best so far] New best pipeline: {arch_name} with {result['metrics']}"
+                            f"      [Best so far] {arch_name} "
+                            f"with {result['metrics']}"
                         )
 
                 # Record in run history
@@ -803,13 +846,15 @@ class Orchestrator:
                     }
                 )
 
-                # Ask Evaluator for arch-specific improvements (unless last)
+                # --- 6. Evaluator + critique for next iteration ---
                 if iteration < iters - 1:
                     suggestions = self._evaluate_for_arch(
                         arch_name, arch_info["name"], result
                     )
                     arch_config.update(suggestions)
-                    arch_config = self._enforce_config_constraints(arch_config, plan, arch_name)
+                    arch_config = self._enforce_config_constraints(
+                        arch_config, plan, arch_name
+                    )
 
             self._save_checkpoint(f"build_arch_{arch_name}")
 
@@ -858,6 +903,7 @@ class Orchestrator:
             "n_repeats": plan.get("n_repeats", 1),
             "tuning_rounds": plan.get("tuning_rounds", 50),
             "tuning_max_runtime": override_max_runtime if override_max_runtime else plan.get("tuning_max_runtime", 120),
+            "autotune_on_device": self.config.autotune_on_device,
         }
 
         # Linear models don't benefit from gradient boosting tuning
@@ -871,13 +917,17 @@ class Orchestrator:
         return config
 
     def _build_single_arch(
-        self, config: dict, arch_name: str, use_xgboost: bool
+        self, config: dict, arch_name: str, use_xgboost: bool,
+        preprocessor=None,
     ) -> dict:
-        """Build a single architecture pipeline."""
+        """Build a single architecture pipeline.
+
+        :param preprocessor: If provided, use this preprocessor instead of
+            constructing one from shared ``context.feature_code_snippets``.
+        """
         from bluecast.ai.tools import tool_build_and_run_pipeline
 
-        preprocessor = None
-        if self.context.feature_code_snippets:
+        if preprocessor is None and self.context.feature_code_snippets:
             from bluecast.ai.fe_preprocessor import AIFeaturePreprocessor
 
             preprocessor = AIFeaturePreprocessor(
@@ -886,10 +936,6 @@ class Orchestrator:
 
         ml_model = config.pop("ml_model", None)
 
-        # For XGBoost, let BlueCast handle it natively by passing
-        # conf_xgboost/conf_params_xgboost (via the default non-catboost path).
-        # We leave ml_model=None which means BlueCast will use its CatBoost
-        # default — but for xgboost we need to create the XgboostBaseModel.
         if use_xgboost:
             from bluecast.ml_modelling.xgboost import XgboostModel
             from bluecast.ml_modelling.xgboost_regression import XgboostModelRegression
@@ -910,26 +956,194 @@ class Orchestrator:
             ml_model=ml_model,
         )
 
+    def _create_arch_fe_task(
+        self, arch_name: str, arch_display_name: str, iteration: int,
+    ) -> str:
+        """Build a task string for the architecture-specific FE agent."""
+        data_summary = self.context.get_data_summary()
+
+        # Include previous iteration feedback if available
+        feedback = ""
+        importances = self.context.arch_feature_importances.get(arch_name)
+        if importances and iteration > 0:
+            sorted_feats = sorted(
+                importances.items(), key=lambda x: abs(x[1]), reverse=True
+            )
+            top_5 = sorted_feats[:5]
+            feedback = (
+                f"\n\nPrevious iteration results are available. "
+                f"Top features by importance: "
+                + ", ".join(f"{f}={v:.4f}" for f, v in top_5)
+                + "\nUse this to guide your feature engineering — create "
+                f"more features similar to the top ones and avoid "
+                f"creating features similar to low-importance ones."
+            )
+
+        # Include recent metrics for the architecture
+        arch_runs = [
+            r for r in self.context.run_history
+            if r.get("architecture") == arch_name
+        ]
+        metrics_info = ""
+        if arch_runs:
+            last = arch_runs[-1]
+            if last.get("success"):
+                metrics_info = f"\nPrevious metrics: {last['metrics']}"
+            else:
+                metrics_info = f"\nWARNING: Previous iteration FAILED with error: {last.get('error')}"
+
+        # Check for persistent errors in context
+        error_feedback = ""
+        last_error = self.context.arch_errors.get(arch_name)
+        if last_error:
+            error_feedback = (
+                f"\n\nCRITICAL: The last build for this architecture FAILED. "
+                f"Error: {last_error}\n"
+                f"Please analyze if your proposed features or configuration "
+                f"caused this (e.g. infinity values, nulls, or incompatible "
+                f"categorical encoding) and adjust your strategy to fix it."
+            )
+
+        return (
+            f"Create features specifically for the **{arch_display_name}** "
+            f"model (iteration {iteration + 1}).\n\n"
+            f"Dataset:\n{data_summary}\n"
+            f"{metrics_info}{feedback}{error_feedback}\n\n"
+            f"Focus on features that will specifically help this architecture."
+        )
+
+    def _extract_feature_importances(
+        self, arch_name: str, result: dict,
+    ) -> None:
+        """Extract feature importances from the trained pipeline."""
+        pipeline = result.get("pipeline")
+        if pipeline is None:
+            return
+
+        try:
+            # BlueCast pipelines store feature importances in different places
+            importances: dict = {}
+
+            # Try to get SHAP-based or model-based feature importances
+            if hasattr(pipeline, "feature_importances"):
+                raw = pipeline.feature_importances
+                if isinstance(raw, dict):
+                    importances = raw
+                elif hasattr(raw, "items"):
+                    importances = dict(raw.items())
+
+            # For CV pipelines, try to get from the first trained model
+            if not importances and hasattr(pipeline, "bluecast_models"):
+                models = pipeline.bluecast_models
+                if models and len(models) > 0:
+                    first_model = models[0]
+                    if hasattr(first_model, "feature_importances"):
+                        raw = first_model.feature_importances
+                        if isinstance(raw, dict):
+                            importances = raw
+
+            if importances:
+                self.context.arch_feature_importances[arch_name] = importances
+                if self.config.verbose:
+                    top_3 = sorted(
+                        importances.items(),
+                        key=lambda x: abs(x[1]),
+                        reverse=True,
+                    )[:3]
+                    print(
+                        f"      Feature importances: top-3 = "
+                        + ", ".join(f"{k}={v:.4f}" for k, v in top_3)
+                    )
+        except Exception as e:
+            logger.debug(f"Could not extract feature importances: {e}")
+
+    def _is_result_better(self, result: dict) -> bool:
+        """Check if a result is better than the current best."""
+        if self.context.best_metrics is None:
+            return True
+
+        new_m = result["metrics"]
+        old_m = self.context.best_metrics
+        eval_metrics = [
+            "roc_auc", "oof_mean", "r2_score", "mae", "rmse",
+            "mse", "mean_absolute_error", "mean_squared_error",
+            "median_absolute_error", "mean_squared_log_error",
+        ]
+        error_metrics = [
+            "oof_mean", "mae", "rmse", "mse", "mean_absolute_error",
+            "mean_squared_error", "median_absolute_error",
+            "mean_squared_log_error",
+        ]
+        for key in eval_metrics:
+            if key in new_m and key in old_m:
+                if key in error_metrics:
+                    return abs(new_m[key]) < abs(old_m[key])
+                return new_m[key] > old_m[key]
+        if not old_m:
+            return True
+        return False
+
     def _evaluate_for_arch(
         self, arch_name: str, arch_display_name: str, result: dict
     ) -> dict:
-        """Ask the Evaluator for architecture-specific improvements."""
+        """Ask the Evaluator for architecture-specific improvements.
+
+        Provides feature importance data and arch-specific FE guidance
+        so the evaluator can recommend both model config and FE changes.
+        """
         extra_info = ""
         if arch_name == "linear":
-            extra_info = "\nWARNING: Linear models strictly require rigorous missing value imputation, categorical encoding, and feature scaling to perform well."
+            extra_info = (
+                "\nWARNING: Linear models strictly require rigorous "
+                "missing value imputation, categorical encoding, and "
+                "feature scaling to perform well."
+            )
         elif arch_name in ("histgb", "xgboost"):
-            extra_info = "\nWARNING: This architecture strictly requires categorical features to be numerically encoded and missing values to be imputed."
+            extra_info = (
+                "\nWARNING: This architecture strictly requires categorical "
+                "features to be numerically encoded and missing values "
+                "to be imputed."
+            )
+
+        # Include feature importance data
+        importance_info = ""
+        importances = self.context.arch_feature_importances.get(arch_name)
+        if importances:
+            sorted_feats = sorted(
+                importances.items(), key=lambda x: abs(x[1]), reverse=True
+            )
+            importance_info = "\n\nFeature importances:\n"
+            for feat, imp in sorted_feats[:15]:
+                importance_info += f"  {feat}: {imp:.4f}\n"
+            if len(sorted_feats) > 15:
+                importance_info += f"  ... ({len(sorted_feats) - 15} more)\n"
+
+        # Include error info if any
+        error_info = ""
+        last_error = self.context.arch_errors.get(arch_name)
+        if last_error:
+            error_info = (
+                f"\n\nWARNING: The last model build FAILED with this error:\n"
+                f"'''\n{last_error}\n'''\n"
+                f"Diagnose the cause (e.g. data types, tuning limits, or "
+                f"specific features) and suggest a fix."
+            )
 
         arch_context = (
             f"You are evaluating the **{arch_display_name}** architecture track.\n"
-            f"Current metrics: {result['metrics']}\n\n"
+            f"Current metrics: {result['metrics'] if result.get('success') else 'N/A'}\n\n"
             f"Available levers for this architecture:\n"
             f"- enable_feature_selection: true/false (recursive feature elimination)\n"
             f"- tuning_rounds: integer (hyperparameter tuning iterations)\n"
             f"- n_folds / n_repeats: cross-validation settings\n"
             f"- ensemble_strategy: mean / stacking / hill_climbing\n"
-            f"{extra_info}\n\n"
-            f"Suggest specific improvements as a JSON dict."
+            f"- columns_to_drop: list of column names to exclude\n"
+            f"{extra_info}{importance_info}{error_info}\n\n"
+            f"Based on the feature importances and metrics, suggest specific "
+            f"improvements as a JSON dict. Consider recommending:\n"
+            f"- Which features to drop (low importance)\n"
+            f"- Whether to enable recursive feature selection\n"
+            f"- Tuning parameter adjustments\n"
         )
 
         eval_result = self.evaluator.run(arch_context)

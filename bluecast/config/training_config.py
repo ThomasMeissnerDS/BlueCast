@@ -513,7 +513,7 @@ class CatboostTuneParamsConfig:
     :param verbosity_during_final_model_training: Verbosity level during final model training. Defaults to 0.
     :param bootstrap_type: List of bootstrap types to consider. Defaults to ["Bayesian", "Poisson", "MVS", "No"].
     :param grow_policy: List of grow policies. Defaults to ["SymmetricTree"].
-    :param catboost_objective: CatBoost objective. Defaults to "MultiClass".
+    :param catboost_loss_function: CatBoost objective. Defaults to "MultiClass".
     :param catboost_eval_metric: CatBoost evaluation metric. Defaults to "MultiClass".
     :param catboost_eval_metric_tune_direction: Direction to tune the evaluation metric. Defaults to "minimize".
                                                 Must be any of ['minimize', 'maximize']
@@ -542,7 +542,7 @@ class CatboostTuneParamsConfig:
         verbosity_during_final_model_training: int = 0,
         bootstrap_type: Optional[List[str]] = None,
         grow_policy: Optional[List[str]] = None,
-        catboost_objective: str = "MultiClass",
+        catboost_loss_function: str = "MultiClass",
         catboost_eval_metric: str = "MultiClass",
         catboost_eval_metric_tune_direction: str = "minimize",
     ):
@@ -578,7 +578,7 @@ class CatboostTuneParamsConfig:
         )
         self.bootstrap_type = bootstrap_type
         self.grow_policy = grow_policy
-        self.catboost_objective = catboost_objective
+        self.catboost_loss_function = catboost_loss_function
         self.catboost_eval_metric = catboost_eval_metric
         self.catboost_eval_metric_tune_direction = catboost_eval_metric_tune_direction
 
@@ -618,7 +618,7 @@ class CatboostTuneParamsRegressionConfig:
     :param verbosity_during_final_model_training: Verbosity level during final model training. Defaults to 0.
     :param bootstrap_type: List of bootstrap types to consider. Defaults to ["Bayesian", "Poisson", "MVS", "No"].
     :param grow_policy: List of grow policies. Defaults to ["SymmetricTree"].
-    :param catboost_objective: CatBoost objective. Defaults to "RMSE".
+    :param catboost_loss_function: CatBoost objective. Defaults to "RMSE".
     :param catboost_eval_metric: CatBoost evaluation metric. Defaults to "RMSE".
     :param catboost_eval_metric_tune_direction: Direction to tune the evaluation metric. Defaults to "minimize".
                                                 Must be any of ['minimize', 'maximize']
@@ -647,7 +647,7 @@ class CatboostTuneParamsRegressionConfig:
         verbosity_during_final_model_training: int = 0,
         bootstrap_type: Optional[List[str]] = None,
         grow_policy: Optional[List[str]] = None,
-        catboost_objective: str = "RMSE",
+        catboost_loss_function: str = "RMSE",
         catboost_eval_metric: str = "RMSE",
         catboost_eval_metric_tune_direction: str = "minimize",
     ):
@@ -680,7 +680,7 @@ class CatboostTuneParamsRegressionConfig:
         )
         self.bootstrap_type = bootstrap_type
         self.grow_policy = grow_policy
-        self.catboost_objective = catboost_objective
+        self.catboost_loss_function = catboost_loss_function
         self.catboost_eval_metric = catboost_eval_metric
         self.catboost_eval_metric_tune_direction = catboost_eval_metric_tune_direction
 

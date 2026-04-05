@@ -315,14 +315,31 @@ class BlueCastCVRegression:
             val_idx = oof_indices_per_fold[fn]
             oof_matrix[val_idx, fn] = oof_preds_per_model[fn]
 
+        # Impute NaN values with column-wise mean. With K-fold CV each row
+        # only has OOF predictions from its validation fold, so most columns
+        # are NaN. Mean imputation is the standard stacking approach.
+        col_means = np.nanmean(oof_matrix, axis=0)
+        for col in range(n_models):
+            mask = np.isnan(oof_matrix[:, col])
+            oof_matrix[mask, col] = col_means[col]
+
+        # Drop any rows that are still all-NaN (shouldn't happen with valid folds)
         valid_mask = ~np.any(np.isnan(oof_matrix), axis=1)
         oof_valid = oof_matrix[valid_mask]
         y_valid = y_full.values[valid_mask]
+
+        if len(oof_valid) == 0:
+            logging.warning(
+                "No valid OOF predictions for ensemble fitting. "
+                "Falling back to mean blending."
+            )
+            return
 
         if self.ensemble_config.ensemble_strategy == "stacking":
             self.stacking_ensemble = StackingEnsemble(
                 meta_learner=self.ensemble_config.stacking_meta_learner,
                 use_ranks=self.ensemble_config.stacking_use_ranks,
+                clip_predictions=False,  # regression targets can exceed [0, 1]
             )
             self.stacking_ensemble.fit(oof_valid, y_valid)
             logging.info("Stacking ensemble fitted on OOF predictions.")

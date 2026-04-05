@@ -24,6 +24,8 @@ def check_gpu_support() -> Dict[str, str]:
     d_train = xgb.DMatrix(data, label=label)
 
     params_list = [
+        {"tree_method": "hist", "device": "cuda"},
+        {"tree_method": "hist", "device": "gpu"},
         {"tree_method": "gpu_hist"},
     ]
 

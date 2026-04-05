@@ -56,10 +56,17 @@ class SharedContext:
     data_profile: Optional[Dict[str, Any]] = None
     data_warnings: List[str] = field(default_factory=list)
 
-    # Created by FeatureEngineer
+    # Created by FeatureEngineer (shared base FE — additive only)
     feature_engineering_code: Optional[str] = None
     feature_code_snippets: List[str] = field(default_factory=list)
     engineered_df: Optional[pd.DataFrame] = None
+
+    # Per-architecture FE state (populated by ArchFeatureEngineerAgent)
+    arch_feature_snippets: Dict[str, List[str]] = field(default_factory=dict)
+    arch_feature_importances: Dict[str, Dict[str, float]] = field(
+        default_factory=dict
+    )
+    arch_errors: Dict[str, str] = field(default_factory=dict)
 
     # Created by PipelineBuilder
     pipeline_config: Optional[Dict[str, Any]] = None

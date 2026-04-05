@@ -549,3 +549,117 @@ class TfIdfTextEncoder:
             df[col] = tfidf_df[col]
 
         return df
+
+class StateAwareGroupbyAggregator:
+    """
+    Stateless-acting Groupby Aggregator for AIFeaturePreprocessor.
+    Calculates aggregations during 'fit_transform' and stores them in state.
+    Mappings are applied during 'transform' to ensure no leakage from test set.
+    """
+
+    def __init__(
+        self,
+        groupby_cols: List[str],
+        agg_cols: List[str],
+        aggregations: List[str] = ["mean"],
+        prefix: str = "state_agg",
+    ):
+        self.groupby_cols = groupby_cols
+        self.agg_cols = agg_cols
+        self.aggregations = aggregations
+        self.prefix = prefix
+        self.mappings: Dict[str, pd.DataFrame] = {}
+        self.is_fitted = False
+
+    def fit_transform(self, df: pd.DataFrame) -> pd.DataFrame:
+        df_out = df.copy()
+        # Perform aggregations
+        agg_results = (
+            df_out.groupby(self.groupby_cols)[self.agg_cols]
+            .agg(self.aggregations)
+            .reset_index()
+        )
+
+        # Flatten column names
+        agg_results.columns = [
+            (
+                "_".join([self.prefix] + [str(c) for c in list(col)]).strip("_")
+                if col[0] not in self.groupby_cols
+                else col[0]
+            )
+            for col in agg_results.columns.values
+        ]
+
+        self.mappings["aggs"] = agg_results
+        self.is_fitted = True
+
+        # Merge back to original df
+        df_out = df_out.merge(agg_results, on=self.groupby_cols, how="left")
+        return df_out
+
+    def transform(self, df: pd.DataFrame) -> pd.DataFrame:
+        if not self.is_fitted:
+            return df
+
+        df_out = df.copy()
+        df_out = df_out.merge(self.mappings["aggs"], on=self.groupby_cols, how="left")
+        return df_out
+
+class StateAwareGroupbyAggregator:
+    """
+    Stateless-acting Groupby Aggregator for AIFeaturePreprocessor.
+    Calculates aggregations during 'fit_transform' and stores them in state.
+    Mappings are applied during 'transform' to ensure no leakage from test set.
+    """
+
+    def __init__(
+        self,
+        groupby_cols: List[str],
+        agg_cols: List[str],
+        aggregations: List[str] = ["mean"],
+        prefix: str = "state_agg",
+    ):
+        self.groupby_cols = groupby_cols
+        self.agg_cols = agg_cols
+        self.aggregations = aggregations
+        self.prefix = prefix
+        self.mappings: Dict[str, pd.DataFrame] = {}
+        self.is_fitted = False
+
+    def fit_transform(self, df: pd.DataFrame) -> pd.DataFrame:
+        df_out = df.copy()
+        # Perform aggregations
+        agg_results = (
+            df_out.groupby(self.groupby_cols)[self.agg_cols]
+            .agg(self.aggregations)
+            .reset_index()
+        )
+
+        # Flatten column names
+        new_cols = []
+        for col in agg_results.columns.values:
+            if isinstance(col, tuple):
+                # MultiIndex: (feature, agg)
+                if col[0] in self.groupby_cols:
+                    new_cols.append(col[0])
+                else:
+                    new_cols.append(f"{self.prefix}_{col[0]}_{col[1]}")
+            else:
+                # Single index
+                new_cols.append(col)
+        
+        agg_results.columns = new_cols
+        self.mappings["aggs"] = agg_results
+        self.is_fitted = True
+
+        # Merge back to original df
+        df_out = df_out.merge(agg_results, on=self.groupby_cols, how="left")
+        return df_out
+
+    def transform(self, df: pd.DataFrame) -> pd.DataFrame:
+        if not self.is_fitted:
+            return df
+
+        df_out = df.copy()
+        df_out = df_out.merge(self.mappings["aggs"], on=self.groupby_cols, how="left")
+        return df_out

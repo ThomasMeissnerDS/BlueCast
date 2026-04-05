@@ -448,7 +448,10 @@ def tool_build_and_run_pipeline(
             ensemble_config.hc_weight_max = config.get("hc_weight_max", 0.5)
             ensemble_config.hc_weight_step = config.get("hc_weight_step", 0.01)
             if class_problem == "regression":
-                ensemble_config.hc_blending_method = "rank"  # regression shouldn't use probability
+                ensemble_config.hc_blending_method = "probability"  # regression must use raw values
+    
+    if class_problem == "regression" and ensemble_config:
+        ensemble_config.stacking_use_ranks = False
 
     if ml_model is not None:
         ml_model.conf_tuning = config

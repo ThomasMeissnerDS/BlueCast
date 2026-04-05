@@ -280,7 +280,13 @@ class XgboostBaseModel:
         y_train = pd.concat([y_train, y_test]).reset_index(drop=True)
 
         if self.cat_columns and self.conf_training.cat_encoding_via_ml_algorithm:
-            x_train[self.cat_columns] = x_train[self.cat_columns].astype("category")
+            valid_cat_columns = [
+                col for col in self.cat_columns if col in x_train.columns
+            ]
+            if valid_cat_columns:
+                x_train[valid_cat_columns] = x_train[valid_cat_columns].astype(
+                    "category"
+                )
 
         return x_train, y_train
 

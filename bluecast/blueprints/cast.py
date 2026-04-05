@@ -457,11 +457,17 @@ class BlueCast:
         # Always override model wiring based on detected schema; ensure target is excluded
         self.ml_model.experiment_tracker = self.experiment_tracker
         self.ml_model.custom_in_fold_preprocessor = self.custom_in_fold_preprocessor
-        self.ml_model.cat_columns = [
+        # Collect detected cat columns AND any columns with 'category' dtype
+        # that feature engineering may have created after initial detection
+        all_cat_cols = set(
             col
             for col in self.feat_type_detector.cat_columns
             if col != self.target_column
-        ]
+        )
+        for col in x_train.columns:
+            if x_train[col].dtype.name == "category" and col != self.target_column:
+                all_cat_cols.add(col)
+        self.ml_model.cat_columns = list(all_cat_cols)
         if self.single_fold_eval_metric_func is not None:
             self.ml_model.single_fold_eval_metric_func = (
                 self.single_fold_eval_metric_func

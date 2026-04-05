@@ -23,12 +23,14 @@ class StackingEnsemble:
         self,
         meta_learner: Optional[Any] = None,
         use_ranks: bool = True,
+        clip_predictions: bool = True,
     ):
         if meta_learner is None:
             self.meta_learner = Ridge(alpha=10.0, fit_intercept=True, random_state=42)
         else:
             self.meta_learner = meta_learner
         self.use_ranks = use_ranks
+        self.clip_predictions = clip_predictions
         self.is_fitted = False
 
     @staticmethod
@@ -72,4 +74,7 @@ class StackingEnsemble:
         if not self.is_fitted:
             raise RuntimeError("StackingEnsemble has not been fitted yet.")
         X = self._rank_transform_matrix(predictions)
-        return np.clip(self.meta_learner.predict(X), 0, 1)
+        preds = self.meta_learner.predict(X)
+        if self.clip_predictions:
+            return np.clip(preds, 0, 1)
+        return preds
