@@ -14,6 +14,7 @@ from bluecast.ai.tools import (
 class FeatureEngineerAgent(BaseAgent):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
+        self.feature_state = {}
         self.register_tool_impl(
             "create_feature",
             self._create_feature_wrapper,
@@ -36,7 +37,7 @@ class FeatureEngineerAgent(BaseAgent):
                 "error": "No training data available.",
             }
 
-        result = tool_create_feature(df, feature_code)
+        result = tool_create_feature(df, feature_code, state=self.feature_state)
         if result["success"]:
             self.context.engineered_df = df
             if feature_code not in self.context.feature_code_snippets:
@@ -142,8 +143,6 @@ Preprocessing Logic:
 
 Provided Framework Tools:
 You can import and use these pre-built BlueCast stateless functions to save time and reduce errors:
-- `from bluecast.preprocessing.feature_creation import add_groupby_agg_feats`
-  Signature: add_groupby_agg_feats(df, groupby_cols=['...'], to_group_cols=['...'], num_col_prefix='agg', target_col='target', aggregations=['min', 'max', 'mean'])
 - `from bluecast.preprocessing.feature_creation import add_polynomial_features`
   Signature: add_polynomial_features(df, cols=['...'], degree=2)
 - `from bluecast.preprocessing.feature_creation import add_interaction_features`

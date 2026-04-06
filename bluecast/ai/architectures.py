@@ -259,11 +259,10 @@ class RandomForestClassificationModel(BaseClassMlModel):
         study = optuna.create_study(direction="maximize", sampler=TPESampler(seed=self.random_state))
         study.optimize(objective, n_trials=tuning_rounds, timeout=tuning_timeout)
 
-        # Guard against no completed trials
         completed = [t for t in study.trials if t.state == optuna.trial.TrialState.COMPLETE]
         if not completed:
             logger.warning("RandomForest: all Optuna trials failed, using defaults.")
-            best_params: dict = {}
+            best_params = {"n_estimators": 100, "max_depth": None}
         else:
             best_params = study.best_params
             logger.info(f"RandomForest classification best params: {best_params} (score: {study.best_value:.4f})")
@@ -329,12 +328,12 @@ class RandomForestRegressionModel(BaseClassMlRegressionModel):
         def objective(trial):
             params = {
                 "n_estimators": trial.suggest_int("n_estimators", conf_tuning.get("rf_estimators_min", 50), conf_tuning.get("rf_estimators_max", 300)),
-                "max_depth": trial.suggest_int("max_depth", conf_tuning.get("rf_max_depth_min", 3), conf_tuning.get("rf_max_depth_max", 15)),
+                "max_depth": trial.suggest_int("max_depth", conf_tuning.get("rf_max_depth_min", 10), conf_tuning.get("rf_max_depth_max", 50)),
                 "min_samples_leaf": trial.suggest_int("min_samples_leaf", conf_tuning.get("rf_min_samples_min", 1), conf_tuning.get("rf_min_samples_max", 20)),
                 "max_features": trial.suggest_float("max_features", conf_tuning.get("rf_max_features_min", 0.1), conf_tuning.get("rf_max_features_max", 1.0)),
             }
-            criterion = "absolute_error" if "absolute_error" in self.scoring else "squared_error"
-            model = RandomForestRegressor(random_state=self.random_state, criterion=criterion, n_jobs=-1, **params)
+            # Always use squared_error internally for RF because absolute_error is computationally prohibitive
+            model = RandomForestRegressor(random_state=self.random_state, criterion="squared_error", n_jobs=-1, **params)
             kfold = KFold(n_splits=self.cv_folds, shuffle=True, random_state=self.random_state)
             scores = cross_val_score(model, x_train, y_train, cv=kfold, scoring=self.scoring, n_jobs=-1)
             return scores.mean()
@@ -345,9 +344,15 @@ class RandomForestRegressionModel(BaseClassMlRegressionModel):
         study = optuna.create_study(direction="maximize", sampler=TPESampler(seed=self.random_state))
         study.optimize(objective, n_trials=tuning_rounds, timeout=tuning_timeout)
 
-        logger.info(f"RandomForest regression best params: {study.best_params} (score: {study.best_value:.4f})")
-        criterion = "absolute_error" if "absolute_error" in self.scoring else "squared_error"
-        self.model = RandomForestRegressor(random_state=self.random_state, criterion=criterion, n_jobs=-1, **study.best_params)
+        completed = [t for t in study.trials if t.state == optuna.trial.TrialState.COMPLETE]
+        if not completed:
+            logger.warning("RandomForest: all Optuna regression trials failed, using defaults.")
+            best_params = {"n_estimators": 100, "max_depth": None}
+        else:
+            best_params = study.best_params
+            logger.info(f"RandomForest regression best params: {best_params} (score: {study.best_value:.4f})")
+            
+        self.model = RandomForestRegressor(random_state=self.random_state, criterion="squared_error", n_jobs=-1, **best_params)
         self.model.fit(x_train, y_train)
 
     def fit(

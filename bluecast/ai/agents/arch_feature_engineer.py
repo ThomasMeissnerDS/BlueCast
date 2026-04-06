@@ -68,6 +68,7 @@ class ArchFeatureEngineerAgent(BaseAgent):
         super().__init__(*args, **kwargs)
         self._arch_name: str = ""
         self._arch_display_name: str = ""
+        self.feature_states: Dict[str, dict] = {}
         self.register_tool_impl(
             "create_feature",
             self._create_feature_wrapper,
@@ -96,7 +97,8 @@ class ArchFeatureEngineerAgent(BaseAgent):
                 "error": "No training data available.",
             }
 
-        result = tool_create_feature(df, feature_code)
+        state = self.feature_states.setdefault(self._arch_name, {})
+        result = tool_create_feature(df, feature_code, state=state)
         if result["success"]:
             self.context.engineered_df = df
             # Store in arch-specific snippet list
@@ -199,8 +201,6 @@ You are creating features specifically for the **{self._arch_display_name}** mod
   Signature: add_polynomial_features(df, cols=['...'], degree=2)
 - `from bluecast.preprocessing.feature_creation import add_interaction_features`
   Signature: add_interaction_features(df, cols_a=['...'], cols_b=['...'], operations=['mul', 'div', 'add', 'sub'])
-- `from bluecast.preprocessing.feature_creation import add_groupby_agg_feats`
-  Signature: add_groupby_agg_feats(df, groupby_cols=['...'], to_group_cols=['...'], num_col_prefix='agg', target_col='target', aggregations=['min', 'max', 'mean'])
 - `from bluecast.preprocessing.feature_creation import add_binned_features`
   Signature: add_binned_features(df, cols=['...'], num_bins=5)
 - `from bluecast.preprocessing.feature_creation import StateAwareGroupbyAggregator`

@@ -141,6 +141,7 @@ def tool_check_leakage(df: pd.DataFrame, target_col: str) -> str:
 def tool_create_feature(
     df: pd.DataFrame,
     feature_code: str,
+    state: Dict[str, Any] = None,
 ) -> Dict[str, Any]:
     """Execute feature engineering code and return the modified DataFrame.
 
@@ -148,8 +149,16 @@ def tool_create_feature(
     Returns dict with 'success', 'new_columns', 'error'.
     """
     original_cols = set(df.columns)
+    if state is None:
+        state = {}
     try:
-        local_vars = {"df": df, "np": np, "pd": pd}
+        local_vars = {
+            "df": df,
+            "np": np,
+            "pd": pd,
+            "state": state,
+            "is_fit": True,
+        }
         exec(feature_code, {}, local_vars)
         df_result = local_vars.get("df", df)
         new_cols = list(set(df_result.columns) - original_cols)

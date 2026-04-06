@@ -765,8 +765,15 @@ class Orchestrator:
                     arch_name, arch_info["name"], iteration
                 )
 
-                # Reset engineered_df so the arch FE starts from raw data
-                self.context.engineered_df = None
+                # Initialize engineered_df with global features so arch FE builds on top of them
+                if self.context.feature_code_snippets and self.context.df_train is not None:
+                    from bluecast.ai.fe_preprocessor import AIFeaturePreprocessor
+                    global_prep = AIFeaturePreprocessor(list(self.context.feature_code_snippets))
+                    df_base, _ = global_prep.fit_transform(self.context.df_train.copy(), target=None)
+                    self.context.engineered_df = df_base
+                else:
+                    self.context.engineered_df = None
+                    
                 self.context.arch_feature_snippets[arch_name] = []
 
                 self.arch_engineer.run(arch_fe_task)
