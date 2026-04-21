@@ -18,6 +18,11 @@ def _default_regression_metric(y_true: np.ndarray, y_pred: np.ndarray) -> float:
     return -np.sqrt(np.mean((y_true - y_pred) ** 2))
 
 
+def _mae_regression_metric(y_true: np.ndarray, y_pred: np.ndarray) -> float:
+    """MAE metric for regression hill climbing (negative MAE, higher is better)."""
+    return -np.mean(np.abs(y_true - y_pred))
+
+
 def _convert_to_ranks(predictions: np.ndarray) -> np.ndarray:
     """Convert predictions to rank percentiles in [0, 1]."""
     n = len(predictions)
@@ -58,13 +63,21 @@ class HillClimbingEnsemble:
         self.weight_step = weight_step
         self.tolerance = tolerance
         self.blending_method = blending_method
-        self.eval_metric = eval_metric or _default_classification_metric
         self.is_classification = is_classification
+
+        if eval_metric:
+            self.eval_metric = eval_metric
+        elif is_classification:
+            self.eval_metric = _default_classification_metric
+        else:
+            self.eval_metric = _default_regression_metric
 
         self.selected_indices: List[int] = []
         self.weights_map: Dict[int, float] = {}
         self.history: List[Dict] = []
         self.is_fitted: bool = False
+        self._y_min: Optional[float] = None
+        self._y_max: Optional[float] = None
 
     def _prepare_predictions(self, preds_list: List[np.ndarray]) -> List[np.ndarray]:
         """Optionally rank-transform predictions."""
@@ -91,6 +104,11 @@ class HillClimbingEnsemble:
 
         preds = self._prepare_predictions(oof_predictions)
         y = y_true.astype(np.float64)
+
+        # Store target range for prediction clipping (regression only)
+        if not self.is_classification:
+            self._y_min = float(np.min(y))
+            self._y_max = float(np.max(y))
 
         individual_scores = [self.eval_metric(y, p) for p in preds]
         start_idx = int(np.argmax(individual_scores))
@@ -214,6 +232,13 @@ class HillClimbingEnsemble:
 
         if self.is_classification:
             return np.clip(ensemble, 0.0, 1.0)
+        
+        # Clip regression predictions to training target range + 50% margin
+        if self._y_min is not None and self._y_max is not None:
+            y_range = self._y_max - self._y_min
+            margin = 0.5 * y_range
+            ensemble = np.clip(ensemble, self._y_min - margin, self._y_max + margin)
+        
         return ensemble
 
     def get_selected_model_info(self) -> List[Dict]:

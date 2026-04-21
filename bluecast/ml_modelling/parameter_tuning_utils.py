@@ -29,7 +29,7 @@ def update_params_based_on_tree_method(
     param["tree_method"] = trial.suggest_categorical(
         "tree_method", xgboost_params.tree_method
     )
-    if param["tree_method"] in ["hist", "approx", "gpu_hist"]:
+    if param["tree_method"] in ["hist", "approx"]:
         param["max_bin"] = trial.suggest_int(
             "max_bin", xgboost_params.max_bin_min, xgboost_params.max_bin_max
         )

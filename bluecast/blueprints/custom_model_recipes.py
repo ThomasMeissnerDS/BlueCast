@@ -59,6 +59,10 @@ class LogisticRegressionModel(BaseClassMlModel):
         y_train: pd.Series,
         y_test: pd.Series,
     ):
+        from sklearn.preprocessing import StandardScaler
+        from sklearn.impute import SimpleImputer
+        self.imputer = SimpleImputer(strategy="median")
+        self.scaler = StandardScaler()
         import optuna
         from optuna.samplers import TPESampler
         from sklearn.model_selection import cross_val_score
@@ -67,7 +71,8 @@ class LogisticRegressionModel(BaseClassMlModel):
         if y_train.nunique() > 2 and self.scoring == "roc_auc":
             self.scoring = "roc_auc_ovr"
 
-        x_train = x_train.fillna(0)
+        x_train_np = self.scaler.fit_transform(self.imputer.fit_transform(x_train))
+        x_train = pd.DataFrame(x_train_np, columns=x_train.columns)
         conf_tuning = getattr(self, "conf_tuning", {})
         tuning_rounds = conf_tuning.get("tuning_rounds", 15)
 
@@ -92,12 +97,12 @@ class LogisticRegressionModel(BaseClassMlModel):
 
             model = LogisticRegression(random_state=self.random_state, max_iter=1000, **params)
             skfold = StratifiedKFold(n_splits=self.cv_folds, shuffle=True, random_state=self.random_state)
-            scores = cross_val_score(model, x_train, y_train, cv=skfold, scoring=self.scoring, n_jobs=-1)
+            scores = cross_val_score(model, x_train, y_train, cv=skfold, scoring=self.scoring)
             return scores.mean()
 
         tuning_timeout = conf_tuning.get("tuning_max_runtime", 120)
 
-        optuna.logging.set_verbosity(optuna.logging.WARNING)
+        optuna.logging.set_verbosity(optuna.logging.ERROR)
         study = optuna.create_study(direction="maximize", sampler=TPESampler(seed=self.random_state))
 
         with warnings.catch_warnings():
@@ -134,7 +139,8 @@ class LogisticRegressionModel(BaseClassMlModel):
         self.autotune(x_train, x_test, y_train, y_test)
 
     def predict(self, df: pd.DataFrame) -> Tuple[PredictedProbas, PredictedClasses]:
-        df = df.fillna(0)
+        df_scaled = pd.DataFrame(self.scaler.transform(self.imputer.transform(df)), columns=df.columns)
+        df = df_scaled
         if self.model is None:
             raise ValueError("No fitted model has been found.")
         proba_matrix = self.model.predict_proba(df)
@@ -173,11 +179,16 @@ class RegularizedRegressionModel(BaseClassMlRegressionModel):
         y_train: pd.Series,
         y_test: pd.Series,
     ):
+        from sklearn.preprocessing import StandardScaler
+        from sklearn.impute import SimpleImputer
+        self.imputer = SimpleImputer(strategy="median")
+        self.scaler = StandardScaler()
         import optuna
         from optuna.samplers import TPESampler
         from sklearn.model_selection import cross_val_score
 
-        x_train = x_train.fillna(0)
+        x_train_np = self.scaler.fit_transform(self.imputer.fit_transform(x_train))
+        x_train = pd.DataFrame(x_train_np, columns=x_train.columns)
         conf_tuning = getattr(self, "conf_tuning", {})
         tuning_rounds = conf_tuning.get("tuning_rounds", 15)
 
@@ -194,12 +205,12 @@ class RegularizedRegressionModel(BaseClassMlRegressionModel):
                 estimator = ElasticNet(alpha=alpha, l1_ratio=l1_ratio, max_iter=100000, random_state=self.random_state)
                 
             kfold = KFold(n_splits=self.cv_folds, shuffle=True, random_state=self.random_state)
-            scores = cross_val_score(estimator, x_train, y_train, cv=kfold, scoring=self.scoring, n_jobs=-1)
+            scores = cross_val_score(estimator, x_train, y_train, cv=kfold, scoring=self.scoring)
             return scores.mean()
 
         tuning_timeout = conf_tuning.get("tuning_max_runtime", 120)
 
-        optuna.logging.set_verbosity(optuna.logging.WARNING)
+        optuna.logging.set_verbosity(optuna.logging.ERROR)
         study = optuna.create_study(direction="maximize", sampler=TPESampler(seed=self.random_state))
         
         with warnings.catch_warnings():
@@ -230,7 +241,8 @@ class RegularizedRegressionModel(BaseClassMlRegressionModel):
         self.autotune(x_train, x_test, y_train, y_test)
 
     def predict(self, df: pd.DataFrame) -> np.ndarray:
-        df = df.fillna(0)
+        df_scaled = pd.DataFrame(self.scaler.transform(self.imputer.transform(df)), columns=df.columns)
+        df = df_scaled
         if self.model is not None:
             preds = self.model.predict(df)
             return preds
@@ -253,7 +265,12 @@ class LinearRegressionModel(BaseClassMlRegressionModel):
         y_train: pd.Series,
         y_test: pd.Series,
     ):
-        x_train = x_train.fillna(0)
+        from sklearn.preprocessing import StandardScaler
+        from sklearn.impute import SimpleImputer
+        self.imputer = SimpleImputer(strategy="median")
+        self.scaler = StandardScaler()
+        x_train_np = self.scaler.fit_transform(self.imputer.fit_transform(x_train))
+        x_train = pd.DataFrame(x_train_np, columns=x_train.columns)
         self.linear_regression_model.fit(x_train, y_train)
         self.model = self.linear_regression_model
 
@@ -267,7 +284,8 @@ class LinearRegressionModel(BaseClassMlRegressionModel):
         self.autotune(x_train, x_test, y_train, y_test)
 
     def predict(self, df: pd.DataFrame) -> np.ndarray:
-        df = df.fillna(0)
+        df_scaled = pd.DataFrame(self.scaler.transform(self.imputer.transform(df)), columns=df.columns)
+        df = df_scaled
         if isinstance(self.model, LinearRegression):
             preds = self.model.predict(df)
             return preds

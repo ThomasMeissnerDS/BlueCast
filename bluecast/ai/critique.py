@@ -67,7 +67,8 @@ Review the evaluation and improvement suggestions below:
 2. **Bottleneck** — Do the suggestions address the actual bottleneck?
 3. **Mode adherence** — For 'ultimate' mode, did the evaluator consider
    architecture-specific advice?
-4. **Diminishing returns** — Are suggestions likely to improve meaningfully?
+4. **Error Analysis** — Did the evaluator use error analysis tools like inspect_residuals or consider SHAP dependence values (if available)?
+5. **Diminishing returns** — Are suggestions likely to improve meaningfully?
 
 Respond with:
 - APPROVED if the evaluation is actionable
@@ -241,11 +242,18 @@ class CritiqueLoop:
 
     def _get_critique(self, critique_prompt: str, agent_output: str) -> str:
         """Get a critique of the agent's output."""
+        # Build a summary of recent tool results so the critic can evaluate
+        # work done via tool calls (not just the text response).
+        tool_summary = self._summarise_recent_tool_results()
+        combined = agent_output
+        if tool_summary:
+            combined += "\n\n--- Tool Results Summary ---\n" + tool_summary
+
         messages = [
             Message(role="system", content=critique_prompt),
             Message(
                 role="user",
-                content=f"Here is the work to review:\n\n{agent_output[:4000]}",
+                content=f"Here is the work to review:\n\n{combined[:6000]}",
             ),
         ]
         response = self.llm.chat(messages)
@@ -255,6 +263,29 @@ class CritiqueLoop:
             self.context.completion_tokens += response.usage.get("completion_tokens", 0)
 
         return response.text if response else "APPROVED"
+
+    def _summarise_recent_tool_results(self, max_entries: int = 15) -> str:
+        """Collect recent tool_call / tool_result log entries.
+
+        Tool-based agents (DataAnalyst, FeatureEngineer) express their
+        work through tool calls.  The critic needs to see these results
+        to evaluate the agent's work quality.
+        """
+        relevant = [
+            e
+            for e in self.context.structured_log
+            if e.event_type in ("tool_call", "tool_result")
+        ]
+        if not relevant:
+            return ""
+
+        # Take the most recent entries
+        recent = relevant[-max_entries:]
+        lines = []
+        for entry in recent:
+            prefix = "CALL" if entry.event_type == "tool_call" else "RESULT"
+            lines.append(f"[{prefix}] {entry.content[:300]}")
+        return "\n".join(lines)
 
     @staticmethod
     def _is_approved(critique: str) -> bool:

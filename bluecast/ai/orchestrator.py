@@ -342,6 +342,8 @@ class Orchestrator:
             print("=" * 60)
 
         self._load_checkpoint()
+        
+        self.context.pipeline_start_time = start_time
 
         # --- Step 0: Smart sampling ---
         if not self._is_step_done("sampling"):
@@ -531,6 +533,10 @@ class Orchestrator:
         )
 
         critique_rounds = self._get_critique_rounds()
+        # Tool-based agents communicate through tool calls, not text.
+        # The critic only sees truncated text and almost always returns
+        # NEEDS_IMPROVEMENT, wasting the entire LLM budget.  Cap at 1.
+        critique_rounds = min(critique_rounds, 1)
 
         if critique_rounds > 0:
             from bluecast.ai.critique import CritiqueLoop
@@ -582,6 +588,10 @@ class Orchestrator:
         )
 
         critique_rounds = self._get_critique_rounds()
+        # Same rationale as _step_analyze: FE agents express work via
+        # tool calls.  Excessive critique rounds reset state and throw
+        # away 80%+ of feature engineering effort.
+        critique_rounds = min(critique_rounds, 1)
 
         if critique_rounds > 0 and self.config.mode in ("precise", "ultimate"):
             from bluecast.ai.critique import CritiqueLoop
@@ -604,14 +614,38 @@ class Orchestrator:
             if self.config.verbose:
                 print("  [Validation] Verifying feature engineering snippets...")
 
-            df_test = self.context.df_train.copy()
-            valid_snippets = []
+            df_val = self.context.df_train.copy()
+            if self.context.target_col and self.context.target_col in df_val.columns:
+                df_val = df_val.drop(columns=[self.context.target_col])
 
+            valid_snippets = []
+            
             for i, code in enumerate(self.context.feature_code_snippets):
                 try:
-                    local_vars = {"df": df_test, "np": np, "pd": pd}
-                    exec(code, {}, local_vars)  # noqa: S102
-                    df_test = local_vars.get("df", df_test)
+                    # Pass 1: Simulate train time (is_fit=True)
+                    state_train: dict = {}
+                    df_train_pass = df_val.copy()
+                    local_vars_train = {
+                        "df": df_train_pass,
+                        "np": np,
+                        "pd": pd,
+                        "state": state_train,
+                        "is_fit": True,
+                    }
+                    exec(code, local_vars_train)  # noqa: S102
+                    
+                    # Pass 2: Simulate inference time (is_fit=False)
+                    # Use only 2 rows to ensure methods like qcut that fail on small sets are caught
+                    df_infer_pass = df_val.head(2).copy()
+                    local_vars_infer = {
+                        "df": df_infer_pass,
+                        "np": np,
+                        "pd": pd,
+                        "state": state_train,
+                        "is_fit": False,
+                    }
+                    exec(code, local_vars_infer)  # noqa: S102
+                    
                     valid_snippets.append(code)
                 except Exception as e:
                     if self.config.verbose:
@@ -620,16 +654,33 @@ class Orchestrator:
                         )
 
             self.context.feature_code_snippets = valid_snippets
-            self.context.engineered_df = df_test
+            
+            # Re-run valid snippets on full df_train (with target) to build engineered_df
+            df_final = self.context.df_train.copy()
+            final_state: dict = {}
+            for code in valid_snippets:
+                local_vars = {
+                    "df": df_final,
+                    "np": np,
+                    "pd": pd,
+                    "state": final_state,
+                    "is_fit": True,
+                }
+                exec(code, local_vars)  # noqa: S102
+                df_final = local_vars.get("df", df_final)
+                
+            self.context.engineered_df = df_final
 
             # Prune snippets referencing constant columns (nunique <= 1).
             # These columns are typically dropped by BlueCast's internal
             # pipeline, causing KeyError during CV folds.
+            # Check the engineered df (df_test) to catch junk columns
+            # created by the FE agent (e.g. dummy_shape_check = 1).
             const_cols = [
                 c
-                for c in self.context.df_train.columns
+                for c in df_test.columns
                 if c != self.context.target_col
-                and self.context.df_train[c].nunique() <= 1
+                and df_test[c].nunique() <= 1
             ]
             if const_cols:
                 pruned = []
@@ -669,6 +720,13 @@ class Orchestrator:
         }
 
         for iteration in range(max_iterations):
+            if self.config.global_tuning_budget and self.config.global_tuning_budget > 0:
+                elapsed = time.time() - getattr(self.context, 'pipeline_start_time', time.time())
+                if elapsed > self.config.global_tuning_budget * 0.8:
+                    if self.config.verbose:
+                        print(f"\n  [TIMEOUT] Global budget nearly exhausted ({elapsed:.0f}s). Stopping build loop early.")
+                    break
+
             if self.config.verbose:
                 print(f"\n  Iteration {iteration + 1}/{max_iterations}:")
 
@@ -716,6 +774,22 @@ class Orchestrator:
         iters = self.config.ultimate_iterations_per_arch
         total_archs = len(archs)
 
+        # Cap iterations per arch based on budget so every architecture gets
+        # enough compute.  Each iteration needs ~180s for FE + tuning + CV.
+        if self.config.global_tuning_budget and self.config.global_tuning_budget > 0:
+            max_affordable_iters = max(
+                2, int(self.config.global_tuning_budget / (total_archs * 180))
+            )
+            if max_affordable_iters < iters:
+                if self.config.verbose:
+                    print(
+                        f"  [BUDGET] Capping iterations from {iters} to "
+                        f"{max_affordable_iters} per arch "
+                        f"(budget={self.config.global_tuning_budget}s, "
+                        f"{total_archs} archs)"
+                    )
+                iters = max_affordable_iters
+
         override_max_runtime = None
         if self.config.global_tuning_budget and self.config.global_tuning_budget > 0:
             n_folds_expected = plan.get("n_folds", 5)
@@ -752,11 +826,30 @@ class Orchestrator:
                 plan, arch_name, override_max_runtime
             )
 
+            # Set scoring for custom architectures if they support it
+            if ml_model is not None and hasattr(ml_model, "scoring"):
+                # Regression: MAE scoring
+                if arch_config.get("regression_eval_metric") == "mae":
+                    ml_model.scoring = "neg_mean_absolute_error"
+                # Classification: balanced_accuracy scoring
+                clf_metric = arch_config.get("classification_eval_metric")
+                if clf_metric == "balanced_accuracy":
+                    ml_model.scoring = "balanced_accuracy"
+                elif clf_metric == "log_loss":
+                    ml_model.scoring = "neg_log_loss"
+
             # Reset arch FE state for this architecture
             self.context.arch_feature_snippets[arch_name] = []
             self.arch_engineer.set_architecture(arch_name, arch_info["name"])
 
             for iteration in range(iters):
+                if self.config.global_tuning_budget and self.config.global_tuning_budget > 0:
+                    elapsed = time.time() - getattr(self.context, 'pipeline_start_time', time.time())
+                    if elapsed > self.config.global_tuning_budget * 0.8:
+                        if self.config.verbose:
+                            print(f"\n  [TIMEOUT] Global budget nearly exhausted ({elapsed:.0f}s). Skipping further iterations for {arch_name}.")
+                        break
+                        
                 if self.config.verbose:
                     print(f"    Iteration {iteration + 1}/{iters}:")
 
@@ -836,6 +929,13 @@ class Orchestrator:
                 if is_better:
                     self.context.best_pipeline = result["pipeline"]
                     self.context.best_metrics = result["metrics"]
+                    
+                    # Store the complete FE code for the best architecture so it can be exported
+                    best_arch_snippets = self.context.arch_feature_snippets.get(arch_name, [])
+                    all_snippets = list(self.context.feature_code_snippets) + list(best_arch_snippets)
+                    if all_snippets:
+                        self.context.feature_engineering_code = "\n\n".join(all_snippets)
+                    
                     if self.config.verbose:
                         print(
                             f"      [Best so far] {arch_name} "
@@ -893,6 +993,9 @@ class Orchestrator:
             else:
                 config["tuning_max_runtime"] = max_runtime
             
+        if "enable_feature_selection" in config:
+            config["enable_feature_selection"] = False
+            
         if arch_name in ["linear", "randomforest"]:
             config["cat_encoding_via_ml_algorithm"] = False
             
@@ -900,18 +1003,30 @@ class Orchestrator:
 
     def _build_arch_config(self, plan: dict, arch_name: str, override_max_runtime: Optional[int] = None) -> dict:
         """Build a base pipeline config for a specific architecture."""
+        class_problem = plan.get(
+            "class_problem", self.context.class_problem or "binary"
+        )
         config = {
-            "class_problem": plan.get(
-                "class_problem", self.context.class_problem or "binary"
-            ),
+            "class_problem": class_problem,
             "use_cv": plan.get("use_cv", True),
-            "ensemble_strategy": plan.get("ensemble_strategy", "mean"),
+            "ensemble_strategy": plan.get("ensemble_strategy", "hill_climbing"),
             "n_folds": plan.get("n_folds", 5),
             "n_repeats": plan.get("n_repeats", 1),
             "tuning_rounds": plan.get("tuning_rounds", 50),
             "tuning_max_runtime": override_max_runtime if override_max_runtime else plan.get("tuning_max_runtime", 120),
             "autotune_on_device": self.config.autotune_on_device,
         }
+
+        # Propagate regression eval metric so MAE (or other metrics) are
+        # used instead of defaulting to RMSE in tool_build_and_run_pipeline.
+        # Only propagate for regression tasks to prevent classification
+        # pipelines from being poisoned with regression objectives.
+        if class_problem == "regression" and plan.get("regression_eval_metric"):
+            config["regression_eval_metric"] = plan["regression_eval_metric"]
+
+        # Propagate classification eval metric (e.g. balanced_accuracy)
+        if class_problem != "regression" and plan.get("classification_eval_metric"):
+            config["classification_eval_metric"] = plan["classification_eval_metric"]
 
         # Linear models don't benefit from gradient boosting tuning
         if arch_name == "linear":
@@ -951,7 +1066,26 @@ class Orchestrator:
                 "class_problem", self.context.class_problem or "binary"
             )
             if problem == "regression":
-                ml_model = XgboostModelRegression(class_problem="regression")
+                conf_xgboost = None
+                conf_params_xgboost = None
+                if config.get("regression_eval_metric") == "mae":
+                    from bluecast.config.training_config import (
+                        XgboostTuneParamsRegressionConfig,
+                        XgboostRegressionFinalParamConfig,
+                    )
+                    conf_xgboost = XgboostTuneParamsRegressionConfig(
+                        xgboost_eval_metric="mae",
+                        xgboost_objective="reg:absoluteerror"
+                    )
+                    conf_params_xgboost = XgboostRegressionFinalParamConfig()
+                    conf_params_xgboost.params["eval_metric"] = "mae"
+                    conf_params_xgboost.params["objective"] = "reg:absoluteerror"
+
+                ml_model = XgboostModelRegression(
+                    class_problem="regression",
+                    conf_xgboost=conf_xgboost,
+                    conf_params_xgboost=conf_params_xgboost,
+                )
             else:
                 ml_model = XgboostModel(class_problem=problem)
 
@@ -995,9 +1129,9 @@ class Orchestrator:
         if arch_runs:
             last = arch_runs[-1]
             if last.get("success"):
-                metrics_info = f"\nPrevious metrics: {last['metrics']}"
+                metrics_info = f"\nPrevious metrics: {last.get('metrics', 'N/A')}"
             else:
-                metrics_info = f"\nWARNING: Previous iteration FAILED with error: {last.get('error')}"
+                metrics_info = f"\nWARNING: Previous iteration FAILED with error: {last.get('error', 'unknown error')}"
 
         # Check for persistent errors in context
         error_feedback = ""
@@ -1183,7 +1317,7 @@ class Orchestrator:
                 "class_problem", self.context.class_problem or "binary"
             ),
             "use_cv": plan.get("use_cv", True),
-            "ensemble_strategy": plan.get("ensemble_strategy", "mean"),
+            "ensemble_strategy": plan.get("ensemble_strategy", "hill_climbing"),
             "n_folds": plan.get("n_folds", 5),
             "n_repeats": plan.get("n_repeats", 1),
             "tuning_rounds": plan.get("tuning_rounds", 50),
@@ -1194,8 +1328,8 @@ class Orchestrator:
             config_hints["tuning_rounds"] = min(
                 config_hints["tuning_rounds"] * (iteration + 1), 500
             )
-        if iteration >= 2 and config_hints["ensemble_strategy"] == "mean":
-            config_hints["ensemble_strategy"] = "stacking"
+        if iteration >= 2 and config_hints["ensemble_strategy"] == "stacking":
+            config_hints["ensemble_strategy"] = "hill_climbing"
 
         return (
             f"Build and run a BlueCast pipeline (iteration {iteration + 1}).\n"

@@ -468,7 +468,7 @@ class XgboostBaseModel:
         y_test: pd.Series,
     ):
         if not self.conf_training.show_detailed_tuning_logs:
-            optuna.logging.set_verbosity(optuna.logging.WARNING)
+            optuna.logging.set_verbosity(optuna.logging.ERROR)
 
         if self.conf_training.autotune_model:
             self.autotune(
@@ -873,7 +873,7 @@ class CatboostBaseModel:
         Mirrors the XGBoost orchestrate_hyperparameter_tuning approach.
         """
         if not self.conf_training.show_detailed_tuning_logs:
-            optuna.logging.set_verbosity(optuna.logging.WARNING)
+            optuna.logging.set_verbosity(optuna.logging.ERROR)
 
         if self.conf_training.autotune_model:
             self.autotune(

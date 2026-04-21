@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "bluecast"
-version = "3.0.3"
+version = "3.0.4"
 description = "A lightweight and fast automl framework"
 authors = ["Thomas Meißner <meissnercorporation@gmx.de>"]
 license = "GPL-3.0-only"
@@ -35,7 +35,7 @@ pyarrow = ">=10.0.0"  # former: "<0.17.0"
 shap = ">=0.47.0"
 s3fs = ">=2022.1.0"
 xgboost = ">=2.0.0,<3.0.0"
-numpy           = ">=2.0.0"
+numpy           = ">=1.23.0"
 scipy           = ">=1.16.0"
 scikit-learn    = ">=1.6.0"
 google-generativeai = {version = ">=0.8.0", optional = true}

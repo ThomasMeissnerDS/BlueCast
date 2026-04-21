@@ -44,7 +44,7 @@ class AIFeaturePreprocessor(CustomPreprocessing):
                     "state": self.state,
                     "is_fit": is_fit,
                 }
-                exec(code, {}, local_vars)  # noqa: S102
+                exec(code, local_vars)  # noqa: S102
                 df = local_vars.get("df", df)
             except Exception as e:
                 logger.warning(
@@ -56,6 +56,7 @@ class AIFeaturePreprocessor(CustomPreprocessing):
     def fit_transform(
         self, df: pd.DataFrame, target: pd.Series
     ) -> Tuple[pd.DataFrame, pd.Series]:
+        self.state.clear()
         df = self._apply_snippets(df, is_fit=True)
         return df, target
 

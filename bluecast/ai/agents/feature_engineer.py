@@ -37,6 +37,11 @@ class FeatureEngineerAgent(BaseAgent):
                 "error": "No training data available.",
             }
 
+        # Hide target column from feature engineering to prevent schema mismatches on inference
+        target_col = getattr(self.context, "target_col", None)
+        if target_col and target_col in df.columns:
+            df = df.drop(columns=[target_col])
+
         result = tool_create_feature(df, feature_code, state=self.feature_state)
         if result["success"]:
             self.context.engineered_df = df
@@ -61,6 +66,11 @@ class FeatureEngineerAgent(BaseAgent):
                 "new_columns": [],
                 "error": "No training data available.",
             }
+
+        # Hide target column from feature engineering to prevent schema mismatches on inference
+        target_col = getattr(self.context, "target_col", None)
+        if target_col and target_col in df.columns:
+            df = df.drop(columns=[target_col])
 
         result = tool_create_tfidf_features(df, text_col, max_features)
         if result["success"]:
@@ -148,7 +158,8 @@ You can import and use these pre-built BlueCast stateless functions to save time
 - `from bluecast.preprocessing.feature_creation import add_interaction_features`
   Signature: add_interaction_features(df, cols_a=['...'], cols_b=['...'], operations=['mul', 'div', 'add', 'sub'])
 - `from bluecast.preprocessing.feature_creation import add_binned_features`
-  Signature: add_binned_features(df, cols=['...'], num_bins=5)
+  Signature: add_binned_features(df, cols=['...'], num_bins=5, state=state, is_fit=is_fit)
+  IMPORTANT: Always pass state=state and is_fit=is_fit to ensure train/test bin edge consistency.
 - `from bluecast.preprocessing.feature_creation import add_datetime_features`
   Signature: add_datetime_features(df, date_cols=['...'])
 - `from bluecast.preprocessing.feature_creation import StateAwareGroupbyAggregator`

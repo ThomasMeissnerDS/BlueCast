@@ -26,6 +26,113 @@ from bluecast.ml_modelling.base_classes import (
 logger = logging.getLogger(__name__)
 
 
+
+class MLPClassificationModel(BaseClassMlModel):
+    def __init__(self, scoring: str = "roc_auc", cv_folds: int = 5, random_state: int = 300):
+        self.model = None
+        self.scoring = scoring
+        self.cv_folds = cv_folds
+        self.random_state = random_state
+
+    def autotune(self, x_train: pd.DataFrame, x_test: pd.DataFrame, y_train: pd.Series, y_test: pd.Series) -> None:
+        import optuna
+        from optuna.samplers import TPESampler
+        from sklearn.model_selection import cross_val_score
+        from sklearn.neural_network import MLPClassifier
+        from sklearn.preprocessing import StandardScaler
+        from sklearn.impute import SimpleImputer
+        import numpy as np
+
+        if y_train.nunique() > 2 and self.scoring == "roc_auc":
+            self.scoring = "roc_auc_ovr"
+
+        self.imputer = SimpleImputer(strategy="median")
+        self.scaler = StandardScaler()
+        x_train_np = self.scaler.fit_transform(self.imputer.fit_transform(x_train))
+        x_train = pd.DataFrame(x_train_np, columns=x_train.columns)
+
+        def objective(trial):
+            params = {
+                "hidden_layer_sizes": trial.suggest_categorical("hidden_layer_sizes", [(50,), (100,), (50, 50), (100, 50)]),
+                "activation": trial.suggest_categorical("activation", ["relu", "tanh"]),
+                "alpha": trial.suggest_float("alpha", 1e-5, 1e-1, log=True),
+                "learning_rate_init": trial.suggest_float("learning_rate_init", 1e-4, 1e-1, log=True),
+            }
+            model = MLPClassifier(random_state=self.random_state, max_iter=200, early_stopping=True, **params)
+            skfold = StratifiedKFold(n_splits=self.cv_folds, shuffle=True, random_state=self.random_state)
+            return cross_val_score(model, x_train, y_train, cv=skfold, scoring=self.scoring).mean()
+
+        optuna.logging.set_verbosity(optuna.logging.ERROR)
+        study = optuna.create_study(direction="maximize", sampler=TPESampler(seed=self.random_state))
+        study.optimize(objective, n_trials=10, timeout=120)
+
+        completed = [t for t in study.trials if t.state == optuna.trial.TrialState.COMPLETE]
+        best_params = study.best_params if completed else {"hidden_layer_sizes": (100,)}
+        from sklearn.neural_network import MLPClassifier
+        self.model = MLPClassifier(random_state=self.random_state, max_iter=200, early_stopping=True, **best_params)
+        self.model.fit(x_train, y_train)
+
+    def fit(self, x_train: pd.DataFrame, x_test: pd.DataFrame, y_train: pd.Series, y_test: pd.Series) -> None:
+        self.autotune(x_train, x_test, y_train, y_test)
+
+    def predict(self, df: pd.DataFrame):
+        df_scaled = pd.DataFrame(self.scaler.transform(self.imputer.transform(df)), columns=df.columns)
+        proba_matrix = self.model.predict_proba(df_scaled)
+        classes = self.model.predict(df_scaled)
+        if proba_matrix.shape[1] == 2:
+            return proba_matrix[:, 1], classes
+        return proba_matrix, classes
+
+class MLPRegressionModel(BaseClassMlRegressionModel):
+    def __init__(self, scoring: str = "neg_mean_absolute_error", cv_folds: int = 5, random_state: int = 300):
+        self.model = None
+        self.scoring = scoring
+        self.cv_folds = cv_folds
+        self.random_state = random_state
+
+    def autotune(self, x_train: pd.DataFrame, x_test: pd.DataFrame, y_train: pd.Series, y_test: pd.Series) -> None:
+        import optuna
+        from optuna.samplers import TPESampler
+        from sklearn.model_selection import cross_val_score
+        from sklearn.neural_network import MLPRegressor
+        from sklearn.preprocessing import StandardScaler
+        from sklearn.impute import SimpleImputer
+        import numpy as np
+
+        self.imputer = SimpleImputer(strategy="median")
+        self.scaler = StandardScaler()
+        x_train_np = self.scaler.fit_transform(self.imputer.fit_transform(x_train))
+        x_train = pd.DataFrame(x_train_np, columns=x_train.columns)
+
+        def objective(trial):
+            params = {
+                "hidden_layer_sizes": trial.suggest_categorical("hidden_layer_sizes", [(50,), (100,), (50, 50), (100, 50)]),
+                "activation": trial.suggest_categorical("activation", ["relu", "tanh"]),
+                "alpha": trial.suggest_float("alpha", 1e-5, 1e-1, log=True),
+                "learning_rate_init": trial.suggest_float("learning_rate_init", 1e-4, 1e-1, log=True),
+            }
+            model = MLPRegressor(random_state=self.random_state, max_iter=200, early_stopping=True, **params)
+            kfold = KFold(n_splits=self.cv_folds, shuffle=True, random_state=self.random_state)
+            return cross_val_score(model, x_train, y_train, cv=kfold, scoring=self.scoring).mean()
+
+        optuna.logging.set_verbosity(optuna.logging.ERROR)
+        study = optuna.create_study(direction="maximize", sampler=TPESampler(seed=self.random_state))
+        study.optimize(objective, n_trials=10, timeout=120)
+
+        completed = [t for t in study.trials if t.state == optuna.trial.TrialState.COMPLETE]
+        best_params = study.best_params if completed else {"hidden_layer_sizes": (100,)}
+        from sklearn.neural_network import MLPRegressor
+        self.model = MLPRegressor(random_state=self.random_state, max_iter=200, early_stopping=True, **best_params)
+        self.model.fit(x_train, y_train)
+
+    def fit(self, x_train: pd.DataFrame, x_test: pd.DataFrame, y_train: pd.Series, y_test: pd.Series) -> None:
+        self.autotune(x_train, x_test, y_train, y_test)
+
+    def predict(self, df: pd.DataFrame):
+        df_scaled = pd.DataFrame(self.scaler.transform(self.imputer.transform(df)), columns=df.columns)
+        return self.model.predict(df_scaled)
+
+
 # ---------------------------------------------------------------------------
 # HistGradientBoosting wrapper
 # ---------------------------------------------------------------------------
@@ -80,12 +187,12 @@ class HistGBClassificationModel(BaseClassMlModel):
                 random_state=self.random_state, early_stopping=True, validation_fraction=0.1, **params
             )
             skfold = StratifiedKFold(n_splits=self.cv_folds, shuffle=True, random_state=self.random_state)
-            scores = cross_val_score(model, x_train, y_train, cv=skfold, scoring=self.scoring, n_jobs=-1)
+            scores = cross_val_score(model, x_train, y_train, cv=skfold, scoring=self.scoring)
             return scores.mean()
 
         tuning_timeout = conf_tuning.get("tuning_max_runtime", 120)
 
-        optuna.logging.set_verbosity(optuna.logging.WARNING)
+        optuna.logging.set_verbosity(optuna.logging.ERROR)
         study = optuna.create_study(direction="maximize", sampler=TPESampler(seed=self.random_state))
         study.optimize(objective, n_trials=tuning_rounds, timeout=tuning_timeout)
 
@@ -170,12 +277,12 @@ class HistGBRegressionModel(BaseClassMlRegressionModel):
                 random_state=self.random_state, loss=loss, early_stopping=True, validation_fraction=0.1, **params
             )
             kfold = KFold(n_splits=self.cv_folds, shuffle=True, random_state=self.random_state)
-            scores = cross_val_score(model, x_train, y_train, cv=kfold, scoring=self.scoring, n_jobs=-1)
+            scores = cross_val_score(model, x_train, y_train, cv=kfold, scoring=self.scoring)
             return scores.mean()
 
         tuning_timeout = conf_tuning.get("tuning_max_runtime", 120)
 
-        optuna.logging.set_verbosity(optuna.logging.WARNING)
+        optuna.logging.set_verbosity(optuna.logging.ERROR)
         study = optuna.create_study(direction="maximize", sampler=TPESampler(seed=self.random_state))
         study.optimize(objective, n_trials=tuning_rounds, timeout=tuning_timeout)
 
@@ -248,14 +355,14 @@ class RandomForestClassificationModel(BaseClassMlModel):
                 "min_samples_leaf": trial.suggest_int("min_samples_leaf", conf_tuning.get("rf_min_samples_min", 1), conf_tuning.get("rf_min_samples_max", 20)),
                 "max_features": trial.suggest_float("max_features", conf_tuning.get("rf_max_features_min", 0.1), conf_tuning.get("rf_max_features_max", 1.0)),
             }
-            model = RandomForestClassifier(random_state=self.random_state, n_jobs=-1, **params)
+            model = RandomForestClassifier(random_state=self.random_state, n_jobs=1, **params)
             skfold = StratifiedKFold(n_splits=self.cv_folds, shuffle=True, random_state=self.random_state)
-            scores = cross_val_score(model, x_train, y_train, cv=skfold, scoring=self.scoring, n_jobs=-1)
+            scores = cross_val_score(model, x_train, y_train, cv=skfold, scoring=self.scoring)
             return scores.mean()
 
         tuning_timeout = conf_tuning.get("tuning_max_runtime", 120)
 
-        optuna.logging.set_verbosity(optuna.logging.WARNING)
+        optuna.logging.set_verbosity(optuna.logging.ERROR)
         study = optuna.create_study(direction="maximize", sampler=TPESampler(seed=self.random_state))
         study.optimize(objective, n_trials=tuning_rounds, timeout=tuning_timeout)
 
@@ -267,7 +374,7 @@ class RandomForestClassificationModel(BaseClassMlModel):
             best_params = study.best_params
             logger.info(f"RandomForest classification best params: {best_params} (score: {study.best_value:.4f})")
 
-        self.model = RandomForestClassifier(random_state=self.random_state, n_jobs=-1, **best_params)
+        self.model = RandomForestClassifier(random_state=self.random_state, n_jobs=1, **best_params)
         self.model.fit(x_train, y_train)
 
     def fit(
@@ -333,14 +440,14 @@ class RandomForestRegressionModel(BaseClassMlRegressionModel):
                 "max_features": trial.suggest_float("max_features", conf_tuning.get("rf_max_features_min", 0.1), conf_tuning.get("rf_max_features_max", 1.0)),
             }
             # Always use squared_error internally for RF because absolute_error is computationally prohibitive
-            model = RandomForestRegressor(random_state=self.random_state, criterion="squared_error", n_jobs=-1, **params)
+            model = RandomForestRegressor(random_state=self.random_state, criterion="squared_error", n_jobs=1, **params)
             kfold = KFold(n_splits=self.cv_folds, shuffle=True, random_state=self.random_state)
-            scores = cross_val_score(model, x_train, y_train, cv=kfold, scoring=self.scoring, n_jobs=-1)
+            scores = cross_val_score(model, x_train, y_train, cv=kfold, scoring=self.scoring)
             return scores.mean()
 
         tuning_timeout = conf_tuning.get("tuning_max_runtime", 120)
 
-        optuna.logging.set_verbosity(optuna.logging.WARNING)
+        optuna.logging.set_verbosity(optuna.logging.ERROR)
         study = optuna.create_study(direction="maximize", sampler=TPESampler(seed=self.random_state))
         study.optimize(objective, n_trials=tuning_rounds, timeout=tuning_timeout)
 
@@ -352,7 +459,7 @@ class RandomForestRegressionModel(BaseClassMlRegressionModel):
             best_params = study.best_params
             logger.info(f"RandomForest regression best params: {best_params} (score: {study.best_value:.4f})")
             
-        self.model = RandomForestRegressor(random_state=self.random_state, criterion="squared_error", n_jobs=-1, **best_params)
+        self.model = RandomForestRegressor(random_state=self.random_state, criterion="squared_error", n_jobs=1, **best_params)
         self.model.fit(x_train, y_train)
 
     def fit(
@@ -429,6 +536,11 @@ ARCHITECTURE_REGISTRY: Dict[str, ArchInfo] = {
     "histgb": {
         "name": "HistGradientBoosting (sklearn)",
         "factory": _make_histgb,
+        "supports": ["binary", "multiclass", "regression"],
+    },
+        "mlp": {
+        "name": "MLP Neural Network (sklearn)",
+        "factory": lambda problem: MLPRegressionModel() if problem == "regression" else MLPClassificationModel(),
         "supports": ["binary", "multiclass", "regression"],
     },
     "randomforest": {

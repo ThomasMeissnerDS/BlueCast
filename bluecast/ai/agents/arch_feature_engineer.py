@@ -77,6 +77,14 @@ class ArchFeatureEngineerAgent(BaseAgent):
             "create_tfidf_features",
             self._create_tfidf_wrapper,
         )
+        self.register_tool_impl(
+            "drop_collinear_features",
+            self._drop_collinear_wrapper,
+        )
+        self.register_tool_impl(
+            "l1_feature_selection",
+            self._l1_selection_wrapper,
+        )
 
     def set_architecture(self, arch_name: str, display_name: str) -> None:
         """Set the target architecture for the next run."""
@@ -96,6 +104,11 @@ class ArchFeatureEngineerAgent(BaseAgent):
                 "shape": [],
                 "error": "No training data available.",
             }
+
+        # Hide target column from feature engineering to prevent schema mismatches on inference
+        target_col = getattr(self.context, "target_col", None)
+        if target_col and target_col in df.columns:
+            df = df.drop(columns=[target_col])
 
         state = self.feature_states.setdefault(self._arch_name, {})
         result = tool_create_feature(df, feature_code, state=state)
@@ -121,6 +134,11 @@ class ArchFeatureEngineerAgent(BaseAgent):
                 "error": "No training data available.",
             }
 
+        # Hide target column from feature engineering to prevent schema mismatches on inference
+        target_col = getattr(self.context, "target_col", None)
+        if target_col and target_col in df.columns:
+            df = df.drop(columns=[target_col])
+
         result = tool_create_tfidf_features(df, text_col, max_features)
         if result["success"]:
             self.context.engineered_df = df
@@ -137,6 +155,66 @@ class ArchFeatureEngineerAgent(BaseAgent):
                 self._arch_name, []
             )
             snippets.append(tfidf_code)
+        return result
+
+    def _drop_collinear_wrapper(self, threshold: float = 0.9, **kw):
+        from bluecast.ai.tools import tool_drop_collinear_features
+        if self.context.engineered_df is not None:
+            df = self.context.engineered_df
+        elif self.context.df_train is not None:
+            df = self.context.df_train.copy()
+        else:
+            return {"success": False, "error": "No training data available."}
+
+        target_col = getattr(self.context, "target_col", None)
+        result = tool_drop_collinear_features(df, threshold, target_col)
+        
+        if result.get("success"):
+            self.context.engineered_df = df
+            dropped = result["dropped_columns"]
+            if dropped:
+                code = (
+                    f"to_drop = {dropped}\n"
+                    f"df = df.drop(columns=[c for c in to_drop if c in df.columns])\n"
+                )
+                snippets = self.context.arch_feature_snippets.setdefault(self._arch_name, [])
+                snippets.append(code)
+                result["message"] = f"Dropped {len(dropped)} collinear columns: {dropped}"
+            else:
+                result["message"] = "No collinear columns exceeded the threshold."
+                
+        return result
+
+    def _l1_selection_wrapper(self, alpha: float = 0.01, **kw):
+        from bluecast.ai.tools import tool_l1_feature_selection
+        if self.context.engineered_df is not None:
+            df = self.context.engineered_df
+        elif self.context.df_train is not None:
+            df = self.context.df_train.copy()
+        else:
+            return {"success": False, "error": "No training data available."}
+
+        target_col = getattr(self.context, "target_col", None)
+        class_problem = getattr(self.context, "class_problem", "regression")
+        if not target_col:
+            return {"success": False, "error": "Context missing target_col."}
+            
+        result = tool_l1_feature_selection(df, target_col, class_problem, alpha)
+        
+        if result.get("success"):
+            self.context.engineered_df = df
+            dropped = result["dropped_columns"]
+            if dropped:
+                code = (
+                    f"to_drop = {dropped}\n"
+                    f"df = df.drop(columns=[c for c in to_drop if c in df.columns])\n"
+                )
+                snippets = self.context.arch_feature_snippets.setdefault(self._arch_name, [])
+                snippets.append(code)
+                result["message"] = f"Dropped {len(dropped)} uninformative columns using L1 regularization."
+            else:
+                result["message"] = "No columns were dropped."
+                
         return result
 
     @property
@@ -202,7 +280,8 @@ You are creating features specifically for the **{self._arch_display_name}** mod
 - `from bluecast.preprocessing.feature_creation import add_interaction_features`
   Signature: add_interaction_features(df, cols_a=['...'], cols_b=['...'], operations=['mul', 'div', 'add', 'sub'])
 - `from bluecast.preprocessing.feature_creation import add_binned_features`
-  Signature: add_binned_features(df, cols=['...'], num_bins=5)
+  Signature: add_binned_features(df, cols=['...'], num_bins=5, state=state, is_fit=is_fit)
+  IMPORTANT: Always pass state=state and is_fit=is_fit to ensure train/test bin edge consistency.
 - `from bluecast.preprocessing.feature_creation import StateAwareGroupbyAggregator`
   Usage:
   if 'my_agg' not in state:
@@ -211,6 +290,8 @@ You are creating features specifically for the **{self._arch_display_name}** mod
       df = state['my_agg'].fit_transform(df)
   else:
       df = state['my_agg'].transform(df)
+- `drop_collinear_features` (Linear Only): Tool to drop highly correlated columns.
+- `l1_feature_selection` (Linear Only): Tool to drop uninformative features via L1.
 {importance_section}
 
 Dataset overview:
@@ -221,7 +302,13 @@ Analysis findings:
 {hints}"""
 
     def get_tools(self) -> List[ToolDefinition]:
-        return [
+        tools = [
             TOOL_DEFINITIONS["create_feature"],
             TOOL_DEFINITIONS["create_tfidf_features"],
         ]
+        if self._arch_name in ["linear", "logistic"]:
+            if "drop_collinear_features" in TOOL_DEFINITIONS:
+                tools.append(TOOL_DEFINITIONS["drop_collinear_features"])
+            if "l1_feature_selection" in TOOL_DEFINITIONS:
+                tools.append(TOOL_DEFINITIONS["l1_feature_selection"])
+        return tools

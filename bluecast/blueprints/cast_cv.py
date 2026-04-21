@@ -19,6 +19,7 @@ from bluecast.conformal_prediction.conformal_prediction import (
 )
 from bluecast.ensemble.ensemble_config import EnsembleConfig
 from bluecast.ensemble.hill_climbing import HillClimbingEnsemble
+
 from bluecast.ensemble.mean_blending import blend_predictions_mean
 from bluecast.ensemble.stacking import StackingEnsemble
 from bluecast.evaluation.eval_metrics import ClassificationEvalWrapper
@@ -95,6 +96,7 @@ class BlueCastCV:
         self.ensemble_config = ensemble_config or EnsembleConfig()
         self.stacking_ensemble: Optional[StackingEnsemble] = None
         self.hill_climbing_ensemble: Optional[HillClimbingEnsemble] = None
+
 
         if not cat_columns:
             self.cat_columns = []
@@ -193,10 +195,10 @@ class BlueCastCV:
                 conf_tuning=self.conf_tuning,
                 conf_params=deepcopy(self.conf_params),
                 experiment_tracker=self.experiment_tracker,
-                custom_in_fold_preprocessor=self.custom_in_fold_preprocessor,
-                custom_preprocessor=self.custom_preprocessor,
-                custom_feature_selector=self.custom_feature_selector,
-                custom_last_mile_computation=self.custom_last_mile_computation,
+                custom_in_fold_preprocessor=deepcopy(self.custom_in_fold_preprocessor) if self.custom_in_fold_preprocessor else None,
+                custom_preprocessor=deepcopy(self.custom_preprocessor) if self.custom_preprocessor else None,
+                custom_feature_selector=deepcopy(self.custom_feature_selector) if self.custom_feature_selector else None,
+                custom_last_mile_computation=deepcopy(self.custom_last_mile_computation) if self.custom_last_mile_computation else None,
                 ml_model=deepcopy(self.ml_model) if self.ml_model else None,
                 single_fold_eval_metric_func=self.single_fold_eval_metric_func,
             )
@@ -257,10 +259,10 @@ class BlueCastCV:
                 conf_tuning=self.conf_tuning,
                 conf_params=deepcopy(self.conf_params),
                 experiment_tracker=self.experiment_tracker,
-                custom_in_fold_preprocessor=self.custom_in_fold_preprocessor,
-                custom_preprocessor=self.custom_preprocessor,
-                custom_feature_selector=self.custom_feature_selector,
-                custom_last_mile_computation=self.custom_last_mile_computation,
+                custom_in_fold_preprocessor=deepcopy(self.custom_in_fold_preprocessor) if self.custom_in_fold_preprocessor else None,
+                custom_preprocessor=deepcopy(self.custom_preprocessor) if self.custom_preprocessor else None,
+                custom_feature_selector=deepcopy(self.custom_feature_selector) if self.custom_feature_selector else None,
+                custom_last_mile_computation=deepcopy(self.custom_last_mile_computation) if self.custom_last_mile_computation else None,
                 ml_model=deepcopy(self.ml_model) if self.ml_model else None,
                 single_fold_eval_metric_func=self.single_fold_eval_metric_func,
             )
@@ -347,6 +349,8 @@ class BlueCastCV:
             model_names = [f"model_{i}" for i in range(n_models)]
             self.hill_climbing_ensemble.fit(oof_list, y_valid, model_names)
             logging.info("Hill climbing ensemble fitted on OOF predictions.")
+
+
 
     def predict(
         self,

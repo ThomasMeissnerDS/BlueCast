@@ -22,9 +22,8 @@ def test_check_gpu_support_gpu_available():
         params = check_gpu_support()
         # Verify that GPU parameters are returned
         assert params in [
-            {"device": "cuda", "tree_method": "gpu_hist"},
-            {"device": "cuda"},
-            {"tree_method": "gpu_hist"},
+            {"tree_method": "hist", "device": "cuda"},
+            {"tree_method": "hist", "device": "gpu"},
         ]
 
         # Ensure that xgb.train was called at least once

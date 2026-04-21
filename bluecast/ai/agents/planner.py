@@ -25,8 +25,11 @@ Your output must be valid JSON with these fields:
   "feature_engineering_hints": ["hint1", "hint2"],
   "needs_web_research": true | false,
   "research_queries": ["query1"],
-  "ensemble_strategy": "mean" | "stacking" | "hill_climbing",
+  "ensemble_strategy": "stacking" | "hill_climbing",
+  "regression_eval_metric": "rmse" | "mae",
+  "classification_eval_metric": "roc_auc" | "balanced_accuracy" | "log_loss",
   "use_cv": true | false,
+  "fold_strategy": "stratified" | "kfold" | "groupkfold",
   "n_folds": 5,
   "n_repeats": 1,
   "tuning_rounds": 50,
@@ -38,7 +41,12 @@ Your output must be valid JSON with these fields:
 Guidelines:
 - If the user says "fast", use n_folds=3, tuning_rounds=20, max_iterations=1, no FE
 - If the user says "precise" or "best performance", use hill_climbing, n_folds=5, n_repeats=2, tuning_rounds=200, max_iterations=5, enable FE
-- Default to "balanced": stacking, n_folds=5, tuning_rounds=50, max_iterations=3
+- CRITICAL: "regression_eval_metric" must ONLY be set when class_problem is "regression". NEVER set it for "binary" or "multiclass" tasks.
+- CRITICAL: "classification_eval_metric" must ONLY be set when class_problem is "binary" or "multiclass". NEVER set it for "regression" tasks.
+- If the user explicitly mentions "MAE" or "Mean Absolute Error" for a REGRESSION task, set "regression_eval_metric": "mae".
+- If the user explicitly mentions "balanced accuracy" for a CLASSIFICATION task, set "classification_eval_metric": "balanced_accuracy".
+- If data has grouped properties (e.g., patient IDs, sessions), output "groupkfold" for fold_strategy.
+- Default to "balanced": stacking, n_folds=5, fold_strategy="stratified", tuning_rounds=50, max_iterations=3, regression_eval_metric="rmse"
 - If mode is "ultimate": enable FE, use hill_climbing, n_folds=5. The orchestrator will
   automatically train multiple architectures (CatBoost, XGBoost, Linear, HistGB) so
   max_iterations=1 is fine (per-architecture iteration is handled separately).
@@ -47,7 +55,10 @@ Guidelines:
   and to impute ALL missing values. XGBoost, HistGB, and Linear models strictly require numerical
   inputs and will crash otherwise. Also advise feature scaling (e.g., StandardScaler) for Linear models.
 - Detect class_problem from the target column distribution in the data summary
-- If user mentions GPU, set a note about it"""
+- If user mentions GPU, set a note about it
+- If "regression_eval_metric" is "mae", also suggest "loss_function": "MAE" in the feature engineering hints for model tuning.
+"""
+
 
     def get_tools(self) -> List[ToolDefinition]:
         return []

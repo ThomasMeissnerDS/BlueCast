@@ -352,7 +352,7 @@ class CatboostModelRegression(CatboostBaseModel):
                     training_config=self.conf_training,
                     model_parameters=params,
                     eval_scores=avg_score,
-                    metric_used="catboost regression cv average",
+                    metric_used=self.single_fold_eval_metric_func.metric_name,
                     metric_higher_is_better=False,
                 )
                 return avg_score
@@ -470,7 +470,7 @@ class CatboostModelRegression(CatboostBaseModel):
             training_config=self.conf_training,
             model_parameters=params,
             eval_scores=score,
-            metric_used="catboost_single_fold_regression",
+            metric_used=self.single_fold_eval_metric_func.metric_name,
             metric_higher_is_better=False,
         )
         return score
@@ -558,7 +558,7 @@ class CatboostModelRegression(CatboostBaseModel):
             training_config=self.conf_training,
             model_parameters=tuned_params,
             eval_scores=mean_score,
-            metric_used="catboost_oof_regression",
+            metric_used=self.single_fold_eval_metric_func.metric_name,
             metric_higher_is_better=False,
         )
         return mean_score
@@ -633,7 +633,7 @@ class CatboostModelRegression(CatboostBaseModel):
                     training_config=self.conf_training,
                     model_parameters=tuned_params,
                     eval_scores=avg_score,
-                    metric_used="catboost fine_tune gridsearch regression",
+                    metric_used=self.single_fold_eval_metric_func.metric_name,
                     metric_higher_is_better=False,
                 )
                 return avg_score

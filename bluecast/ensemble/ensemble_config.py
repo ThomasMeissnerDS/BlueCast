@@ -24,6 +24,8 @@ class EnsembleConfig:
     :param hc_eval_metric: Custom evaluation metric for hill climbing. Should accept (y_true, y_pred)
         and return a score where higher is better. If None, uses ROC AUC for classification and
         negative RMSE for regression.
+    :param regression_eval_metric: String indicating the regression metric to use ('rmse' or 'mae').
+        Defaults to 'rmse'.
     """
 
     def __init__(
@@ -41,6 +43,7 @@ class EnsembleConfig:
         hc_blending_method: Literal["rank", "probability"] = "rank",
         hc_allow_negative_weights: bool = True,
         hc_eval_metric: Optional[Callable] = None,
+        regression_eval_metric: Literal["rmse", "mae"] = "rmse",
     ):
         self.ensemble_strategy = ensemble_strategy
         self.mean_type = mean_type
@@ -53,6 +56,7 @@ class EnsembleConfig:
         self.hc_blending_method = hc_blending_method
         self.hc_allow_negative_weights = hc_allow_negative_weights
         self.hc_eval_metric = hc_eval_metric
+        self.regression_eval_metric = regression_eval_metric
 
         if not hc_allow_negative_weights:
             self.hc_weight_min = 0.0

@@ -451,25 +451,56 @@ def add_interaction_features(
 
 
 def add_binned_features(
-    df: pd.DataFrame, cols: List[str], num_bins: int = 5
+    df: pd.DataFrame,
+    cols: List[str],
+    num_bins: int = 5,
+    state: Optional[Dict[str, Any]] = None,
+    is_fit: bool = True,
 ) -> pd.DataFrame:
-    """
-    Statelessly bin continuous features into equal-width bins.
-    Uses pd.cut. Note: When used in training and testing separately,
-    test splits might have slightly different bin edges, meaning it behaves best
-    with tree-based models like CatBoost.
+    """Bin continuous features into quantile bins.
+
+    When ``state`` is provided, bin edges are stored during fit and reused
+    during transform so that train and test data use identical bin boundaries.
+    Without ``state`` the function is stateless (bin edges computed from the
+    input data each time), which can cause train/test inconsistency.
+
+    :param df: Input DataFrame.
+    :param cols: Columns to bin.
+    :param num_bins: Number of quantile bins.
+    :param state: Optional dict to store/retrieve bin edges across fit/transform.
+    :param is_fit: If True, compute bin edges; if False, reuse stored edges.
+    :returns: DataFrame with ``{col}_binned`` columns added.
     """
     df_out = df.copy()
     for col in cols:
-        if col in df_out.columns:
+        if col not in df_out.columns:
+            continue
+
+        state_key = f"_binned_edges_{col}_{num_bins}"
+
+        # Transform mode: reuse stored bin edges
+        if state is not None and not is_fit and state_key in state:
+            bins = state[state_key]
+            df_out[f"{col}_binned"] = pd.cut(
+                df_out[col], bins=bins, labels=False, include_lowest=True,
+            ).fillna(-1).astype(int)
+        else:
+            # Fit mode (or stateless fallback): compute bin edges
             try:
-                # drop duplicates to avoid bin edge issues
-                df_out[f"{col}_binned"] = pd.qcut(
-                    df_out[col], q=num_bins, labels=False, duplicates="drop"
+                result, bins = pd.qcut(
+                    df_out[col], q=num_bins, labels=False,
+                    retbins=True, duplicates="drop",
                 )
+                df_out[f"{col}_binned"] = result
+                if state is not None:
+                    # Extend outer bins to -inf/+inf for unseen test values
+                    bins = bins.copy()
+                    bins[0] = -np.inf
+                    bins[-1] = np.inf
+                    state[state_key] = bins
             except Exception:
                 df_out[f"{col}_binned"] = pd.cut(
-                    df_out[col], bins=num_bins, labels=False
+                    df_out[col], bins=num_bins, labels=False,
                 )
     return df_out
 
@@ -599,6 +630,11 @@ class StateAwareGroupbyAggregator:
         self.mappings["aggs"] = agg_results
         self.is_fitted = True
 
+        # Drop columns from df_out that will be added by the merge to prevent duplicates
+        cols_to_drop = [c for c in agg_results.columns if c in df_out.columns and c not in self.groupby_cols]
+        if cols_to_drop:
+            df_out = df_out.drop(columns=cols_to_drop)
+
         # Merge back to original df
         df_out = df_out.merge(agg_results, on=self.groupby_cols, how="left")
         return df_out
@@ -608,5 +644,10 @@ class StateAwareGroupbyAggregator:
             return df
 
         df_out = df.copy()
+        
+        cols_to_drop = [c for c in self.mappings["aggs"].columns if c in df_out.columns and c not in self.groupby_cols]
+        if cols_to_drop:
+            df_out = df_out.drop(columns=cols_to_drop)
+
         df_out = df_out.merge(self.mappings["aggs"], on=self.groupby_cols, how="left")
         return df_out

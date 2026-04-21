@@ -131,10 +131,18 @@ class PipelineBuilderAgent(BaseAgent):
         lines.append("")
 
         strategy = config.get("ensemble_strategy", "mean")
+        reg_metric = config.get("regression_eval_metric", "rmse")
         if config.get("use_cv", True):
             lines.append(
-                f'ensemble_config = EnsembleConfig(ensemble_strategy="{strategy}")'
+                f'ensemble_config = EnsembleConfig(ensemble_strategy="{strategy}", regression_eval_metric="{reg_metric}")'
             )
+
+
+        if config.get("class_problem") == "regression" and reg_metric == "mae":
+            lines.append("from bluecast.config.training_config import CatboostTuneParamsRegressionConfig")
+            lines.append("conf_tuning = CatboostTuneParamsRegressionConfig()")
+            lines.append('conf_tuning.catboost_loss_function = "MAE"')
+            lines.append('conf_tuning.catboost_eval_metric = "MAE"')
             lines.append("")
 
         lines.append("pipeline = BlueCastAuto(")
@@ -143,6 +151,8 @@ class PipelineBuilderAgent(BaseAgent):
         lines.append("    conf_training=training_config,")
         if config.get("use_cv", True):
             lines.append("    ensemble_config=ensemble_config,")
+        if config.get("class_problem") == "regression" and reg_metric == "mae":
+            lines.append("    conf_tuning=conf_tuning,")
         if self.context.feature_code_snippets:
             lines.append("    custom_preprocessor=preprocessor,")
         lines.append(")")
@@ -162,7 +172,8 @@ class PipelineBuilderAgent(BaseAgent):
         if self.context.run_history:
             history = "\n\nPrevious runs:\n"
             for i, run in enumerate(self.context.run_history):
-                history += f"  Run {i + 1}: success={run['success']}, metrics={run['metrics']}\n"
+                metrics_val = run.get('metrics', 'N/A')
+                history += f"  Run {i + 1}: success={run.get('success', False)}, metrics={metrics_val}\n"
                 if run.get("config"):
                     history += f"    config: {run['config']}\n"
 
@@ -177,6 +188,7 @@ Available parameters:
 - class_problem: "binary", "multiclass", or "regression"
 - use_cv: true/false (use cross-validation)
 - ensemble_strategy: "mean", "stacking", or "hill_climbing"
+- regression_eval_metric: "rmse" or "mae" (for regression tasks)
 - n_folds: number of CV folds (3-10)
 - n_repeats: CV repeats (1-3)
 - tuning_rounds: hyperparameter tuning rounds (20-200)

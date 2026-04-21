@@ -18,9 +18,10 @@ class EvaluatorAgent(BaseAgent):
         if self.context.run_history:
             history = "\n\nRun history:\n"
             for i, run in enumerate(self.context.run_history):
+                metrics_val = run.get('metrics', 'N/A')
                 history += (
-                    f"  Run {i + 1}: success={run['success']}, "
-                    f"metrics={run['metrics']}, config={run.get('config', {})}\n"
+                    f"  Run {i + 1}: success={run.get('success', False)}, "
+                    f"metrics={metrics_val}, config={run.get('config', {})}\n"
                 )
 
         return f"""You are a model evaluation expert for the BlueCast AutoML framework.
@@ -33,12 +34,15 @@ Provide your response as a structured analysis:
 2. What worked well in the current run
 3. Specific suggestions for improvement:
    - Should we change ensemble_strategy? (mean -> stacking -> hill_climbing)
+   - Should we switch regression_eval_metric? (e.g., from 'rmse' to 'mae' if the user requested MAE)
    - Should we adjust tuning_rounds, n_folds, or CV repeats?
    - Should we set columns_to_drop to remove noisy or irrelevant features?
-   - Should we enable_feature_selection or loosen Optuna bounds (e.g. rf_max_depth_max) if underfitting?
+   - Should we loosen Optuna bounds (e.g. rf_max_depth_max) if underfitting? (DO NOT enable_feature_selection as it may cause timeouts).
+   - Should we apply pseudo-labeling or more advanced numeric interactions?
 4. Recommended configuration changes as a JSON dict
 
 Be concrete. Instead of "try more tuning", say "increase tuning_rounds from 50 to 150".
+If "regression_eval_metric" is "mae", ensure you also suggest "loss_function": "MAE" for model training.
 {history}"""
 
     def get_tools(self) -> List[ToolDefinition]:

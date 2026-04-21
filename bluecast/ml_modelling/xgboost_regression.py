@@ -309,7 +309,7 @@ class XgboostModelRegression(XgboostBaseModel):
                     training_config=self.conf_training,
                     model_parameters=params,
                     eval_scores=adjusted_score,
-                    metric_used="adjusted rmse",
+                    metric_used=self.single_fold_eval_metric_func.metric_name,
                     metric_higher_is_better=False,
                 )
 
@@ -428,7 +428,7 @@ class XgboostModelRegression(XgboostBaseModel):
             training_config=self.conf_training,
             model_parameters=param,
             eval_scores=mse,
-            metric_used="root_mean_squared_error",
+            metric_used=self.single_fold_eval_metric_func.metric_name,
             metric_higher_is_better=False,
         )
         return mse
@@ -533,7 +533,7 @@ class XgboostModelRegression(XgboostBaseModel):
                 training_config=self.conf_training,
                 model_parameters=tuned_params,
                 eval_scores=mse_mean,
-                metric_used="root_mean_squared_error",
+                metric_used=self.single_fold_eval_metric_func.metric_name,
                 metric_higher_is_better=False,
             )
         return mse_mean
@@ -620,7 +620,7 @@ class XgboostModelRegression(XgboostBaseModel):
                     training_config=self.conf_training,
                     model_parameters=tuned_params,
                     eval_scores=adjusted_score,
-                    metric_used="root_mean_squared_error",
+                    metric_used=self.single_fold_eval_metric_func.metric_name,
                     metric_higher_is_better=False,
                 )
 

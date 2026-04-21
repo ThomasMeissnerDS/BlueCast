@@ -26,7 +26,6 @@ def check_gpu_support() -> Dict[str, str]:
     params_list = [
         {"tree_method": "hist", "device": "cuda"},
         {"tree_method": "hist", "device": "gpu"},
-        {"tree_method": "gpu_hist"},
     ]
 
     for params in params_list:
