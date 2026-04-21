@@ -996,7 +996,7 @@ class Orchestrator:
         if "enable_feature_selection" in config:
             config["enable_feature_selection"] = False
             
-        if arch_name in ["linear", "randomforest"]:
+        if arch_name in ["linear", "randomforest", "mlp"]:
             config["cat_encoding_via_ml_algorithm"] = False
             
         return config
@@ -1033,7 +1033,7 @@ class Orchestrator:
             config["tuning_rounds"] = 1
             config["tuning_max_runtime"] = 30
             
-        if arch_name in ["linear", "randomforest"]:
+        if arch_name in ["linear", "randomforest", "mlp"]:
             config["cat_encoding_via_ml_algorithm"] = False
 
         return config
