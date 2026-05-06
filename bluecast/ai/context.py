@@ -67,6 +67,10 @@ class SharedContext:
         default_factory=dict
     )
     arch_errors: Dict[str, str] = field(default_factory=dict)
+    arch_error_analysis: Dict[str, str] = field(default_factory=dict)
+
+    # Imputation recommendations from DataAnalyst (sentinel detection results)
+    imputation_recommendations: Optional[str] = None
 
     # Created by PipelineBuilder
     pipeline_config: Optional[Dict[str, Any]] = None
@@ -82,6 +86,7 @@ class SharedContext:
     run_history: List[Dict[str, Any]] = field(default_factory=list)
     best_metrics: Optional[Dict[str, float]] = None
     best_pipeline: Optional[Any] = None
+    best_pipelines: List[Any] = field(default_factory=list)
 
     # Structured execution log
     structured_log: List[AgentLogEntry] = field(default_factory=list)

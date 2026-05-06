@@ -107,6 +107,8 @@ class BlueCastAI:
         Set to 0 to disable critique entirely.
     :param autotune_on_device: Whether to autotune on CPU or GPU. Choose any of ["gpu", "cpu", "auto"].
         Defaults to "cpu".
+    :param architectures_to_run: Optional list of architecture names to run in ultimate mode.
+        If provided, only these architectures will be evaluated. Defaults to None (run all).
 
     Usage::
 
@@ -145,6 +147,7 @@ class BlueCastAI:
         global_tuning_budget: Optional[int] = None,
         critique_max_rounds: Optional[int] = None,
         autotune_on_device: Literal["cpu", "gpu", "auto"] = "auto",
+        architectures_to_run: Optional[List[str]] = None,
     ):
         self.config = AIConfig(
             api_key=api_key,
@@ -160,6 +163,7 @@ class BlueCastAI:
             global_tuning_budget=global_tuning_budget,
             critique_max_rounds=critique_max_rounds,
             autotune_on_device=autotune_on_device,
+            architectures_to_run=architectures_to_run,
         )
         self._llm = _create_provider(self.config)
 

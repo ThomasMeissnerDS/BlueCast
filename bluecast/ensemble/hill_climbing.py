@@ -81,7 +81,7 @@ class HillClimbingEnsemble:
 
     def _prepare_predictions(self, preds_list: List[np.ndarray]) -> List[np.ndarray]:
         """Optionally rank-transform predictions."""
-        if self.blending_method == "rank":
+        if self.blending_method == "rank" and self.is_classification:
             return [_convert_to_ranks(p) for p in preds_list]
         return [p.astype(np.float64) for p in preds_list]
 

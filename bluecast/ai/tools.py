@@ -8,7 +8,7 @@ safe operations on data and pipelines.
 import logging
 import traceback
 from io import StringIO
-from typing import Any, Dict, Optional
+from typing import Any, Dict, List, Optional
 
 import numpy as np
 import pandas as pd
@@ -133,6 +133,189 @@ def tool_check_leakage(df: pd.DataFrame, target_col: str) -> str:
     return "\n".join(results)
 
 
+def tool_evaluate_imputations(
+    df: pd.DataFrame, target_col: str, fill_value: float = -999.0
+) -> str:
+    """Test imputation strategies for numerical columns with NaNs or sentinel values.
+
+    Auto-detects common sentinel values (999, -999, 9999, -9999, etc.) that
+    likely represent hidden missing data. For each affected column, tests 8
+    strategies (raw, mean, median, 0, fill_value, 1st-percentile,
+    99th-percentile, mode) and returns a per-column recommendation.
+
+    Downsamples to 10 000 rows when the DataFrame is larger to keep MI fast.
+    """
+    if target_col not in df.columns:
+        return f"Target column '{target_col}' not found."
+
+    # Downsample if too large to make Mutual Information computation snappy
+    if len(df) > 10_000:
+        df = df.sample(n=10_000, random_state=42)
+
+    num_cols = df.select_dtypes(include=["number"]).columns.tolist()
+    if target_col in num_cols:
+        num_cols.remove(target_col)
+
+    # ------------------------------------------------------------------
+    # 1. Detect sentinel values
+    # ------------------------------------------------------------------
+    SENTINEL_CANDIDATES = [999.0, -999.0, 999, -999, 9999.0, -9999.0,
+                           9999, -9999, -1.0, -1]
+
+    sentinel_info: Dict[str, List[float]] = {}  # col -> list of detected sentinels
+    for col in num_cols:
+        col_sentinels = []
+        col_series = df[col].dropna()
+        if col_series.empty:
+            continue
+        col_mean = col_series.mean()
+        col_std = col_series.std()
+        for sv in SENTINEL_CANDIDATES:
+            count = (df[col] == sv).sum()
+            pct = count / len(df)
+            # Heuristic: appears in >2% of rows AND is >2 stdev from mean
+            if pct > 0.02 and col_std > 0 and abs(sv - col_mean) > 2 * col_std:
+                col_sentinels.append(sv)
+        if col_sentinels:
+            sentinel_info[col] = col_sentinels
+
+    # Columns to evaluate: those with NaN or detected sentinels
+    cols_with_nans = [c for c in num_cols if df[c].isnull().any()]
+    cols_to_eval = sorted(set(cols_with_nans) | set(sentinel_info.keys()))
+
+    if not cols_to_eval:
+        return "No numerical columns with missing values or sentinel values found."
+
+    from sklearn.feature_selection import mutual_info_regression, mutual_info_classif
+    import warnings
+
+    is_classification = df[target_col].nunique() <= 20
+
+    results = []
+    recommendations: Dict[str, str] = {}
+
+    buf = StringIO()
+
+    # Report detected sentinels
+    if sentinel_info:
+        buf.write("### Detected Sentinel Values (Likely Hidden Missing Data)\n\n")
+        for col, svs in sentinel_info.items():
+            for sv in svs:
+                cnt = int((df[col] == sv).sum())
+                pct = cnt / len(df) * 100
+                buf.write(f"- **{col}**: value `{sv}` appears {cnt} times ({pct:.1f}% of rows)\n")
+        buf.write("\n")
+
+    with warnings.catch_warnings():
+        warnings.simplefilter("ignore")
+        for col in cols_to_eval:
+            # Create a working copy where sentinels are replaced with NaN
+            work = df[col].copy()
+            sentinels_for_col = sentinel_info.get(col, [])
+            for sv in sentinels_for_col:
+                work = work.replace(sv, np.nan)
+
+            # Compute statistics on clean (non-sentinel, non-NaN) values
+            clean = work.dropna()
+            if len(clean) < 10:
+                continue
+
+            col_mean = clean.mean()
+            col_median = clean.median()
+            col_mode = clean.mode().iloc[0] if len(clean.mode()) > 0 else col_median
+            col_p1 = clean.quantile(0.01)
+            col_p99 = clean.quantile(0.99)
+
+            strategies = {
+                "raw (drop missing)": clean,
+                "mean": work.fillna(col_mean),
+                "median": work.fillna(col_median),
+                "zero": work.fillna(0),
+                f"static ({fill_value})": work.fillna(fill_value),
+                "1st percentile": work.fillna(col_p1),
+                "99th percentile": work.fillna(col_p99),
+                "mode": work.fillna(col_mode),
+            }
+
+            best_mi = -1.0
+            best_strat = "raw (drop missing)"
+
+            for strat_name, series in strategies.items():
+                if strat_name == "raw (drop missing)":
+                    mask = series.index
+                    y = df.loc[mask, target_col].dropna()
+                    x_vals = series.loc[y.index]
+                    if len(y) < 10:
+                        continue
+                    x = x_vals.values.reshape(-1, 1)
+                else:
+                    valid_mask = df[target_col].notnull()
+                    y = df.loc[valid_mask, target_col]
+                    x = series[valid_mask].values.reshape(-1, 1)
+
+                if len(y) < 10:
+                    continue
+
+                # Correlation
+                corr = np.corrcoef(x.flatten(), y.values)[0, 1]
+                if np.isnan(corr):
+                    corr = 0.0
+
+                # Mutual Information
+                if is_classification:
+                    mi = mutual_info_classif(x, y, random_state=42)[0]
+                else:
+                    mi = mutual_info_regression(x, y, random_state=42)[0]
+
+                results.append({
+                    "Feature": col,
+                    "Strategy": strat_name,
+                    "Correlation (abs)": round(abs(corr), 4),
+                    "Mutual Info": round(mi, 4),
+                })
+
+                if mi > best_mi:
+                    best_mi = mi
+                    best_strat = strat_name
+
+            recommendations[col] = best_strat
+
+    if not results:
+        return "Evaluation failed: not enough valid target data."
+
+    res_df = pd.DataFrame(results)
+
+    buf.write("### Imputation Strategy Evaluation\n\n")
+
+    # Sort by Mutual Info
+    buf.write("#### Top strategies by Mutual Information (non-linear signal):\n")
+    buf.write(
+        res_df.sort_values("Mutual Info", ascending=False)
+        .head(20)
+        .to_string(index=False)
+    )
+
+    # Sort by Correlation
+    buf.write("\n\n#### Top strategies by Pearson Correlation (linear signal):\n")
+    buf.write(
+        res_df.sort_values("Correlation (abs)", ascending=False)
+        .head(20)
+        .to_string(index=False)
+    )
+
+    # Per-column recommendations
+    if recommendations:
+        buf.write("\n\n### Per-Column Imputation Recommendation\n\n")
+        buf.write("Based on highest Mutual Information with the target:\n\n")
+        for col, strat in recommendations.items():
+            sentinel_note = ""
+            if col in sentinel_info:
+                sentinel_note = f" ⚠️ Sentinel values detected: {sentinel_info[col]}"
+            buf.write(f"- **{col}**: Best strategy = **{strat}**{sentinel_note}\n")
+
+    return buf.getvalue()
+
+
 # ---------------------------------------------------------------------------
 # Feature engineering tools
 # ---------------------------------------------------------------------------
@@ -167,6 +350,7 @@ def tool_create_feature(
             "new_columns": new_cols,
             "shape": list(df_result.shape),
             "error": None,
+            "df": df_result,
         }
     except Exception as e:
         return {
@@ -204,6 +388,7 @@ def tool_create_tfidf_features(
             "new_columns": feature_names,
             "shape": list(df.shape),
             "error": None,
+            "df": df,
         }
     except Exception as e:
         return {"success": False, "new_columns": [], "error": str(e)}
@@ -863,14 +1048,20 @@ def tool_build_and_run_pipeline(
 
     # Handle custom config overrides for regression metrics
     conf_tuning = None
-    if class_problem == "regression" and config.get("regression_eval_metric") == "mae":
-        from bluecast.config.training_config import CatboostTuneParamsRegressionConfig, XgboostTuneParamsRegressionConfig
+    single_fold_eval_metric_func = None
+    
+    if class_problem == "regression" and config.get("regression_eval_metric"):
+        from bluecast.ai.metrics import get_regression_metric_config, get_bluecast_eval_wrapper
+        from bluecast.config.training_config import CatboostTuneParamsRegressionConfig
+        
+        metric_name = config.get("regression_eval_metric")
+        metric_config = get_regression_metric_config(metric_name)
+        
         conf_tuning = CatboostTuneParamsRegressionConfig()
-        conf_tuning.catboost_loss_function = "MAE"
-        conf_tuning.catboost_eval_metric = "MAE"
-        # Also XGBoost
-        # Note: XGBoost uses 'mae' but we might need to check version compatibility
-        # For now we prioritize CatBoost as it is the default.
+        conf_tuning.catboost_loss_function = metric_config["catboost_loss"]
+        conf_tuning.catboost_eval_metric = metric_config["catboost_loss"]
+        
+        single_fold_eval_metric_func = get_bluecast_eval_wrapper(metric_name)
 
     if ml_model is not None:
         # Note: Do NOT set ml_model.conf_tuning = config here.
@@ -890,6 +1081,10 @@ def tool_build_and_run_pipeline(
             custom_preprocessor=custom_preprocessor,
             ml_model=ml_model,
         )
+        
+        if single_fold_eval_metric_func:
+            # Inject dynamic metric if using default BlueCast pipeline for native models
+            pipeline.single_fold_eval_metric_func = single_fold_eval_metric_func
 
         if "columns_to_drop" in config and isinstance(config["columns_to_drop"], list):
             df = df.drop(columns=config["columns_to_drop"], errors="ignore")
@@ -912,7 +1107,13 @@ def tool_build_and_run_pipeline(
                 df_eval=df_eval,
                 y_eval=y_eval,
             )
-
+        if isinstance(metrics, dict):
+            ml_model_obj = getattr(pipeline._inner, "ml_model", None)
+            if ml_model_obj is not None:
+                if hasattr(ml_model_obj, "best_tuning_score_"):
+                    metrics["tuning_score"] = ml_model_obj.best_tuning_score_
+                elif hasattr(ml_model_obj, "best_score"):
+                    metrics["tuning_score"] = ml_model_obj.best_score
         return {
             "success": True,
             "metrics": _serialize_metrics(metrics),
@@ -1130,6 +1331,20 @@ TOOL_DEFINITIONS: Dict[str, ToolDefinition] = {
         parameters={
             "type": "object",
             "properties": {},
+            "required": [],
+        },
+    ),
+    "evaluate_imputations": ToolDefinition(
+        name="evaluate_imputations",
+        description="Test imputation strategies for numerical columns with NaNs or sentinel values (999, -999, etc.). Auto-detects hidden missing data encoded as round-number sentinels. Tests 8 strategies (raw, mean, median, 0, static, 1st-percentile, 99th-percentile, mode) and returns per-column recommendations based on Mutual Information with the target.",
+        parameters={
+            "type": "object",
+            "properties": {
+                "fill_value": {
+                    "type": "number",
+                    "description": "Static value to use for static imputation. Default -999.0.",
+                }
+            },
             "required": [],
         },
     ),

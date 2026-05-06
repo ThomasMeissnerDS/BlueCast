@@ -43,6 +43,8 @@ class AIConfig:
     :param critique_max_rounds: Optional override for the number of critique-refine rounds.
         If None, mode-based defaults are used (fast=0, balanced=1, precise=2, ultimate=5).
         Set to 0 to disable critique entirely.
+    :param architectures_to_run: Optional list of architecture names to run in ultimate mode.
+        If provided, only these architectures will be evaluated. Defaults to None (run all).
     """
 
     api_key: str = ""
@@ -65,6 +67,7 @@ class AIConfig:
     critique_max_rounds: Optional[int] = None
     global_tuning_budget: Optional[int] = None
     autotune_on_device: Literal["cpu", "gpu", "auto"] = "cpu"
+    architectures_to_run: Optional[List[str]] = None
 
     def get_model_name(self) -> str:
         if self.model:

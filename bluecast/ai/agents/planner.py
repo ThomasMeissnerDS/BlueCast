@@ -26,7 +26,7 @@ Your output must be valid JSON with these fields:
   "needs_web_research": true | false,
   "research_queries": ["query1"],
   "ensemble_strategy": "stacking" | "hill_climbing",
-  "regression_eval_metric": "rmse" | "mae",
+  "regression_eval_metric": "rmse" | "mae" | "msle" | "mape" | "r2" | "poisson",
   "classification_eval_metric": "roc_auc" | "balanced_accuracy" | "log_loss",
   "use_cv": true | false,
   "fold_strategy": "stratified" | "kfold" | "groupkfold",
@@ -43,8 +43,8 @@ Guidelines:
 - If the user says "precise" or "best performance", use hill_climbing, n_folds=5, n_repeats=2, tuning_rounds=200, max_iterations=5, enable FE
 - CRITICAL: "regression_eval_metric" must ONLY be set when class_problem is "regression". NEVER set it for "binary" or "multiclass" tasks.
 - CRITICAL: "classification_eval_metric" must ONLY be set when class_problem is "binary" or "multiclass". NEVER set it for "regression" tasks.
-- If the user explicitly mentions "MAE" or "Mean Absolute Error" for a REGRESSION task, set "regression_eval_metric": "mae".
-- If the user explicitly mentions "balanced accuracy" for a CLASSIFICATION task, set "classification_eval_metric": "balanced_accuracy".
+- If the user explicitly mentions an evaluation metric (e.g., MAE, RMSE, RMSLE, R2, MAPE, Poisson) for a REGRESSION task, set "regression_eval_metric" to the corresponding standard string ("mae", "rmse", "msle", "r2", "mape", "poisson").
+- If the user explicitly mentions an evaluation metric for a CLASSIFICATION task, set "classification_eval_metric" accordingly ("roc_auc", "balanced_accuracy", "log_loss").
 - If data has grouped properties (e.g., patient IDs, sessions), output "groupkfold" for fold_strategy.
 - Default to "balanced": stacking, n_folds=5, fold_strategy="stratified", tuning_rounds=50, max_iterations=3, regression_eval_metric="rmse"
 - If mode is "ultimate": enable FE, use hill_climbing, n_folds=5. The orchestrator will

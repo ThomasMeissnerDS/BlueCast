@@ -651,3 +651,71 @@ class StateAwareGroupbyAggregator:
 
         df_out = df_out.merge(self.mappings["aggs"], on=self.groupby_cols, how="left")
         return df_out
+
+
+def add_pca_features(
+    df: pd.DataFrame,
+    cols: List[str],
+    n_components: int = 3,
+    state: Optional[Dict[str, Any]] = None,
+    is_fit: bool = True,
+    prefix: str = "pca",
+) -> pd.DataFrame:
+    """Add PCA components as new features. Stateful: stores the fitted PCA in state.
+
+    During fit (is_fit=True), fits a PCA on the specified columns and stores
+    the fitted PCA scaler in `state` under key ``f'{prefix}_pca'``.
+    During transform (is_fit=False), uses the previously fitted PCA from state.
+
+    Missing values are filled with 0 before PCA. Columns are scaled to zero
+    mean and unit variance before PCA.
+
+    :param df: DataFrame with the columns to transform.
+    :param cols: List of numeric column names to include in PCA.
+    :param n_components: Number of PCA components to create.
+    :param state: Mutable dict for storing fitted transformers between
+        fit and transform phases (required for CV consistency).
+    :param is_fit: True during training, False during inference/validation.
+    :param prefix: Prefix for the new PCA column names.
+    :return: DataFrame with added PCA columns.
+    """
+    from sklearn.decomposition import PCA
+    from sklearn.preprocessing import StandardScaler
+
+    if state is None:
+        state = {}
+
+    # Filter to columns that actually exist
+    valid_cols = [c for c in cols if c in df.columns]
+    if len(valid_cols) < 2:
+        return df
+
+    cols_hash = "_".join(valid_cols)
+    state_key = f"{prefix}_pca_{cols_hash}"
+
+    # Clamp n_components to the number of available columns
+    n_components = min(n_components, len(valid_cols))
+
+    X = df[valid_cols].fillna(0).values
+
+    if is_fit:
+        scaler = StandardScaler()
+        X_scaled = scaler.fit_transform(X)
+
+        pca = PCA(n_components=n_components, random_state=42)
+        components = pca.fit_transform(X_scaled)
+
+        state[state_key] = {"scaler": scaler, "pca": pca, "cols": valid_cols}
+    else:
+        if state_key not in state:
+            # Not fitted yet — skip gracefully
+            return df
+        fitted = state[state_key]
+        X_scaled = fitted["scaler"].transform(X)
+        components = fitted["pca"].transform(X_scaled)
+
+    for i in range(components.shape[1]):
+        df[f"{prefix}_{i + 1}"] = components[:, i]
+
+    return df
+

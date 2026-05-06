@@ -309,7 +309,7 @@ class BlueCastCVRegression:
         y_full: pd.Series,
         all_splits: list,
     ) -> None:
-        """Fit stacking or hill climbing ensemble from OOF predictions."""
+        """Assemble OOF predictions and evaluate overall CV score."""
         n_samples = len(y_full)
         n_models = len(self.bluecast_models)
         oof_matrix = np.full((n_samples, n_models), np.nan)
@@ -318,43 +318,42 @@ class BlueCastCVRegression:
             val_idx = oof_indices_per_fold[fn]
             oof_matrix[val_idx, fn] = oof_preds_per_model[fn]
 
-        # Impute NaN values with column-wise mean. With K-fold CV each row
-        # only has OOF predictions from its validation fold, so most columns
-        # are NaN. Mean imputation is the standard stacking approach.
-        col_means = np.nanmean(oof_matrix, axis=0)
-        for col in range(n_models):
-            mask = np.isnan(oof_matrix[:, col])
-            oof_matrix[mask, col] = col_means[col]
-
-        # Drop any rows that are still all-NaN (shouldn't happen with valid folds)
-        valid_mask = ~np.any(np.isnan(oof_matrix), axis=1)
-        oof_valid = oof_matrix[valid_mask]
+        # For K-fold CV, each row has exactly one real prediction from its validation fold.
+        # nanmean gracefully collapses the matrix into a single 1D array of OOF predictions.
+        valid_mask = ~np.all(np.isnan(oof_matrix), axis=1)
+        mean_preds = np.nanmean(oof_matrix, axis=1)[valid_mask]
         y_valid = y_full.values[valid_mask]
 
-        if len(oof_valid) == 0:
+        if len(y_valid) == 0:
             logging.warning(
                 "No valid OOF predictions for ensemble fitting. "
                 "Falling back to mean blending."
             )
+            self.oof_valid_mask_ = valid_mask
+            self.oof_predictions_ = np.nanmean(oof_matrix, axis=1)
+            self.oof_y_ = y_full.values
             return
+
+        from sklearn.metrics import mean_absolute_error, root_mean_squared_error
+        
+        eval_func = mean_absolute_error if self.ensemble_config.regression_eval_metric == "mae" else root_mean_squared_error
+        mean_score = eval_func(y_valid, mean_preds)
+
+        logging.info(f"OOF Ensemble Score (Mean Blending): {mean_score:.4f}")
 
         if self.ensemble_config.ensemble_strategy == "stacking":
             self.stacking_ensemble = StackingEnsemble(
                 meta_learner=self.ensemble_config.stacking_meta_learner,
                 use_ranks=self.ensemble_config.stacking_use_ranks,
-                clip_predictions=False,  # regression targets can exceed [0, 1]
             )
-            self.stacking_ensemble.fit(oof_valid, y_valid)
+            self.stacking_ensemble.fit(oof_matrix[valid_mask], y_valid)
             logging.info("Stacking ensemble fitted on OOF predictions.")
-
+            
         elif self.ensemble_config.ensemble_strategy == "hill_climbing":
-            if self.ensemble_config.hc_eval_metric:
-                eval_metric = self.ensemble_config.hc_eval_metric
-            elif self.ensemble_config.regression_eval_metric == "mae":
+            eval_metric = self.ensemble_config.hc_eval_metric
+            if eval_metric is None and self.ensemble_config.regression_eval_metric == "mae":
                 eval_metric = _hc_mae_regression_metric
-            else:
-                eval_metric = _default_regression_metric
-
+                
             self.hill_climbing_ensemble = HillClimbingEnsemble(
                 weight_min=self.ensemble_config.hc_weight_min,
                 weight_max=self.ensemble_config.hc_weight_max,
@@ -364,13 +363,16 @@ class BlueCastCVRegression:
                 eval_metric=eval_metric,
                 is_classification=False,
             )
+            n_models = len(self.bluecast_models)
+            oof_valid = oof_matrix[valid_mask]
             oof_list = [oof_valid[:, i] for i in range(n_models)]
             model_names = [f"model_{i}" for i in range(n_models)]
             self.hill_climbing_ensemble.fit(oof_list, y_valid, model_names)
             logging.info("Hill climbing ensemble fitted on OOF predictions.")
 
-        elif self.ensemble_config.ensemble_strategy == "split_hill_climbing":
-            pass
+        self.oof_valid_mask_ = valid_mask
+        self.oof_y_ = y_valid
+        self.oof_predictions_ = np.nanmean(oof_matrix, axis=1)
 
 
 
@@ -411,18 +413,18 @@ class BlueCastCVRegression:
 
         if strategy == "stacking" and self.stacking_ensemble is not None:
             predictions_matrix = result_df.loc[:, pred_cols].values
-            return pd.Series(
+            y_preds = pd.Series(
                 self.stacking_ensemble.predict(predictions_matrix),
                 index=result_df.index,
             )
-
+            return y_preds
         elif strategy == "hill_climbing" and self.hill_climbing_ensemble is not None:
             preds_list = [result_df[col].values for col in pred_cols]
-            return pd.Series(
+            y_preds = pd.Series(
                 self.hill_climbing_ensemble.predict(preds_list),
                 index=result_df.index,
             )
-
+            return y_preds
         else:
             effective_mean_type = mean_type or self.ensemble_config.mean_type
             return blend_predictions_mean(result_df, pred_cols, effective_mean_type)

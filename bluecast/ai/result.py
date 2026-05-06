@@ -31,6 +31,8 @@ class BlueCastAIResult:
     """
 
     pipeline: Optional[Any] = None
+    pipelines: List[Any] = field(default_factory=list)
+    hill_climbing_ensemble: Optional[Any] = None
     pipeline_code: str = ""
     feature_engineering_code: str = ""
     metrics: Dict[str, Any] = field(default_factory=dict)
@@ -47,6 +49,25 @@ class BlueCastAIResult:
         For classification pipelines this returns class labels (not probabilities).
         For regression pipelines this returns continuous predictions.
         """
+        if getattr(self, "hill_climbing_ensemble", None) is not None:
+            all_preds = []
+            for p in self.pipelines:
+                p_preds = p.predict(df)
+                if isinstance(p_preds, tuple) and len(p_preds) == 2:
+                    p_preds = p_preds[1]
+                all_preds.append(p_preds.values if hasattr(p_preds, "values") else p_preds)
+            return self.hill_climbing_ensemble.predict(all_preds)
+            
+        if getattr(self, "pipelines", None):
+            all_preds = []
+            for p in self.pipelines:
+                p_preds = p.predict(df)
+                if isinstance(p_preds, tuple) and len(p_preds) == 2:
+                    p_preds = p_preds[1]
+                all_preds.append(p_preds)
+            return np.mean(all_preds, axis=0)
+            
+            
         if self.pipeline is None:
             raise RuntimeError("No trained pipeline available.")
 
@@ -64,6 +85,34 @@ class BlueCastAIResult:
 
         Only applicable for classification problems.
         """
+        if getattr(self, "hill_climbing_ensemble", None) is not None:
+            all_preds = []
+            for p in self.pipelines:
+                if hasattr(p, "predict_proba"):
+                    p_preds = p.predict_proba(df)
+                else:
+                    p_preds = p.predict(df)
+                    if isinstance(p_preds, tuple) and len(p_preds) == 2:
+                        p_preds = p_preds[0]
+                    else:
+                        raise AttributeError("The underlying pipeline does not support probability prediction.")
+                all_preds.append(p_preds.values if hasattr(p_preds, "values") else p_preds)
+            return self.hill_climbing_ensemble.predict(all_preds)
+
+        if getattr(self, "pipelines", None):
+            all_preds = []
+            for p in self.pipelines:
+                if hasattr(p, "predict_proba"):
+                    p_preds = p.predict_proba(df)
+                else:
+                    p_preds = p.predict(df)
+                    if isinstance(p_preds, tuple) and len(p_preds) == 2:
+                        p_preds = p_preds[0]
+                    else:
+                        raise AttributeError("The underlying pipeline does not support probability prediction.")
+                all_preds.append(p_preds)
+            return np.mean(all_preds, axis=0)
+
         if self.pipeline is None:
             raise RuntimeError("No trained pipeline available.")
 

@@ -557,6 +557,28 @@ class Orchestrator:
 
         self.context.data_profile = {"summary": result}
 
+        # Extract imputation recommendations (sentinel detection + strategy evaluation)
+        # so downstream FE agents receive them as context
+        imputation_markers = [
+            "Per-Column Imputation Recommendation",
+            "Detected Sentinel Values",
+            "Imputation Strategy Evaluation",
+        ]
+        for marker in imputation_markers:
+            if marker in result:
+                # Store the full imputation section for FE agents
+                idx = result.index(marker)
+                # Extract from the marker to end of the section (next ### or end)
+                section = result[idx:]
+                # Find the next top-level section boundary
+                next_section = section.find("\n## ", 3)
+                if next_section > 0:
+                    section = section[:next_section]
+                self.context.imputation_recommendations = section
+                if self.config.verbose:
+                    print("    [DataAnalyst] Imputation recommendations extracted and stored.")
+                break
+
         for keyword in [
             "leakage",
             "imbalance",
@@ -565,6 +587,7 @@ class Orchestrator:
             "duplicate",
             "constant",
             "outlier",
+            "sentinel",
         ]:
             if keyword in result.lower():
                 self.context.data_warnings.append(
@@ -583,7 +606,10 @@ class Orchestrator:
         task = (
             f"Create useful features for this {self.context.class_problem} problem.\n"
             f"Hints from the planner:\n{hint_text}\n\n"
-            f"Create 3-5 strong features. Call create_feature for each one.\n"
+            f"Use your judgment to decide the right number of features based on the data.\n"
+            f"Start with the simplest, most impactful features first.\n"
+            f"If there are categorical columns with strong predictive potential, consider creating group-level aggregations (mean/std of numeric columns) using StateAwareGroupbyAggregator.\n"
+            f"Call create_feature for each feature separately.\n"
             f"If any column contains free text, use create_tfidf_features."
         )
 
@@ -771,6 +797,18 @@ class Orchestrator:
 
         problem = self.context.class_problem or "binary"
         archs = get_architectures_for_problem(problem)
+        
+        if self.config.architectures_to_run is not None:
+            archs = {
+                k: v for k, v in archs.items() 
+                if k in self.config.architectures_to_run
+            }
+            if not archs:
+                raise ValueError(
+                    f"None of the specified architectures {self.config.architectures_to_run} "
+                    f"support problem type '{problem}' or exist in the registry."
+                )
+
         iters = self.config.ultimate_iterations_per_arch
         total_archs = len(archs)
 
@@ -794,7 +832,7 @@ class Orchestrator:
         if self.config.global_tuning_budget and self.config.global_tuning_budget > 0:
             n_folds_expected = plan.get("n_folds", 5)
             tunable_archs = max(1, total_archs - 1)
-            total_jobs = tunable_archs * iters * n_folds_expected
+            total_jobs = max(1, tunable_archs * iters)
             override_max_runtime = max(
                 10, int(self.config.global_tuning_budget / total_jobs)
             )
@@ -828,9 +866,11 @@ class Orchestrator:
 
             # Set scoring for custom architectures if they support it
             if ml_model is not None and hasattr(ml_model, "scoring"):
-                # Regression: MAE scoring
-                if arch_config.get("regression_eval_metric") == "mae":
-                    ml_model.scoring = "neg_mean_absolute_error"
+                # Regression: dynamic scoring
+                if arch_config.get("regression_eval_metric"):
+                    from bluecast.ai.metrics import get_regression_metric_config
+                    metric_config = get_regression_metric_config(arch_config.get("regression_eval_metric"))
+                    ml_model.scoring = metric_config["sklearn_scoring"]
                 # Classification: balanced_accuracy scoring
                 clf_metric = arch_config.get("classification_eval_metric")
                 if clf_metric == "balanced_accuracy":
@@ -842,6 +882,14 @@ class Orchestrator:
             self.context.arch_feature_snippets[arch_name] = []
             self.arch_engineer.set_architecture(arch_name, arch_info["name"])
 
+            # Track the best exploration iteration for this architecture
+            best_arch_result = None
+            best_arch_config = None
+            best_arch_snippets = None
+            arch_best_pipeline = None
+            base_rounds = plan.get("tuning_rounds", 50)
+
+            # --- N Exploration Iterations (10% tuning rounds, full FE) ---
             for iteration in range(iters):
                 if self.config.global_tuning_budget and self.config.global_tuning_budget > 0:
                     elapsed = time.time() - getattr(self.context, 'pipeline_start_time', time.time())
@@ -851,11 +899,17 @@ class Orchestrator:
                         break
                         
                 if self.config.verbose:
-                    print(f"    Iteration {iteration + 1}/{iters}:")
+                    print(f"    Iteration {iteration + 1}/{iters} (exploration):")
+
+                # --- Exploration uses 10% of tuning rounds ---
+                explore_rounds = max(5, int(base_rounds * 0.1))
+                arch_config["tuning_rounds"] = explore_rounds
+                if self.config.verbose:
+                    print(f"      Tuning rounds: {explore_rounds} (10% exploration)")
 
                 # --- 1. Architecture-specific Feature Engineering ---
                 arch_fe_task = self._create_arch_fe_task(
-                    arch_name, arch_info["name"], iteration
+                    arch_name, arch_info["name"], iteration, iters
                 )
 
                 # Initialize engineered_df with global features so arch FE builds on top of them
@@ -916,29 +970,40 @@ class Orchestrator:
                             "config": result.get("config_used", config),
                         }
                     )
-                    continue  # Move to next architecture or iteration instead of breaking
+                    continue  # Move to next iteration instead of breaking
 
                 if self.config.verbose:
                     print(f"      Metrics: {result['metrics']}")
 
-                # --- 4. Extract feature importances ---
+                # --- 4. Extract feature importances and error analysis ---
                 self._extract_feature_importances(arch_name, result)
+                self._extract_error_analysis(arch_name, result)
 
-                # --- 5. Update global best pipeline ---
+                # --- 5. Track best exploration result for this architecture ---
+                is_arch_best = (best_arch_result is None) or self._compare_results(result, best_arch_result)
+                if is_arch_best:
+                    best_arch_result = result
+                    best_arch_config = dict(config)
+                    best_arch_snippets = list(combined_snippets)
+                    arch_best_pipeline = result.get("pipeline")
+                    if self.config.verbose:
+                        print(f"      [Best exploration] {arch_name} with {result['metrics']}")
+
+                # --- 6. Update global best pipeline ---
                 is_better = self._is_result_better(result)
                 if is_better:
                     self.context.best_pipeline = result["pipeline"]
                     self.context.best_metrics = result["metrics"]
                     
                     # Store the complete FE code for the best architecture so it can be exported
-                    best_arch_snippets = self.context.arch_feature_snippets.get(arch_name, [])
-                    all_snippets = list(self.context.feature_code_snippets) + list(best_arch_snippets)
+                    arch_snips = self.context.arch_feature_snippets.get(arch_name, [])
+                    all_snippets = list(self.context.feature_code_snippets) + list(arch_snips)
                     if all_snippets:
                         self.context.feature_engineering_code = "\n\n".join(all_snippets)
                     
                     if self.config.verbose:
                         print(
-                            f"      [Best so far] {arch_name} "
+                            f"      [Best overall] {arch_name} "
                             f"with {result['metrics']}"
                         )
 
@@ -953,25 +1018,109 @@ class Orchestrator:
                     }
                 )
 
-                # --- 6. Evaluator + critique for next iteration ---
+                # --- 7. Evaluator + critique for next iteration ---
                 if iteration < iters - 1:
                     suggestions = self._evaluate_for_arch(
-                        arch_name, arch_info["name"], result
+                        arch_name, arch_info["name"], result,
+                        iteration=iteration, total_iterations=iters,
                     )
                     arch_config.update(suggestions)
                     arch_config = self._enforce_config_constraints(
-                        arch_config, plan, arch_name
+                        arch_config, plan, arch_name, override_max_runtime
                     )
+
+            # --- N+1 Refinement Iteration (100% tuning, best FE snippets, no FE agent) ---
+            if best_arch_result is not None and iters > 1:
+                # Check timeout before refinement
+                budget_ok = True
+                if self.config.global_tuning_budget and self.config.global_tuning_budget > 0:
+                    elapsed = time.time() - getattr(self.context, 'pipeline_start_time', time.time())
+                    if elapsed > self.config.global_tuning_budget * 0.7:
+                        budget_ok = False
+                        if self.config.verbose:
+                            print(f"    [SKIP REFINEMENT] Budget nearly exhausted ({elapsed:.0f}s).")
+
+                if budget_ok:
+                    if self.config.verbose:
+                        print(f"    Refinement (100% tuning on best exploration config):")
+                        print(f"      Tuning rounds: {base_rounds} (full budget)")
+
+                    # Rebuild preprocessor from the best exploration snippets
+                    refinement_preprocessor = (
+                        AIFeaturePreprocessor(best_arch_snippets)
+                        if best_arch_snippets
+                        else None
+                    )
+
+                    # Use best config but with full tuning rounds
+                    refinement_config = dict(best_arch_config)
+                    refinement_config["tuning_rounds"] = base_rounds
+
+                    # Re-instantiate a fresh model for refinement
+                    refinement_ml_model = arch_info["factory"](problem)
+                    if refinement_ml_model is not None and hasattr(refinement_ml_model, "scoring"):
+                        if arch_config.get("regression_eval_metric"):
+                            from bluecast.ai.metrics import get_regression_metric_config
+                            metric_config = get_regression_metric_config(arch_config.get("regression_eval_metric"))
+                            refinement_ml_model.scoring = metric_config["sklearn_scoring"]
+                        clf_metric = arch_config.get("classification_eval_metric")
+                        if clf_metric == "balanced_accuracy":
+                            refinement_ml_model.scoring = "balanced_accuracy"
+                        elif clf_metric == "log_loss":
+                            refinement_ml_model.scoring = "neg_log_loss"
+
+                    if not use_xgboost:
+                        refinement_config["ml_model"] = refinement_ml_model
+
+                    refinement_result = self._build_single_arch(
+                        refinement_config, arch_name, use_xgboost,
+                        preprocessor=refinement_preprocessor,
+                    )
+
+                    if refinement_result["success"]:
+                        if self.config.verbose:
+                            print(f"      Refinement metrics: {refinement_result['metrics']}")
+
+                        # Only keep refinement if it beats the best exploration result
+                        refinement_is_better = self._compare_results(refinement_result, best_arch_result)
+                        if refinement_is_better:
+                            arch_best_pipeline = refinement_result.get("pipeline")
+                            if self.config.verbose:
+                                print(f"      [Refinement IMPROVED] Keeping refined model.")
+
+                            # Update global best if refinement is overall best
+                            if self._is_result_better(refinement_result):
+                                self.context.best_pipeline = refinement_result["pipeline"]
+                                self.context.best_metrics = refinement_result["metrics"]
+                                if best_arch_snippets:
+                                    self.context.feature_engineering_code = "\n\n".join(best_arch_snippets)
+
+                            self.context.run_history.append({
+                                "success": True,
+                                "metrics": refinement_result["metrics"],
+                                "config": refinement_result["config_used"],
+                                "architecture": arch_name,
+                                "iteration": "refinement",
+                            })
+                        else:
+                            if self.config.verbose:
+                                print(f"      [Refinement DISCARDED] Exploration result was better.")
+                    else:
+                        if self.config.verbose:
+                            print(f"      Refinement FAILED: {refinement_result.get('error', 'unknown')}")
+
+            if arch_best_pipeline is not None:
+                self.context.best_pipelines.append(arch_best_pipeline)
 
             self._save_checkpoint(f"build_arch_{arch_name}")
 
-    def _enforce_config_constraints(self, config: dict, original_plan: dict, arch_name: str = "") -> dict:
+    def _enforce_config_constraints(self, config: dict, original_plan: dict, arch_name: str = "", override_max_runtime: Optional[int] = None) -> dict:
         """Enforce strict bounds on tuning rounds and runtime to prevent runaway LLM configs."""
         max_rounds = original_plan.get("tuning_rounds")
         if max_rounds is None:
             max_rounds = 200
             
-        max_runtime = original_plan.get("tuning_max_runtime")
+        max_runtime = override_max_runtime if override_max_runtime else original_plan.get("tuning_max_runtime")
         if max_runtime is None:
             max_runtime = 1800
 
@@ -1068,18 +1217,29 @@ class Orchestrator:
             if problem == "regression":
                 conf_xgboost = None
                 conf_params_xgboost = None
-                if config.get("regression_eval_metric") == "mae":
+                if config.get("regression_eval_metric"):
+                    from bluecast.ai.metrics import get_regression_metric_config
                     from bluecast.config.training_config import (
                         XgboostTuneParamsRegressionConfig,
                         XgboostRegressionFinalParamConfig,
                     )
+                    metric_config = get_regression_metric_config(config.get("regression_eval_metric"))
                     conf_xgboost = XgboostTuneParamsRegressionConfig(
-                        xgboost_eval_metric="mae",
-                        xgboost_objective="reg:absoluteerror"
+                        xgboost_eval_metric=metric_config.get("catboost_loss", "RMSE").lower(), # xgboost eval metrics are usually lower case of catboost ones or specific strings
+                        xgboost_objective=metric_config["xgboost_loss"]
                     )
                     conf_params_xgboost = XgboostRegressionFinalParamConfig()
-                    conf_params_xgboost.params["eval_metric"] = "mae"
-                    conf_params_xgboost.params["objective"] = "reg:absoluteerror"
+                    
+                    # Ensure we pass the right eval metric
+                    if metric_config["xgboost_loss"] == "reg:absoluteerror":
+                        eval_m = "mae"
+                    elif metric_config["xgboost_loss"] == "reg:squarederror":
+                        eval_m = "rmse"
+                    else:
+                        eval_m = metric_config.get("catboost_loss", "rmse").lower()
+                        
+                    conf_params_xgboost.params["eval_metric"] = eval_m
+                    conf_params_xgboost.params["objective"] = metric_config["xgboost_loss"]
 
                 ml_model = XgboostModelRegression(
                     class_problem="regression",
@@ -1099,9 +1259,34 @@ class Orchestrator:
 
     def _create_arch_fe_task(
         self, arch_name: str, arch_display_name: str, iteration: int,
+        total_iterations: int = 1,
     ) -> str:
         """Build a task string for the architecture-specific FE agent."""
         data_summary = self.context.get_data_summary()
+
+        # --- Iteration-specific strategy ---
+        if iteration == 0:
+            strategy = (
+                "STRATEGY: This is the FIRST iteration — establish a baseline.\n"
+                "Create 1-3 simple, high-signal features (e.g., missing value "
+                "indicators, basic imputation, and strongly correlated group-level aggregations).\n"
+                "The goal is speed: get a baseline score quickly so later iterations "
+                "can compare against it."
+            )
+        elif iteration < total_iterations - 1:
+            strategy = (
+                f"STRATEGY: This is iteration {iteration + 1} of {total_iterations} — build on the baseline.\n"
+                "Create 3-5 targeted features. Focus on interaction features and "
+                "ratios between the top predictors identified in the previous iteration.\n"
+                "Use feature importances below to decide which columns to combine."
+            )
+        else:
+            strategy = (
+                f"STRATEGY: This is the FINAL iteration ({iteration + 1} of {total_iterations}) — maximize performance.\n"
+                "Use advanced techniques: group-level aggregations, polynomial features, "
+                "binned features. Focus specifically on the error analysis rows where the "
+                "model struggles most. Create 5-8 features."
+            )
 
         # Include previous iteration feedback if available
         feedback = ""
@@ -1111,13 +1296,22 @@ class Orchestrator:
                 importances.items(), key=lambda x: abs(x[1]), reverse=True
             )
             top_5 = sorted_feats[:5]
-            feedback = (
+            feedback += (
                 f"\n\nPrevious iteration results are available. "
                 f"Top features by importance: "
                 + ", ".join(f"{f}={v:.4f}" for f, v in top_5)
                 + "\nUse this to guide your feature engineering — create "
                 f"more features similar to the top ones and avoid "
                 f"creating features similar to low-importance ones."
+            )
+            
+        error_analysis = self.context.arch_error_analysis.get(arch_name)
+        if error_analysis and iteration > 0:
+            feedback += (
+                f"\n\nERROR ANALYSIS FROM PREVIOUS ITERATION (Out-of-Fold):\n"
+                f"The model struggles most with the following unseen rows (highest OOF residuals/loss):\n"
+                f"{error_analysis}\n"
+                f"Analyze these specific rows. What feature is missing that would help the model predict them correctly?"
             )
 
         # Include recent metrics for the architecture
@@ -1145,12 +1339,22 @@ class Orchestrator:
                 f"categorical encoding) and adjust your strategy to fix it."
             )
 
+        # Include imputation recommendations from DataAnalyst
+        imputation_ctx = ""
+        if self.context.imputation_recommendations:
+            imputation_ctx = (
+                f"\n\nIMPUTATION GUIDANCE FROM DATA ANALYST:\n"
+                f"{self.context.imputation_recommendations}\n"
+                f"Use the recommended imputation strategies above when handling "
+                f"missing/sentinel values in your features."
+            )
+
         return (
             f"Create features specifically for the **{arch_display_name}** "
-            f"model (iteration {iteration + 1}).\n\n"
+            f"model (iteration {iteration + 1} of {total_iterations}).\n\n"
+            f"{strategy}\n\n"
             f"Dataset:\n{data_summary}\n"
-            f"{metrics_info}{feedback}{error_feedback}\n\n"
-            f"Focus on features that will specifically help this architecture."
+            f"{metrics_info}{feedback}{error_feedback}{imputation_ctx}"
         )
 
     def _extract_feature_importances(
@@ -1198,6 +1402,44 @@ class Orchestrator:
         except Exception as e:
             logger.debug(f"Could not extract feature importances: {e}")
 
+    def _extract_error_analysis(self, arch_name: str, result: dict) -> None:
+        """Run predictions on the OOF data to find rows with highest residuals."""
+        pipeline = result.get("pipeline")
+        if pipeline is None:
+            return
+
+        try:
+            # For CV pipelines, the OOF predictions are stored on the inner auto_pipeline
+            inner_pipeline = getattr(pipeline, "auto_pipeline", pipeline)
+            
+            if not hasattr(inner_pipeline, "oof_predictions_") or not hasattr(inner_pipeline, "oof_valid_mask_"):
+                return
+                
+            y_preds = inner_pipeline.oof_predictions_
+            mask = inner_pipeline.oof_valid_mask_
+            
+            # Reconstruct the feature set for the OOF rows to provide full context to the LLM
+            # Ensure df_train is aligned
+            df_train = self.context.get_working_df()
+            if len(mask) == len(df_train):
+                df_res = df_train[mask].copy()
+                df_res["_prediction"] = y_preds
+                
+                from bluecast.ai.tools import tool_inspect_residuals
+                task_type = self.context.class_problem or "regression"
+                target_col = self.context.target_col
+                
+                residuals_str = tool_inspect_residuals(df_res, target_col, "_prediction", task_type, n_rows=10)
+                if "Residual analysis failed" not in residuals_str and "Target or prediction column not found" not in residuals_str:
+                    self.context.arch_error_analysis[arch_name] = residuals_str
+                    if self.config.verbose:
+                        print(f"      Extracted OOF error analysis for {arch_name} (top 10 residuals).")
+            else:
+                logger.debug("OOF mask length does not match training data length; skipping error analysis.")
+                
+        except Exception as e:
+            logger.debug(f"Could not extract error analysis: {e}")
+
     def _is_result_better(self, result: dict) -> bool:
         """Check if a result is better than the current best."""
         if self.context.best_metrics is None:
@@ -1224,8 +1466,32 @@ class Orchestrator:
             return True
         return False
 
+    def _compare_results(self, new_result: dict, old_result: dict) -> bool:
+        """Compare two result dicts directly. Returns True if new_result is better."""
+        new_m = new_result.get("metrics", {})
+        old_m = old_result.get("metrics", {})
+        if not old_m:
+            return True
+        eval_metrics = [
+            "roc_auc", "oof_mean", "r2_score", "mae", "rmse",
+            "mse", "mean_absolute_error", "mean_squared_error",
+            "median_absolute_error", "mean_squared_log_error",
+        ]
+        error_metrics = [
+            "oof_mean", "mae", "rmse", "mse", "mean_absolute_error",
+            "mean_squared_error", "median_absolute_error",
+            "mean_squared_log_error",
+        ]
+        for key in eval_metrics:
+            if key in new_m and key in old_m:
+                if key in error_metrics:
+                    return abs(new_m[key]) < abs(old_m[key])
+                return new_m[key] > old_m[key]
+        return False
+
     def _evaluate_for_arch(
-        self, arch_name: str, arch_display_name: str, result: dict
+        self, arch_name: str, arch_display_name: str, result: dict,
+        iteration: int = 0, total_iterations: int = 1,
     ) -> dict:
         """Ask the Evaluator for architecture-specific improvements.
 
@@ -1270,6 +1536,31 @@ class Orchestrator:
                 f"specific features) and suggest a fix."
             )
 
+        # Iteration context for strategic recommendations
+        remaining = total_iterations - iteration - 1
+        iteration_context = (
+            f"\n\nIteration context: This is iteration {iteration + 1} of {total_iterations} "
+            f"({remaining} iteration(s) remaining after this).\n"
+        )
+        if iteration == 0:
+            iteration_context += (
+                "This was the BASELINE iteration with minimal features and tuning. "
+                "Focus your recommendations on the most impactful improvements "
+                "for the next iteration. Be conservative — suggest moderate "
+                "tuning budget increases, not maximum values."
+            )
+        elif remaining > 1:
+            iteration_context += (
+                "There are several iterations remaining. Suggest targeted "
+                "improvements — don't try to fix everything at once."
+            )
+        else:
+            iteration_context += (
+                "This is the SECOND-TO-LAST iteration. Suggest aggressive "
+                "improvements: maximum tuning rounds, expanded search spaces, "
+                "and advanced feature engineering for the final run."
+            )
+
         arch_context = (
             f"You are evaluating the **{arch_display_name}** architecture track.\n"
             f"Current metrics: {result['metrics'] if result.get('success') else 'N/A'}\n\n"
@@ -1279,12 +1570,13 @@ class Orchestrator:
             f"- n_folds / n_repeats: cross-validation settings\n"
             f"- ensemble_strategy: mean / stacking / hill_climbing\n"
             f"- columns_to_drop: list of column names to exclude\n"
-            f"{extra_info}{importance_info}{error_info}\n\n"
+            f"- Architecture specific bounds: e.g. rf_max_depth_max, rf_estimators_max, catboost_depth_max, histgb_depth_max, etc.\n"
+            f"{extra_info}{importance_info}{error_info}{iteration_context}\n\n"
             f"Based on the feature importances and metrics, suggest specific "
             f"improvements as a JSON dict. Consider recommending:\n"
             f"- Which features to drop (low importance)\n"
             f"- Whether to enable recursive feature selection\n"
-            f"- Tuning parameter adjustments\n"
+            f"- Tuning parameter adjustments. If `tuning_score` is significantly better (lower error or higher metric) than `oof_mean`, the model is overfitting — decrease `max_depth_max` or increase regularization. If both are poor, try increasing `tuning_rounds` or expanding the search space bounds.\n"
         )
 
         eval_result = self.evaluator.run(arch_context)
@@ -1338,8 +1630,49 @@ class Orchestrator:
         )
 
     def _assemble_result(self) -> BlueCastAIResult:
+        from bluecast.ensemble.hill_climbing import HillClimbingEnsemble, _mae_regression_metric
+        
+        hc_ensemble = None
+        valid_pipelines = []
+        
+        if len(self.context.best_pipelines) > 1:
+            oof_list = []
+            valid_masks = []
+            for p in self.context.best_pipelines:
+                if hasattr(p, "oof_predictions_") and hasattr(p, "oof_valid_mask_"):
+                    oof_list.append(p.oof_predictions_)
+                    valid_masks.append(p.oof_valid_mask_)
+                    valid_pipelines.append(p)
+            
+            if len(oof_list) > 1:
+                # Find rows where all architectures successfully predicted
+                common_valid_mask = np.all(np.column_stack(valid_masks), axis=1)
+                
+                # Extract true targets
+                y_true = self.context.df_train[self.context.target_col].values[common_valid_mask]
+                
+                # Mask OOF predictions
+                filtered_oof_list = [oof[common_valid_mask] for oof in oof_list]
+                
+                is_classification = self.context.class_problem != "regression"
+                eval_metric = _mae_regression_metric if not is_classification else None
+                
+                hc_ensemble = HillClimbingEnsemble(
+                    is_classification=is_classification,
+                    eval_metric=eval_metric,
+                    blending_method="probability" # Use raw predictions for Regression
+                )
+                
+                # Fit global ensemble
+                model_names = [f"arch_{i}" for i in range(len(filtered_oof_list))]
+                hc_ensemble.fit(filtered_oof_list, y_true, model_names)
+        else:
+            valid_pipelines = self.context.best_pipelines
+
         result = BlueCastAIResult(
             pipeline=self.context.best_pipeline,
+            pipelines=valid_pipelines,
+            hill_climbing_ensemble=hc_ensemble,
             pipeline_code=self.context.pipeline_code or "",
             feature_engineering_code=self.context.feature_engineering_code or "",
             metrics=self.context.best_metrics or {},

@@ -12,7 +12,9 @@ from bluecast.ai.tools import (
     tool_check_outliers,
     tool_check_temporal_patterns,
     tool_check_uniqueness,
+    tool_check_uniqueness,
     tool_describe_data,
+    tool_evaluate_imputations,
     tool_inspect_rows,
     tool_run_sql_query,
     tool_web_search,
@@ -38,6 +40,12 @@ class DataAnalystAgent(BaseAgent):
             "check_leakage",
             lambda **kw: tool_check_leakage(
                 self.context.df_train, self.context.target_col
+            ),
+        )
+        self.register_tool_impl(
+            "evaluate_imputations",
+            lambda fill_value=-999.0, **kw: tool_evaluate_imputations(
+                self.context.df_train, self.context.target_col, fill_value
             ),
         )
         self.register_tool_impl(
@@ -98,8 +106,9 @@ Use your tools systematically:
 1. **describe_data** — Get dtypes, distributions, nulls, target overview
 2. **check_uniqueness** — Find ID columns, understand cardinality
 3. **check_correlations** — Find highly correlated features and target relationships
-4. **check_leakage** — Detect potential target leakage
-5. **check_outliers** — Use IsolationForest to find anomalous rows
+4. **evaluate_imputations** — MANDATORY: Test imputation strategies for ALL numeric columns. This tool auto-detects sentinel values (e.g. 999, -999, 9999) that represent hidden missing data, even when `df.isnull()` reports zero NaNs. Always call this tool.
+5. **check_leakage** — Detect potential target leakage
+6. **check_outliers** — Use IsolationForest to find anomalous rows
 6. **inspect_rows** — Drill into suspicious rows from outlier detection
 7. **check_temporal_patterns** — Detect datetime columns, check for drift
 8. **check_group_statistics** — Analyze distributions within groups
@@ -127,6 +136,7 @@ Current dataset overview:
         return [
             TOOL_DEFINITIONS["describe_data"],
             TOOL_DEFINITIONS["check_correlations"],
+            TOOL_DEFINITIONS["evaluate_imputations"],
             TOOL_DEFINITIONS["check_leakage"],
             TOOL_DEFINITIONS["check_uniqueness"],
             TOOL_DEFINITIONS["check_outliers"],
