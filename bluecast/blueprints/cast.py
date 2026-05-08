@@ -269,7 +269,7 @@ class BlueCast:
                 message = f"""Categorical encoding via ML algorithm is enabled. The tree method 'exact' is not supported with categorical encoding within Xgboost. The tree method 'exact' has been removed. Using {self.conf_tuning.tree_method} only during hyperparameter tuning."""
                 warnings.warn(message, UserWarning, stacklevel=2)
 
-    def fit(self, df: pd.DataFrame, target_col: str) -> None:
+    def fit(self, df: pd.DataFrame, target_col: str) -> None:  # noqa: C901
         """Train a full ML pipeline."""
 
         self.target_column = target_col
@@ -332,7 +332,7 @@ class BlueCast:
                 y_test = y_test.reset_index(drop=True)
             if target_col in feat_type_detector.cat_columns:
                 feat_type_detector.cat_columns.remove(target_col)
-            
+
             self.cat_columns = feat_type_detector.cat_columns
             self.date_columns = feat_type_detector.date_columns
 

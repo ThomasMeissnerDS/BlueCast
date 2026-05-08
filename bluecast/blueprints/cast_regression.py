@@ -306,7 +306,7 @@ class BlueCastRegression:
                 y_test = y_test.reset_index(drop=True)
             if target_col in feat_type_detector.cat_columns:
                 feat_type_detector.cat_columns.remove(target_col)
-            
+
             self.cat_columns = feat_type_detector.cat_columns
             self.date_columns = feat_type_detector.date_columns
 

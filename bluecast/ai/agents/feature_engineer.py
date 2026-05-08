@@ -125,7 +125,7 @@ Guidelines:
 - Do NOT drop existing columns (the model may need them)
 - Keep feature names descriptive and unique
 - If a feature creation fails, try a different approach
-- STRICT: DO NOT use stateful transformations manually (e.g. StandardScaler, Target Encoding, global means via groupby). These leak validation targets during CV or crash on single-row test sets during inference. 
+- STRICT: DO NOT use stateful transformations manually (e.g. StandardScaler, Target Encoding, global means via groupby). These leak validation targets during CV or crash on single-row test sets during inference.
 - Use the 'state' dictionary to store and retrieve data-dependent parameters (like means, counts, or scalers) between 'fit' and 'transform' phases.
 - The code runs inside a framework that provides 'is_fit' (bool) and 'state' (dict) in the local scope.
 
@@ -135,7 +135,7 @@ CRITICAL PIPELINE EXECUTION CONSTRAINTS:
 
 CRITICAL ARCHITECTURE CONSTRAINTS:
 If the overarching plan involves XGBoost, HistGB, or Linear models (e.g., in 'ultimate' mode):
-1. You MUST LEAVE CATEGORICAL COLUMNS UNENCODED (do NOT use `.cat.codes` or `factorize()`). The BlueCast pipeline has powerful native Target Encoding that will automatically handle `object` and `category` text data if you leave them alone. If you convert them to integers, BlueCast will treat them as continuous variables and performance will be ruined!
+1. You MUST LEAVE CATEGORICAL COLUMNS UNENCODED (do NOT use `.cat.codes` or `factorize()`). The BlueCast pipeline has powerful native Target Encoding that will automatically handle `object` and `category` text data if you leave them alone. If you convert them to integers, BlueCast will treat them as continuous variables and performance will be ruined!  # noqa: E501
 2. You MUST impute ALL missing values with simple constants (e.g., `fillna(0)`).
 3. If Linear models are used, you SHOULD scale numerical features statelessly (e.g., `df['col'] = df['col'] / df['col'].max()` where max is a hardcoded constant, NOT a dynamic `.max()`).
 (CatBoost is the only model that handles unencoded categories natively. But BlueCast Auto natively handles them for the rest!).

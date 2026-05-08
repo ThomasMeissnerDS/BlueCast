@@ -56,14 +56,26 @@ class PipelineBuilderAgent(BaseAgent):
                 old_m = self.context.best_metrics
                 # Compare OOF scores, classification metrics, or regression metrics
                 eval_metrics = [
-                    "roc_auc", "oof_mean", "r2_score", "mae", "rmse",
-                    "mse", "mean_absolute_error", "mean_squared_error",
-                    "median_absolute_error", "mean_squared_log_error"
+                    "roc_auc",
+                    "oof_mean",
+                    "r2_score",
+                    "mae",
+                    "rmse",
+                    "mse",
+                    "mean_absolute_error",
+                    "mean_squared_error",
+                    "median_absolute_error",
+                    "mean_squared_log_error",
                 ]
                 error_metrics = [
-                    "oof_mean", "mae", "rmse", "mse", "mean_absolute_error",
-                    "mean_squared_error", "median_absolute_error",
-                    "mean_squared_log_error"
+                    "oof_mean",
+                    "mae",
+                    "rmse",
+                    "mse",
+                    "mean_absolute_error",
+                    "mean_squared_error",
+                    "median_absolute_error",
+                    "mean_squared_log_error",
                 ]
                 for key in eval_metrics:
                     if key in new_m and key in old_m:
@@ -126,7 +138,9 @@ class PipelineBuilderAgent(BaseAgent):
         )
 
         if "out_of_fold_dataset_store_path" in config:
-            lines.append(f'    out_of_fold_dataset_store_path="{config["out_of_fold_dataset_store_path"]}",')
+            lines.append(
+                f'    out_of_fold_dataset_store_path="{config["out_of_fold_dataset_store_path"]}",'
+            )
         lines.append(")")
         lines.append("")
 
@@ -137,9 +151,10 @@ class PipelineBuilderAgent(BaseAgent):
                 f'ensemble_config = EnsembleConfig(ensemble_strategy="{strategy}", regression_eval_metric="{reg_metric}")'
             )
 
-
         if config.get("class_problem") == "regression" and reg_metric == "mae":
-            lines.append("from bluecast.config.training_config import CatboostTuneParamsRegressionConfig")
+            lines.append(
+                "from bluecast.config.training_config import CatboostTuneParamsRegressionConfig"
+            )
             lines.append("conf_tuning = CatboostTuneParamsRegressionConfig()")
             lines.append('conf_tuning.catboost_loss_function = "MAE"')
             lines.append('conf_tuning.catboost_eval_metric = "MAE"')
@@ -172,7 +187,7 @@ class PipelineBuilderAgent(BaseAgent):
         if self.context.run_history:
             history = "\n\nPrevious runs:\n"
             for i, run in enumerate(self.context.run_history):
-                metrics_val = run.get('metrics', 'N/A')
+                metrics_val = run.get("metrics", "N/A")
                 history += f"  Run {i + 1}: success={run.get('success', False)}, metrics={metrics_val}\n"
                 if run.get("config"):
                     history += f"    config: {run['config']}\n"

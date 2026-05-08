@@ -59,7 +59,6 @@ Guidelines:
 - If "regression_eval_metric" is "mae", also suggest "loss_function": "MAE" in the feature engineering hints for model tuning.
 """
 
-
     def get_tools(self) -> List[ToolDefinition]:
         return []
 

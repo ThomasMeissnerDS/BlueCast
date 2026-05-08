@@ -115,13 +115,7 @@ automl_hc = BlueCastCV(
 oof_mean, oof_std = automl_hc.fit_eval(df, target_col="target")
 print(f"Hill climbing OOF score: {oof_mean:.4f} +/- {oof_std:.4f}")
 
-if automl_hc.hill_climbing_ensemble:
-    print(f"Models selected: {len(automl_hc.hill_climbing_ensemble.selected_indices)}")
-    for entry in automl_hc.hill_climbing_ensemble.history:
-        print(
-            f"  Step {entry['iteration']}: {entry['model']} "
-            f"(weight={entry['weight']:+.3f}, score={entry['score']:.6f})"
-        )
+
 print()
 
 

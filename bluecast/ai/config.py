@@ -68,6 +68,7 @@ class AIConfig:
     global_tuning_budget: Optional[int] = None
     autotune_on_device: Literal["cpu", "gpu", "auto"] = "cpu"
     architectures_to_run: Optional[List[str]] = None
+    ultimate_iterations_per_arch: int = 1
 
     def get_model_name(self) -> str:
         if self.model:

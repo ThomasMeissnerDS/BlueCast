@@ -133,9 +133,9 @@ def tool_check_leakage(df: pd.DataFrame, target_col: str) -> str:
     return "\n".join(results)
 
 
-def tool_evaluate_imputations(
+def tool_evaluate_imputations(  # noqa: C901
     df: pd.DataFrame, target_col: str, fill_value: float = -999.0
-) -> str:
+) -> str:  # noqa: C901
     """Test imputation strategies for numerical columns with NaNs or sentinel values.
 
     Auto-detects common sentinel values (999, -999, 9999, -9999, etc.) that
@@ -159,8 +159,18 @@ def tool_evaluate_imputations(
     # ------------------------------------------------------------------
     # 1. Detect sentinel values
     # ------------------------------------------------------------------
-    SENTINEL_CANDIDATES = [999.0, -999.0, 999, -999, 9999.0, -9999.0,
-                           9999, -9999, -1.0, -1]
+    SENTINEL_CANDIDATES = [
+        999.0,
+        -999.0,
+        999,
+        -999,
+        9999.0,
+        -9999.0,
+        9999,
+        -9999,
+        -1.0,
+        -1,
+    ]
 
     sentinel_info: Dict[str, List[float]] = {}  # col -> list of detected sentinels
     for col in num_cols:
@@ -186,8 +196,9 @@ def tool_evaluate_imputations(
     if not cols_to_eval:
         return "No numerical columns with missing values or sentinel values found."
 
-    from sklearn.feature_selection import mutual_info_regression, mutual_info_classif
     import warnings
+
+    from sklearn.feature_selection import mutual_info_classif, mutual_info_regression
 
     is_classification = df[target_col].nunique() <= 20
 
@@ -203,7 +214,9 @@ def tool_evaluate_imputations(
             for sv in svs:
                 cnt = int((df[col] == sv).sum())
                 pct = cnt / len(df) * 100
-                buf.write(f"- **{col}**: value `{sv}` appears {cnt} times ({pct:.1f}% of rows)\n")
+                buf.write(
+                    f"- **{col}**: value `{sv}` appears {cnt} times ({pct:.1f}% of rows)\n"
+                )
         buf.write("\n")
 
     with warnings.catch_warnings():
@@ -267,12 +280,14 @@ def tool_evaluate_imputations(
                 else:
                     mi = mutual_info_regression(x, y, random_state=42)[0]
 
-                results.append({
-                    "Feature": col,
-                    "Strategy": strat_name,
-                    "Correlation (abs)": round(abs(corr), 4),
-                    "Mutual Info": round(mi, 4),
-                })
+                results.append(
+                    {
+                        "Feature": col,
+                        "Strategy": strat_name,
+                        "Correlation (abs)": round(abs(corr), 4),
+                        "Mutual Info": round(mi, 4),
+                    }
+                )
 
                 if mi > best_mi:
                     best_mi = mi
@@ -324,7 +339,7 @@ def tool_evaluate_imputations(
 def tool_create_feature(
     df: pd.DataFrame,
     feature_code: str,
-    state: Dict[str, Any] = None,
+    state: Optional[Dict[str, Any]] = None,
 ) -> Dict[str, Any]:
     """Execute feature engineering code and return the modified DataFrame.
 
@@ -398,9 +413,9 @@ def tool_drop_collinear_features(
     df: pd.DataFrame, threshold: float = 0.9, target_col: Optional[str] = None
 ) -> Dict[str, Any]:
     """Identify highly correlated numerical features and drop one from each pair.
-    
+
     If target_col is provided, it prefers dropping the feature less correlated with target.
-    
+
     Returns a dict with 'success', 'dropped_columns', 'error'.
     """
     try:
@@ -409,10 +424,10 @@ def tool_drop_collinear_features(
             target_corr = num_df.corrwith(num_df[target_col]).abs()
         else:
             target_corr = pd.Series(index=num_df.columns, data=1.0)
-            
+
         corr_matrix = num_df.corr(numeric_only=True).abs()
         upper = corr_matrix.where(np.triu(np.ones(corr_matrix.shape), k=1).astype(bool))
-        
+
         to_drop = set()
         for i in range(len(upper.columns)):
             col1 = upper.columns[i]
@@ -423,69 +438,78 @@ def tool_drop_collinear_features(
                         to_drop.add(col1)
                     else:
                         to_drop.add(col2)
-                        
+
         to_drop_list = list(to_drop)
         for c in to_drop_list:
             if c in df.columns:
                 df.drop(columns=[c], inplace=True)
-                
-        return {
-            "success": True,
-            "dropped_columns": to_drop_list,
-            "error": None
-        }
+
+        return {"success": True, "dropped_columns": to_drop_list, "error": None}
     except Exception as e:
         return {"success": False, "dropped_columns": [], "error": str(e)}
 
 
 def tool_l1_feature_selection(
-    df: pd.DataFrame, target_col: str, class_problem: str = "regression", alpha: float = 0.01
+    df: pd.DataFrame,
+    target_col: str,
+    class_problem: str = "regression",
+    alpha: float = 0.01,
 ) -> Dict[str, Any]:
     """Perform L1 regularization to drop uninformative features for linear models.
-    
+
     Returns a dict with 'success', 'dropped_columns', 'error'.
     """
     try:
+        from sklearn.impute import SimpleImputer
         from sklearn.linear_model import Lasso, LogisticRegression
         from sklearn.preprocessing import StandardScaler
-        from sklearn.impute import SimpleImputer
-        
+
         if target_col not in df.columns:
-            return {"success": False, "dropped_columns": [], "error": f"Target column {target_col} missing."}
-            
+            return {
+                "success": False,
+                "dropped_columns": [],
+                "error": f"Target column {target_col} missing.",
+            }
+
         y = df[target_col]
-        num_cols = df.drop(columns=[target_col], errors='ignore').select_dtypes(include=["number"]).columns.tolist()
-        
+        num_cols = (
+            df.drop(columns=[target_col], errors="ignore")
+            .select_dtypes(include=["number"])
+            .columns.tolist()
+        )
+
         if not num_cols:
-            return {"success": False, "dropped_columns": [], "error": "No numeric columns."}
-            
+            return {
+                "success": False,
+                "dropped_columns": [],
+                "error": "No numeric columns.",
+            }
+
         X = df[num_cols].copy()
-        
+
         imputer = SimpleImputer(strategy="median")
         scaler = StandardScaler()
         X_scaled = scaler.fit_transform(imputer.fit_transform(X))
-        
+
         if class_problem == "regression":
             model = Lasso(alpha=alpha, random_state=300)
         else:
-            model = LogisticRegression(penalty="l1", solver="liblinear", C=1/(alpha + 1e-5), random_state=300)
-            
+            model = LogisticRegression(
+                penalty="l1", solver="liblinear", C=1 / (alpha + 1e-5), random_state=300
+            )
+
         model.fit(X_scaled, y)
         coef = model.coef_
         if len(coef.shape) > 1:
             coef = np.max(np.abs(coef), axis=0)
-            
+
         dropped = []
         for c, c_val in zip(num_cols, coef):
             if abs(c_val) < 1e-5:
                 dropped.append(c)
                 df.drop(columns=[c], inplace=True)
-                
-        return {
-            "success": True,
-            "dropped_columns": dropped,
-            "error": None
-        }
+
+        return {"success": True, "dropped_columns": dropped, "error": None}
     except Exception as e:
         return {"success": False, "dropped_columns": [], "error": str(e)}
 
@@ -495,28 +519,29 @@ def tool_l1_feature_selection(
 # ---------------------------------------------------------------------------
 
 
-
 def tool_check_adversarial_validation(df: pd.DataFrame, test_condition: str) -> str:
     """Run adversarial validation between train and test datasets defined by a condition."""
     try:
         from bluecast.monitoring.data_monitoring import DataDrift
-        
+
         subset_test = df.query(test_condition)
         subset_train = df.drop(subset_test.index)
-        
+
         if len(subset_test) < 10 or len(subset_train) < 10:
             return "Condition resulted in too few rows for either train or test split (need >= 10)."
-            
+
         drift = DataDrift()
         cat_cols = df.select_dtypes(include=["object", "category"]).columns.tolist()
-        auc = drift.adversarial_validation(subset_train, subset_test, cat_columns=cat_cols)
-        
+        auc = drift.adversarial_validation(
+            subset_train, subset_test, cat_columns=cat_cols
+        )
+
         res = f"Adversarial Validation AUC: {auc:.4f}\n"
         if auc > 0.6:
             res += "WARNING: High AUC indicates significant covariate shift between splits.\n"
         else:
             res += "Low AUC indicates train and test distributions are similar.\n"
-            
+
         top_features = drift.adversarial_feature_importance[:5]
         if top_features:
             res += "Top features driving the drift:\n"
@@ -526,36 +551,45 @@ def tool_check_adversarial_validation(df: pd.DataFrame, test_condition: str) -> 
     except Exception as e:
         return f"Adversarial validation failed: {e}"
 
-def tool_check_mutual_information(df: pd.DataFrame, target_col: str, task_type: str = "classification") -> str:
+
+def tool_check_mutual_information(
+    df: pd.DataFrame, target_col: str, task_type: str = "classification"
+) -> str:
     """Calculate mutual information between features and target."""
+
     from sklearn.feature_selection import mutual_info_classif, mutual_info_regression
     from sklearn.impute import SimpleImputer
     from sklearn.preprocessing import OrdinalEncoder
-    import numpy as np
-    
+
     try:
         if target_col not in df.columns:
             return f"Target '{target_col}' not found."
-            
+
         df_clean = df.copy()
         y = df_clean.pop(target_col)
-        
-        df_clean = df_clean.dropna(thresh=int(len(df_clean)*0.1), axis=1)
-        
-        cat_cols = df_clean.select_dtypes(include=["object", "category"]).columns.tolist()
+
+        df_clean = df_clean.dropna(thresh=int(len(df_clean) * 0.1), axis=1)
+
+        cat_cols = df_clean.select_dtypes(
+            include=["object", "category"]
+        ).columns.tolist()
         if cat_cols:
-            df_clean[cat_cols] = OrdinalEncoder().fit_transform(df_clean[cat_cols].astype(str))
-            
+            df_clean[cat_cols] = OrdinalEncoder().fit_transform(
+                df_clean[cat_cols].astype(str)
+            )
+
         num_cols = df_clean.select_dtypes(include=["number"]).columns.tolist()
-        df_clean[num_cols] = SimpleImputer(strategy="median").fit_transform(df_clean[num_cols])
-        
+        df_clean[num_cols] = SimpleImputer(strategy="median").fit_transform(
+            df_clean[num_cols]
+        )
+
         if task_type == "classification":
             mi = mutual_info_classif(df_clean, y, random_state=42)
         else:
             mi = mutual_info_regression(df_clean, y, random_state=42)
-            
+
         mi_series = pd.Series(mi, index=df_clean.columns).sort_values(ascending=False)
-        
+
         res = f"Top 15 Mutual Information scores (task: {task_type}):\n"
         for col, val in mi_series.head(15).items():
             res += f"  {col}: {val:.4f}\n"
@@ -563,87 +597,103 @@ def tool_check_mutual_information(df: pd.DataFrame, target_col: str, task_type: 
     except Exception as e:
         return f"Mutual information failed: {e}"
 
+
 def tool_target_distribution_test(df: pd.DataFrame, target_col: str) -> str:
     """Check normality of target distribution using Shapiro-Wilk test."""
     try:
         from scipy.stats import shapiro, skew
-        
+
         if target_col not in df.columns:
             return f"Target '{target_col}' not found."
-            
+
         y = df[target_col].dropna()
         if not pd.api.types.is_numeric_dtype(y):
             return "Target is not numeric, cannot test for normality."
-            
+
         if len(y) > 5000:
             y = y.sample(5000, random_state=42)
-            
+
         stat, p = shapiro(y)
         sk = skew(y)
-        
+
         res = f"Shapiro-Wilk Test on '{target_col}':\n"
         res += f"  Statistic: {stat:.4f}, p-value: {p:.4e}\n"
         res += f"  Skewness: {sk:.4f}\n"
-        
+
         if p < 0.05:
             res += "  Result: Distribution is NOT normal (reject H0).\n"
             if abs(sk) > 1:
                 res += "  Recommendation: High skew detected. Consider a log, Box-Cox, or Yeo-Johnson transformation."
         else:
             res += "  Result: Distribution appears normal (fail to reject H0)."
-            
+
         return res
     except Exception as e:
         return f"Target distribution test failed: {e}"
+
 
 def tool_nlp_profiling(df: pd.DataFrame, text_col: str) -> str:
     """Analyze a text column for length, vocabulary richness, etc."""
     try:
         if text_col not in df.columns:
             return f"Column '{text_col}' not found."
-            
+
         texts = df[text_col].dropna().astype(str)
         if len(texts) == 0:
             return "No valid text found."
-            
+
         lengths = texts.str.len()
         words = texts.str.split()
         word_counts = words.str.len()
-        
+
         res = f"NLP Profiling for '{text_col}' ({len(texts)} non-null rows):\n"
         res += f"  Character Length: mean={lengths.mean():.1f}, median={lengths.median():.1f}, max={lengths.max()}\n"
         res += f"  Word Count: mean={word_counts.mean():.1f}, median={word_counts.median():.1f}, max={word_counts.max()}\n"
-        
+
         all_words = pd.Series([w.lower() for wordlist in words for w in wordlist])
         vocab = all_words.nunique()
         res += f"  Total vocabulary size (unique words): {vocab}\n"
-        
+
         res += "  Top 10 most common words:\n"
         for word, count in all_words.value_counts().head(10).items():
             res += f"    '{word}': {count}\n"
-            
+
         return res
     except Exception as e:
         return f"NLP profiling failed: {e}"
 
-def tool_apply_target_encoding(df: pd.DataFrame, target_col: str, cat_cols: str) -> dict:
+
+def tool_apply_target_encoding(
+    df: pd.DataFrame, target_col: str, cat_cols: str
+) -> dict:
     """Apply Out-of-fold target encoding to categorical columns."""
     try:
-        from bluecast.preprocessing.target_encoding import BinaryClassTargetEncoder, MultiClassTargetEncoder
-        
+        from bluecast.preprocessing.target_encoding import (
+            BinaryClassTargetEncoder,
+            MultiClassTargetEncoder,
+        )
+
         cols_to_encode = [c.strip() for c in cat_cols.split(",")]
         missing = [c for c in cols_to_encode if c not in df.columns]
         if missing:
-            return {"success": False, "new_columns": [], "error": f"Columns not found: {missing}"}
-            
+            return {
+                "success": False,
+                "new_columns": [],
+                "error": f"Columns not found: {missing}",
+            }
+
         n_unique = df[target_col].nunique()
         if n_unique <= 2:
-            encoder = BinaryClassTargetEncoder(cat_columns=cols_to_encode, target_col=target_col)
+            encoder = BinaryClassTargetEncoder(
+                cat_columns=cols_to_encode, target_col=target_col
+            )
         else:
-            encoder = MultiClassTargetEncoder(cat_columns=cols_to_encode, target_col=target_col)
-        
+            encoder = MultiClassTargetEncoder(
+                cat_columns=cols_to_encode, target_col=target_col
+            )
+
         df_encoded = encoder.fit_transform_target_encoder(df)
-        
+
         new_columns = []
         for c in df_encoded.columns:
             if c not in df.columns:
@@ -653,54 +703,68 @@ def tool_apply_target_encoding(df: pd.DataFrame, target_col: str, cat_cols: str)
                 new_col = f"{c}_te"
                 df[new_col] = df_encoded[c]
                 new_columns.append(new_col)
-                
+
         return {"success": True, "new_columns": new_columns, "error": None}
     except Exception as e:
         return {"success": False, "new_columns": [], "error": str(e)}
+
 
 def tool_automated_numeric_interactions(df: pd.DataFrame, num_cols: str) -> dict:
     """Create basic numeric interactions (multiplication, ratio) between top numeric columns."""
     try:
         import numpy as np
-        
+
         cols = [c.strip() for c in num_cols.split(",") if c.strip() in df.columns]
         if len(cols) < 2:
-            return {"success": False, "new_columns": [], "error": "Provide at least 2 valid numeric columns."}
-            
+            return {
+                "success": False,
+                "new_columns": [],
+                "error": "Provide at least 2 valid numeric columns.",
+            }
+
         new_columns = []
         for i in range(len(cols)):
-            for j in range(i+1, len(cols)):
+            for j in range(i + 1, len(cols)):
                 c1, c2 = cols[i], cols[j]
-                
+
                 # Multiplication
                 m_col = f"{c1}_mult_{c2}"
                 df[m_col] = df[c1] * df[c2]
                 new_columns.append(m_col)
-                
+
                 # Ratio (with stable epsilon)
                 r_col = f"{c1}_div_{c2}"
                 eps = 1e-6
                 df[r_col] = df[c1] / (df[c2].fillna(0) + eps)
                 new_columns.append(r_col)
-                
+
                 # Log of ratio (very common in financial/fit data)
                 l_col = f"log_{c1}_div_{c2}"
                 df[l_col] = np.log1p(df[c1].clip(0)) - np.log1p(df[c2].clip(0))
                 new_columns.append(l_col)
-                
+
         return {"success": True, "new_columns": new_columns, "error": None}
     except Exception as e:
         return {"success": False, "new_columns": [], "error": str(e)}
 
-def tool_create_groupby_aggregations(df: pd.DataFrame, group_col: str, agg_cols: str, aggregations: str) -> dict:
+
+def tool_create_groupby_aggregations(
+    df: pd.DataFrame, group_col: str, agg_cols: str, aggregations: str
+) -> dict:
     """Create group-by aggregate features."""
     try:
         if group_col not in df.columns:
-            return {"success": False, "new_columns": [], "error": f"Group column '{group_col}' not found."}
-            
-        target_agg_cols = [c.strip() for c in agg_cols.split(",") if c.strip() in df.columns]
+            return {
+                "success": False,
+                "new_columns": [],
+                "error": f"Group column '{group_col}' not found.",
+            }
+
+        target_agg_cols = [
+            c.strip() for c in agg_cols.split(",") if c.strip() in df.columns
+        ]
         aggs = [a.strip() for a in aggregations.split(",")]
-        
+
         new_columns = []
         for agg_col in target_agg_cols:
             grouped = df.groupby(group_col)[agg_col].agg(aggs)
@@ -708,34 +772,44 @@ def tool_create_groupby_aggregations(df: pd.DataFrame, group_col: str, agg_cols:
                 new_col = f"{agg_col}_{agg}_by_{group_col}"
                 df[new_col] = df[group_col].map(grouped[agg])
                 new_columns.append(new_col)
-                
+
         return {"success": True, "new_columns": new_columns, "error": None}
     except Exception as e:
         return {"success": False, "new_columns": [], "error": str(e)}
 
-def tool_inspect_residuals(df: pd.DataFrame, target_col: str, pred_col: str, task_type: str = "regression", n_rows: int = 20) -> str:
+
+def tool_inspect_residuals(
+    df: pd.DataFrame,
+    target_col: str,
+    pred_col: str,
+    task_type: str = "regression",
+    n_rows: int = 20,
+) -> str:
     """Inspect rows with the highest loss/residuals between target and predictions."""
     try:
         import numpy as np
-        
+
         if target_col not in df.columns or pred_col not in df.columns:
             return "Target or prediction column not found in df."
-            
+
         df_res = df.copy()
         if task_type == "regression":
             df_res["_residual_loss"] = (df_res[target_col] - df_res[pred_col]).abs()
         else:
             y = df_res[target_col].astype(float)
-            p = df_res[pred_col].astype(float).clip(1e-15, 1-1e-15)
+            p = df_res[pred_col].astype(float).clip(1e-15, 1 - 1e-15)
             df_res["_residual_loss"] = -(y * np.log(p) + (1 - y) * np.log(1 - p))
-            
-        highest_loss = df_res.sort_values("_residual_loss", ascending=False).head(n_rows)
-        
+
+        highest_loss = df_res.sort_values("_residual_loss", ascending=False).head(
+            n_rows
+        )
+
         res = f"Top {n_rows} rows with highest residuals/loss:\n"
         res += highest_loss.to_string()
         return res
     except Exception as e:
         return f"Residual analysis failed: {e}"
+
 
 def tool_check_uniqueness(df: pd.DataFrame) -> str:
     """Cardinality analysis for every column."""
@@ -892,14 +966,19 @@ def tool_check_temporal_patterns(df: pd.DataFrame, target_col: str) -> str:
     return "\n".join(lines)
 
 
-def tool_apply_pseudo_labeling(df: pd.DataFrame, target_col: str, task_type: str = "binary", confidence_threshold: float = 0.9) -> str:
+def tool_apply_pseudo_labeling(
+    df: pd.DataFrame,
+    target_col: str,
+    task_type: str = "binary",
+    confidence_threshold: float = 0.9,
+) -> str:
     """Implement pseudo-labeling for semi-supervised augmentation.
     Trains a model on labeled rows, predicts unlabeled rows, and assigns high-confidence predictions.
     """
     import numpy as np
     from sklearn.ensemble import RandomForestClassifier, RandomForestRegressor
-    from sklearn.preprocessing import LabelEncoder
     from sklearn.impute import SimpleImputer
+    from sklearn.preprocessing import LabelEncoder
 
     if target_col not in df.columns:
         return f"Error: '{target_col}' not found."
@@ -913,7 +992,9 @@ def tool_apply_pseudo_labeling(df: pd.DataFrame, target_col: str, task_type: str
 
     X_train = df_labeled.drop(columns=[target_col]).select_dtypes(include=[np.number])
     y_train = df_labeled[target_col]
-    X_unlabeled = df_unlabeled.drop(columns=[target_col]).select_dtypes(include=[np.number])
+    X_unlabeled = df_unlabeled.drop(columns=[target_col]).select_dtypes(
+        include=[np.number]
+    )
 
     if X_train.empty:
         return "No numeric features available for pseudo-labeling model."
@@ -1018,13 +1099,17 @@ def tool_build_and_run_pipeline(
             int(config.get("n_repeats", 1)),
         ),
     )
-    
+
     if "out_of_fold_dataset_store_path" in config:
-        training_config.out_of_fold_dataset_store_path = config["out_of_fold_dataset_store_path"]
+        training_config.out_of_fold_dataset_store_path = config[
+            "out_of_fold_dataset_store_path"
+        ]
 
     if "cat_encoding_via_ml_algorithm" in config:
-        training_config.cat_encoding_via_ml_algorithm = config["cat_encoding_via_ml_algorithm"]
-        
+        training_config.cat_encoding_via_ml_algorithm = config[
+            "cat_encoding_via_ml_algorithm"
+        ]
+
     if "enable_feature_selection" in config:
         training_config.enable_feature_selection = config["enable_feature_selection"]
 
@@ -1033,15 +1118,16 @@ def tool_build_and_run_pipeline(
         strategy = config.get("ensemble_strategy", "hill_climbing")
         reg_metric = config.get("regression_eval_metric", "rmse")
         ensemble_config = EnsembleConfig(
-            ensemble_strategy=strategy, 
-            regression_eval_metric=reg_metric
+            ensemble_strategy=strategy, regression_eval_metric=reg_metric
         )
         if strategy == "hill_climbing":
             ensemble_config.hc_weight_min = config.get("hc_weight_min", -0.3)
             ensemble_config.hc_weight_max = config.get("hc_weight_max", 0.5)
             ensemble_config.hc_weight_step = config.get("hc_weight_step", 0.01)
             if class_problem == "regression":
-                ensemble_config.hc_blending_method = "probability"  # regression must use raw values
+                ensemble_config.hc_blending_method = (
+                    "probability"  # regression must use raw values
+                )
 
     if class_problem == "regression" and ensemble_config:
         ensemble_config.stacking_use_ranks = False
@@ -1049,18 +1135,21 @@ def tool_build_and_run_pipeline(
     # Handle custom config overrides for regression metrics
     conf_tuning = None
     single_fold_eval_metric_func = None
-    
+
     if class_problem == "regression" and config.get("regression_eval_metric"):
-        from bluecast.ai.metrics import get_regression_metric_config, get_bluecast_eval_wrapper
+        from bluecast.ai.metrics import (
+            get_bluecast_eval_wrapper,
+            get_regression_metric_config,
+        )
         from bluecast.config.training_config import CatboostTuneParamsRegressionConfig
-        
+
         metric_name = config.get("regression_eval_metric")
         metric_config = get_regression_metric_config(metric_name)
-        
+
         conf_tuning = CatboostTuneParamsRegressionConfig()
         conf_tuning.catboost_loss_function = metric_config["catboost_loss"]
         conf_tuning.catboost_eval_metric = metric_config["catboost_loss"]
-        
+
         single_fold_eval_metric_func = get_bluecast_eval_wrapper(metric_name)
 
     if ml_model is not None:
@@ -1081,7 +1170,7 @@ def tool_build_and_run_pipeline(
             custom_preprocessor=custom_preprocessor,
             ml_model=ml_model,
         )
-        
+
         if single_fold_eval_metric_func:
             # Inject dynamic metric if using default BlueCast pipeline for native models
             pipeline.single_fold_eval_metric_func = single_fold_eval_metric_func
@@ -1324,7 +1413,6 @@ TOOL_DEFINITIONS: Dict[str, ToolDefinition] = {
             "required": ["target_col", "pred_col"],
         },
     ),
-
     "describe_data": ToolDefinition(
         name="describe_data",
         description="Generate a comprehensive profile of the dataset including dtypes, nulls, distributions, and target analysis.",
@@ -1336,7 +1424,7 @@ TOOL_DEFINITIONS: Dict[str, ToolDefinition] = {
     ),
     "evaluate_imputations": ToolDefinition(
         name="evaluate_imputations",
-        description="Test imputation strategies for numerical columns with NaNs or sentinel values (999, -999, etc.). Auto-detects hidden missing data encoded as round-number sentinels. Tests 8 strategies (raw, mean, median, 0, static, 1st-percentile, 99th-percentile, mode) and returns per-column recommendations based on Mutual Information with the target.",
+        description="Test imputation strategies for numerical columns with NaNs or sentinel values (999, -999, etc.). Auto-detects hidden missing data encoded as round-number sentinels. Tests 8 strategies (raw, mean, median, 0, static, 1st-percentile, 99th-percentile, mode) and returns per-column recommendations based on Mutual Information with the target.",  # noqa: E501
         parameters={
             "type": "object",
             "properties": {
@@ -1627,12 +1715,12 @@ TOOL_DEFINITIONS: Dict[str, ToolDefinition] = {
             "properties": {
                 "task_type": {
                     "type": "string",
-                    "description": "'binary', 'multiclass', or 'regression'. Default 'binary'."
+                    "description": "'binary', 'multiclass', or 'regression'. Default 'binary'.",
                 },
                 "confidence_threshold": {
                     "type": "number",
-                    "description": "Threshold for assigning pseudo logic (e.g. 0.90)."
-                }
+                    "description": "Threshold for assigning pseudo logic (e.g. 0.90).",
+                },
             },
             "required": [],
         },

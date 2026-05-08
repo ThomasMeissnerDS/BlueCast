@@ -1,7 +1,7 @@
 """Nelder-Mead optimization ensemble: optimize blending weights."""
 
 import logging
-from typing import Callable, Dict, List, Optional
+from typing import Callable, List, Optional
 
 import numpy as np
 from scipy.optimize import minimize
@@ -35,10 +35,10 @@ def _convert_to_ranks(predictions: np.ndarray) -> np.ndarray:
 
 class NelderMeadEnsemble:
     """Optimization-based blending using Nelder-Mead.
-    
+
     Finds optimal weights for the given models via scipy.optimize.minimize.
 
-    :param blending_method: 'rank' normalizes model outputs via rank transform, 
+    :param blending_method: 'rank' normalizes model outputs via rank transform,
         'probability' uses raw predictions.
     :param eval_metric: Callable(y_true, y_pred) -> float, higher is better.
     """
@@ -100,31 +100,31 @@ class NelderMeadEnsemble:
             if abs(w_sum) < 1e-10:
                 return 1e9  # Degenerate case: all weights near zero
             w_norm = weights / w_sum
-            
+
             # Penalty for any individual weight being extreme
             if np.any(w_norm < -1.0) or np.any(w_norm > 2.0):
                 return 1e9
-                
+
             blended = np.dot(preds_matrix, w_norm)
             if self.is_classification:
                 blended = np.clip(blended, 0.0, 1.0)
             score = self.eval_metric(y, blended)
-            
+
             # Light L2 regularization toward uniform weights
-            l2_reg = 1e-4 * np.sum((w_norm - 1.0/n_models)**2)
-            
+            l2_reg = 1e-4 * np.sum((w_norm - 1.0 / n_models) ** 2)
+
             return -score + l2_reg  # Minimize negative score
 
         initial_weights = np.ones(n_models) / n_models
-        
+
         res = minimize(
-            objective, 
-            initial_weights, 
-            method='Nelder-Mead', 
-            options={'maxiter': 2000, 'xatol': 1e-8, 'fatol': 1e-8}
+            objective,
+            initial_weights,
+            method="Nelder-Mead",
+            options={"maxiter": 2000, "xatol": 1e-8, "fatol": 1e-8},
         )
         raw_weights = res.x
-        
+
         # Normalize weights to sum to 1.0 (matches what objective() used)
         weight_sum = np.sum(raw_weights)
         if abs(weight_sum) > 1e-10:
@@ -132,14 +132,18 @@ class NelderMeadEnsemble:
         else:
             self.weights = np.ones(n_models) / n_models
             logging.warning("Nelder-Mead: Degenerate weights, falling back to uniform")
-        
+
         self.is_fitted = True
-        
+
         # Compute final score with normalized weights
         blended_final = np.dot(preds_matrix, self.weights)
         final_score = self.eval_metric(y, blended_final)
-        logging.info(f"Nelder-Mead optimization complete. Final Score: {-final_score:.6f}")
-        logging.info(f"Nelder-Mead optimal weights: {self.weights} (sum={np.sum(self.weights):.4f})")
+        logging.info(
+            f"Nelder-Mead optimization complete. Final Score: {-final_score:.6f}"
+        )
+        logging.info(
+            f"Nelder-Mead optimal weights: {self.weights} (sum={np.sum(self.weights):.4f})"
+        )
 
     def predict(self, predictions: List[np.ndarray]) -> np.ndarray:
         """Blend predictions using fitted weights.
@@ -156,13 +160,13 @@ class NelderMeadEnsemble:
 
         if self.is_classification:
             return np.clip(blended, 0.0, 1.0)
-        
+
         # Safety clip for regression: training range + 50% margin
-        # Wide enough to allow legitimate extrapolation, tight enough 
+        # Wide enough to allow legitimate extrapolation, tight enough
         # to catch catastrophic errors
         if self._y_min is not None and self._y_max is not None:
             y_range = self._y_max - self._y_min
             margin = 0.5 * y_range
             blended = np.clip(blended, self._y_min - margin, self._y_max + margin)
-        
+
         return blended

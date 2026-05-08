@@ -18,7 +18,7 @@ class EvaluatorAgent(BaseAgent):
         if self.context.run_history:
             history = "\n\nRun history:\n"
             for i, run in enumerate(self.context.run_history):
-                metrics_val = run.get('metrics', 'N/A')
+                metrics_val = run.get("metrics", "N/A")
                 history += (
                     f"  Run {i + 1}: success={run.get('success', False)}, "
                     f"metrics={metrics_val}, config={run.get('config', {})}\n"

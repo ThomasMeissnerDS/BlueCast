@@ -226,9 +226,9 @@ class FeatureClusteringScorer:
         self.cluster_settings = cluster_settings  # settings for each feature
         self.scalers: dict[str, MinMaxScaler] = {}  # storing scalers per feature
         self.cluster_classes: dict[str, KMeans] = {}  # storing Kmeans class per feature
-        self.cluster_mappings: dict[
-            str, dict[int, int]
-        ] = {}  # storing reindex mapping for cluster ids
+        self.cluster_mappings: dict[str, dict[int, int]] = (
+            {}
+        )  # storing reindex mapping for cluster ids
 
     def _fit_reindex_clusters_by_mean(
         self, temp_df: pd.DataFrame, feature_name: str, higher_is_better: bool = True
@@ -481,15 +481,25 @@ def add_binned_features(
         # Transform mode: reuse stored bin edges
         if state is not None and not is_fit and state_key in state:
             bins = state[state_key]
-            df_out[f"{col}_binned"] = pd.cut(
-                df_out[col], bins=bins, labels=False, include_lowest=True,
-            ).fillna(-1).astype(int)
+            df_out[f"{col}_binned"] = (
+                pd.cut(
+                    df_out[col],
+                    bins=bins,
+                    labels=False,
+                    include_lowest=True,
+                )
+                .fillna(-1)
+                .astype(int)
+            )
         else:
             # Fit mode (or stateless fallback): compute bin edges
             try:
                 result, bins = pd.qcut(
-                    df_out[col], q=num_bins, labels=False,
-                    retbins=True, duplicates="drop",
+                    df_out[col],
+                    q=num_bins,
+                    labels=False,
+                    retbins=True,
+                    duplicates="drop",
                 )
                 df_out[f"{col}_binned"] = result
                 if state is not None:
@@ -500,7 +510,9 @@ def add_binned_features(
                     state[state_key] = bins
             except Exception:
                 df_out[f"{col}_binned"] = pd.cut(
-                    df_out[col], bins=num_bins, labels=False,
+                    df_out[col],
+                    bins=num_bins,
+                    labels=False,
                 )
     return df_out
 
@@ -582,7 +594,6 @@ class TfIdfTextEncoder:
         return df
 
 
-
 class StateAwareGroupbyAggregator:
     """
     Stateless-acting Groupby Aggregator for AIFeaturePreprocessor.
@@ -594,12 +605,12 @@ class StateAwareGroupbyAggregator:
         self,
         groupby_cols: List[str],
         agg_cols: List[str],
-        aggregations: List[str] = ["mean"],
+        aggregations: Optional[List[str]] = None,
         prefix: str = "state_agg",
     ):
         self.groupby_cols = groupby_cols
         self.agg_cols = agg_cols
-        self.aggregations = aggregations
+        self.aggregations = aggregations if aggregations is not None else ["mean"]
         self.prefix = prefix
         self.mappings: Dict[str, pd.DataFrame] = {}
         self.is_fitted = False
@@ -625,13 +636,17 @@ class StateAwareGroupbyAggregator:
             else:
                 # Single index
                 new_cols.append(col)
-        
+
         agg_results.columns = new_cols
         self.mappings["aggs"] = agg_results
         self.is_fitted = True
 
         # Drop columns from df_out that will be added by the merge to prevent duplicates
-        cols_to_drop = [c for c in agg_results.columns if c in df_out.columns and c not in self.groupby_cols]
+        cols_to_drop = [
+            c
+            for c in agg_results.columns
+            if c in df_out.columns and c not in self.groupby_cols
+        ]
         if cols_to_drop:
             df_out = df_out.drop(columns=cols_to_drop)
 
@@ -644,8 +659,12 @@ class StateAwareGroupbyAggregator:
             return df
 
         df_out = df.copy()
-        
-        cols_to_drop = [c for c in self.mappings["aggs"].columns if c in df_out.columns and c not in self.groupby_cols]
+
+        cols_to_drop = [
+            c
+            for c in self.mappings["aggs"].columns
+            if c in df_out.columns and c not in self.groupby_cols
+        ]
         if cols_to_drop:
             df_out = df_out.drop(columns=cols_to_drop)
 
@@ -718,4 +737,3 @@ def add_pca_features(
         df[f"{prefix}_{i + 1}"] = components[:, i]
 
     return df
-

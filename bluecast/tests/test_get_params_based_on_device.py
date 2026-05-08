@@ -29,7 +29,9 @@ def test_get_params_based_on_device_xgboost_auto_gpu():
 
 
 def test_get_params_based_on_device_xgboost_cpu():
-    conf_training = TrainingConfig(autotune_on_device="cpu", cat_encoding_via_ml_algorithm=False)
+    conf_training = TrainingConfig(
+        autotune_on_device="cpu", cat_encoding_via_ml_algorithm=False
+    )
     conf_params_xgboost = XgboostFinalParamConfig()
     conf_xgboost = XgboostTuneParamsConfig(tree_method=["exact"])
 
@@ -44,7 +46,9 @@ def test_get_params_based_on_device_xgboost_cpu():
 
 
 def test_get_params_based_on_device_xgboost_cpu_with_categorical():
-    conf_training = TrainingConfig(autotune_on_device="cpu", cat_encoding_via_ml_algorithm=True)
+    conf_training = TrainingConfig(
+        autotune_on_device="cpu", cat_encoding_via_ml_algorithm=True
+    )
     conf_params_xgboost = XgboostFinalParamConfig()
     conf_xgboost = XgboostTuneParamsConfig(tree_method=["exact"])
 

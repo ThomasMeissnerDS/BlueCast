@@ -156,7 +156,9 @@ class HillClimbingEnsemble:
 
                 for w in weight_candidates:
                     if self.is_classification:
-                        combined = np.clip(ensemble * (1.0 - w) + candidate * w, 0.0, 1.0)
+                        combined = np.clip(
+                            ensemble * (1.0 - w) + candidate * w, 0.0, 1.0
+                        )
                     else:
                         combined = ensemble * (1.0 - w) + candidate * w
                     score = self.eval_metric(y, combined)
@@ -178,7 +180,9 @@ class HillClimbingEnsemble:
                             1.0,
                         )
                     else:
-                        best_combined = ensemble * (1.0 - local_best_w) + candidate * local_best_w
+                        best_combined = (
+                            ensemble * (1.0 - local_best_w) + candidate * local_best_w
+                        )
                     new_w = {
                         k: v * (1.0 - local_best_w) for k, v in self.weights_map.items()
                     }
@@ -228,17 +232,29 @@ class HillClimbingEnsemble:
 
         ensemble = np.zeros_like(preds[0], dtype=np.float64)
         for idx, weight in self.weights_map.items():
-            ensemble += weight * preds[idx]
+            if weight == 0.0:
+                continue
+
+            p_val = preds[idx]
+            if np.isnan(p_val).any() or np.isinf(p_val).any():
+                # Replace invalid values with the median of valid predictions in this model
+                valid_vals = p_val[~np.isnan(p_val) & ~np.isinf(p_val)]
+                fill_val = np.median(valid_vals) if len(valid_vals) > 0 else 0.0
+                p_val = np.nan_to_num(
+                    p_val, nan=fill_val, posinf=fill_val, neginf=fill_val
+                )
+
+            ensemble += weight * p_val
 
         if self.is_classification:
             return np.clip(ensemble, 0.0, 1.0)
-        
+
         # Clip regression predictions to training target range + 50% margin
         if self._y_min is not None and self._y_max is not None:
             y_range = self._y_max - self._y_min
             margin = 0.5 * y_range
             ensemble = np.clip(ensemble, self._y_min - margin, self._y_max + margin)
-        
+
         return ensemble
 
     def get_selected_model_info(self) -> List[Dict]:

@@ -16,7 +16,7 @@ from sklearn.ensemble import (
     RandomForestRegressor,
 )
 from sklearn.impute import SimpleImputer
-from sklearn.model_selection import GridSearchCV, KFold, StratifiedKFold
+from sklearn.model_selection import GridSearchCV, StratifiedKFold
 
 from bluecast.ml_modelling.base_classes import (
     BaseClassMlModel,
@@ -26,22 +26,27 @@ from bluecast.ml_modelling.base_classes import (
 logger = logging.getLogger(__name__)
 
 
-
 class MLPClassificationModel(BaseClassMlModel):
-    def __init__(self, scoring: str = "roc_auc", cv_folds: int = 5, random_state: int = 300):
+    def __init__(
+        self, scoring: str = "roc_auc", cv_folds: int = 5, random_state: int = 300
+    ):
         self.model = None
         self.scoring = scoring
         self.cv_folds = cv_folds
         self.random_state = random_state
 
-    def autotune(self, x_train: pd.DataFrame, x_test: pd.DataFrame, y_train: pd.Series, y_test: pd.Series) -> None:
+    def autotune(
+        self,
+        x_train: pd.DataFrame,
+        x_test: pd.DataFrame,
+        y_train: pd.Series,
+        y_test: pd.Series,
+    ) -> None:
         import optuna
         from optuna.samplers import TPESampler
         from sklearn.model_selection import cross_val_score
         from sklearn.neural_network import MLPClassifier
         from sklearn.preprocessing import StandardScaler
-        from sklearn.impute import SimpleImputer
-        import numpy as np
 
         if y_train.nunique() > 2 and self.scoring == "roc_auc":
             self.scoring = "roc_auc_ovr"
@@ -53,53 +58,96 @@ class MLPClassificationModel(BaseClassMlModel):
 
         def objective(trial):
             params = {
-                "hidden_layer_sizes": trial.suggest_categorical("hidden_layer_sizes", [(50,), (100,), (50, 50), (100, 50)]),
+                "hidden_layer_sizes": trial.suggest_categorical(
+                    "hidden_layer_sizes", [(50,), (100,), (50, 50), (100, 50)]
+                ),
                 "activation": trial.suggest_categorical("activation", ["relu", "tanh"]),
                 "alpha": trial.suggest_float("alpha", 1e-5, 1e-1, log=True),
-                "learning_rate_init": trial.suggest_float("learning_rate_init", 1e-4, 1e-1, log=True),
+                "learning_rate_init": trial.suggest_float(
+                    "learning_rate_init", 1e-4, 1e-1, log=True
+                ),
             }
-            model = MLPClassifier(random_state=self.random_state, max_iter=200, early_stopping=True, **params)
-            skfold = StratifiedKFold(n_splits=self.cv_folds, shuffle=True, random_state=self.random_state)
-            return cross_val_score(model, x_train, y_train, cv=skfold, scoring=self.scoring).mean()
+            model = MLPClassifier(
+                random_state=self.random_state,
+                max_iter=200,
+                early_stopping=True,
+                **params,
+            )
+            skfold = StratifiedKFold(
+                n_splits=self.cv_folds, shuffle=True, random_state=self.random_state
+            )
+            return cross_val_score(
+                model, x_train, y_train, cv=skfold, scoring=self.scoring
+            ).mean()
 
         optuna.logging.set_verbosity(optuna.logging.ERROR)
-        study = optuna.create_study(direction="maximize", sampler=TPESampler(seed=self.random_state))
+        study = optuna.create_study(
+            direction="maximize", sampler=TPESampler(seed=self.random_state)
+        )
         study.optimize(objective, n_trials=10, timeout=120)
 
-        completed = [t for t in study.trials if t.state == optuna.trial.TrialState.COMPLETE]
+        completed = [
+            t for t in study.trials if t.state == optuna.trial.TrialState.COMPLETE
+        ]
         best_params = study.best_params if completed else {"hidden_layer_sizes": (100,)}
-        from sklearn.neural_network import MLPClassifier
-        self.model = MLPClassifier(random_state=self.random_state, max_iter=200, early_stopping=True, **best_params)
+        self.model = MLPClassifier(
+            random_state=self.random_state,
+            max_iter=200,
+            early_stopping=True,
+            **best_params,
+        )
         self.model.fit(x_train, y_train)
 
-    def fit(self, x_train: pd.DataFrame, x_test: pd.DataFrame, y_train: pd.Series, y_test: pd.Series) -> None:
+    def fit(
+        self,
+        x_train: pd.DataFrame,
+        x_test: pd.DataFrame,
+        y_train: pd.Series,
+        y_test: pd.Series,
+    ) -> None:
         self.autotune(x_train, x_test, y_train, y_test)
 
     def predict(self, df: pd.DataFrame):
-        df_scaled = pd.DataFrame(self.scaler.transform(self.imputer.transform(df)), columns=df.columns)
+        df_scaled = pd.DataFrame(
+            self.scaler.transform(self.imputer.transform(df)), columns=df.columns
+        )
         proba_matrix = self.model.predict_proba(df_scaled)
         classes = self.model.predict(df_scaled)
         if proba_matrix.shape[1] == 2:
             return proba_matrix[:, 1], classes
         return proba_matrix, classes
 
+
 class MLPRegressionModel(BaseClassMlRegressionModel):
-    def __init__(self, scoring: str = "neg_mean_absolute_error", cv_folds: int = 5, random_state: int = 300):
+    def __init__(
+        self,
+        scoring: str = "neg_mean_absolute_error",
+        cv_folds: int = 5,
+        random_state: int = 300,
+    ):
         self.model = None
         self.scoring = scoring
         self.cv_folds = cv_folds
         self.random_state = random_state
 
-    def autotune(self, x_train: pd.DataFrame, x_test: pd.DataFrame, y_train: pd.Series, y_test: pd.Series) -> None:
+    def autotune(
+        self,
+        x_train: pd.DataFrame,
+        x_test: pd.DataFrame,
+        y_train: pd.Series,
+        y_test: pd.Series,
+    ) -> None:
         import optuna
         from optuna.samplers import TPESampler
+        from sklearn.compose import TransformedTargetRegressor
         from sklearn.model_selection import cross_val_score
         from sklearn.neural_network import MLPRegressor
-        from sklearn.preprocessing import StandardScaler, PolynomialFeatures, QuantileTransformer, PowerTransformer, FunctionTransformer
-        from sklearn.impute import SimpleImputer
-        from sklearn.compose import TransformedTargetRegressor
         from sklearn.pipeline import Pipeline
-        import numpy as np
+        from sklearn.preprocessing import (
+            QuantileTransformer,
+            StandardScaler,
+        )
+
         self.scaler = StandardScaler()
         target_transformer_choices = ["standard", "quantile"]
 
@@ -108,96 +156,132 @@ class MLPRegressionModel(BaseClassMlRegressionModel):
 
         def objective(trial):
             params = {
-                "hidden_layer_sizes": trial.suggest_categorical("hidden_layer_sizes", [(50,), (100,), (200,), (50, 50), (100, 50), (100, 100)]),
+                "hidden_layer_sizes": trial.suggest_categorical(
+                    "hidden_layer_sizes",
+                    [(50,), (100,), (200,), (50, 50), (100, 50), (100, 100)],
+                ),
                 "activation": trial.suggest_categorical("activation", ["relu", "tanh"]),
                 "alpha": trial.suggest_float("alpha", 1e-5, 1e-1, log=True),
-                "learning_rate_init": trial.suggest_float("learning_rate_init", 1e-4, 1e-1, log=True),
-                "learning_rate": trial.suggest_categorical("learning_rate", ["constant", "adaptive"]),
+                "learning_rate_init": trial.suggest_float(
+                    "learning_rate_init", 1e-4, 1e-1, log=True
+                ),
+                "learning_rate": trial.suggest_categorical(
+                    "learning_rate", ["constant", "adaptive"]
+                ),
             }
             target_transformer_type = trial.suggest_categorical(
                 "target_transformer_type", target_transformer_choices
             )
-            
+
             imputer_strategy = trial.suggest_categorical(
                 "imputer_strategy", ["mean", "median", "most_frequent", "constant"]
             )
-            
+
             if target_transformer_type == "standard":
                 target_transformer = StandardScaler()
             elif target_transformer_type == "quantile":
-                target_transformer = QuantileTransformer(output_distribution="normal", random_state=self.random_state)
+                target_transformer = QuantileTransformer(
+                    output_distribution="normal", random_state=self.random_state
+                )
 
-            base_model = MLPRegressor(random_state=self.random_state, max_iter=200, early_stopping=True, **params)
+            base_model = MLPRegressor(
+                random_state=self.random_state,
+                max_iter=200,
+                early_stopping=True,
+                **params,
+            )
             # Wrap with target scaling so CV scores reflect inverse-transformed predictions
             wrapped = TransformedTargetRegressor(
                 regressor=base_model, transformer=target_transformer
             )
-            
+
             if imputer_strategy == "constant":
                 imputer = SimpleImputer(strategy="constant", fill_value=0)
             else:
                 imputer = SimpleImputer(strategy=imputer_strategy)
-                
+
             steps = [
                 ("imputer", imputer),
             ]
-                
-            steps.extend([
-                ("scaler", StandardScaler()),
-                ("estimator", wrapped)
-            ])
+
+            steps.extend([("scaler", StandardScaler()), ("estimator", wrapped)])
             pipeline = Pipeline(steps)
-            
-            from sklearn.preprocessing import LabelEncoder
+
             from sklearn.model_selection import StratifiedKFold
+            from sklearn.preprocessing import LabelEncoder
+
             le = LabelEncoder()
             y_binned = le.fit_transform(pd.qcut(y_train, 5, duplicates="drop"))
-            cv = StratifiedKFold(n_splits=self.cv_folds, shuffle=True, random_state=self.random_state)
+            cv = StratifiedKFold(
+                n_splits=self.cv_folds, shuffle=True, random_state=self.random_state
+            )
             splits = list(cv.split(x_train, y_binned))
-            return cross_val_score(pipeline, x_train, y_train, cv=splits, scoring=self.scoring).mean()
+            return cross_val_score(
+                pipeline, x_train, y_train, cv=splits, scoring=self.scoring
+            ).mean()
 
         tuning_timeout = conf_tuning.get("tuning_max_runtime", 120)
 
         optuna.logging.set_verbosity(optuna.logging.ERROR)
-        study = optuna.create_study(direction="maximize", sampler=TPESampler(seed=self.random_state))
+        study = optuna.create_study(
+            direction="maximize", sampler=TPESampler(seed=self.random_state)
+        )
         study.optimize(objective, n_trials=tuning_rounds, timeout=tuning_timeout)
 
-        completed = [t for t in study.trials if t.state == optuna.trial.TrialState.COMPLETE]
+        completed = [
+            t for t in study.trials if t.state == optuna.trial.TrialState.COMPLETE
+        ]
         if not completed:
-            best_params = {"hidden_layer_sizes": (100,), "target_transformer_type": "standard", "imputer_strategy": "median"}
+            best_params = {
+                "hidden_layer_sizes": (100,),
+                "target_transformer_type": "standard",
+                "imputer_strategy": "median",
+            }
         else:
             best_params = study.best_params.copy()
-            
+
         target_transformer_type = best_params.pop("target_transformer_type", "standard")
         imputer_strategy = best_params.pop("imputer_strategy", "median")
-        
+
         if imputer_strategy == "constant":
             self.imputer = SimpleImputer(strategy="constant", fill_value=0)
         else:
             self.imputer = SimpleImputer(strategy=imputer_strategy)
-        
-        from sklearn.neural_network import MLPRegressor
-        base_mlp = MLPRegressor(random_state=self.random_state, max_iter=200, early_stopping=True, **best_params)
-        
+
+        base_mlp = MLPRegressor(
+            random_state=self.random_state,
+            max_iter=200,
+            early_stopping=True,
+            **best_params,
+        )
+
         if target_transformer_type == "standard":
             self.target_scaler = StandardScaler()
         elif target_transformer_type == "quantile":
-            self.target_scaler = QuantileTransformer(output_distribution="normal", random_state=self.random_state)
-            
+            self.target_scaler = QuantileTransformer(
+                output_distribution="normal", random_state=self.random_state
+            )
+
         # Wrap final model — predict() auto inverse-transforms
         self.model = TransformedTargetRegressor(
             regressor=base_mlp, transformer=self.target_scaler
         )
-        
+
         x_train_np = self.scaler.fit_transform(self.imputer.fit_transform(x_train))
         self.model.fit(x_train_np, y_train)
 
-    def fit(self, x_train: pd.DataFrame, x_test: pd.DataFrame, y_train: pd.Series, y_test: pd.Series) -> None:
+    def fit(
+        self,
+        x_train: pd.DataFrame,
+        x_test: pd.DataFrame,
+        y_train: pd.Series,
+        y_test: pd.Series,
+    ) -> None:
         self.autotune(x_train, x_test, y_train, y_test)
 
     def predict(self, df: pd.DataFrame):
         x_np = self.scaler.transform(self.imputer.transform(df))
-        
+
         # TransformedTargetRegressor.predict() auto inverse-transforms
         return self.model.predict(x_np)
 
@@ -246,38 +330,78 @@ class HistGBClassificationModel(BaseClassMlModel):
 
         def objective(trial):
             params = {
-                "max_iter": trial.suggest_int("max_iter", conf_tuning.get("histgb_max_iter_min", 100), conf_tuning.get("histgb_max_iter_max", 1000)),
-                "learning_rate": trial.suggest_float("learning_rate", conf_tuning.get("histgb_lr_min", 0.01), conf_tuning.get("histgb_lr_max", 0.1), log=True),
-                "max_depth": trial.suggest_int("max_depth", conf_tuning.get("histgb_depth_min", 3), conf_tuning.get("histgb_depth_max", 9)),
-                "min_samples_leaf": trial.suggest_int("min_samples_leaf", conf_tuning.get("histgb_min_samples_min", 10), conf_tuning.get("histgb_min_samples_max", 50)),
-                "l2_regularization": trial.suggest_float("l2_regularization", conf_tuning.get("histgb_l2_min", 1e-6), conf_tuning.get("histgb_l2_max", 10.0), log=True),
+                "max_iter": trial.suggest_int(
+                    "max_iter",
+                    conf_tuning.get("histgb_max_iter_min", 100),
+                    conf_tuning.get("histgb_max_iter_max", 1000),
+                ),
+                "learning_rate": trial.suggest_float(
+                    "learning_rate",
+                    conf_tuning.get("histgb_lr_min", 0.01),
+                    conf_tuning.get("histgb_lr_max", 0.1),
+                    log=True,
+                ),
+                "max_depth": trial.suggest_int(
+                    "max_depth",
+                    conf_tuning.get("histgb_depth_min", 3),
+                    conf_tuning.get("histgb_depth_max", 9),
+                ),
+                "min_samples_leaf": trial.suggest_int(
+                    "min_samples_leaf",
+                    conf_tuning.get("histgb_min_samples_min", 10),
+                    conf_tuning.get("histgb_min_samples_max", 50),
+                ),
+                "l2_regularization": trial.suggest_float(
+                    "l2_regularization",
+                    conf_tuning.get("histgb_l2_min", 1e-6),
+                    conf_tuning.get("histgb_l2_max", 10.0),
+                    log=True,
+                ),
             }
             model = HistGradientBoostingClassifier(
-                random_state=self.random_state, early_stopping=True, validation_fraction=0.1, **params
+                random_state=self.random_state,
+                early_stopping=True,
+                validation_fraction=0.1,
+                **params,
             )
-            skfold = StratifiedKFold(n_splits=self.cv_folds, shuffle=True, random_state=self.random_state)
-            scores = cross_val_score(model, x_train, y_train, cv=skfold, scoring=self.scoring)
+            skfold = StratifiedKFold(
+                n_splits=self.cv_folds, shuffle=True, random_state=self.random_state
+            )
+            scores = cross_val_score(
+                model, x_train, y_train, cv=skfold, scoring=self.scoring
+            )
             return scores.mean()
 
         tuning_timeout = conf_tuning.get("tuning_max_runtime", 120)
 
         optuna.logging.set_verbosity(optuna.logging.ERROR)
-        study = optuna.create_study(direction="maximize", sampler=TPESampler(seed=self.random_state))
+        study = optuna.create_study(
+            direction="maximize", sampler=TPESampler(seed=self.random_state)
+        )
         study.optimize(objective, n_trials=tuning_rounds, timeout=tuning_timeout)
 
         # Guard against no completed trials
-        completed = [t for t in study.trials if t.state == optuna.trial.TrialState.COMPLETE]
+        completed = [
+            t for t in study.trials if t.state == optuna.trial.TrialState.COMPLETE
+        ]
         if not completed:
-            logger.warning("FALLBACK: HistGB classification all Optuna trials failed, using defaults.")
+            logger.warning(
+                "FALLBACK: HistGB classification all Optuna trials failed, using defaults."
+            )
             best_params: dict = {}
             self.best_tuning_score_ = 0.0
         else:
             best_params = study.best_params
             self.best_tuning_score_ = study.best_value
-            logger.info(f"HistGB classification best params: {best_params} (score: {study.best_value:.4f})")
+            logger.info(
+                f"HistGB classification best params: {best_params} (score: {study.best_value:.4f})"
+            )
 
         self.model = HistGradientBoostingClassifier(
-            random_state=self.random_state, early_stopping=True, validation_fraction=0.1, **best_params
+            random_state=self.random_state,
+            early_stopping=True,
+            validation_fraction=0.1,
+            **best_params,
         )
         self.model.fit(x_train, y_train)
 
@@ -337,38 +461,79 @@ class HistGBRegressionModel(BaseClassMlRegressionModel):
 
         def objective(trial):
             params = {
-                "max_iter": trial.suggest_int("max_iter", conf_tuning.get("histgb_max_iter_min", 100), conf_tuning.get("histgb_max_iter_max", 1000)),
-                "learning_rate": trial.suggest_float("learning_rate", conf_tuning.get("histgb_lr_min", 0.01), conf_tuning.get("histgb_lr_max", 0.1), log=True),
-                "max_depth": trial.suggest_int("max_depth", conf_tuning.get("histgb_depth_min", 3), conf_tuning.get("histgb_depth_max", 9)),
-                "min_samples_leaf": trial.suggest_int("min_samples_leaf", conf_tuning.get("histgb_min_samples_min", 10), conf_tuning.get("histgb_min_samples_max", 50)),
-                "l2_regularization": trial.suggest_float("l2_regularization", conf_tuning.get("histgb_l2_min", 1e-6), conf_tuning.get("histgb_l2_max", 10.0), log=True),
+                "max_iter": trial.suggest_int(
+                    "max_iter",
+                    conf_tuning.get("histgb_max_iter_min", 100),
+                    conf_tuning.get("histgb_max_iter_max", 1000),
+                ),
+                "learning_rate": trial.suggest_float(
+                    "learning_rate",
+                    conf_tuning.get("histgb_lr_min", 0.01),
+                    conf_tuning.get("histgb_lr_max", 0.1),
+                    log=True,
+                ),
+                "max_depth": trial.suggest_int(
+                    "max_depth",
+                    conf_tuning.get("histgb_depth_min", 3),
+                    conf_tuning.get("histgb_depth_max", 9),
+                ),
+                "min_samples_leaf": trial.suggest_int(
+                    "min_samples_leaf",
+                    conf_tuning.get("histgb_min_samples_min", 10),
+                    conf_tuning.get("histgb_min_samples_max", 50),
+                ),
+                "l2_regularization": trial.suggest_float(
+                    "l2_regularization",
+                    conf_tuning.get("histgb_l2_min", 1e-6),
+                    conf_tuning.get("histgb_l2_max", 10.0),
+                    log=True,
+                ),
             }
             from bluecast.ai.metrics import get_tree_criterion_from_scoring
+
             loss = get_tree_criterion_from_scoring(self.scoring)
             model = HistGradientBoostingRegressor(
-                random_state=self.random_state, loss=loss, early_stopping=True, validation_fraction=0.1, **params
+                random_state=self.random_state,
+                loss=loss,
+                early_stopping=True,
+                validation_fraction=0.1,
+                **params,
             )
-            from sklearn.preprocessing import LabelEncoder
             from sklearn.model_selection import StratifiedKFold
+            from sklearn.preprocessing import LabelEncoder
+
             le = LabelEncoder()
             y_binned = le.fit_transform(pd.qcut(y_train, 5, duplicates="drop"))
-            cv = StratifiedKFold(n_splits=self.cv_folds, shuffle=True, random_state=self.random_state)
+            cv = StratifiedKFold(
+                n_splits=self.cv_folds, shuffle=True, random_state=self.random_state
+            )
             splits = list(cv.split(x_train, y_binned))
-            scores = cross_val_score(model, x_train, y_train, cv=splits, scoring=self.scoring)
+            scores = cross_val_score(
+                model, x_train, y_train, cv=splits, scoring=self.scoring
+            )
             return scores.mean()
 
         tuning_timeout = conf_tuning.get("tuning_max_runtime", 120)
 
         optuna.logging.set_verbosity(optuna.logging.ERROR)
-        study = optuna.create_study(direction="maximize", sampler=TPESampler(seed=self.random_state))
+        study = optuna.create_study(
+            direction="maximize", sampler=TPESampler(seed=self.random_state)
+        )
         study.optimize(objective, n_trials=tuning_rounds, timeout=tuning_timeout)
 
         self.best_tuning_score_ = study.best_value
-        logger.info(f"HistGB regression best params: {study.best_params} (score: {study.best_value:.4f})")
+        logger.info(
+            f"HistGB regression best params: {study.best_params} (score: {study.best_value:.4f})"
+        )
         from bluecast.ai.metrics import get_tree_criterion_from_scoring
+
         loss = get_tree_criterion_from_scoring(self.scoring)
         self.model = HistGradientBoostingRegressor(
-            random_state=self.random_state, loss=loss, early_stopping=True, validation_fraction=0.1, **study.best_params
+            random_state=self.random_state,
+            loss=loss,
+            early_stopping=True,
+            validation_fraction=0.1,
+            **study.best_params,
         )
         self.model.fit(x_train, y_train)
 
@@ -423,18 +588,34 @@ class RandomForestClassificationModel(BaseClassMlModel):
             self.scoring = "roc_auc_ovr"
 
         from sklearn.pipeline import Pipeline
-        from sklearn.impute import SimpleImputer
+
         conf_tuning = getattr(self, "conf_tuning", {})
         tuning_rounds = conf_tuning.get("tuning_rounds", 15)
 
         def objective(trial):
             params = {
-                "n_estimators": trial.suggest_int("n_estimators", conf_tuning.get("rf_estimators_min", 50), conf_tuning.get("rf_estimators_max", 150)),
-                "max_depth": trial.suggest_int("max_depth", conf_tuning.get("rf_max_depth_min", 3), conf_tuning.get("rf_max_depth_max", 15)),
-                "min_samples_leaf": trial.suggest_int("min_samples_leaf", conf_tuning.get("rf_min_samples_min", 1), conf_tuning.get("rf_min_samples_max", 20)),
-                "max_features": trial.suggest_float("max_features", conf_tuning.get("rf_max_features_min", 0.1), conf_tuning.get("rf_max_features_max", 1.0)),
+                "n_estimators": trial.suggest_int(
+                    "n_estimators",
+                    conf_tuning.get("rf_estimators_min", 50),
+                    conf_tuning.get("rf_estimators_max", 150),
+                ),
+                "max_depth": trial.suggest_int(
+                    "max_depth",
+                    conf_tuning.get("rf_max_depth_min", 3),
+                    conf_tuning.get("rf_max_depth_max", 15),
+                ),
+                "min_samples_leaf": trial.suggest_int(
+                    "min_samples_leaf",
+                    conf_tuning.get("rf_min_samples_min", 1),
+                    conf_tuning.get("rf_min_samples_max", 20),
+                ),
+                "max_features": trial.suggest_float(
+                    "max_features",
+                    conf_tuning.get("rf_max_features_min", 0.1),
+                    conf_tuning.get("rf_max_features_max", 1.0),
+                ),
             }
-            
+
             imputer_strategy = trial.suggest_categorical(
                 "imputer_strategy", ["mean", "median", "most_frequent", "constant"]
             )
@@ -442,31 +623,48 @@ class RandomForestClassificationModel(BaseClassMlModel):
                 imputer = SimpleImputer(strategy="constant", fill_value=0)
             else:
                 imputer = SimpleImputer(strategy=imputer_strategy)
-                
-            model = RandomForestClassifier(random_state=self.random_state, n_jobs=-1, **params)
-            pipeline = Pipeline([
-                ("imputer", imputer),
-                ("model", model)
-            ])
-            skfold = StratifiedKFold(n_splits=self.cv_folds, shuffle=True, random_state=self.random_state)
-            scores = cross_val_score(pipeline, x_train, y_train, cv=skfold, scoring=self.scoring)
+
+            model = RandomForestClassifier(
+                random_state=self.random_state, n_jobs=-1, **params
+            )
+            pipeline = Pipeline([("imputer", imputer), ("model", model)])
+            skfold = StratifiedKFold(
+                n_splits=self.cv_folds, shuffle=True, random_state=self.random_state
+            )
+            scores = cross_val_score(
+                pipeline, x_train, y_train, cv=skfold, scoring=self.scoring
+            )
             return scores.mean()
 
         tuning_timeout = conf_tuning.get("tuning_max_runtime", 900)
 
         optuna.logging.set_verbosity(optuna.logging.ERROR)
-        study = optuna.create_study(direction="maximize", sampler=TPESampler(seed=self.random_state))
+        study = optuna.create_study(
+            direction="maximize", sampler=TPESampler(seed=self.random_state)
+        )
         study.optimize(objective, n_trials=tuning_rounds, timeout=tuning_timeout)
 
-        completed = [t for t in study.trials if t.state == optuna.trial.TrialState.COMPLETE]
+        completed = [
+            t for t in study.trials if t.state == optuna.trial.TrialState.COMPLETE
+        ]
         if not completed:
-            logger.warning("FALLBACK: RandomForest classification all Optuna trials failed, using defaults.")
-            best_params = {"n_estimators": 100, "max_depth": 10, "min_samples_leaf": 2, "max_features": 0.5, "imputer_strategy": "median"}
+            logger.warning(
+                "FALLBACK: RandomForest classification all Optuna trials failed, using defaults."
+            )
+            best_params = {
+                "n_estimators": 100,
+                "max_depth": 10,
+                "min_samples_leaf": 2,
+                "max_features": 0.5,
+                "imputer_strategy": "median",
+            }
             self.best_tuning_score_ = 0.0
         else:
             best_params = study.best_params
             self.best_tuning_score_ = study.best_value
-            logger.info(f"RandomForest classification best params: {best_params} (score: {study.best_value:.4f})")
+            logger.info(
+                f"RandomForest classification best params: {best_params} (score: {study.best_value:.4f})"
+            )
 
         imputer_strategy = best_params.pop("imputer_strategy", "median")
         if imputer_strategy == "constant":
@@ -474,9 +672,13 @@ class RandomForestClassificationModel(BaseClassMlModel):
         else:
             self.imputer = SimpleImputer(strategy=imputer_strategy)
 
-        self.model = RandomForestClassifier(random_state=self.random_state, n_jobs=-1, **best_params)
-        
-        x_train_imputed = pd.DataFrame(self.imputer.fit_transform(x_train), columns=x_train.columns)
+        self.model = RandomForestClassifier(
+            random_state=self.random_state, n_jobs=-1, **best_params
+        )
+
+        x_train_imputed = pd.DataFrame(
+            self.imputer.fit_transform(x_train), columns=x_train.columns
+        )
         self.model.fit(x_train_imputed, y_train)
 
     def fit(
@@ -529,18 +731,34 @@ class RandomForestRegressionModel(BaseClassMlRegressionModel):
         from optuna.samplers import TPESampler
         from sklearn.model_selection import cross_val_score
         from sklearn.pipeline import Pipeline
-        from sklearn.impute import SimpleImputer
+
         conf_tuning = getattr(self, "conf_tuning", {})
         tuning_rounds = conf_tuning.get("tuning_rounds", 15)
 
         def objective(trial):
             params = {
-                "n_estimators": trial.suggest_int("n_estimators", conf_tuning.get("rf_estimators_min", 2), conf_tuning.get("rf_estimators_max", 150)),
-                "max_depth": trial.suggest_int("max_depth", conf_tuning.get("rf_max_depth_min", 2), conf_tuning.get("rf_max_depth_max", 20)),
-                "min_samples_leaf": trial.suggest_int("min_samples_leaf", conf_tuning.get("rf_min_samples_min", 1), conf_tuning.get("rf_min_samples_max", 20)),
-                "max_features": trial.suggest_float("max_features", conf_tuning.get("rf_max_features_min", 0.1), conf_tuning.get("rf_max_features_max", 1.0)),
+                "n_estimators": trial.suggest_int(
+                    "n_estimators",
+                    conf_tuning.get("rf_estimators_min", 2),
+                    conf_tuning.get("rf_estimators_max", 150),
+                ),
+                "max_depth": trial.suggest_int(
+                    "max_depth",
+                    conf_tuning.get("rf_max_depth_min", 2),
+                    conf_tuning.get("rf_max_depth_max", 20),
+                ),
+                "min_samples_leaf": trial.suggest_int(
+                    "min_samples_leaf",
+                    conf_tuning.get("rf_min_samples_min", 1),
+                    conf_tuning.get("rf_min_samples_max", 20),
+                ),
+                "max_features": trial.suggest_float(
+                    "max_features",
+                    conf_tuning.get("rf_max_features_min", 0.1),
+                    conf_tuning.get("rf_max_features_max", 1.0),
+                ),
             }
-            
+
             imputer_strategy = trial.suggest_categorical(
                 "imputer_strategy", ["mean", "median", "most_frequent", "constant"]
             )
@@ -548,49 +766,76 @@ class RandomForestRegressionModel(BaseClassMlRegressionModel):
                 imputer = SimpleImputer(strategy="constant", fill_value=0)
             else:
                 imputer = SimpleImputer(strategy=imputer_strategy)
-            
+
             from bluecast.ai.metrics import get_tree_criterion_from_scoring
+
             criterion = get_tree_criterion_from_scoring(self.scoring)
-            model = RandomForestRegressor(random_state=self.random_state, n_jobs=-1, criterion=criterion, **params)
-            pipeline = Pipeline([
-                ("imputer", imputer),
-                ("model", model)
-            ])
-            from sklearn.preprocessing import LabelEncoder
+            model = RandomForestRegressor(
+                random_state=self.random_state, n_jobs=-1, criterion=criterion, **params
+            )
+            pipeline = Pipeline([("imputer", imputer), ("model", model)])
             from sklearn.model_selection import StratifiedKFold
+            from sklearn.preprocessing import LabelEncoder
+
             le = LabelEncoder()
             y_binned = le.fit_transform(pd.qcut(y_train, 5, duplicates="drop"))
-            cv = StratifiedKFold(n_splits=self.cv_folds, shuffle=True, random_state=self.random_state)
+            cv = StratifiedKFold(
+                n_splits=self.cv_folds, shuffle=True, random_state=self.random_state
+            )
             splits = list(cv.split(x_train, y_binned))
-            scores = cross_val_score(pipeline, x_train, y_train, cv=splits, scoring=self.scoring)
+            scores = cross_val_score(
+                pipeline, x_train, y_train, cv=splits, scoring=self.scoring
+            )
             return scores.mean()
 
         tuning_timeout = conf_tuning.get("tuning_max_runtime", 900)
 
         optuna.logging.set_verbosity(optuna.logging.ERROR)
-        study = optuna.create_study(direction="maximize", sampler=TPESampler(seed=self.random_state))
+        study = optuna.create_study(
+            direction="maximize", sampler=TPESampler(seed=self.random_state)
+        )
         study.optimize(objective, n_trials=tuning_rounds, timeout=tuning_timeout)
 
-        completed = [t for t in study.trials if t.state == optuna.trial.TrialState.COMPLETE]
+        completed = [
+            t for t in study.trials if t.state == optuna.trial.TrialState.COMPLETE
+        ]
         if not completed:
-            logger.warning("FALLBACK: RandomForest regression all Optuna trials failed, using defaults.")
-            best_params = {"n_estimators": 100, "max_depth": 10, "min_samples_leaf": 2, "max_features": 0.5, "imputer_strategy": "median"}
+            logger.warning(
+                "FALLBACK: RandomForest regression all Optuna trials failed, using defaults."
+            )
+            best_params = {
+                "n_estimators": 100,
+                "max_depth": 10,
+                "min_samples_leaf": 2,
+                "max_features": 0.5,
+                "imputer_strategy": "median",
+            }
         else:
             best_params = study.best_params
-            logger.info(f"RandomForest regression best params: {best_params} (score: {study.best_value:.4f})")
-            
+            logger.info(
+                f"RandomForest regression best params: {best_params} (score: {study.best_value:.4f})"
+            )
+
         self.best_tuning_score_ = study.best_value
         imputer_strategy = best_params.pop("imputer_strategy", "median")
         if imputer_strategy == "constant":
             self.imputer = SimpleImputer(strategy="constant", fill_value=0)
         else:
             self.imputer = SimpleImputer(strategy=imputer_strategy)
-            
+
         from bluecast.ai.metrics import get_tree_criterion_from_scoring
+
         criterion = get_tree_criterion_from_scoring(self.scoring)
-        self.model = RandomForestRegressor(random_state=self.random_state, n_jobs=-1, criterion=criterion, **best_params)
-        
-        x_train_imputed = pd.DataFrame(self.imputer.fit_transform(x_train), columns=x_train.columns)
+        self.model = RandomForestRegressor(
+            random_state=self.random_state,
+            n_jobs=-1,
+            criterion=criterion,
+            **best_params,
+        )
+
+        x_train_imputed = pd.DataFrame(
+            self.imputer.fit_transform(x_train), columns=x_train.columns
+        )
         self.model.fit(x_train_imputed, y_train)
 
     def fit(
@@ -666,7 +911,11 @@ ARCHITECTURE_REGISTRY: Dict[str, ArchInfo] = {
     },
     "mlp": {
         "name": "MLP Neural Network (sklearn)",
-        "factory": lambda problem: MLPRegressionModel() if problem == "regression" else MLPClassificationModel(),
+        "factory": lambda problem: (
+            MLPRegressionModel()
+            if problem == "regression"
+            else MLPClassificationModel()
+        ),
         "supports": ["binary", "multiclass", "regression"],
     },
     "xgboost": {

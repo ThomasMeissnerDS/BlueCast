@@ -1,7 +1,8 @@
-import pandas as pd
 import numpy as np
-from bluecast.blueprints.custom_model_recipes import RegularizedRegressionModel
+import pandas as pd
+
 from bluecast.ai.architectures import MLPRegressionModel
+from bluecast.blueprints.custom_model_recipes import RegularizedRegressionModel
 
 # Fake data
 np.random.seed(42)
@@ -16,7 +17,7 @@ reg.conf_tuning = {"tuning_rounds": 2, "tuning_max_runtime": 10}
 reg.fit(X, X, y, y)
 preds = reg.predict(X)
 print("Regularized predictions mean:", preds.mean())
-print("Poly selected:", getattr(reg, 'poly_transformer', None) is not None)
+print("Poly selected:", getattr(reg, "poly_transformer", None) is not None)
 print("Target transformer:", type(reg.target_scaler).__name__)
 
 print("\nTesting MLPRegressionModel...")
@@ -25,5 +26,5 @@ mlp.conf_tuning = {"tuning_rounds": 2, "tuning_max_runtime": 10}
 mlp.fit(X, X, y, y)
 preds2 = mlp.predict(X)
 print("MLP predictions mean:", preds2.mean())
-print("Poly selected:", getattr(mlp, 'poly_transformer', None) is not None)
+print("Poly selected:", getattr(mlp, "poly_transformer", None) is not None)
 print("Target transformer:", type(mlp.target_scaler).__name__)

@@ -55,9 +55,11 @@ class BlueCastAIResult:
                 p_preds = p.predict(df)
                 if isinstance(p_preds, tuple) and len(p_preds) == 2:
                     p_preds = p_preds[1]
-                all_preds.append(p_preds.values if hasattr(p_preds, "values") else p_preds)
+                all_preds.append(
+                    p_preds.values if hasattr(p_preds, "values") else p_preds
+                )
             return self.hill_climbing_ensemble.predict(all_preds)
-            
+
         if getattr(self, "pipelines", None):
             all_preds = []
             for p in self.pipelines:
@@ -66,8 +68,7 @@ class BlueCastAIResult:
                     p_preds = p_preds[1]
                 all_preds.append(p_preds)
             return np.mean(all_preds, axis=0)
-            
-            
+
         if self.pipeline is None:
             raise RuntimeError("No trained pipeline available.")
 
@@ -95,8 +96,12 @@ class BlueCastAIResult:
                     if isinstance(p_preds, tuple) and len(p_preds) == 2:
                         p_preds = p_preds[0]
                     else:
-                        raise AttributeError("The underlying pipeline does not support probability prediction.")
-                all_preds.append(p_preds.values if hasattr(p_preds, "values") else p_preds)
+                        raise AttributeError(
+                            "The underlying pipeline does not support probability prediction."
+                        )
+                all_preds.append(
+                    p_preds.values if hasattr(p_preds, "values") else p_preds
+                )
             return self.hill_climbing_ensemble.predict(all_preds)
 
         if getattr(self, "pipelines", None):
@@ -109,7 +114,9 @@ class BlueCastAIResult:
                     if isinstance(p_preds, tuple) and len(p_preds) == 2:
                         p_preds = p_preds[0]
                     else:
-                        raise AttributeError("The underlying pipeline does not support probability prediction.")
+                        raise AttributeError(
+                            "The underlying pipeline does not support probability prediction."
+                        )
                 all_preds.append(p_preds)
             return np.mean(all_preds, axis=0)
 
@@ -125,7 +132,9 @@ class BlueCastAIResult:
         if isinstance(preds, tuple) and len(preds) == 2:
             return preds[0]  # Return probabilities
 
-        raise AttributeError("The underlying pipeline does not support probability prediction.")
+        raise AttributeError(
+            "The underlying pipeline does not support probability prediction."
+        )
 
     def save_code(self, path: str) -> None:
         """Save the generated pipeline code to a .py file."""

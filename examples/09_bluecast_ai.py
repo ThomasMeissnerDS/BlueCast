@@ -443,12 +443,12 @@ ai_ckpt = BlueCastAI(
     checkpoint_dir=checkpoint_dir,  # enables checkpoint save/resume
 )
 result_balanced = ai_ckpt.run(
-        df,
-        target_col="default",
-        prompt="Build a good binary classifier with feature engineering and stacking",
-        mode="balanced",
-        max_iterations=2,
-    )
+    df,
+    target_col="default",
+    prompt="Build a good binary classifier with feature engineering and stacking",
+    mode="balanced",
+    max_iterations=2,
+)
 
 print(f"\nBalanced mode metrics: {result_balanced.metrics}")
 

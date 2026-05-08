@@ -7,7 +7,7 @@ can leverage feedback from previous iterations (feature importances,
 OOF metrics) to refine its feature strategy.
 """
 
-from typing import Dict, List, Optional
+from typing import Dict, List
 
 from bluecast.ai.agents.base import BaseAgent
 from bluecast.ai.providers.base import ToolDefinition
@@ -181,7 +181,7 @@ class ArchFeatureEngineerAgent(BaseAgent):
                         valid_cols.append(col)
                     else:
                         df.drop(columns=[col], inplace=True)
-            
+
             # If all newly created features were constant, reject the entire snippet
             if new_cols and not valid_cols:
                 return {
@@ -189,7 +189,7 @@ class ArchFeatureEngineerAgent(BaseAgent):
                     "new_columns": [],
                     "error": "Snippet rejected: All generated features were constant or had zero variance.",
                 }
-                
+
             self.context.engineered_df = df
             # Store in arch-specific snippet list
             snippets = self.context.arch_feature_snippets.setdefault(
@@ -238,6 +238,7 @@ class ArchFeatureEngineerAgent(BaseAgent):
 
     def _drop_collinear_wrapper(self, threshold: float = 0.9, **kw):
         from bluecast.ai.tools import tool_drop_collinear_features
+
         if self.context.engineered_df is not None:
             df = self.context.engineered_df
         elif self.context.df_train is not None:
@@ -247,7 +248,7 @@ class ArchFeatureEngineerAgent(BaseAgent):
 
         target_col = getattr(self.context, "target_col", None)
         result = tool_drop_collinear_features(df, threshold, target_col)
-        
+
         if result.get("success"):
             self.context.engineered_df = df
             dropped = result["dropped_columns"]
@@ -256,16 +257,21 @@ class ArchFeatureEngineerAgent(BaseAgent):
                     f"to_drop = {dropped}\n"
                     f"df = df.drop(columns=[c for c in to_drop if c in df.columns])\n"
                 )
-                snippets = self.context.arch_feature_snippets.setdefault(self._arch_name, [])
+                snippets = self.context.arch_feature_snippets.setdefault(
+                    self._arch_name, []
+                )
                 snippets.append(code)
-                result["message"] = f"Dropped {len(dropped)} collinear columns: {dropped}"
+                result["message"] = (
+                    f"Dropped {len(dropped)} collinear columns: {dropped}"
+                )
             else:
                 result["message"] = "No collinear columns exceeded the threshold."
-                
+
         return result
 
     def _l1_selection_wrapper(self, alpha: float = 0.01, **kw):
         from bluecast.ai.tools import tool_l1_feature_selection
+
         if self.context.engineered_df is not None:
             df = self.context.engineered_df
         elif self.context.df_train is not None:
@@ -277,9 +283,9 @@ class ArchFeatureEngineerAgent(BaseAgent):
         class_problem = getattr(self.context, "class_problem", "regression")
         if not target_col:
             return {"success": False, "error": "Context missing target_col."}
-            
+
         result = tool_l1_feature_selection(df, target_col, class_problem, alpha)
-        
+
         if result.get("success"):
             self.context.engineered_df = df
             dropped = result["dropped_columns"]
@@ -288,12 +294,16 @@ class ArchFeatureEngineerAgent(BaseAgent):
                     f"to_drop = {dropped}\n"
                     f"df = df.drop(columns=[c for c in to_drop if c in df.columns])\n"
                 )
-                snippets = self.context.arch_feature_snippets.setdefault(self._arch_name, [])
+                snippets = self.context.arch_feature_snippets.setdefault(
+                    self._arch_name, []
+                )
                 snippets.append(code)
-                result["message"] = f"Dropped {len(dropped)} uninformative columns using L1 regularization."
+                result["message"] = (
+                    f"Dropped {len(dropped)} uninformative columns using L1 regularization."
+                )
             else:
                 result["message"] = "No columns were dropped."
-                
+
         return result
 
     @property
@@ -326,7 +336,9 @@ class ArchFeatureEngineerAgent(BaseAgent):
             for feat, imp in top_feats:
                 importance_section += f"  {feat}: {imp:.4f}\n"
             if bottom_feats:
-                importance_section += "Lowest importance features (consider dropping):\n"
+                importance_section += (
+                    "Lowest importance features (consider dropping):\n"
+                )
                 for feat, imp in bottom_feats:
                     importance_section += f"  {feat}: {imp:.4f}\n"
 

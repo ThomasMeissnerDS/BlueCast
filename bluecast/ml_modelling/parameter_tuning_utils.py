@@ -1,5 +1,4 @@
 import logging
-import warnings
 from typing import Any, Dict, Tuple, Union
 
 import optuna
@@ -64,7 +63,7 @@ def get_params_based_on_device_xgboost(
     if conf_training.autotune_on_device in ["auto"]:
         train_on = check_gpu_support()
         conf_params_xgboost.params["device"] = train_on.get("device", None)
-        
+
         # Exact tree method does not support GPU or enable_categorical=True
         if "exact" in conf_xgboost.tree_method and (
             conf_params_xgboost.params.get("device") in ["gpu", "cuda"]
@@ -82,7 +81,9 @@ def get_params_based_on_device_xgboost(
         # On CPU, default to exact unless categorical features dictate otherwise
         if conf_training.cat_encoding_via_ml_algorithm:
             train_on = {"tree_method": "hist", "device": "cpu"}
-            conf_xgboost.tree_method = [m for m in conf_xgboost.tree_method if m != "exact"]
+            conf_xgboost.tree_method = [
+                m for m in conf_xgboost.tree_method if m != "exact"
+            ]
         else:
             train_on = {"tree_method": "exact", "device": "cpu"}
     return train_on
@@ -99,7 +100,10 @@ def get_params_based_on_device_catboost(
     if conf_training.autotune_on_device in ["auto"]:
         train_on = check_gpu_support()
         # If GPU was detected (XGBoost logic), use it for CatBoost too
-        if train_on.get("device") in ["gpu", "cuda"] or "gpu" in str(train_on.get("tree_method")).lower():
+        if (
+            train_on.get("device") in ["gpu", "cuda"]
+            or "gpu" in str(train_on.get("tree_method")).lower()
+        ):
             train_on = {"task_type": "GPU"}
         else:
             train_on = {"task_type": "CPU"}

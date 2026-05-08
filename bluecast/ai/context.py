@@ -63,11 +63,11 @@ class SharedContext:
 
     # Per-architecture FE state (populated by ArchFeatureEngineerAgent)
     arch_feature_snippets: Dict[str, List[str]] = field(default_factory=dict)
-    arch_feature_importances: Dict[str, Dict[str, float]] = field(
-        default_factory=dict
-    )
+    arch_feature_importances: Dict[str, Dict[str, float]] = field(default_factory=dict)
+    arch_history: Dict[str, List[Dict[str, Any]]] = field(default_factory=dict)
     arch_errors: Dict[str, str] = field(default_factory=dict)
     arch_error_analysis: Dict[str, str] = field(default_factory=dict)
+    pipeline_start_time: float = 0.0
 
     # Imputation recommendations from DataAnalyst (sentinel detection results)
     imputation_recommendations: Optional[str] = None

@@ -104,10 +104,15 @@ Write in Markdown. Be concise but thorough. Use bullet points and tables."""
                 f"\nWeb research findings:\n{self.context.web_research[:1000]}"
             )
 
-        if hasattr(self.context, 'arch_error_analysis') and self.context.arch_error_analysis:
+        if (
+            hasattr(self.context, "arch_error_analysis")
+            and self.context.arch_error_analysis
+        ):
             sections.append("\nArchitecture Error Analysis (Residuals on OOF data):")
             for arch, analysis in self.context.arch_error_analysis.items():
-                sections.append(f"\n### {arch.capitalize()} Error Analysis:\n{analysis}")
+                sections.append(
+                    f"\n### {arch.capitalize()} Error Analysis:\n{analysis}"
+                )
 
         if self.context.pipeline_code:
             sections.append(

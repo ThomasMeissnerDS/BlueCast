@@ -18,10 +18,7 @@ from bluecast.conformal_prediction.conformal_prediction import (
     ConformalPredictionWrapper,
 )
 from bluecast.ensemble.ensemble_config import EnsembleConfig
-from bluecast.ensemble.hill_climbing import HillClimbingEnsemble
-
 from bluecast.ensemble.mean_blending import blend_predictions_mean
-from bluecast.ensemble.stacking import StackingEnsemble
 from bluecast.evaluation.eval_metrics import ClassificationEvalWrapper
 from bluecast.experimentation.tracking import ExperimentTracker
 from bluecast.preprocessing.custom import CustomPreprocessing
@@ -94,9 +91,6 @@ class BlueCastCV:
         self.single_fold_eval_metric_func = single_fold_eval_metric_func
         self.conformal_prediction_wrapper: Optional[ConformalPredictionWrapper] = None
         self.ensemble_config = ensemble_config or EnsembleConfig()
-        self.stacking_ensemble: Optional[StackingEnsemble] = None
-        self.hill_climbing_ensemble: Optional[HillClimbingEnsemble] = None
-
 
         if not cat_columns:
             self.cat_columns = []
@@ -195,10 +189,26 @@ class BlueCastCV:
                 conf_tuning=self.conf_tuning,
                 conf_params=deepcopy(self.conf_params),
                 experiment_tracker=self.experiment_tracker,
-                custom_in_fold_preprocessor=deepcopy(self.custom_in_fold_preprocessor) if self.custom_in_fold_preprocessor else None,
-                custom_preprocessor=deepcopy(self.custom_preprocessor) if self.custom_preprocessor else None,
-                custom_feature_selector=deepcopy(self.custom_feature_selector) if self.custom_feature_selector else None,
-                custom_last_mile_computation=deepcopy(self.custom_last_mile_computation) if self.custom_last_mile_computation else None,
+                custom_in_fold_preprocessor=(
+                    deepcopy(self.custom_in_fold_preprocessor)
+                    if self.custom_in_fold_preprocessor
+                    else None
+                ),
+                custom_preprocessor=(
+                    deepcopy(self.custom_preprocessor)
+                    if self.custom_preprocessor
+                    else None
+                ),
+                custom_feature_selector=(
+                    deepcopy(self.custom_feature_selector)
+                    if self.custom_feature_selector
+                    else None
+                ),
+                custom_last_mile_computation=(
+                    deepcopy(self.custom_last_mile_computation)
+                    if self.custom_last_mile_computation
+                    else None
+                ),
                 ml_model=deepcopy(self.ml_model) if self.ml_model else None,
                 single_fold_eval_metric_func=self.single_fold_eval_metric_func,
             )
@@ -259,10 +269,26 @@ class BlueCastCV:
                 conf_tuning=self.conf_tuning,
                 conf_params=deepcopy(self.conf_params),
                 experiment_tracker=self.experiment_tracker,
-                custom_in_fold_preprocessor=deepcopy(self.custom_in_fold_preprocessor) if self.custom_in_fold_preprocessor else None,
-                custom_preprocessor=deepcopy(self.custom_preprocessor) if self.custom_preprocessor else None,
-                custom_feature_selector=deepcopy(self.custom_feature_selector) if self.custom_feature_selector else None,
-                custom_last_mile_computation=deepcopy(self.custom_last_mile_computation) if self.custom_last_mile_computation else None,
+                custom_in_fold_preprocessor=(
+                    deepcopy(self.custom_in_fold_preprocessor)
+                    if self.custom_in_fold_preprocessor
+                    else None
+                ),
+                custom_preprocessor=(
+                    deepcopy(self.custom_preprocessor)
+                    if self.custom_preprocessor
+                    else None
+                ),
+                custom_feature_selector=(
+                    deepcopy(self.custom_feature_selector)
+                    if self.custom_feature_selector
+                    else None
+                ),
+                custom_last_mile_computation=(
+                    deepcopy(self.custom_last_mile_computation)
+                    if self.custom_last_mile_computation
+                    else None
+                ),
                 ml_model=deepcopy(self.ml_model) if self.ml_model else None,
                 single_fold_eval_metric_func=self.single_fold_eval_metric_func,
             )
@@ -308,49 +334,30 @@ class BlueCastCV:
             val_idx = oof_indices_per_fold[fn]
             oof_matrix[val_idx, fn] = oof_preds_per_model[fn]
 
-        # Impute NaN values with column-wise mean. With K-fold CV each row
-        # only has OOF predictions from its validation fold, so most columns
-        # are NaN. Mean imputation is the standard stacking approach.
-        col_means = np.nanmean(oof_matrix, axis=0)
-        for col in range(n_models):
-            mask = np.isnan(oof_matrix[:, col])
-            oof_matrix[mask, col] = col_means[col]
-
-        # Drop any rows that are still all-NaN (shouldn't happen with valid folds)
-        valid_mask = ~np.any(np.isnan(oof_matrix), axis=1)
-        oof_valid = oof_matrix[valid_mask]
+        # For K-fold CV, each row has exactly one real prediction from its validation fold.
+        # nanmean gracefully collapses the matrix into a single 1D array of OOF predictions.
+        valid_mask = ~np.all(np.isnan(oof_matrix), axis=1)
         y_valid = y_full.values[valid_mask]
 
-        if len(oof_valid) == 0:
+        if len(y_valid) == 0:
             logging.warning(
                 "No valid OOF predictions for ensemble fitting. "
                 "Falling back to mean blending."
             )
+            self.oof_predictions_ = np.nanmean(oof_matrix, axis=1)
+            self.oof_valid_mask_ = valid_mask
+            self.oof_y_ = y_full.values
             return
 
-        if self.ensemble_config.ensemble_strategy == "stacking":
-            self.stacking_ensemble = StackingEnsemble(
-                meta_learner=self.ensemble_config.stacking_meta_learner,
-                use_ranks=self.ensemble_config.stacking_use_ranks,
+        if self.ensemble_config.ensemble_strategy in ["stacking", "hill_climbing"]:
+            logging.info(
+                f"Note: {self.ensemble_config.ensemble_strategy.capitalize()} is applied at the cross-architecture level. "
+                "Internal CV folds of a single algorithm predict on disjoint sets and will be natively ensembled using 'mean' blending."
             )
-            self.stacking_ensemble.fit(oof_valid, y_valid)
-            logging.info("Stacking ensemble fitted on OOF predictions.")
 
-        elif self.ensemble_config.ensemble_strategy == "hill_climbing":
-            self.hill_climbing_ensemble = HillClimbingEnsemble(
-                weight_min=self.ensemble_config.hc_weight_min,
-                weight_max=self.ensemble_config.hc_weight_max,
-                weight_step=self.ensemble_config.hc_weight_step,
-                tolerance=self.ensemble_config.hc_tolerance,
-                blending_method=self.ensemble_config.hc_blending_method,
-                eval_metric=self.ensemble_config.hc_eval_metric,
-            )
-            oof_list = [oof_valid[:, i] for i in range(n_models)]
-            model_names = [f"model_{i}" for i in range(n_models)]
-            self.hill_climbing_ensemble.fit(oof_list, y_valid, model_names)
-            logging.info("Hill climbing ensemble fitted on OOF predictions.")
-
-
+        self.oof_predictions_ = np.nanmean(oof_matrix, axis=1)
+        self.oof_valid_mask_ = valid_mask
+        self.oof_y_ = y_valid
 
     def predict(
         self,
@@ -429,29 +436,9 @@ class BlueCastCV:
                 else:
                     classification_threshold = 0.5
 
-                strategy = self.ensemble_config.ensemble_strategy
-
-                if strategy == "stacking" and self.stacking_ensemble is not None:
-                    predictions_matrix = result_df.loc[:, prob_cols].values
-                    y_probs = pd.Series(
-                        self.stacking_ensemble.predict(predictions_matrix),
-                        index=result_df.index,
-                    )
-                elif (
-                    strategy == "hill_climbing"
-                    and self.hill_climbing_ensemble is not None
-                ):
-                    preds_list = [result_df[col].values for col in prob_cols]
-                    y_probs = pd.Series(
-                        self.hill_climbing_ensemble.predict(preds_list),
-                        index=result_df.index,
-                    )
-                else:
-                    y_probs = blend_predictions_mean(
-                        result_df,
-                        prob_cols,
-                        self.ensemble_config.mean_type,
-                    )
+                y_probs = blend_predictions_mean(
+                    result_df, prob_cols, self.ensemble_config.mean_type
+                )
 
                 y_classes = (y_probs > classification_threshold).astype(int)
 
