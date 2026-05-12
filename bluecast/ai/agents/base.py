@@ -37,6 +37,7 @@ class BaseAgent(ABC):
         self.llm = llm
         self.context = context
         self.verbose = verbose
+        self.max_tool_iterations = MAX_TOOL_ITERATIONS
         self._tool_implementations: Dict[str, Callable] = {}
 
     @property
@@ -100,7 +101,7 @@ class BaseAgent(ABC):
         response: Optional[LLMResponse] = None
         previous_tool_calls: List[ToolCall] = []
 
-        for _iteration in range(MAX_TOOL_ITERATIONS):
+        for _iteration in range(self.max_tool_iterations):
             try:
                 response = self.llm.chat(messages, tools=tools if tools else None)
             except Exception as e:

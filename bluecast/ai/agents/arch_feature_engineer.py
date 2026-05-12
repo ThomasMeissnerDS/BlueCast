@@ -13,6 +13,7 @@ from bluecast.ai.agents.base import BaseAgent
 from bluecast.ai.providers.base import ToolDefinition
 from bluecast.ai.tools import (
     TOOL_DEFINITIONS,
+    tool_check_feature_quality,
     tool_create_feature,
     tool_create_tfidf_features,
 )
@@ -26,9 +27,11 @@ ARCH_FE_GUIDELINES: Dict[str, str] = {
         "- CatBoost handles missing values natively — NO imputation needed.\n"
         "- Leave the data as-is for categoricals and NaNs.\n"
         "\n## Feature Engineering (OPTIONAL — adapt to iteration)\n"
-        "- Group aggregations using StateAwareGroupbyAggregator (EXTREMELY IMPORTANT for CatBoost!).\n"
-        "  Example: Group by categorical columns (like 'City', 'State') and compute mean/std of numerical columns.\n"
-        "- Numerical interactions, polynomial terms, ratios, binning.\n"
+        "- WARNING: Avoid using StateAwareGroupbyAggregator on HIGH-CARDINALITY categoricals (e.g., granular IDs). This causes severe target leakage on StratifiedKFold validation splits and fails on unseen test data.\n"
+        "- Group aggregations using StateAwareGroupbyAggregator (Only on LOW-cardinality categorical columns like City, Region).\n"
+        "  Example: Group by low-cardinality columns and compute mean/std of numerical columns.\n"
+        "- Numerical interactions, polynomial terms, binning.\n"
+        "- WARNING: If creating ratio features, NEVER divide blindly. You MUST clip the denominator away from zero (e.g. `df['col_b'].clip(lower=0.1)`) to prevent exploding infinities on unseen test data.\n"
         "- Create features that capture non-linear relationships between numericals.\n"
         "- CatBoost is already strong on raw data — only add features you believe are truly informative."
     ),
@@ -39,9 +42,10 @@ ARCH_FE_GUIDELINES: Dict[str, str] = {
         "- Impute ALL missing values with simple constants (e.g., fillna(0) or fillna(-999)).\n"
         "- Create missing value indicator columns (df['col_is_missing'] = df['col'].isna().astype(int)) for columns with >5% missing.\n"
         "\n## Feature Engineering (OPTIONAL — adapt to iteration)\n"
-        "- Interaction features (products, ratios, differences between related columns).\n"
+        "- Interaction features (products, differences between related columns).\n"
+        "- WARNING: If creating ratio features, NEVER divide blindly. You MUST clip the denominator away from zero (e.g. `df['col_b'].clip(lower=0.1)`).\n"
         "- Polynomial terms for suspected non-linear relationships.\n"
-        "- Group aggregations (mean/median of target-correlated features grouped by categorical columns)."
+        "- Group aggregations (mean/median of target-correlated features grouped by LOW-cardinality categorical columns. Avoid high-cardinality!)."
     ),
     "histgb": (
         "## Preprocessing Best Practices (MUST DO)\n"
@@ -50,8 +54,9 @@ ARCH_FE_GUIDELINES: Dict[str, str] = {
         "- HistGB handles missing values natively (via dedicated NaN bin) — NO imputation needed.\n"
         "- However, creating explicit missing value indicator columns can still help.\n"
         "\n## Feature Engineering (OPTIONAL — adapt to iteration)\n"
-        "- Interaction features, polynomial terms, ratio features.\n"
-        "- Group-based aggregations using StateAwareGroupbyAggregator.\n"
+        "- Interaction features, polynomial terms.\n"
+        "- WARNING: If creating ratio features, NEVER divide blindly. You MUST clip the denominator away from zero (e.g. `df['col_b'].clip(lower=0.1)`).\n"
+        "- Group-based aggregations using StateAwareGroupbyAggregator (LOW-cardinality columns only).\n"
         "- HistGB is fast — you can create more features without major speed penalties."
     ),
     "randomforest": (
@@ -142,6 +147,10 @@ class ArchFeatureEngineerAgent(BaseAgent):
         self.register_tool_impl(
             "l1_feature_selection",
             self._l1_selection_wrapper,
+        )
+        self.register_tool_impl(
+            "check_feature_quality",
+            self._check_feature_quality_wrapper,
         )
 
     def set_architecture(self, arch_name: str, display_name: str) -> None:
@@ -394,6 +403,9 @@ The following tools are available if you need them. Use your judgment about whic
   IMPORTANT: Always pass state=state and is_fit=is_fit to ensure train/test PCA consistency.
   Creates n_components new 'pca_1', 'pca_2', ... columns capturing the principal components of the input features.
   Useful for reducing dimensionality of correlated numeric features.
+- `check_feature_quality`: After calling create_feature, use this tool to instantly check if your new features
+  have meaningful correlation or mutual information with the target. Pass the new_columns list from create_feature.
+  Returns a quality rating (HIGH/MEDIUM/LOW) per feature. Use this to decide if the feature is worth keeping.
 - `drop_collinear_features` (Linear Only): Tool to drop highly correlated columns.
 - `l1_feature_selection` (Linear Only): Tool to drop uninformative features via L1.
 {importance_section}
@@ -405,10 +417,38 @@ Analysis findings:
 {profile}
 {hints}"""
 
+    def _check_feature_quality_wrapper(self, feature_cols: list, **kw):
+        """Check signal quality of newly created features."""
+        if self.context.engineered_df is not None:
+            df = self.context.engineered_df
+        elif self.context.df_train is not None:
+            df = self.context.df_train.copy()
+        else:
+            return "No training data available."
+
+        target_col = getattr(self.context, "target_col", None)
+        if not target_col:
+            return "No target column set in context."
+
+        # Need target column in the df for quality check
+        full_df = self.context.df_train
+        if full_df is not None and target_col in full_df.columns:
+            df_with_target = df.copy()
+            # Align indices for target assignment
+            common_idx = df_with_target.index.intersection(full_df.index)
+            df_with_target.loc[common_idx, target_col] = full_df.loc[
+                common_idx, target_col
+            ]
+        else:
+            return "Cannot check quality: target column not available."
+
+        return tool_check_feature_quality(df_with_target, target_col, feature_cols)
+
     def get_tools(self) -> List[ToolDefinition]:
         tools = [
             TOOL_DEFINITIONS["create_feature"],
             TOOL_DEFINITIONS["create_tfidf_features"],
+            TOOL_DEFINITIONS["check_feature_quality"],
         ]
         if self._arch_name in ["linear", "logistic", "mlp"]:
             if "drop_collinear_features" in TOOL_DEFINITIONS:

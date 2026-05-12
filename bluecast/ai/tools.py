@@ -336,6 +336,67 @@ def tool_evaluate_imputations(  # noqa: C901
 # ---------------------------------------------------------------------------
 
 
+def tool_check_feature_quality(
+    df: pd.DataFrame, target_col: str, feature_cols: List[str]
+) -> str:
+    """Check signal quality of newly created features via correlation and MI.
+
+    This is a lightweight check (<1s) that helps the LLM decide whether a
+    feature is worth keeping before running a full pipeline.
+
+    :param df: DataFrame containing both the features and target column.
+    :param target_col: Name of the target column.
+    :param feature_cols: List of feature column names to evaluate.
+    :returns: Per-feature quality assessment string.
+    """
+    from sklearn.feature_selection import mutual_info_regression
+
+    if target_col not in df.columns:
+        return f"Target column '{target_col}' not found."
+
+    y = df[target_col].values
+    results = []
+    for col in feature_cols:
+        if col not in df.columns:
+            results.append(f"{col}: MISSING (not found in DataFrame)")
+            continue
+
+        x = df[col].values.astype(np.float64)
+        mask = ~(np.isnan(x) | np.isinf(x) | np.isnan(y))
+        if mask.sum() < 30:
+            results.append(f"{col}: insufficient non-null data ({mask.sum()} rows)")
+            continue
+
+        x_clean = x[mask].reshape(-1, 1)
+        y_clean = y[mask]
+
+        try:
+            corr = float(np.corrcoef(x_clean.ravel(), y_clean)[0, 1])
+        except Exception:
+            corr = 0.0
+
+        try:
+            mi = float(
+                mutual_info_regression(x_clean, y_clean, random_state=42)[0]
+            )
+        except Exception:
+            mi = 0.0
+
+        if abs(corr) > 0.3 or mi > 0.1:
+            quality = "HIGH"
+        elif abs(corr) > 0.1 or mi > 0.05:
+            quality = "MEDIUM"
+        else:
+            quality = "LOW"
+
+        results.append(
+            f"{col}: correlation={corr:.4f}, mutual_info={mi:.4f} → {quality} signal"
+        )
+
+    return "\n".join(results)
+
+
+
 def tool_create_feature(
     df: pd.DataFrame,
     feature_code: str,
@@ -1505,6 +1566,23 @@ TOOL_DEFINITIONS: Dict[str, ToolDefinition] = {
                 },
             },
             "required": ["feature_code"],
+        },
+    ),
+    "check_feature_quality": ToolDefinition(
+        name="check_feature_quality",
+        description="Check the predictive quality of newly created features by computing their correlation and mutual information with the target. "
+        "Returns a per-feature quality rating (HIGH/MEDIUM/LOW). Use this AFTER create_feature to validate whether new features are worth keeping. "
+        "This is a lightweight check (<1 second) that does NOT train a model.",
+        parameters={
+            "type": "object",
+            "properties": {
+                "feature_cols": {
+                    "type": "array",
+                    "items": {"type": "string"},
+                    "description": "List of feature column names to evaluate (typically the new_columns from a recent create_feature call).",
+                },
+            },
+            "required": ["feature_cols"],
         },
     ),
     "build_and_run_pipeline": ToolDefinition(

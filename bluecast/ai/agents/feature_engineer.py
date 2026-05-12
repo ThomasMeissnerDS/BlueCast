@@ -132,6 +132,7 @@ Guidelines:
 CRITICAL PIPELINE EXECUTION CONSTRAINTS:
 1. Call `create_feature` separately for each new feature you invent. DO NOT combine them into one massive code block. This prevents a single failed line of code from dropping all your other valid features.
 2. DO NOT use or attempt to encode columns that have ZERO VARIANCE (only 1 unique value) or are entirely missing. The BlueCast pipeline automatically DROPS these columns before your features run. If you reference them, your snippet will crash with a ColumnNotFoundError!
+3. STRICT: DO NOT create multiple conflicting snippets that overwrite the same column! If you impute a sentinel value or create an `is_missing` indicator, do it ONCE in a single snippet. Do not overwrite columns you just created.
 
 CRITICAL ARCHITECTURE CONSTRAINTS:
 If the overarching plan involves XGBoost, HistGB, or Linear models (e.g., in 'ultimate' mode):
@@ -181,7 +182,15 @@ Dataset overview:
 
 Analysis findings:
 {profile}
-{hints}"""
+{hints}
+
+Advanced Feature Engineering Techniques to Strongly Consider:
+- **Sentinel Missing Values**: Often datasets use 999.0, -999, etc., to hide missing data. Impute them with medians and apply transformations (e.g., log1p) to fix skewness.
+- **Hierarchical Groupby Aggregations**: Use `StateAwareGroupbyAggregator` on LOW-cardinality categorical columns (e.g., Department, Region) to compute mean/std/min/max of important numerical columns. WARNING: Do NOT group by high-cardinality columns (like granular IDs) as it causes severe target leakage on unseen test data.
+- **Ratio Features**: Divide small-range numerical columns by larger-range numerical columns to capture relative magnitudes. WARNING: If creating ratio features, NEVER divide blindly. You MUST clip the denominator away from zero (e.g. `df['col_b'].clip(lower=0.1)`) to prevent exploding infinities on unseen test data.
+- **Domain Sums/Products**: Add or multiply groups of positive or related continuous features.
+- **Interaction & Polynomials**: Use `add_interaction_features` and `add_polynomial_features` heavily on features that are highly correlated with the target.
+- **Quantile Binning**: Bin continuous variables into equal-frequency buckets using pandas `qcut`."""
 
     def get_tools(self) -> List[ToolDefinition]:
         return [

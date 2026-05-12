@@ -5,7 +5,7 @@ import json
 import logging
 import os
 import time
-from typing import Optional
+from typing import List, Optional
 
 import dill
 import numpy as np
@@ -923,28 +923,61 @@ class Orchestrator:
                     print(f"      Tuning rounds: {explore_rounds} (10% exploration)")
 
                 # --- 1. Architecture-specific Feature Engineering ---
-                arch_fe_task = self._create_arch_fe_task(
-                    arch_name, arch_info["name"], iteration, iters
+
+                # Seed this iteration with the best-performing snippets
+                # from previous iterations instead of starting from scratch.
+                # This lets the LLM focus on adding NEW features rather than
+                # wasting tool calls recreating the same proven features.
+                global_snip_set = set(self.context.feature_code_snippets)
+                if best_arch_snippets is not None:
+                    inherited_snippets = [
+                        s for s in best_arch_snippets if s not in global_snip_set
+                    ]
+                else:
+                    inherited_snippets = []
+
+                self.context.arch_feature_snippets[arch_name] = list(
+                    inherited_snippets
                 )
 
-                # Initialize engineered_df with global features so arch FE builds on top of them
-                if (
-                    self.context.feature_code_snippets
-                    and self.context.df_train is not None
-                ):
-                    global_prep = AIFeaturePreprocessor(
-                        list(self.context.feature_code_snippets)
-                    )
-                    df_base, _ = global_prep.fit_transform(
+                arch_fe_task = self._create_arch_fe_task(
+                    arch_name,
+                    arch_info["name"],
+                    iteration,
+                    iters,
+                    inherited_snippets=inherited_snippets,
+                )
+
+                # Initialize engineered_df with global + inherited features
+                # so arch FE builds on top of them
+                seed_snippets = list(self.context.feature_code_snippets) + list(
+                    inherited_snippets
+                )
+                if seed_snippets and self.context.df_train is not None:
+                    seed_prep = AIFeaturePreprocessor(seed_snippets)
+                    df_base, _ = seed_prep.fit_transform(
                         self.context.df_train.copy(), target=None
                     )
                     self.context.engineered_df = df_base
                 else:
                     self.context.engineered_df = None
 
-                self.context.arch_feature_snippets[arch_name] = []
+                # Give later iterations a larger tool call budget since the
+                # LLM has more context (inherited features, quality checks)
+                # and needs room to experiment.
+                if iteration >= 3:
+                    self.arch_engineer.max_tool_iterations = 15
+                else:
+                    self.arch_engineer.max_tool_iterations = 10
 
                 self.arch_engineer.run(arch_fe_task)
+
+                # Convert columns_to_drop into a snippet to ensure it runs during inference
+                if "columns_to_drop" in arch_config and isinstance(arch_config["columns_to_drop"], list):
+                    drop_cols = arch_config.pop("columns_to_drop")
+                    if drop_cols:
+                        drop_code = f"df = df.drop(columns={drop_cols}, errors='ignore')"
+                        self.context.arch_feature_snippets[arch_name].append(drop_code)
 
                 if self.config.verbose:
                     n_arch_snippets = len(
@@ -987,6 +1020,7 @@ class Orchestrator:
                             "architecture": arch_name,
                             "iteration": iteration + 1,
                             "config": result.get("config_used", config),
+                            "snippets": list(self.context.arch_feature_snippets.get(arch_name, [])),
                         }
                     )
                     continue  # Move to next iteration instead of breaking
@@ -1042,6 +1076,7 @@ class Orchestrator:
                         "config": result["config_used"],
                         "architecture": arch_name,
                         "iteration": iteration + 1,
+                        "snippets": list(self.context.arch_feature_snippets.get(arch_name, [])),
                     }
                 )
 
@@ -1355,9 +1390,22 @@ class Orchestrator:
         arch_display_name: str,
         iteration: int,
         total_iterations: int = 1,
+        inherited_snippets: Optional[List[str]] = None,
     ) -> str:
         """Build a task string for the architecture-specific FE agent."""
         data_summary = self.context.get_data_summary()
+
+        # --- Inherited features info ---
+        inherited_info = ""
+        if inherited_snippets:
+            inherited_info = (
+                f"\n\n--- INHERITED FEATURES (already applied, do NOT recreate) ---\n"
+                f"The following {len(inherited_snippets)} feature snippet(s) from the best "
+                f"previous iteration are ALREADY applied to the DataFrame. "
+                f"Do NOT call create_feature for these — they are pre-loaded.\n"
+                f"```python\n" + "\n# ---\n".join(inherited_snippets) + "\n```\n"
+                f"Focus ONLY on creating NEW features that complement these.\n"
+            )
 
         # --- Iteration-specific strategy ---
         if iteration == 0:
@@ -1369,18 +1417,25 @@ class Orchestrator:
                 "can compare against it."
             )
         elif iteration < total_iterations - 1:
+            n_inherited = len(inherited_snippets) if inherited_snippets else 0
             strategy = (
-                f"STRATEGY: This is iteration {iteration + 1} of {total_iterations} — build on the baseline.\n"
-                "Create 3-5 targeted features. Focus on interaction features and "
-                "ratios between the top predictors identified in the previous iteration.\n"
-                "Use feature importances below to decide which columns to combine."
+                f"STRATEGY: This is iteration {iteration + 1} of {total_iterations} — improve on the best so far.\n"
+                f"The {n_inherited} best features from previous iterations are ALREADY applied (see above).\n"
+                f"Create 2-4 NEW features on top of them. Focus on interaction features and "
+                f"ratios between the top predictors identified in the previous iteration.\n"
+                f"Use feature importances below to decide which columns to combine.\n"
+                f"If some inherited features have near-zero importance, consider using "
+                f"drop_collinear_features or l1_feature_selection to prune them."
             )
         else:
+            n_inherited = len(inherited_snippets) if inherited_snippets else 0
             strategy = (
                 f"STRATEGY: This is the FINAL iteration ({iteration + 1} of {total_iterations}) — maximize performance.\n"
-                "Use advanced techniques: group-level aggregations, polynomial features, "
-                "binned features. Focus specifically on the error analysis rows where the "
-                "model struggles most. Create 5-8 features."
+                f"The {n_inherited} best features from previous iterations are ALREADY applied (see above).\n"
+                f"Create 3-5 NEW advanced features: group-level aggregations, polynomial features, "
+                f"binned features. Focus specifically on the error analysis rows where the "
+                f"model struggles most.\n"
+                f"Consider pruning low-importance inherited features via drop_collinear_features."
             )
 
         # Include previous iteration feedback if available
@@ -1409,17 +1464,22 @@ class Orchestrator:
                 f"Analyze these specific rows. What feature is missing that would help the model predict them correctly?"
             )
 
-        # Include recent metrics for the architecture
+        # Include full iteration history for this architecture
         arch_runs = [
             r for r in self.context.run_history if r.get("architecture") == arch_name
         ]
         metrics_info = ""
         if arch_runs:
-            last = arch_runs[-1]
-            if last.get("success"):
-                metrics_info = f"\nPrevious metrics: {last.get('metrics', 'N/A')}"
-            else:
-                metrics_info = f"\nWARNING: Previous iteration FAILED with error: {last.get('error', 'unknown error')}"
+            metrics_info = "\n\n--- CUMULATIVE ITERATION HISTORY ---\n"
+            for r in arch_runs:
+                iter_idx = r.get("iteration", "?")
+                snippets = r.get("snippets", [])
+                snip_text = "\n".join(snippets) if snippets else "No features generated."
+                if r.get("success"):
+                    metrics_info += f"Iteration {iter_idx}: Achieved Metrics: {r.get('metrics', 'N/A')}\nSnippets Used:\n```python\n{snip_text}\n```\n\n"
+                else:
+                    metrics_info += f"Iteration {iter_idx}: FAILED with error: {r.get('error', 'unknown error')}\nSnippets Used:\n```python\n{snip_text}\n```\n\n"
+            metrics_info += "Use this history to see what worked and what failed. Do not repeat failed experiments. Build upon the successful ones.\n"
 
         # Check for persistent errors in context
         error_feedback = ""
@@ -1448,7 +1508,7 @@ class Orchestrator:
             f"model (iteration {iteration + 1} of {total_iterations}).\n\n"
             f"{strategy}\n\n"
             f"Dataset:\n{data_summary}\n"
-            f"{metrics_info}{feedback}{error_feedback}{imputation_ctx}"
+            f"{inherited_info}{metrics_info}{feedback}{error_feedback}{imputation_ctx}"
         )
 
     def _extract_feature_importances(
@@ -1672,6 +1732,12 @@ class Orchestrator:
                 f"specific features) and suggest a fix."
             )
 
+        # Include data profile so the Evaluator knows column cardinalities
+        data_profile = self.context.data_profile
+        profile_info = ""
+        if data_profile:
+            profile_info = f"\n\nINITIAL DATA ANALYSIS:\n{data_profile}\n"
+
         # Iteration context for strategic recommendations
         remaining = total_iterations - iteration - 1
         iteration_context = (
@@ -1697,6 +1763,16 @@ class Orchestrator:
                 "and advanced feature engineering for the final run."
             )
 
+        # Include the actual FE snippets used so the evaluator can make
+        # targeted FE recommendations (e.g., "drop the PCA feature")
+        snippet_info = ""
+        arch_snippets = self.context.arch_feature_snippets.get(arch_name, [])
+        if arch_snippets:
+            snippet_info = (
+                f"\n\nFEATURE ENGINEERING SNIPPETS USED THIS ITERATION:\n"
+                f"```python\n" + "\n# ---\n".join(arch_snippets) + "\n```\n"
+            )
+
         arch_context = (
             f"You are evaluating the **{arch_display_name}** architecture track.\n"
             f"Current metrics: {result['metrics'] if result.get('success') else 'N/A'}\n\n"
@@ -1707,10 +1783,11 @@ class Orchestrator:
             f"- ensemble_strategy: mean / stacking / hill_climbing\n"
             f"- columns_to_drop: list of column names to exclude\n"
             f"- Architecture specific bounds: e.g. rf_max_depth_max, rf_estimators_max, catboost_depth_max, histgb_depth_max, etc.\n"
-            f"{extra_info}{importance_info}{error_info}{iteration_context}\n\n"
+            f"{extra_info}{importance_info}{snippet_info}{error_info}{profile_info}{iteration_context}\n\n"
             f"Based on the feature importances and metrics, suggest specific "
             f"improvements as a JSON dict. Consider recommending:\n"
-            f"- Which features to drop (low importance)\n"
+            f"- Which features to drop (low importance or high risk)\n"
+            f"- LEAKAGE CHECK: Review the initial data analysis above. If any generated features group by categorical columns that have >50 unique values (high cardinality), recommend dropping them immediately! Grouping by granular IDs causes severe target leakage on validation folds.\n"
             f"- Whether to enable recursive feature selection\n"
             f"- Tuning parameter adjustments. If `tuning_score` is significantly better (lower error or higher metric) than `oof_mean`, the model is overfitting — decrease `max_depth_max` or increase regularization. If both are poor, try increasing `tuning_rounds` or expanding the search space bounds.\n"  # noqa: E501
         )

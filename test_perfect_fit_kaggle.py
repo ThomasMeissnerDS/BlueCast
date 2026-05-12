@@ -69,6 +69,9 @@ def main():
     * make sure we do not have schema mismatches between train and unseen data (inference)
     * use MAE inside ml algorithm tunings and also for OOF evaluation
     * save out of fold predictions to folder 'data/output/'
+    * Please use advanced feature engineering techniques: specifically look for sentinel missing values, generate interaction features, and apply polynomial features.
+    * WARNING: If generating ratio features by dividing columns, you MUST clip the denominator away from zero (e.g. df['col'].clip(lower=0.01)) to prevent exploding infinities on unseen test data.
+    * DO NOT group by categorical columns unless they are truly low-cardinality (e.g. <50 unique values).
         """,
         mode="ultimate",
         max_iterations=5,

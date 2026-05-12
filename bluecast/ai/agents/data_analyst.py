@@ -125,6 +125,8 @@ After analysis, provide a comprehensive structured summary with:
 - Specific recommendations for tree-based models (which handle missing values and unencoded categories naturally).
 - Specific recommendations for linear models (which strictly require missing value imputation, scaling, and categorical encoding).
 - Warnings about leakage, class imbalance, or other issues
+- CRITICAL: Explicitly list any sentinel missing values discovered (e.g. "Column X uses 999.0 as a missing value indicator").
+- CRITICAL: Call out high-cardinality categorical columns that would be good candidates for hierarchical groupby aggregations.
 
 Be thorough. Look for oddities the model might struggle with.
 
