@@ -60,6 +60,7 @@ class SharedContext:
     feature_engineering_code: Optional[str] = None
     feature_code_snippets: List[str] = field(default_factory=list)
     engineered_df: Optional[pd.DataFrame] = None
+    custom_preprocessor: Optional[Any] = None
 
     # Per-architecture FE state (populated by ArchFeatureEngineerAgent)
     arch_feature_snippets: Dict[str, List[str]] = field(default_factory=dict)

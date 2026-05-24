@@ -321,7 +321,16 @@ class BlueCastCVRegression:
                 oof_preds_per_model, oof_indices_per_fold, y, all_splits
             )
 
-        oof_mean, oof_std = self.show_oof_scores()
+        # Use the configured regression metric (mae or rmse) rather than
+        # always defaulting to RMSE.  The eval_regressor dict uses lowercase
+        # "mae" but uppercase "RMSE" as keys.
+        metric_key = "RMSE"
+        if (
+            self.ensemble_config
+            and self.ensemble_config.regression_eval_metric == "mae"
+        ):
+            metric_key = "mae"
+        oof_mean, oof_std = self.show_oof_scores(metric=metric_key)
         return oof_mean, oof_std
 
     def _fit_ensemble_from_oof(

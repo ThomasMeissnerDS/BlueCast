@@ -57,8 +57,8 @@ def main():
 
 
     In a nutshell:
-    * use 8 iterations
-    * use up to 5 hypertuning rounds for each model
+    * use 5 iterations
+    * use up to 200 hypertuning rounds for each model
     * make sure we do not have schema mismatches between train and unseen data (inference)
     * use MAE inside ml algorithm tunings and also for OOF evaluation
     * save out of fold predictions to folder 'data/output/'
@@ -67,7 +67,7 @@ def main():
     * DO NOT group by categorical columns unless they are truly low-cardinality (e.g. <50 unique values).
         """,
         mode="ultimate",
-        max_iterations=1,
+        max_iterations=5,
     )
 
     # 3. INSPECT RESULTS & EXPORT

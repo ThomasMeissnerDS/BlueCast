@@ -552,7 +552,7 @@ class TfIdfTextEncoder:
             max_features=max_features, stop_words=stop_words
         )
         self.is_fitted = False
-        self.feature_names = []
+        self.feature_names: list[str] = []
 
     def fit_transform(self, df: pd.DataFrame, text_col: str) -> pd.DataFrame:
         if text_col not in df.columns:

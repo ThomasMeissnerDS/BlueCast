@@ -114,3 +114,14 @@ def get_tree_criterion_from_scoring(scoring: str) -> str:
         return "friedman_mse"
     else:
         return "squared_error"
+
+
+def get_pytorch_loss_from_scoring(scoring: str):
+    import torch.nn as nn
+
+    if "absolute_error" in scoring or "mae" in scoring:
+        return nn.L1Loss()
+    elif "poisson" in scoring:
+        return nn.PoissonNLLLoss(log_input=False)
+    else:
+        return nn.MSELoss()

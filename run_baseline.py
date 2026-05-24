@@ -1,4 +1,5 @@
 import pandas as pd
+
 from bluecast.blueprints.cast_regression import BlueCastRegression
 
 train = pd.read_csv("data/dataset.csv")

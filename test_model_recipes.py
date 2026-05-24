@@ -13,7 +13,7 @@ y = pd.Series(np.exp(np.random.randn(100) * 0.5 + 5))
 print("Testing RegularizedRegressionModel...")
 reg = RegularizedRegressionModel(scoring="neg_mean_absolute_error", cv_folds=2)
 # Set fewer tuning rounds for test
-reg.conf_tuning = {"tuning_rounds": 2, "tuning_max_runtime": 10}
+reg.conf_tuning = {"tuning_rounds": 2, "tuning_max_runtime": 10}  # type: ignore
 reg.fit(X, X, y, y)
 preds = reg.predict(X)
 print("Regularized predictions mean:", preds.mean())
@@ -22,7 +22,7 @@ print("Target transformer:", type(reg.target_scaler).__name__)
 
 print("\nTesting MLPRegressionModel...")
 mlp = MLPRegressionModel(scoring="neg_mean_absolute_error", cv_folds=2)
-mlp.conf_tuning = {"tuning_rounds": 2, "tuning_max_runtime": 10}
+mlp.conf_tuning = {"tuning_rounds": 2, "tuning_max_runtime": 10}  # type: ignore
 mlp.fit(X, X, y, y)
 preds2 = mlp.predict(X)
 print("MLP predictions mean:", preds2.mean())

@@ -159,9 +159,9 @@ class ArchFeatureEngineerAgent(BaseAgent):
         self._arch_display_name = display_name
 
     def _create_feature_wrapper(self, feature_code: str, description: str = "", **kw):
-        # Work on a copy of the training data
+        # Work on a copy of the training data to prevent in-place corruption if snippets fail or are rejected
         if self.context.engineered_df is not None:
-            df = self.context.engineered_df
+            df = self.context.engineered_df.copy()
         elif self.context.df_train is not None:
             df = self.context.df_train.copy()
         else:
@@ -207,6 +207,7 @@ class ArchFeatureEngineerAgent(BaseAgent):
             if feature_code not in snippets:
                 snippets.append(feature_code)
             result["new_columns"] = valid_cols
+
         return result
 
     def _create_tfidf_wrapper(self, text_col: str, max_features: int = 50, **kw):

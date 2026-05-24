@@ -376,9 +376,7 @@ def tool_check_feature_quality(
             corr = 0.0
 
         try:
-            mi = float(
-                mutual_info_regression(x_clean, y_clean, random_state=42)[0]
-            )
+            mi = float(mutual_info_regression(x_clean, y_clean, random_state=42)[0])
         except Exception:
             mi = 0.0
 
@@ -394,7 +392,6 @@ def tool_check_feature_quality(
         )
 
     return "\n".join(results)
-
 
 
 def tool_create_feature(
@@ -745,15 +742,19 @@ def tool_apply_target_encoding(
 
         n_unique = df[target_col].nunique()
         if n_unique <= 2:
-            encoder = BinaryClassTargetEncoder(
-                cat_columns=cols_to_encode, target_col=target_col
+            bin_encoder = BinaryClassTargetEncoder(
+                cat_columns=cols_to_encode  # type: ignore
+            )
+            df_encoded = bin_encoder.fit_target_encode_binary_class(
+                df.copy(), df[target_col]
             )
         else:
-            encoder = MultiClassTargetEncoder(
-                cat_columns=cols_to_encode, target_col=target_col
+            multi_encoder = MultiClassTargetEncoder(
+                cat_columns=cols_to_encode, target_col=target_col  # type: ignore
             )
-
-        df_encoded = encoder.fit_transform_target_encoder(df)
+            df_encoded = multi_encoder.fit_target_encode_multiclass(
+                df.copy(), df[target_col]
+            )
 
         new_columns = []
         for c in df_encoded.columns:
@@ -1204,7 +1205,7 @@ def tool_build_and_run_pipeline(
         )
         from bluecast.config.training_config import CatboostTuneParamsRegressionConfig
 
-        metric_name = config.get("regression_eval_metric")
+        metric_name = str(config.get("regression_eval_metric", "mae"))
         metric_config = get_regression_metric_config(metric_name)
 
         conf_tuning = CatboostTuneParamsRegressionConfig()
@@ -1214,12 +1215,24 @@ def tool_build_and_run_pipeline(
         single_fold_eval_metric_func = get_bluecast_eval_wrapper(metric_name)
 
     if ml_model is not None:
-        # Note: Do NOT set ml_model.conf_tuning = config here.
-        # The proper conf_tuning object (e.g., CatboostTuneParamsRegressionConfig
-        # with MAE) is passed to BlueCastAuto via the conf_tuning parameter below.
-        # Setting ml_model.conf_tuning to the raw config dict would overwrite
-        # the model's expected tuning configuration format.
-        pass
+        # Inject tuning budget into custom models so they respect the
+        # orchestrator's tuning_rounds / tuning_max_runtime settings.
+        # Custom PyTorch models (RegularizedRegressionModel, MLPRegressionModel,
+        # SO1DCNNRegressionModel) read from self.conf_tuning as a dict.
+        ml_model.conf_tuning = {
+            "tuning_rounds": int(config.get("tuning_rounds", 15)),
+            "tuning_max_runtime": int(config.get("tuning_max_runtime", 120)),
+            "nn_max_iter": int(config.get("nn_max_iter", 200)),
+        }
+
+        # Custom models do their own internal CV during autotune() and
+        # completely ignore the x_test/y_test from cast_regression's inner
+        # train/test split.  When BlueCastAI uses CV (outer fold provides
+        # holdout), that inner split wastes ~20% of each fold's training data.
+        # Setting train_size=0.99 effectively eliminates the waste without
+        # modifying BlueCastCVRegression's default behaviour for other users.
+        if use_cv:
+            training_config.train_size = 0.99
 
     try:
         pipeline = BlueCastAuto(
@@ -1234,7 +1247,7 @@ def tool_build_and_run_pipeline(
 
         if single_fold_eval_metric_func:
             # Inject dynamic metric if using default BlueCast pipeline for native models
-            pipeline.single_fold_eval_metric_func = single_fold_eval_metric_func
+            pipeline.single_fold_eval_metric_func = single_fold_eval_metric_func  # type: ignore
 
         if "columns_to_drop" in config and isinstance(config["columns_to_drop"], list):
             df = df.drop(columns=config["columns_to_drop"], errors="ignore")

@@ -175,6 +175,7 @@ class BlueCastAI:
         context_files: Optional[List[str]] = None,
         mode: Literal["fast", "balanced", "precise", "ultimate"] = "balanced",
         max_iterations: int = 0,
+        custom_preprocessor=None,
     ) -> BlueCastAIResult:
         """Run the multi-agent pipeline on the dataset.
 
@@ -213,5 +214,6 @@ class BlueCastAI:
             df=df,
             target_col=target_col,
             prompt=prompt,
+            custom_preprocessor=custom_preprocessor,
         )
         return orchestrator.run()

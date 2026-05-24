@@ -56,6 +56,7 @@ class Orchestrator:
         df: pd.DataFrame,
         target_col: str,
         prompt: str,
+        custom_preprocessor=None,
     ):
         self.llm = llm
         self.config = config
@@ -66,6 +67,7 @@ class Orchestrator:
             mode=config.mode,
             original_shape=df.shape,
             callbacks=config.callbacks,
+            custom_preprocessor=custom_preprocessor,
         )
 
         self._load_context_files()
@@ -811,8 +813,10 @@ class Orchestrator:
         archs = get_architectures_for_problem(problem)
 
         if self.config.architectures_to_run is not None:
+            # Iterate in the user-specified order so strong architectures
+            # (e.g. CatBoost) run first and get the tuning budget.
             archs = {
-                k: v for k, v in archs.items() if k in self.config.architectures_to_run
+                k: archs[k] for k in self.config.architectures_to_run if k in archs
             }
             if not archs:
                 raise ValueError(
@@ -842,7 +846,8 @@ class Orchestrator:
         override_max_runtime = None
         if self.config.global_tuning_budget and self.config.global_tuning_budget > 0:
             tunable_archs = max(1, total_archs - 1)
-            total_jobs = max(1, tunable_archs * iters)
+            n_folds = plan.get("n_folds", 5)
+            total_jobs = max(1, tunable_archs * iters * n_folds)
             override_max_runtime = max(
                 10, int(self.config.global_tuning_budget / total_jobs)
             )
@@ -929,16 +934,13 @@ class Orchestrator:
                 # This lets the LLM focus on adding NEW features rather than
                 # wasting tool calls recreating the same proven features.
                 global_snip_set = set(self.context.feature_code_snippets)
+                inherited_snippets: list[str] = []
                 if best_arch_snippets is not None:
                     inherited_snippets = [
                         s for s in best_arch_snippets if s not in global_snip_set
                     ]
-                else:
-                    inherited_snippets = []
 
-                self.context.arch_feature_snippets[arch_name] = list(
-                    inherited_snippets
-                )
+                self.context.arch_feature_snippets[arch_name] = list(inherited_snippets)
 
                 arch_fe_task = self._create_arch_fe_task(
                     arch_name,
@@ -970,13 +972,22 @@ class Orchestrator:
                 else:
                     self.arch_engineer.max_tool_iterations = 10
 
-                self.arch_engineer.run(arch_fe_task)
-
+                if self.context.custom_preprocessor is not None:
+                    if self.config.verbose:
+                        print(
+                            "      [SKIP FE] Custom preprocessor provided — skipping LLM FE agent"
+                        )
+                else:
+                    self.arch_engineer.run(arch_fe_task)
                 # Convert columns_to_drop into a snippet to ensure it runs during inference
-                if "columns_to_drop" in arch_config and isinstance(arch_config["columns_to_drop"], list):
+                if "columns_to_drop" in arch_config and isinstance(
+                    arch_config["columns_to_drop"], list
+                ):
                     drop_cols = arch_config.pop("columns_to_drop")
                     if drop_cols:
-                        drop_code = f"df = df.drop(columns={drop_cols}, errors='ignore')"
+                        drop_code = (
+                            f"df = df.drop(columns={drop_cols}, errors='ignore')"
+                        )
                         self.context.arch_feature_snippets[arch_name].append(drop_code)
 
                 if self.config.verbose:
@@ -986,14 +997,18 @@ class Orchestrator:
                     print(f"      Arch FE: {n_arch_snippets} snippets created")
 
                 # --- 2. Combine base + arch snippets → preprocessor ---
+                # If the user provided a custom_preprocessor, always use it.
+                # LLM-generated snippets should not silently replace a
+                # deterministic, user-provided preprocessor.
                 combined_snippets = list(self.context.feature_code_snippets) + list(
                     self.context.arch_feature_snippets.get(arch_name, [])
                 )
-                preprocessor = (
-                    AIFeaturePreprocessor(combined_snippets)
-                    if combined_snippets
-                    else None
-                )
+                if self.context.custom_preprocessor is not None:
+                    preprocessor = self.context.custom_preprocessor
+                elif combined_snippets:
+                    preprocessor = AIFeaturePreprocessor(combined_snippets)
+                else:
+                    preprocessor = None
 
                 # --- 3. Build + tune model ---
                 config = dict(arch_config)
@@ -1020,7 +1035,9 @@ class Orchestrator:
                             "architecture": arch_name,
                             "iteration": iteration + 1,
                             "config": result.get("config_used", config),
-                            "snippets": list(self.context.arch_feature_snippets.get(arch_name, [])),
+                            "snippets": list(
+                                self.context.arch_feature_snippets.get(arch_name, [])
+                            ),
                         }
                     )
                     continue  # Move to next iteration instead of breaking
@@ -1076,7 +1093,9 @@ class Orchestrator:
                         "config": result["config_used"],
                         "architecture": arch_name,
                         "iteration": iteration + 1,
-                        "snippets": list(self.context.arch_feature_snippets.get(arch_name, [])),
+                        "snippets": list(
+                            self.context.arch_feature_snippets.get(arch_name, [])
+                        ),
                     }
                 )
 
@@ -1253,10 +1272,14 @@ class Orchestrator:
             else:
                 config["tuning_max_runtime"] = max_runtime
 
+        if "nn_max_iter" in config:
+            current = config.get("nn_max_iter", 200)
+            config["nn_max_iter"] = min(current, 1000)
+
         if "enable_feature_selection" in config:
             config["enable_feature_selection"] = False
 
-        if arch_name in ["linear", "randomforest", "mlp"]:
+        if arch_name in ["linear", "randomforest", "mlp", "so1dcnn"]:
             config["cat_encoding_via_ml_algorithm"] = False
 
         return config
@@ -1299,7 +1322,7 @@ class Orchestrator:
             config["tuning_rounds"] = 1
             config["tuning_max_runtime"] = 30
 
-        if arch_name in ["linear", "randomforest", "mlp"]:
+        if arch_name in ["linear", "randomforest", "mlp", "so1dcnn"]:
             config["cat_encoding_via_ml_algorithm"] = False
 
         return config
@@ -1318,12 +1341,17 @@ class Orchestrator:
         """
         from bluecast.ai.tools import tool_build_and_run_pipeline
 
-        if preprocessor is None and self.context.feature_code_snippets:
-            from bluecast.ai.fe_preprocessor import AIFeaturePreprocessor
+        if preprocessor is None:
+            if self.context.custom_preprocessor is not None:
+                preprocessor = self.context.custom_preprocessor
+            elif self.context.feature_code_snippets:
+                from bluecast.ai.fe_preprocessor import AIFeaturePreprocessor
 
-            preprocessor = AIFeaturePreprocessor(
-                list(self.context.feature_code_snippets)
-            )
+                preprocessor = AIFeaturePreprocessor(
+                    list(self.context.feature_code_snippets)
+                )
+            else:
+                preprocessor = None
 
         ml_model = config.pop("ml_model", None)
 
@@ -1399,12 +1427,12 @@ class Orchestrator:
         inherited_info = ""
         if inherited_snippets:
             inherited_info = (
-                f"\n\n--- INHERITED FEATURES (already applied, do NOT recreate) ---\n"
+                "\n\n--- INHERITED FEATURES (already applied, do NOT recreate) ---\n"
                 f"The following {len(inherited_snippets)} feature snippet(s) from the best "
-                f"previous iteration are ALREADY applied to the DataFrame. "
-                f"Do NOT call create_feature for these — they are pre-loaded.\n"
-                f"```python\n" + "\n# ---\n".join(inherited_snippets) + "\n```\n"
-                f"Focus ONLY on creating NEW features that complement these.\n"
+                "previous iteration are ALREADY applied to the DataFrame. "
+                "Do NOT call create_feature for these — they are pre-loaded.\n"
+                "```python\n" + "\n# ---\n".join(inherited_snippets) + "\n```\n"
+                "Focus ONLY on creating NEW features that complement these.\n"
             )
 
         # --- Iteration-specific strategy ---
@@ -1474,7 +1502,9 @@ class Orchestrator:
             for r in arch_runs:
                 iter_idx = r.get("iteration", "?")
                 snippets = r.get("snippets", [])
-                snip_text = "\n".join(snippets) if snippets else "No features generated."
+                snip_text = (
+                    "\n".join(snippets) if snippets else "No features generated."
+                )
                 if r.get("success"):
                     metrics_info += f"Iteration {iter_idx}: Achieved Metrics: {r.get('metrics', 'N/A')}\nSnippets Used:\n```python\n{snip_text}\n```\n\n"
                 else:
@@ -1769,8 +1799,22 @@ class Orchestrator:
         arch_snippets = self.context.arch_feature_snippets.get(arch_name, [])
         if arch_snippets:
             snippet_info = (
-                f"\n\nFEATURE ENGINEERING SNIPPETS USED THIS ITERATION:\n"
-                f"```python\n" + "\n# ---\n".join(arch_snippets) + "\n```\n"
+                "\n\nFEATURE ENGINEERING SNIPPETS USED THIS ITERATION:\n"
+                "```python\n" + "\n# ---\n".join(arch_snippets) + "\n```\n"
+            )
+
+        convergence_info = result.get("convergence_info", {})
+        convergence_context = ""
+        if convergence_info:
+            convergence_context = (
+                f"\n\nNN CONVERGENCE DIAGNOSTICS:\n"
+                f"  max_iter used: {convergence_info.get('nn_max_iter_used', 'N/A')}\n"
+                f"  Trials completed: {convergence_info.get('trials_completed', 'N/A')}\n"
+                f"  Best trial score: {convergence_info.get('best_trial_score', 'N/A')}\n"
+                f"\nIf the model did not converge (budget_exhausted=True or "
+                f"epochs_run == max_iter), you may increase nn_max_iter by up to 2×. "
+                f'Set it via: {{"nn_max_iter": <new_value>}} in your JSON response. '
+                f"Maximum allowed: 1000.\n"
             )
 
         arch_context = (
@@ -1782,8 +1826,9 @@ class Orchestrator:
             f"- n_folds / n_repeats: cross-validation settings\n"
             f"- ensemble_strategy: mean / stacking / hill_climbing\n"
             f"- columns_to_drop: list of column names to exclude\n"
+            f"- nn_max_iter: integer (max training epochs for PyTorch models, current: {result.get('config_used', {}).get('nn_max_iter', 200)})\n"
             f"- Architecture specific bounds: e.g. rf_max_depth_max, rf_estimators_max, catboost_depth_max, histgb_depth_max, etc.\n"
-            f"{extra_info}{importance_info}{snippet_info}{error_info}{profile_info}{iteration_context}\n\n"
+            f"{extra_info}{importance_info}{snippet_info}{error_info}{profile_info}{iteration_context}{convergence_context}\n\n"
             f"Based on the feature importances and metrics, suggest specific "
             f"improvements as a JSON dict. Consider recommending:\n"
             f"- Which features to drop (low importance or high risk)\n"
@@ -1875,17 +1920,42 @@ class Orchestrator:
                 is_classification = self.context.class_problem != "regression"
                 eval_metric = _mae_regression_metric if not is_classification else None
 
-                hc_ensemble = HillClimbingEnsemble(
-                    is_classification=is_classification,
-                    eval_metric=eval_metric,
-                    blending_method="probability",  # Use raw predictions for Regression
-                    weight_min=0.0,
-                    tolerance=1e-4,
-                )
+                # --- NEW FILTERING LOGIC ---
+                if not is_classification and eval_metric == _mae_regression_metric:
+                    # Calculate negative MAE for each architecture
+                    arch_scores = [
+                        eval_metric(y_true, oof) for oof in filtered_oof_list
+                    ]
+                    best_mae = -max(arch_scores)  # convert back to positive MAE
 
-                # Fit global ensemble
-                model_names = [f"arch_{i}" for i in range(len(filtered_oof_list))]
-                hc_ensemble.fit(filtered_oof_list, y_true, model_names)
+                    final_oof_list = []
+                    final_pipelines = []
+                    for i, score in enumerate(arch_scores):
+                        mae = -score
+                        if mae <= 1.5 * best_mae:
+                            final_oof_list.append(filtered_oof_list[i])
+                            final_pipelines.append(valid_pipelines[i])
+                        elif self.config.verbose:
+                            print(
+                                f"    [SKIP ENSEMBLE] Architecture {i} OOF MAE {mae:.2f} is more than 2x worse than best {best_mae:.2f}. Excluding."
+                            )
+
+                    filtered_oof_list = final_oof_list
+                    valid_pipelines = final_pipelines
+                # ---------------------------
+
+                if len(filtered_oof_list) > 0:
+                    hc_ensemble = HillClimbingEnsemble(
+                        is_classification=is_classification,
+                        eval_metric=eval_metric,
+                        blending_method="probability",  # Use raw predictions for Regression
+                        weight_min=0.0,
+                        tolerance=1e-4,
+                    )
+
+                    # Fit global ensemble
+                    model_names = [f"arch_{i}" for i in range(len(filtered_oof_list))]
+                    hc_ensemble.fit(filtered_oof_list, y_true, model_names)
         else:
             valid_pipelines = self.context.best_pipelines
 

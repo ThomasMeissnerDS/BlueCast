@@ -49,7 +49,8 @@ class BlueCastAIResult:
         For classification pipelines this returns class labels (not probabilities).
         For regression pipelines this returns continuous predictions.
         """
-        if getattr(self, "hill_climbing_ensemble", None) is not None:
+        hc = getattr(self, "hill_climbing_ensemble", None)
+        if hc is not None:
             all_preds = []
             for p in self.pipelines:
                 p_preds = p.predict(df)
@@ -58,7 +59,7 @@ class BlueCastAIResult:
                 all_preds.append(
                     p_preds.values if hasattr(p_preds, "values") else p_preds
                 )
-            return self.hill_climbing_ensemble.predict(all_preds)
+            return hc.predict(all_preds)
 
         if getattr(self, "pipelines", None):
             all_preds = []
@@ -86,7 +87,8 @@ class BlueCastAIResult:
 
         Only applicable for classification problems.
         """
-        if getattr(self, "hill_climbing_ensemble", None) is not None:
+        hc = getattr(self, "hill_climbing_ensemble", None)
+        if hc is not None:
             all_preds = []
             for p in self.pipelines:
                 if hasattr(p, "predict_proba"):
@@ -102,7 +104,7 @@ class BlueCastAIResult:
                 all_preds.append(
                     p_preds.values if hasattr(p_preds, "values") else p_preds
                 )
-            return self.hill_climbing_ensemble.predict(all_preds)
+            return hc.predict(all_preds)
 
         if getattr(self, "pipelines", None):
             all_preds = []

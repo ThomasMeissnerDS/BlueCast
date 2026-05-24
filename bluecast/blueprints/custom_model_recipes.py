@@ -5,13 +5,6 @@ from typing import Optional, Tuple
 import numpy as np
 import pandas as pd
 from sklearn.exceptions import ConvergenceWarning
-from sklearn.linear_model import (
-    ElasticNet,
-    Lasso,
-    LinearRegression,
-    LogisticRegression,
-    Ridge,
-)
 from sklearn.model_selection import GridSearchCV, StratifiedKFold
 
 from bluecast.ml_modelling.base_classes import (
@@ -23,6 +16,10 @@ from bluecast.ml_modelling.base_classes import (
 from bluecast.ml_modelling.base_classes import (
     BaseClassMlModel,
     BaseClassMlRegressionModel,
+)
+from bluecast.ml_modelling.pytorch_models import (
+    PyTorchMLPClassifier,
+    PyTorchMLPRegressor,
 )
 
 
@@ -44,8 +41,8 @@ class LogisticRegressionModel(BaseClassMlModel):
         scoring: str = "roc_auc",
         cv_folds: int = 5,
     ):
-        self.logistic_regression_model: LogisticRegression = LogisticRegression(
-            max_iter=max_iter, random_state=random_state
+        self.logistic_regression_model = PyTorchMLPClassifier(
+            hidden_layer_sizes=(), max_iter=max_iter, random_state=random_state
         )
         self.model: Optional[GridSearchCV] = None
         self.random_state = random_state
@@ -85,35 +82,29 @@ class LogisticRegressionModel(BaseClassMlModel):
                 conf_tuning.get("lr_C_max", 1e2),
                 log=True,
             )
-            class_weight = trial.suggest_categorical("class_weight", ["balanced", None])
+            # class_weight is unused for PyTorchMLPClassifier
 
             if penalty == "l1":
-                solver = "saga"
-                l1_ratio = None
+                l1_ratio = 1.0
             elif penalty == "elasticnet":
-                solver = "saga"
                 l1_ratio = trial.suggest_float(
                     "l1_ratio",
                     conf_tuning.get("lr_l1_ratio_min", 0.1),
                     conf_tuning.get("lr_l1_ratio_max", 0.9),
                 )
             else:
-                solver = trial.suggest_categorical(
-                    "solver", ["lbfgs", "newton-cg", "sag", "saga"]
-                )
-                l1_ratio = None
+                l1_ratio = 0.0
 
             params = {
-                "penalty": penalty,
-                "C": C,
-                "class_weight": class_weight,
-                "solver": solver,
+                "alpha": 1.0 / C,
+                "l1_ratio": l1_ratio,
             }
-            if l1_ratio is not None:
-                params["l1_ratio"] = l1_ratio
 
-            model = LogisticRegression(
-                random_state=self.random_state, max_iter=1000, **params
+            model = PyTorchMLPClassifier(
+                hidden_layer_sizes=(),
+                random_state=self.random_state,
+                max_iter=1000,
+                **params,
             )
             skfold = StratifiedKFold(
                 n_splits=self.cv_folds, shuffle=True, random_state=self.random_state
@@ -152,15 +143,24 @@ class LogisticRegressionModel(BaseClassMlModel):
             self.best_tuning_score_ = study.best_value
             penalty = best_params.get("penalty")
             if penalty == "l1":
-                best_params["solver"] = "saga"
-            elif penalty == "elasticnet":
-                best_params["solver"] = "saga"
+                best_params["l1_ratio"] = 1.0
+            elif penalty == "l2":
+                best_params["l1_ratio"] = 0.0
 
-            if "l1_ratio" in best_params and penalty != "elasticnet":
-                del best_params["l1_ratio"]
+            best_params["alpha"] = 1.0 / best_params.pop("C")
 
-        self.model = LogisticRegression(
-            random_state=self.random_state, max_iter=1000, **best_params
+            if "class_weight" in best_params:
+                del best_params["class_weight"]
+            if "penalty" in best_params:
+                del best_params["penalty"]
+
+        self.model = PyTorchMLPClassifier(
+            hidden_layer_sizes=(),
+            random_state=self.random_state,
+            max_iter=1000,
+            learning_rate_init=0.05,
+            early_stopping_rounds=50,
+            **best_params,
         )
         self.model.fit(x_train, y_train)
 
@@ -254,11 +254,39 @@ class RegularizedRegressionModel(BaseClassMlRegressionModel):
                 "imputer_strategy", ["mean", "median", "most_frequent", "constant"]
             )
 
+            learning_rate_init = trial.suggest_float(
+                "learning_rate_init", 1e-4, 1e-1, log=True
+            )
+            batch_size = trial.suggest_categorical(
+                "batch_size", [16, 32, 64, 128, 256, 512]
+            )
+            dropout_rate = trial.suggest_float("dropout_rate", 0.0, 0.5)
+
             if model_type == "ridge":
-                estimator = Ridge(alpha=alpha, random_state=self.random_state)
+                estimator = PyTorchMLPRegressor(
+                    hidden_layer_sizes=(16,),
+                    max_iter=100000,
+                    alpha=alpha,
+                    l1_ratio=0.0,
+                    random_state=self.random_state,
+                    scoring=self.scoring,
+                    learning_rate_init=learning_rate_init,
+                    batch_size=batch_size,
+                    dropout_rate=dropout_rate,
+                    early_stopping_rounds=50,
+                )
             elif model_type == "lasso":
-                estimator = Lasso(
-                    alpha=alpha, max_iter=100000, random_state=self.random_state
+                estimator = PyTorchMLPRegressor(
+                    hidden_layer_sizes=(16,),
+                    alpha=alpha,
+                    l1_ratio=1.0,
+                    max_iter=100000,
+                    random_state=self.random_state,
+                    scoring=self.scoring,
+                    learning_rate_init=learning_rate_init,
+                    batch_size=batch_size,
+                    dropout_rate=dropout_rate,
+                    early_stopping_rounds=50,
                 )
             else:
                 l1_ratio = trial.suggest_float(
@@ -266,11 +294,17 @@ class RegularizedRegressionModel(BaseClassMlRegressionModel):
                     conf_tuning.get("reg_l1_ratio_min", 0.1),
                     conf_tuning.get("reg_l1_ratio_max", 0.9),
                 )
-                estimator = ElasticNet(
+                estimator = PyTorchMLPRegressor(
+                    hidden_layer_sizes=(16,),
                     alpha=alpha,
                     l1_ratio=l1_ratio,
                     max_iter=100000,
                     random_state=self.random_state,
+                    scoring=self.scoring,
+                    learning_rate_init=learning_rate_init,
+                    batch_size=batch_size,
+                    dropout_rate=dropout_rate,
+                    early_stopping_rounds=50,
                 )
 
             if target_transformer_type == "standard":
@@ -338,6 +372,9 @@ class RegularizedRegressionModel(BaseClassMlRegressionModel):
                 "alpha": 1.0,
                 "target_transformer_type": "standard",
                 "imputer_strategy": "median",
+                "learning_rate_init": 0.05,
+                "batch_size": 256,
+                "dropout_rate": 0.2,
             }
             study_best_value = float("-inf")
             self.best_tuning_score_ = 0.0
@@ -356,21 +393,43 @@ class RegularizedRegressionModel(BaseClassMlRegressionModel):
             self.imputer = SimpleImputer(strategy=imputer_strategy)
 
         if model_type == "ridge":
-            base_model = Ridge(
+            base_model = PyTorchMLPRegressor(
+                hidden_layer_sizes=(16,),
+                max_iter=100000,
+                alpha=best_params.get("alpha"),
+                l1_ratio=0.0,
                 random_state=self.random_state,
-                **{k: v for k, v in best_params.items() if k in ["alpha"]},
+                scoring=self.scoring,
+                learning_rate_init=best_params.get("learning_rate_init", 0.05),
+                batch_size=best_params.get("batch_size", 256),
+                dropout_rate=best_params.get("dropout_rate", 0.2),
+                early_stopping_rounds=50,
             )
         elif model_type == "lasso":
-            base_model = Lasso(
+            base_model = PyTorchMLPRegressor(
+                hidden_layer_sizes=(16,),
                 max_iter=100000,
                 random_state=self.random_state,
-                **{k: v for k, v in best_params.items() if k in ["alpha"]},
+                alpha=best_params.get("alpha"),
+                l1_ratio=1.0,
+                scoring=self.scoring,
+                learning_rate_init=best_params.get("learning_rate_init", 0.05),
+                batch_size=best_params.get("batch_size", 256),
+                dropout_rate=best_params.get("dropout_rate", 0.2),
+                early_stopping_rounds=50,
             )
         else:
-            base_model = ElasticNet(
+            base_model = PyTorchMLPRegressor(
+                hidden_layer_sizes=(16,),
                 max_iter=100000,
                 random_state=self.random_state,
-                **{k: v for k, v in best_params.items() if k in ["alpha", "l1_ratio"]},
+                alpha=best_params.get("alpha"),
+                l1_ratio=best_params.get("l1_ratio"),
+                scoring=self.scoring,
+                learning_rate_init=best_params.get("learning_rate_init", 0.05),
+                batch_size=best_params.get("batch_size", 256),
+                dropout_rate=best_params.get("dropout_rate", 0.2),
+                early_stopping_rounds=50,
             )
 
         if target_transformer_type == "standard":
@@ -385,7 +444,7 @@ class RegularizedRegressionModel(BaseClassMlRegressionModel):
             regressor=base_model, transformer=self.target_scaler
         )
 
-        self.best_model_type = model_type
+        self.best_model_type = model_type  # type: ignore
         import logging
 
         logging.info(
@@ -394,7 +453,7 @@ class RegularizedRegressionModel(BaseClassMlRegressionModel):
 
         # Fit final model on fully transformed data
         x_train_np = self.scaler.fit_transform(self.imputer.fit_transform(x_train))
-        self.model.fit(x_train_np, y_train)
+        self.model.fit(x_train_np, y_train)  # type: ignore
 
     def fit(
         self,
@@ -421,8 +480,17 @@ class LinearRegressionModel(BaseClassMlRegressionModel):
     RegularizedRegressionModel instead."""
 
     def __init__(self):
-        self.linear_regression_model: LinearRegression = LinearRegression()
-        self.model: Optional[LinearRegression] = None
+        self.linear_regression_model = PyTorchMLPRegressor(
+            hidden_layer_sizes=(16,),
+            max_iter=100000,
+            alpha=0.0,
+            scoring="neg_mean_absolute_error",
+            learning_rate_init=0.05,
+            batch_size=256,
+            dropout_rate=0.2,
+            early_stopping_rounds=50,
+        )
+        self.model = None
 
     def autotune(
         self,
@@ -455,7 +523,7 @@ class LinearRegressionModel(BaseClassMlRegressionModel):
             self.scaler.transform(self.imputer.transform(df)), columns=df.columns
         )
         df = df_scaled
-        if isinstance(self.model, LinearRegression):
+        if self.model is not None:
             preds = self.model.predict(df)
             return preds
         else:
