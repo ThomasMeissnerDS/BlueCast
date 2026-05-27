@@ -44,11 +44,13 @@ anthropic = {version = ">=0.30.0", optional = true}
 fastapi = {version = ">=0.100.0", optional = true}
 uvicorn = {version = ">=0.20.0", optional = true}
 pandasql = {version = ">=0.7.3", optional = true}
-PyPDF2 = {version = ">=3.0.0", optional = true}
+pypdf = {version = ">=3.1.0", optional = true}
 python-docx = {version = ">=0.8.11", optional = true}
 google-cloud-aiplatform = "^1.148.1"
 torch = {version = ">=2.10.0", source = "pytorch"}
 lxml = ">=6.1.0"
+filelock = ">=3.20.3"
+cryptography = ">=46.0.7"
 
 [tool.poetry.group.dev.dependencies]
 recommonmark = ">=0.7.1"
@@ -73,7 +75,7 @@ sphinx-rtd-theme = "^2.0.0"
 [tool.poetry.extras]
 jupyter = ["ipython", "jupyter_core", "notebook"]
 full = ["ipython", "jupyter_core", "notebook"]
-ai = ["google-generativeai", "openai", "anthropic", "pandasql", "PyPDF2", "python-docx"]
+ai = ["google-generativeai", "openai", "anthropic", "pandasql", "pypdf", "python-docx"]
 ai-gemini = ["google-generativeai"]
 ai-openai = ["openai"]
 ai-anthropic = ["anthropic"]

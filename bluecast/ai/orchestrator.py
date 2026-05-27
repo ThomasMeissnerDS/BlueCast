@@ -92,7 +92,7 @@ class Orchestrator:
     def _load_context_files(self) -> None:
         """Load domain knowledge files into context.
 
-        Supports: .pdf (via PyPDF2), .docx (via python-docx),
+        Supports: .pdf (via pypdf), .docx (via python-docx),
         .csv/.tsv (first 100 rows), .txt/.md/.rst (raw text).
         """
         from pathlib import Path
@@ -129,16 +129,16 @@ class Orchestrator:
     def _extract_pdf_text(path: str) -> str:
         """Extract text from a PDF file."""
         try:
-            import PyPDF2
+            import pypdf
 
             with open(path, "rb") as f:
-                reader = PyPDF2.PdfReader(f)
+                reader = pypdf.PdfReader(f)
                 pages = [page.extract_text() or "" for page in reader.pages]
             return "\n\n".join(pages)
         except ImportError:
             raise ImportError(
-                "PyPDF2 is required for PDF support. "
-                "Install it with: pip install PyPDF2"
+                "pypdf is required for PDF support. "
+                "Install it with: pip install pypdf"
             )
 
     @staticmethod

@@ -188,7 +188,7 @@ class BlueCastAI:
             - "Maximize ROC AUC using hill climbing and feature engineering"
         :param context_files: Optional list of file paths containing domain knowledge.
             Supports .pdf, .docx, .csv, .tsv, .txt, .md, .rst files.
-            PDF requires ``pip install PyPDF2``; docx requires ``pip install python-docx``.
+            PDF requires ``pip install pypdf``; docx requires ``pip install python-docx``.
         :param mode: Speed vs thoroughness trade-off:
             'fast' = skip FE, 1 iteration (~2 min),
             'balanced' = targeted FE, critic on data analysis, 3 iterations (~10 min),
