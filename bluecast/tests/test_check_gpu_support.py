@@ -33,11 +33,11 @@ def test_check_gpu_support_gpu_available():
 def test_check_gpu_support_gpu_warning():
     """Test that the function falls back to CPU if GPU-related warnings are captured."""
 
-    # Mock xgb.train to raise a warning with 'GPU' in the message, simulating GPU issues
-    with patch("xgboost.train"):
-        with patch("warnings.warn") as mock_warn:
-            mock_warn.side_effect = lambda *args, **kwargs: mock_warn.message
-            mock_warn.message = "GPU-related warning"
+    import warnings
 
-            params = check_gpu_support()
-            assert params == {"tree_method": "gpu_hist"}
+    def mock_train_with_warning(*args, **kwargs):
+        warnings.warn("GPU-related warning")
+
+    with patch("xgboost.train", side_effect=mock_train_with_warning):
+        params = check_gpu_support()
+        assert params == {"tree_method": "hist"}
