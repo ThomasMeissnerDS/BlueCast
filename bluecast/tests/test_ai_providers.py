@@ -1,6 +1,16 @@
 """Tests for bluecast.ai.providers — all LLM provider implementations."""
 
 import pytest
+
+import sys
+from unittest.mock import MagicMock
+
+sys.modules["google.generativeai"] = MagicMock()
+sys.modules["vertexai"] = MagicMock()
+sys.modules["vertexai.generative_models"] = MagicMock()
+sys.modules["openai"] = MagicMock()
+sys.modules["anthropic"] = MagicMock()
+
 from unittest.mock import MagicMock, patch
 
 from bluecast.ai.providers.base import (
@@ -29,7 +39,7 @@ class TestBaseLLMProvider:
                 )
 
         provider = MinimalProvider(api_key="test", model="test-model")
-        result = provider.simple_chat("hello")
+        result = provider.simple_chat("sys", "hello")
         assert result == "response text"
 
     def test_simple_chat_none_response(self):
@@ -38,7 +48,7 @@ class TestBaseLLMProvider:
                 return None
 
         provider = NoneProvider(api_key="test", model="test-model")
-        result = provider.simple_chat("hello")
+        result = provider.simple_chat("sys", "hello")
         assert result == ""
 
 
@@ -48,15 +58,15 @@ class TestBaseLLMProvider:
 
 
 class TestGeminiProvider:
-    @patch("bluecast.ai.providers.gemini.genai")
-    def test_init(self, mock_genai):
+    
+    def test_init(self):
         from bluecast.ai.providers.gemini import GeminiProvider
 
         provider = GeminiProvider(api_key="test-key", model="gemini-2.5-flash")
         assert provider.api_key == "test-key"
 
-    @patch("bluecast.ai.providers.gemini.genai")
-    def test_convert_tools(self, mock_genai):
+    
+    def test_convert_tools(self):
         from bluecast.ai.providers.gemini import GeminiProvider
 
         provider = GeminiProvider(api_key="test", model="gemini-2.5-flash")
@@ -75,8 +85,8 @@ class TestGeminiProvider:
         result = provider._convert_tools(tools)
         assert result is not None
 
-    @patch("bluecast.ai.providers.gemini.genai")
-    def test_chat_text_response(self, mock_genai):
+    
+    def test_chat_text_response(self):
         from bluecast.ai.providers.gemini import GeminiProvider
 
         # Mock the model
@@ -99,8 +109,8 @@ class TestGeminiProvider:
         assert result is not None
         assert result.text == "Hello from Gemini"
 
-    @patch("bluecast.ai.providers.gemini.genai")
-    def test_convert_messages(self, mock_genai):
+    
+    def test_convert_messages(self):
         from bluecast.ai.providers.gemini import GeminiProvider
 
         provider = GeminiProvider(api_key="test", model="gemini-2.5-flash")
@@ -121,9 +131,9 @@ class TestGeminiProvider:
 
 
 class TestVertexAIProvider:
-    @patch("bluecast.ai.providers.vertexai_provider.vertexai")
-    @patch("bluecast.ai.providers.vertexai_provider.GenerativeModel")
-    def test_init(self, mock_gm, mock_vertexai):
+    
+    
+    def test_init(self):
         from bluecast.ai.providers.vertexai_provider import VertexAIProvider
 
         provider = VertexAIProvider(
@@ -134,9 +144,9 @@ class TestVertexAIProvider:
         )
         assert provider.project == "test-project"
 
-    @patch("bluecast.ai.providers.vertexai_provider.vertexai")
-    @patch("bluecast.ai.providers.vertexai_provider.GenerativeModel")
-    def test_convert_tools(self, mock_gm, mock_vertexai):
+    
+    
+    def test_convert_tools(self):
         from bluecast.ai.providers.vertexai_provider import VertexAIProvider
 
         provider = VertexAIProvider(
@@ -160,9 +170,9 @@ class TestVertexAIProvider:
         result = provider._convert_tools(tools)
         assert result is not None
 
-    @patch("bluecast.ai.providers.vertexai_provider.vertexai")
-    @patch("bluecast.ai.providers.vertexai_provider.GenerativeModel")
-    def test_convert_messages(self, mock_gm, mock_vertexai):
+    
+    
+    def test_convert_messages(self):
         from bluecast.ai.providers.vertexai_provider import VertexAIProvider
 
         provider = VertexAIProvider(
@@ -178,15 +188,15 @@ class TestVertexAIProvider:
                 role="assistant",
                 content="Tool result",
                 tool_call_id="call_1",
-                tool_name="test_tool",
+                name="test_tool",
             ),
         ]
         result = provider._convert_messages(messages)
         assert isinstance(result, (list, tuple))
 
-    @patch("bluecast.ai.providers.vertexai_provider.vertexai")
-    @patch("bluecast.ai.providers.vertexai_provider.GenerativeModel")
-    def test_chat_text_response(self, mock_gm, mock_vertexai):
+    
+    
+    def test_chat_text_response(self):
         from bluecast.ai.providers.vertexai_provider import VertexAIProvider
 
         mock_model = MagicMock()
@@ -219,15 +229,15 @@ class TestVertexAIProvider:
 
 
 class TestOpenAIProvider:
-    @patch("bluecast.ai.providers.openai_provider.openai")
-    def test_init(self, mock_openai):
+    
+    def test_init(self):
         from bluecast.ai.providers.openai_provider import OpenAIProvider
 
         provider = OpenAIProvider(api_key="test-key", model="gpt-4o")
         assert provider.model == "gpt-4o"
 
-    @patch("bluecast.ai.providers.openai_provider.openai")
-    def test_convert_messages(self, mock_openai):
+    
+    def test_convert_messages(self):
         from bluecast.ai.providers.openai_provider import OpenAIProvider
 
         provider = OpenAIProvider(api_key="test", model="gpt-4o")
@@ -240,8 +250,8 @@ class TestOpenAIProvider:
         assert isinstance(result, list)
         assert result[0]["role"] == "system"
 
-    @patch("bluecast.ai.providers.openai_provider.openai")
-    def test_convert_messages_with_tool_result(self, mock_openai):
+    
+    def test_convert_messages_with_tool_result(self):
         from bluecast.ai.providers.openai_provider import OpenAIProvider
 
         provider = OpenAIProvider(api_key="test", model="gpt-4o")
@@ -251,15 +261,15 @@ class TestOpenAIProvider:
                 role="tool",
                 content="Tool result",
                 tool_call_id="call_1",
-                tool_name="test_tool",
+                name="test_tool",
             ),
         ]
         result = provider._convert_messages(messages)
         tool_msg = [m for m in result if m.get("role") == "tool"]
         assert len(tool_msg) >= 1
 
-    @patch("bluecast.ai.providers.openai_provider.openai")
-    def test_chat_text_response(self, mock_openai):
+    
+    def test_chat_text_response(self):
         from bluecast.ai.providers.openai_provider import OpenAIProvider
 
         mock_client = MagicMock()
@@ -286,8 +296,8 @@ class TestOpenAIProvider:
 
 
 class TestAnthropicProvider:
-    @patch("bluecast.ai.providers.anthropic_provider.anthropic")
-    def test_init(self, mock_anthropic):
+    
+    def test_init(self):
         from bluecast.ai.providers.anthropic_provider import AnthropicProvider
 
         provider = AnthropicProvider(
@@ -295,8 +305,8 @@ class TestAnthropicProvider:
         )
         assert provider.model == "claude-sonnet-4-20250514"
 
-    @patch("bluecast.ai.providers.anthropic_provider.anthropic")
-    def test_convert_messages(self, mock_anthropic):
+    
+    def test_convert_messages(self):
         from bluecast.ai.providers.anthropic_provider import AnthropicProvider
 
         provider = AnthropicProvider(api_key="test", model="claude-sonnet-4-20250514")
@@ -307,8 +317,8 @@ class TestAnthropicProvider:
         result = provider._convert_messages(messages)
         assert isinstance(result, (list, tuple))
 
-    @patch("bluecast.ai.providers.anthropic_provider.anthropic")
-    def test_chat_text_response(self, mock_anthropic):
+    
+    def test_chat_text_response(self):
         from bluecast.ai.providers.anthropic_provider import AnthropicProvider
 
         mock_client = MagicMock()
@@ -328,8 +338,8 @@ class TestAnthropicProvider:
         assert result is not None
         assert result.text == "Anthropic response"
 
-    @patch("bluecast.ai.providers.anthropic_provider.anthropic")
-    def test_convert_tools(self, mock_anthropic):
+    
+    def test_convert_tools(self):
         from bluecast.ai.providers.anthropic_provider import AnthropicProvider
 
         provider = AnthropicProvider(api_key="test", model="claude-sonnet-4-20250514")
@@ -365,7 +375,7 @@ class TestDataClasses:
             role="tool",
             content="result",
             tool_call_id="call_1",
-            tool_name="test_tool",
+            name="test_tool",
         )
         assert msg.tool_call_id == "call_1"
 

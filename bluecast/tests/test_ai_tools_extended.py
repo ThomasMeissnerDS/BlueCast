@@ -473,7 +473,7 @@ class TestSerializeMetrics:
 
 
 class TestBuildAndRunPipeline:
-    @patch("bluecast.ai.tools.BlueCastAuto")
+    @patch("bluecast.blueprints.unified.BlueCastAuto")
     def test_regression_pipeline(self, mock_auto, regression_df):
         from bluecast.ai.tools import tool_build_and_run_pipeline
 

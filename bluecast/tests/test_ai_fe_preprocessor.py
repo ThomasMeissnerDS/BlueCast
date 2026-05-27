@@ -82,10 +82,7 @@ class TestAIFeaturePreprocessor:
         df_test = pd.DataFrame({"a": [4, 5, 6]})
         
         snippets = [
-            "if is_fit:\n"
-            "    df['new_col'] = df['a'] * 2\n"
-            "else:\n"
-            "    raise ValueError('Simulated failure during transform')"
+            "df['new_col'] = df['a'].apply(lambda x: x * 2 if x < 4 else int('fail'))"
         ]
         
         prep = AIFeaturePreprocessor(snippets)
