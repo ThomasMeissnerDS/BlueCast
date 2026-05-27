@@ -3,7 +3,10 @@ import tempfile
 from datetime import datetime
 from typing import Any, Dict, List, Literal, Optional, Union
 
-import duckdb
+try:
+    import duckdb
+except ImportError:
+    duckdb = None
 import pandas as pd
 
 from bluecast.config.base_classes import BaseClassExperimentTracker

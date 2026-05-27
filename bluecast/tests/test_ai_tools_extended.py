@@ -474,9 +474,7 @@ class TestSerializeMetrics:
 
 class TestBuildAndRunPipeline:
     @patch("bluecast.ai.tools.BlueCastAuto")
-    @patch("bluecast.ai.tools.BlueCastCVRegression")
-    @patch("bluecast.ai.tools.BlueCastRegression")
-    def test_regression_pipeline(self, mock_reg, mock_cv_reg, mock_auto, regression_df):
+    def test_regression_pipeline(self, mock_auto, regression_df):
         from bluecast.ai.tools import tool_build_and_run_pipeline
 
         mock_pipeline = MagicMock()
