@@ -1,7 +1,6 @@
 """Tests for bluecast.ai.providers — all LLM provider implementations."""
 
 import pytest
-
 import sys
 from unittest.mock import MagicMock
 
@@ -11,8 +10,6 @@ sys.modules["vertexai.generative_models"] = MagicMock()
 sys.modules["openai"] = MagicMock()
 sys.modules["anthropic"] = MagicMock()
 
-from unittest.mock import MagicMock, patch
-
 from bluecast.ai.providers.base import (
     BaseLLMProvider,
     LLMResponse,
@@ -21,16 +18,12 @@ from bluecast.ai.providers.base import (
     ToolDefinition,
 )
 
-
 # ---------------------------------------------------------------------------
 # BaseLLMProvider
 # ---------------------------------------------------------------------------
 
-
 class TestBaseLLMProvider:
     def test_simple_chat(self):
-        """Test the convenience simple_chat method."""
-
         class MinimalProvider(BaseLLMProvider):
             def chat(self, messages, tools=None):
                 return LLMResponse(
@@ -51,45 +44,32 @@ class TestBaseLLMProvider:
         result = provider.simple_chat("sys", "hello")
         assert result == ""
 
-
 # ---------------------------------------------------------------------------
 # GeminiProvider (mocked SDK)
 # ---------------------------------------------------------------------------
 
-
 class TestGeminiProvider:
-    
     def test_init(self):
         from bluecast.ai.providers.gemini import GeminiProvider
-
         provider = GeminiProvider(api_key="test-key", model="gemini-2.5-flash")
         assert provider.api_key == "test-key"
 
-    
     def test_convert_tools(self):
         from bluecast.ai.providers.gemini import GeminiProvider
-
         provider = GeminiProvider(api_key="test", model="gemini-2.5-flash")
         tools = [
             ToolDefinition(
                 name="test_tool",
                 description="A test",
-                parameters={
-                    "type": "object",
-                    "properties": {
-                        "arg1": {"type": "string", "description": "An arg"}
-                    },
-                },
+                parameters={"type": "object", "properties": {"arg1": {"type": "string", "description": "An arg"}}},
             )
         ]
         result = provider._convert_tools(tools)
         assert result is not None
 
-    
     def test_chat_text_response(self):
         from bluecast.ai.providers.gemini import GeminiProvider
-
-        # Mock the model
+        mock_genai = sys.modules["google.generativeai"]
         mock_model_instance = MagicMock()
         mock_response = MagicMock()
         mock_response.text = "Hello from Gemini"
@@ -109,10 +89,8 @@ class TestGeminiProvider:
         assert result is not None
         assert result.text == "Hello from Gemini"
 
-    
     def test_convert_messages(self):
         from bluecast.ai.providers.gemini import GeminiProvider
-
         provider = GeminiProvider(api_key="test", model="gemini-2.5-flash")
         messages = [
             Message(role="system", content="System prompt"),
@@ -121,84 +99,62 @@ class TestGeminiProvider:
             Message(role="user", content="How are you?"),
         ]
         result = provider._convert_messages(messages)
-        # System message is extracted separately
         assert isinstance(result, (list, tuple))
-
 
 # ---------------------------------------------------------------------------
 # VertexAIProvider (mocked SDK)
 # ---------------------------------------------------------------------------
 
-
 class TestVertexAIProvider:
-    
-    
     def test_init(self):
         from bluecast.ai.providers.vertexai_provider import VertexAIProvider
-
         provider = VertexAIProvider(
             api_key="test",
             model="gemini-2.5-flash",
-            project="test-project",
+            project_id="test-project",
             location="us-central1",
         )
-        assert provider.project == "test-project"
+        assert provider.project_id == "test-project"
 
-    
-    
     def test_convert_tools(self):
         from bluecast.ai.providers.vertexai_provider import VertexAIProvider
-
         provider = VertexAIProvider(
             api_key="test",
             model="gemini-2.5-flash",
-            project="test-project",
+            project_id="test-project",
             location="us-central1",
         )
         tools = [
             ToolDefinition(
                 name="test_tool",
                 description="A test",
-                parameters={
-                    "type": "object",
-                    "properties": {
-                        "arg1": {"type": "string", "description": "An arg"}
-                    },
-                },
+                parameters={"type": "object", "properties": {"arg1": {"type": "string", "description": "An arg"}}},
             )
         ]
         result = provider._convert_tools(tools)
         assert result is not None
 
-    
-    
     def test_convert_messages(self):
         from bluecast.ai.providers.vertexai_provider import VertexAIProvider
-
         provider = VertexAIProvider(
             api_key="test",
             model="gemini-2.5-flash",
-            project="test-project",
+            project_id="test-project",
             location="us-central1",
         )
         messages = [
             Message(role="system", content="System prompt"),
             Message(role="user", content="Hello"),
-            Message(
-                role="assistant",
-                content="Tool result",
-                tool_call_id="call_1",
-                name="test_tool",
-            ),
+            Message(role="assistant", content="Tool result", tool_call_id="call_1", tool_name="test_tool"),
         ]
         result = provider._convert_messages(messages)
         assert isinstance(result, (list, tuple))
 
-    
-    
     def test_chat_text_response(self):
         from bluecast.ai.providers.vertexai_provider import VertexAIProvider
-
+        import vertexai
+        mock_gm = sys.modules["vertexai.generative_models"]
+        
         mock_model = MagicMock()
         mock_response = MagicMock()
         mock_part = MagicMock()
@@ -210,36 +166,30 @@ class TestVertexAIProvider:
         mock_response.usage_metadata.prompt_token_count = 10
         mock_response.usage_metadata.candidates_token_count = 5
         mock_model.generate_content.return_value = mock_response
-        mock_gm.return_value = mock_model
+        mock_gm.GenerativeModel.return_value = mock_model
 
         provider = VertexAIProvider(
             api_key="test",
             model="gemini-2.5-flash",
-            project="test-project",
+            project_id="test-project",
             location="us-central1",
         )
         messages = [Message(role="user", content="Hello")]
         result = provider.chat(messages)
         assert result is not None
 
-
 # ---------------------------------------------------------------------------
 # OpenAIProvider (mocked SDK)
 # ---------------------------------------------------------------------------
 
-
 class TestOpenAIProvider:
-    
     def test_init(self):
         from bluecast.ai.providers.openai_provider import OpenAIProvider
-
         provider = OpenAIProvider(api_key="test-key", model="gpt-4o")
         assert provider.model == "gpt-4o"
 
-    
     def test_convert_messages(self):
         from bluecast.ai.providers.openai_provider import OpenAIProvider
-
         provider = OpenAIProvider(api_key="test", model="gpt-4o")
         messages = [
             Message(role="system", content="System"),
@@ -250,28 +200,20 @@ class TestOpenAIProvider:
         assert isinstance(result, list)
         assert result[0]["role"] == "system"
 
-    
     def test_convert_messages_with_tool_result(self):
         from bluecast.ai.providers.openai_provider import OpenAIProvider
-
         provider = OpenAIProvider(api_key="test", model="gpt-4o")
         messages = [
             Message(role="user", content="Hello"),
-            Message(
-                role="tool",
-                content="Tool result",
-                tool_call_id="call_1",
-                name="test_tool",
-            ),
+            Message(role="tool", content="Tool result", tool_call_id="call_1", tool_name="test_tool"),
         ]
         result = provider._convert_messages(messages)
         tool_msg = [m for m in result if m.get("role") == "tool"]
         assert len(tool_msg) >= 1
 
-    
     def test_chat_text_response(self):
         from bluecast.ai.providers.openai_provider import OpenAIProvider
-
+        mock_openai = sys.modules["openai"]
         mock_client = MagicMock()
         mock_choice = MagicMock()
         mock_choice.message.content = "OpenAI response"
@@ -289,26 +231,18 @@ class TestOpenAIProvider:
         assert result is not None
         assert result.text == "OpenAI response"
 
-
 # ---------------------------------------------------------------------------
 # AnthropicProvider (mocked SDK)
 # ---------------------------------------------------------------------------
 
-
 class TestAnthropicProvider:
-    
     def test_init(self):
         from bluecast.ai.providers.anthropic_provider import AnthropicProvider
-
-        provider = AnthropicProvider(
-            api_key="test-key", model="claude-sonnet-4-20250514"
-        )
+        provider = AnthropicProvider(api_key="test-key", model="claude-sonnet-4-20250514")
         assert provider.model == "claude-sonnet-4-20250514"
 
-    
     def test_convert_messages(self):
         from bluecast.ai.providers.anthropic_provider import AnthropicProvider
-
         provider = AnthropicProvider(api_key="test", model="claude-sonnet-4-20250514")
         messages = [
             Message(role="system", content="System"),
@@ -317,10 +251,9 @@ class TestAnthropicProvider:
         result = provider._convert_messages(messages)
         assert isinstance(result, (list, tuple))
 
-    
     def test_chat_text_response(self):
         from bluecast.ai.providers.anthropic_provider import AnthropicProvider
-
+        mock_anthropic = sys.modules["anthropic"]
         mock_client = MagicMock()
         mock_response = MagicMock()
         mock_content_block = MagicMock()
@@ -338,31 +271,22 @@ class TestAnthropicProvider:
         assert result is not None
         assert result.text == "Anthropic response"
 
-    
     def test_convert_tools(self):
         from bluecast.ai.providers.anthropic_provider import AnthropicProvider
-
         provider = AnthropicProvider(api_key="test", model="claude-sonnet-4-20250514")
         tools = [
             ToolDefinition(
                 name="test_tool",
                 description="A test",
-                parameters={
-                    "type": "object",
-                    "properties": {
-                        "arg1": {"type": "string", "description": "An arg"}
-                    },
-                },
+                parameters={"type": "object", "properties": {"arg1": {"type": "string", "description": "An arg"}}},
             )
         ]
         result = provider._convert_tools(tools)
         assert isinstance(result, list)
 
-
 # ---------------------------------------------------------------------------
 # Data classes
 # ---------------------------------------------------------------------------
-
 
 class TestDataClasses:
     def test_message_creation(self):
@@ -371,12 +295,7 @@ class TestDataClasses:
         assert msg.content == "Hello"
 
     def test_message_with_tool(self):
-        msg = Message(
-            role="tool",
-            content="result",
-            tool_call_id="call_1",
-            name="test_tool",
-        )
+        msg = Message(role="tool", content="result", tool_call_id="call_1", tool_name="test_tool")
         assert msg.tool_call_id == "call_1"
 
     def test_tool_call(self):
@@ -385,20 +304,12 @@ class TestDataClasses:
         assert tc.arguments["key"] == "val"
 
     def test_llm_response(self):
-        resp = LLMResponse(
-            text="Hello",
-            tool_calls=[ToolCall(id="1", name="tool", arguments={})],
-            usage={"prompt_tokens": 10},
-        )
+        resp = LLMResponse(text="Hello", tool_calls=[ToolCall(id="1", name="tool", arguments={})], usage={"prompt_tokens": 10})
         assert resp.text == "Hello"
         assert len(resp.tool_calls) == 1
         assert resp.usage["prompt_tokens"] == 10
 
     def test_tool_definition(self):
-        td = ToolDefinition(
-            name="test",
-            description="A test tool",
-            parameters={"type": "object", "properties": {}},
-        )
+        td = ToolDefinition(name="test", description="A test tool", parameters={"type": "object", "properties": {}})
         assert td.name == "test"
         assert td.description == "A test tool"

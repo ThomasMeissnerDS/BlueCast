@@ -91,4 +91,4 @@ class BaseLLMProvider(ABC):
             Message(role="user", content=user_message),
         ]
         response = self.chat(messages)
-        return response.text
+        return response.text if response else ""

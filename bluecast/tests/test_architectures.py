@@ -97,6 +97,11 @@ class TestHistGBArchitecture:
         with patch.object(model.__class__, 'autotune') as mock_autotune:
             model.model = MagicMock()
             model.model.predict.return_value = np.zeros(len(y))
+            model.imputer = MagicMock()
+            model.imputer.transform.return_value = np.zeros((len(y), X_num.shape[1]))
+            model.scaler = MagicMock()
+            model.scaler.transform.return_value = np.zeros((len(y), X_num.shape[1]))
+            
             model.fit(X_num, X_num, y, y)
             preds = model.predict(X_num)
         assert len(preds) == len(y)
@@ -132,6 +137,11 @@ class TestRandomForestArchitecture:
         with patch.object(model.__class__, 'autotune') as mock_autotune:
             model.model = MagicMock()
             model.model.predict.return_value = np.zeros(len(y))
+            model.imputer = MagicMock()
+            model.imputer.transform.return_value = np.zeros((len(y), X_num.shape[1]))
+            model.scaler = MagicMock()
+            model.scaler.transform.return_value = np.zeros((len(y), X_num.shape[1]))
+            
             model.fit(X_num, X_num, y, y)
             preds = model.predict(X_num)
         assert len(preds) == len(y)
@@ -219,6 +229,10 @@ class TestMLPArchitecture:
         with patch.object(model.__class__, 'autotune') as mock_autotune:
             model.model = MagicMock()
             model.model.predict.return_value = np.zeros(len(y))
+            model.imputer = MagicMock()
+            model.imputer.transform.return_value = np.zeros((len(y), X_num.shape[1]))
+            model.scaler = MagicMock()
+            model.scaler.transform.return_value = np.zeros((len(y), X_num.shape[1]))
             
             model.fit(X_num, X_num, y, y)
             preds = model.predict(X_num)
