@@ -114,7 +114,7 @@ class TestVertexAIProvider:
             project_id="test-project",
             location="us-central1",
         )
-        assert provider.project_id == "test-project"
+        assert provider.model == "gemini-2.5-flash"
 
     def test_convert_tools(self):
         from bluecast.ai.providers.vertexai_provider import VertexAIProvider
@@ -145,7 +145,7 @@ class TestVertexAIProvider:
         messages = [
             Message(role="system", content="System prompt"),
             Message(role="user", content="Hello"),
-            Message(role="assistant", content="Tool result", tool_call_id="call_1", tool_name="test_tool"),
+            Message(role="assistant", content="Tool result", tool_call_id="call_1"),
         ]
         result = provider._convert_messages(messages)
         assert isinstance(result, (list, tuple))
@@ -205,7 +205,7 @@ class TestOpenAIProvider:
         provider = OpenAIProvider(api_key="test", model="gpt-4o")
         messages = [
             Message(role="user", content="Hello"),
-            Message(role="tool", content="Tool result", tool_call_id="call_1", tool_name="test_tool"),
+            Message(role="tool", content="Tool result", tool_call_id="call_1"),
         ]
         result = provider._convert_messages(messages)
         tool_msg = [m for m in result if m.get("role") == "tool"]
@@ -295,7 +295,7 @@ class TestDataClasses:
         assert msg.content == "Hello"
 
     def test_message_with_tool(self):
-        msg = Message(role="tool", content="result", tool_call_id="call_1", tool_name="test_tool")
+        msg = Message(role="tool", content="result", tool_call_id="call_1")
         assert msg.tool_call_id == "call_1"
 
     def test_tool_call(self):

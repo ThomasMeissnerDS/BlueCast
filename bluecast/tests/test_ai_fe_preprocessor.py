@@ -82,7 +82,7 @@ class TestAIFeaturePreprocessor:
         df_test = pd.DataFrame({"a": [4, 5, 6]})
         
         snippets = [
-            "df['new_col'] = df['a'].apply(lambda x: x * 2 if x < 4 else int('fail'))"
+            "df['new_col'] = df['a'].apply(lambda x: x * 2 if pd.isna(x) or x < 4 else int('fail'))"
         ]
         
         prep = AIFeaturePreprocessor(snippets)
