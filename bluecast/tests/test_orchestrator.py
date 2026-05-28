@@ -1,6 +1,5 @@
 """Tests for the Orchestrator class — full coverage with mocked LLM."""
 
-import json
 import os
 import tempfile
 
@@ -10,9 +9,7 @@ import pytest
 from unittest.mock import MagicMock, patch
 
 from bluecast.ai.config import AIConfig
-from bluecast.ai.context import SharedContext
 from bluecast.ai.orchestrator import Orchestrator
-from bluecast.ai.providers.base import LLMResponse, ToolCall
 from bluecast.ai.result import BlueCastAIResult
 from bluecast.tests.test_ai_mock_provider import (
     MockLLMProvider,
@@ -25,6 +22,7 @@ from bluecast.tests.test_ai_mock_provider import (
 # ---------------------------------------------------------------------------
 # Fixtures
 # ---------------------------------------------------------------------------
+
 
 @pytest.fixture
 def sample_df():
@@ -85,6 +83,7 @@ def orchestrator(sample_df, mock_llm, config):
 # Constructor
 # ---------------------------------------------------------------------------
 
+
 class TestOrchestratorInit:
     def test_creates_agents(self, orchestrator):
         assert orchestrator.planner is not None
@@ -108,6 +107,7 @@ class TestOrchestratorInit:
 # ---------------------------------------------------------------------------
 # Context file loading
 # ---------------------------------------------------------------------------
+
 
 class TestContextFiles:
     def test_load_txt_file(self, sample_df, mock_llm):
@@ -164,6 +164,7 @@ class TestContextFiles:
 # Smart sampling
 # ---------------------------------------------------------------------------
 
+
 class TestSmartSampling:
     def test_no_sample_needed(self, orchestrator):
         orchestrator._apply_smart_sampling()
@@ -210,9 +211,7 @@ class TestSmartSampling:
 
     def test_column_warning(self, mock_llm):
         rng = np.random.default_rng(42)
-        df = pd.DataFrame(
-            {f"col_{i}": rng.normal(0, 1, 10) for i in range(250)}
-        )
+        df = pd.DataFrame({f"col_{i}": rng.normal(0, 1, 10) for i in range(250)})
         df["target"] = rng.choice([0, 1], 10)
         config = AIConfig(
             api_key="test",
@@ -229,6 +228,7 @@ class TestSmartSampling:
 # ---------------------------------------------------------------------------
 # Checkpointing
 # ---------------------------------------------------------------------------
+
 
 class TestCheckpointing:
     def test_checkpoint_save_load_clear(self, sample_df, mock_llm):
@@ -269,9 +269,15 @@ class TestCheckpointing:
 # Critique rounds
 # ---------------------------------------------------------------------------
 
+
 class TestCritiqueRounds:
     def test_mode_defaults(self, sample_df, mock_llm):
-        for mode, expected in [("fast", 0), ("balanced", 1), ("precise", 2), ("ultimate", 5)]:
+        for mode, expected in [
+            ("fast", 0),
+            ("balanced", 1),
+            ("precise", 2),
+            ("ultimate", 5),
+        ]:
             config = AIConfig(api_key="test", mode=mode, verbose=False)
             orch = Orchestrator(mock_llm, config, sample_df, "target", "test")
             assert orch._get_critique_rounds() == expected
@@ -295,6 +301,7 @@ class TestCritiqueRounds:
 # Individual steps
 # ---------------------------------------------------------------------------
 
+
 class TestStepPlan:
     def test_step_plan_parses_json(self, orchestrator, mock_llm):
         mock_llm.enqueue_response(
@@ -313,6 +320,7 @@ class TestStepPlan:
 
     def test_step_plan_api_exception(self, sample_df):
         """When the LLM raises, the planner catches and returns default plan."""
+
         class FailingLLM(MockLLMProvider):
             def chat(self, messages, tools=None):
                 raise ConnectionError("API down")
@@ -381,6 +389,7 @@ class TestReconstructPlan:
 # Build loop
 # ---------------------------------------------------------------------------
 
+
 class TestStepBuildLoop:
     def test_build_loop_fast_mode(self, orchestrator, mock_llm):
         """Fast mode: one iteration, no evaluator."""
@@ -402,7 +411,7 @@ class TestStepBuildLoop:
         }
 
         with patch(
-            "bluecast.ai.tools.tool_build_and_run_pipeline"
+            "bluecast.ai.agents.pipeline_builder.tool_build_and_run_pipeline"
         ) as mock_build:
             mock_build.return_value = {
                 "success": True,
@@ -419,6 +428,7 @@ class TestStepBuildLoop:
 # ---------------------------------------------------------------------------
 # Config helpers
 # ---------------------------------------------------------------------------
+
 
 class TestBuildArchConfig:
     def test_basic_config(self, orchestrator):
@@ -489,13 +499,16 @@ class TestEnforceConfigConstraints:
 # Full run (fast mode, everything mocked)
 # ---------------------------------------------------------------------------
 
+
 class TestFullRun:
     def test_run_fast_mode(self, sample_df):
         mock_llm = MockLLMProvider()
 
         # Plan response
         mock_llm.enqueue_response(
-            make_planner_response(class_problem="binary", needs_fe=False, max_iterations=1)
+            make_planner_response(
+                class_problem="binary", needs_fe=False, max_iterations=1
+            )
         )
         # Analyst response
         mock_llm.enqueue_response(make_text_response("Data looks clean. No issues."))
@@ -518,7 +531,7 @@ class TestFullRun:
         orch = Orchestrator(mock_llm, config, sample_df, "target", "test")
 
         with patch(
-            "bluecast.ai.tools.tool_build_and_run_pipeline"
+            "bluecast.ai.agents.pipeline_builder.tool_build_and_run_pipeline"
         ) as mock_build:
             mock_build.return_value = {
                 "success": True,
@@ -549,11 +562,23 @@ class TestFullRun:
 
             # First run: complete sampling and plan
             orch1 = Orchestrator(mock_llm, config, sample_df, "target", "test")
-            orch1.context.completed_steps = ["sampling", "plan", "analyze", "build_loop"]
+            orch1.context.completed_steps = [
+                "sampling",
+                "plan",
+                "analyze",
+                "build_loop",
+            ]
             # Save a plan in the log so reconstruct works
             orch1.context.log(
-                "Orchestrator", "plan", event_type="plan",
-                metadata={"plan": {"class_problem": "binary", "needs_feature_engineering": False}},
+                "Orchestrator",
+                "plan",
+                event_type="plan",
+                metadata={
+                    "plan": {
+                        "class_problem": "binary",
+                        "needs_feature_engineering": False,
+                    }
+                },
             )
             orch1._save_checkpoint("build_loop")
 
@@ -563,7 +588,7 @@ class TestFullRun:
             orch2 = Orchestrator(mock_llm2, config, sample_df, "target", "test")
 
             with patch(
-                "bluecast.ai.tools.tool_build_and_run_pipeline"
+                "bluecast.ai.agents.pipeline_builder.tool_build_and_run_pipeline"
             ) as mock_build:
                 mock_build.return_value = {
                     "success": True,
@@ -581,6 +606,7 @@ class TestFullRun:
 # Result assembly
 # ---------------------------------------------------------------------------
 
+
 class TestAssembleResult:
     def test_assemble_result(self, orchestrator):
         orchestrator.context.class_problem = "binary"
@@ -589,7 +615,9 @@ class TestAssembleResult:
         orchestrator.context.pipeline_code = "pipeline.fit(df)"
         orchestrator.context.feature_engineering_code = "df['new'] = 1"
         orchestrator.context.report_markdown = "# Report"
-        orchestrator.context.run_history = [{"success": True, "metrics": {"roc_auc": 0.9}}]
+        orchestrator.context.run_history = [
+            {"success": True, "metrics": {"roc_auc": 0.9}}
+        ]
 
         result = orchestrator._assemble_result()
         assert isinstance(result, BlueCastAIResult)
@@ -597,3 +625,60 @@ class TestAssembleResult:
         assert result.metrics == {"roc_auc": 0.9}
         assert result.pipeline_code == "pipeline.fit(df)"
         assert result.report_markdown == "# Report"
+
+    def test_run_ultimate_mode(self, mock_llm, sample_df, tmpdir):
+        config = AIConfig(
+            api_key="test",
+            mode="ultimate",
+            verbose=False,
+            checkpoint_dir=str(tmpdir),
+            global_tuning_budget=0,
+        )
+        orch = Orchestrator(mock_llm, config, sample_df, "target", "test")
+
+        # Mock out the steps so it doesn't do LLM calls
+        orch._step_plan = MagicMock(
+            return_value={
+                "class_problem": "binary",
+                "needs_feature_engineering": False,
+                "max_iterations": 1,
+                "ensemble_strategy": "nelder_mead",
+            }
+        )
+        orch._step_analyze = MagicMock()
+        orch._step_research = MagicMock()
+        orch._step_ultimate_build_loop = MagicMock()
+
+        orch.run()
+
+        orch._step_plan.assert_called_once()
+        orch._step_analyze.assert_called_once()
+        orch._step_ultimate_build_loop.assert_called_once()
+
+
+def test_step_ultimate_build_loop(mock_llm, sample_df, tmpdir):
+    config = AIConfig(
+        api_key="test",
+        mode="ultimate",
+        verbose=False,
+        checkpoint_dir=str(tmpdir),
+    )
+    orch = Orchestrator(mock_llm, config, sample_df, "target", "test")
+
+    # Mock the internal architecture building
+    orch._build_single_arch = MagicMock()
+    orch._build_single_arch.return_value = {
+        "success": True,
+        "metrics": {"mae": 0.5},
+        "config_used": {},
+        "pipeline": MagicMock(),
+        "model": MagicMock(),
+        "oof_preds": [0.1, 0.9],
+        "val_score": 0.8,
+    }
+
+    plan = {"class_problem": "binary"}
+    orch._step_ultimate_build_loop(plan)
+
+    # Check that architectures were built
+    assert orch._build_single_arch.call_count > 0

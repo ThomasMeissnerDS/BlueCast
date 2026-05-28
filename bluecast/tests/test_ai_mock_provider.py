@@ -87,9 +87,7 @@ def make_tool_response(
     """Helper to create an LLMResponse with a single tool call."""
     return LLMResponse(
         text=text,
-        tool_calls=[
-            ToolCall(id=call_id, name=tool_name, arguments=arguments or {})
-        ],
+        tool_calls=[ToolCall(id=call_id, name=tool_name, arguments=arguments or {})],
         usage={"prompt_tokens": 10, "completion_tokens": 5},
     )
 

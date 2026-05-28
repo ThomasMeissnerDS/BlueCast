@@ -100,9 +100,7 @@ class TestBaseAgent:
 
     def test_run_tool_call_then_text(self, context, mock_llm):
         """Agent calls a tool, gets result, then gives final text."""
-        mock_llm.enqueue_response(
-            make_tool_response("test_tool", {"arg": "value"})
-        )
+        mock_llm.enqueue_response(make_tool_response("test_tool", {"arg": "value"}))
         mock_llm.enqueue_response(make_text_response("Done with tools."))
 
         agent = ConcreteAgent(mock_llm, context, verbose=False)
@@ -126,6 +124,7 @@ class TestBaseAgent:
 
     def test_run_api_error(self, context):
         """LLM API error → agent returns fallback message."""
+
         class FailingLLM(MockLLMProvider):
             def chat(self, messages, tools=None):
                 self.call_count += 1
@@ -139,9 +138,7 @@ class TestBaseAgent:
         """Exhausts max iterations → returns last text."""
         # Queue more tool calls than max iterations
         for _ in range(15):
-            mock_llm.enqueue_response(
-                make_tool_response("test_tool", {"i": str(_)})
-            )
+            mock_llm.enqueue_response(make_tool_response("test_tool", {"i": str(_)}))
 
         agent = ConcreteAgent(mock_llm, context, verbose=False)
         agent.register_tool_impl("test_tool", lambda **kw: "result")

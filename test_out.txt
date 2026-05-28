@@ -1,0 +1,79 @@
+============================= test session starts ==============================
+platform linux -- Python 3.11.4, pytest-7.4.4, pluggy-1.6.0 -- /home/thomas/.cache/pypoetry/virtualenvs/bluecast-uAIs9xjE-py3.11/bin/python
+cachedir: .pytest_cache
+rootdir: /home/thomas/IdeaProjects/BlueCast/BlueCast
+plugins: anyio-4.9.0, dash-3.1.1, mock-3.14.1, cov-7.1.0
+collecting ... collected 1 item
+
+bluecast/tests/test_orchestrator.py::TestStepAnalyze::test_step_analyze FAILED [100%]
+
+=================================== FAILURES ===================================
+______________________ TestStepAnalyze.test_step_analyze _______________________
+bluecast/tests/test_orchestrator.py:334: in test_step_analyze
+    orchestrator._step_analyze()
+bluecast/ai/orchestrator.py:560: in _step_analyze
+    result = self.analyst.run(task)
+bluecast/ai/agents/base.py:96: in run
+    Message(role="system", content=self.system_prompt()),
+bluecast/ai/agents/data_analyst.py:92: in system_prompt
+    data_summary = self.context.get_data_summary()
+bluecast/ai/context.py:215: in get_data_summary
+    f"\nNumeric summary:\n{df[summary_cols].describe().round(3).to_string()}"
+../../../.cache/pypoetry/virtualenvs/bluecast-uAIs9xjE-py3.11/lib/python3.11/site-packages/pandas/core/frame.py:4122: in __getitem__
+    data = self._take_with_is_copy(indexer, axis=1)
+../../../.cache/pypoetry/virtualenvs/bluecast-uAIs9xjE-py3.11/lib/python3.11/site-packages/pandas/core/generic.py:4172: in _take_with_is_copy
+    result = self.take(indices=indices, axis=axis)
+../../../.cache/pypoetry/virtualenvs/bluecast-uAIs9xjE-py3.11/lib/python3.11/site-packages/pandas/core/generic.py:4152: in take
+    new_data = self._mgr.take(
+../../../.cache/pypoetry/virtualenvs/bluecast-uAIs9xjE-py3.11/lib/python3.11/site-packages/pandas/core/internals/managers.py:894: in take
+    return self.reindex_indexer(
+../../../.cache/pypoetry/virtualenvs/bluecast-uAIs9xjE-py3.11/lib/python3.11/site-packages/pandas/core/internals/managers.py:680: in reindex_indexer
+    new_blocks = self._slice_take_blocks_ax0(
+../../../.cache/pypoetry/virtualenvs/bluecast-uAIs9xjE-py3.11/lib/python3.11/site-packages/pandas/core/internals/managers.py:826: in _slice_take_blocks_ax0
+    max_len = max(len(mgr_locs), taker.max() + 1)
+../../../.cache/pypoetry/virtualenvs/bluecast-uAIs9xjE-py3.11/lib/python3.11/site-packages/numpy/core/_methods.py:41: in _amax
+    return umr_maximum(a, axis, None, out, keepdims, initial, where)
+E   TypeError: int() argument must be a string, a bytes-like object or a real number, not '_NoValueType'
+=============================== warnings summary ===============================
+bluecast/blueprints/cast.py:14
+bluecast/blueprints/cast.py:14
+  /home/thomas/IdeaProjects/BlueCast/BlueCast/bluecast/blueprints/cast.py:14: UserWarning: The NumPy module was reloaded (imported a second time). This can in some cases result in small but subtle issues and is discouraged.
+    import numpy as np
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+================================ tests coverage ================================
+_______________ coverage: platform linux, python 3.11.4-final-0 ________________
+
+Name                                          Stmts   Miss  Cover
+-----------------------------------------------------------------
+bluecast/ai/__init__.py                          35     25    29%
+bluecast/ai/agents/__init__.py                    0      0   100%
+bluecast/ai/agents/arch_feature_engineer.py     157    131    17%
+bluecast/ai/agents/base.py                       93     64    31%
+bluecast/ai/agents/data_analyst.py               29      5    83%
+bluecast/ai/agents/evaluator.py                  17      9    47%
+bluecast/ai/agents/feature_engineer.py           62     46    26%
+bluecast/ai/agents/pipeline_builder.py           99     85    14%
+bluecast/ai/agents/planner.py                    28     17    39%
+bluecast/ai/agents/reporter.py                   46     36    22%
+bluecast/ai/agents/researcher.py                 15      3    80%
+bluecast/ai/architectures.py                    455    455     0%
+bluecast/ai/config.py                            36      8    78%
+bluecast/ai/context.py                          118     23    81%
+bluecast/ai/critique.py                          75     75     0%
+bluecast/ai/fe_preprocessor.py                   67     67     0%
+bluecast/ai/metrics.py                           28     28     0%
+bluecast/ai/orchestrator.py                     872    791     9%
+bluecast/ai/providers/__init__.py                 2      0   100%
+bluecast/ai/providers/anthropic_provider.py      68     68     0%
+bluecast/ai/providers/base.py                    43      4    91%
+bluecast/ai/providers/gemini.py                  83     83     0%
+bluecast/ai/providers/openai_provider.py         63     63     0%
+bluecast/ai/providers/vertexai_provider.py      118    118     0%
+bluecast/ai/result.py                           145    117    19%
+bluecast/ai/tools.py                            701    665     5%
+-----------------------------------------------------------------
+TOTAL                                          3455   2986    14%
+=========================== short test summary info ============================
+FAILED bluecast/tests/test_orchestrator.py::TestStepAnalyze::test_step_analyze
+======================== 1 failed, 2 warnings in 0.96s =========================

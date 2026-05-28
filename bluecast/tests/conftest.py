@@ -55,3 +55,20 @@ def trained_bluecast_regression(synthetic_regression_data):
     df = synthetic_regression_data.copy()
     automl.fit(df, target_col="target")
     return automl
+
+
+import numpy.core._methods as np_methods
+
+# Monkey-patch numpy to fix pandas coverage crash
+original_amax = np_methods._amax
+
+
+def patched_amax(
+    a, axis=None, out=None, keepdims=False, initial=np_methods._NoValue, where=True
+):
+    if initial is np_methods._NoValue:
+        return np_methods.umr_maximum(a, axis, None, out, keepdims, None, where)
+    return np_methods.umr_maximum(a, axis, None, out, keepdims, initial, where)
+
+
+np_methods._amax = patched_amax

@@ -22,6 +22,7 @@ from bluecast.ai.providers.base import (
 # BaseLLMProvider
 # ---------------------------------------------------------------------------
 
+
 class TestBaseLLMProvider:
     def test_simple_chat(self):
         class MinimalProvider(BaseLLMProvider):
@@ -44,24 +45,31 @@ class TestBaseLLMProvider:
         result = provider.simple_chat("sys", "hello")
         assert result == ""
 
+
 # ---------------------------------------------------------------------------
 # GeminiProvider (mocked SDK)
 # ---------------------------------------------------------------------------
 
+
 class TestGeminiProvider:
     def test_init(self):
         from bluecast.ai.providers.gemini import GeminiProvider
+
         provider = GeminiProvider(api_key="test-key", model="gemini-2.5-flash")
         assert provider.api_key == "test-key"
 
     def test_convert_tools(self):
         from bluecast.ai.providers.gemini import GeminiProvider
+
         provider = GeminiProvider(api_key="test", model="gemini-2.5-flash")
         tools = [
             ToolDefinition(
                 name="test_tool",
                 description="A test",
-                parameters={"type": "object", "properties": {"arg1": {"type": "string", "description": "An arg"}}},
+                parameters={
+                    "type": "object",
+                    "properties": {"arg1": {"type": "string", "description": "An arg"}},
+                },
             )
         ]
         result = provider._convert_tools(tools)
@@ -69,6 +77,7 @@ class TestGeminiProvider:
 
     def test_chat_text_response(self):
         from bluecast.ai.providers.gemini import GeminiProvider
+
         mock_genai = sys.modules["google.generativeai"]
         mock_model_instance = MagicMock()
         mock_response = MagicMock()
@@ -91,6 +100,7 @@ class TestGeminiProvider:
 
     def test_convert_messages(self):
         from bluecast.ai.providers.gemini import GeminiProvider
+
         provider = GeminiProvider(api_key="test", model="gemini-2.5-flash")
         messages = [
             Message(role="system", content="System prompt"),
@@ -101,13 +111,16 @@ class TestGeminiProvider:
         result = provider._convert_messages(messages)
         assert isinstance(result, (list, tuple))
 
+
 # ---------------------------------------------------------------------------
 # VertexAIProvider (mocked SDK)
 # ---------------------------------------------------------------------------
 
+
 class TestVertexAIProvider:
     def test_init(self):
         from bluecast.ai.providers.vertexai_provider import VertexAIProvider
+
         provider = VertexAIProvider(
             api_key="test",
             model="gemini-2.5-flash",
@@ -118,6 +131,7 @@ class TestVertexAIProvider:
 
     def test_convert_tools(self):
         from bluecast.ai.providers.vertexai_provider import VertexAIProvider
+
         provider = VertexAIProvider(
             api_key="test",
             model="gemini-2.5-flash",
@@ -128,7 +142,10 @@ class TestVertexAIProvider:
             ToolDefinition(
                 name="test_tool",
                 description="A test",
-                parameters={"type": "object", "properties": {"arg1": {"type": "string", "description": "An arg"}}},
+                parameters={
+                    "type": "object",
+                    "properties": {"arg1": {"type": "string", "description": "An arg"}},
+                },
             )
         ]
         result = provider._convert_tools(tools)
@@ -136,6 +153,7 @@ class TestVertexAIProvider:
 
     def test_convert_messages(self):
         from bluecast.ai.providers.vertexai_provider import VertexAIProvider
+
         provider = VertexAIProvider(
             api_key="test",
             model="gemini-2.5-flash",
@@ -153,8 +171,9 @@ class TestVertexAIProvider:
     def test_chat_text_response(self):
         from bluecast.ai.providers.vertexai_provider import VertexAIProvider
         import vertexai
+
         mock_gm = sys.modules["vertexai.generative_models"]
-        
+
         mock_model = MagicMock()
         mock_response = MagicMock()
         mock_part = MagicMock()
@@ -178,18 +197,22 @@ class TestVertexAIProvider:
         result = provider.chat(messages)
         assert result is not None
 
+
 # ---------------------------------------------------------------------------
 # OpenAIProvider (mocked SDK)
 # ---------------------------------------------------------------------------
 
+
 class TestOpenAIProvider:
     def test_init(self):
         from bluecast.ai.providers.openai_provider import OpenAIProvider
+
         provider = OpenAIProvider(api_key="test-key", model="gpt-4o")
         assert provider.model == "gpt-4o"
 
     def test_convert_messages(self):
         from bluecast.ai.providers.openai_provider import OpenAIProvider
+
         provider = OpenAIProvider(api_key="test", model="gpt-4o")
         messages = [
             Message(role="system", content="System"),
@@ -202,6 +225,7 @@ class TestOpenAIProvider:
 
     def test_convert_messages_with_tool_result(self):
         from bluecast.ai.providers.openai_provider import OpenAIProvider
+
         provider = OpenAIProvider(api_key="test", model="gpt-4o")
         messages = [
             Message(role="user", content="Hello"),
@@ -213,6 +237,7 @@ class TestOpenAIProvider:
 
     def test_chat_text_response(self):
         from bluecast.ai.providers.openai_provider import OpenAIProvider
+
         mock_openai = sys.modules["openai"]
         mock_client = MagicMock()
         mock_choice = MagicMock()
@@ -231,18 +256,24 @@ class TestOpenAIProvider:
         assert result is not None
         assert result.text == "OpenAI response"
 
+
 # ---------------------------------------------------------------------------
 # AnthropicProvider (mocked SDK)
 # ---------------------------------------------------------------------------
 
+
 class TestAnthropicProvider:
     def test_init(self):
         from bluecast.ai.providers.anthropic_provider import AnthropicProvider
-        provider = AnthropicProvider(api_key="test-key", model="claude-sonnet-4-20250514")
+
+        provider = AnthropicProvider(
+            api_key="test-key", model="claude-sonnet-4-20250514"
+        )
         assert provider.model == "claude-sonnet-4-20250514"
 
     def test_convert_messages(self):
         from bluecast.ai.providers.anthropic_provider import AnthropicProvider
+
         provider = AnthropicProvider(api_key="test", model="claude-sonnet-4-20250514")
         messages = [
             Message(role="system", content="System"),
@@ -253,6 +284,7 @@ class TestAnthropicProvider:
 
     def test_chat_text_response(self):
         from bluecast.ai.providers.anthropic_provider import AnthropicProvider
+
         mock_anthropic = sys.modules["anthropic"]
         mock_client = MagicMock()
         mock_response = MagicMock()
@@ -273,20 +305,26 @@ class TestAnthropicProvider:
 
     def test_convert_tools(self):
         from bluecast.ai.providers.anthropic_provider import AnthropicProvider
+
         provider = AnthropicProvider(api_key="test", model="claude-sonnet-4-20250514")
         tools = [
             ToolDefinition(
                 name="test_tool",
                 description="A test",
-                parameters={"type": "object", "properties": {"arg1": {"type": "string", "description": "An arg"}}},
+                parameters={
+                    "type": "object",
+                    "properties": {"arg1": {"type": "string", "description": "An arg"}},
+                },
             )
         ]
         result = provider._convert_tools(tools)
         assert isinstance(result, list)
 
+
 # ---------------------------------------------------------------------------
 # Data classes
 # ---------------------------------------------------------------------------
+
 
 class TestDataClasses:
     def test_message_creation(self):
@@ -304,12 +342,20 @@ class TestDataClasses:
         assert tc.arguments["key"] == "val"
 
     def test_llm_response(self):
-        resp = LLMResponse(text="Hello", tool_calls=[ToolCall(id="1", name="tool", arguments={})], usage={"prompt_tokens": 10})
+        resp = LLMResponse(
+            text="Hello",
+            tool_calls=[ToolCall(id="1", name="tool", arguments={})],
+            usage={"prompt_tokens": 10},
+        )
         assert resp.text == "Hello"
         assert len(resp.tool_calls) == 1
         assert resp.usage["prompt_tokens"] == 10
 
     def test_tool_definition(self):
-        td = ToolDefinition(name="test", description="A test tool", parameters={"type": "object", "properties": {}})
+        td = ToolDefinition(
+            name="test",
+            description="A test tool",
+            parameters={"type": "object", "properties": {}},
+        )
         assert td.name == "test"
         assert td.description == "A test tool"

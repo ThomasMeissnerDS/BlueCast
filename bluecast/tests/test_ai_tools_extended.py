@@ -88,7 +88,8 @@ def df_with_text():
                 "world foo bar baz",
                 "another text hello",
                 "foo bar world",
-            ] * 20,
+            ]
+            * 20,
             "num": list(range(100)),
             "target": [0, 1] * 50,
         }
@@ -112,7 +113,12 @@ class TestDescribeData:
 
     def test_with_nulls(self, df_with_nulls):
         result = tool_describe_data(df_with_nulls, "target")
-        assert "missing" in result.lower() or "null" in result.lower() or "nan" in result.lower() or "Shape" in result
+        assert (
+            "missing" in result.lower()
+            or "null" in result.lower()
+            or "nan" in result.lower()
+            or "Shape" in result
+        )
 
 
 # ---------------------------------------------------------------------------
@@ -162,7 +168,11 @@ class TestCheckUniqueness:
     def test_basic(self, classification_df):
         result = tool_check_uniqueness(classification_df)
         assert isinstance(result, str)
-        assert "unique" in result.lower() or "cardinality" in result.lower() or "num1" in result
+        assert (
+            "unique" in result.lower()
+            or "cardinality" in result.lower()
+            or "num1" in result
+        )
 
     def test_with_id_column(self):
         df = pd.DataFrame(
@@ -224,9 +234,7 @@ class TestCheckGroupStatistics:
         assert isinstance(result, str)
 
     def test_missing_column(self, classification_df):
-        result = tool_check_group_statistics(
-            classification_df, "nonexistent", "num1"
-        )
+        result = tool_check_group_statistics(classification_df, "nonexistent", "num1")
         assert isinstance(result, str)
 
 
@@ -241,9 +249,7 @@ class TestInspectRows:
         assert isinstance(result, str)
 
     def test_by_condition(self, classification_df):
-        result = tool_inspect_rows(
-            classification_df, condition="num1 > 0"
-        )
+        result = tool_inspect_rows(classification_df, condition="num1 > 0")
         assert isinstance(result, str)
 
     def test_empty(self, classification_df):
@@ -406,7 +412,9 @@ class TestEvaluateImputations:
 
 class TestCheckFeatureQuality:
     def test_basic(self, classification_df):
-        result = tool_check_feature_quality(classification_df, "target", ["num1", "num2"])
+        result = tool_check_feature_quality(
+            classification_df, "target", ["num1", "num2"]
+        )
         assert isinstance(result, (str, dict))
 
     def test_nonexistent_column(self, classification_df):

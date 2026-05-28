@@ -86,7 +86,6 @@ def test_bluecast_instance_instantiation(welcome):
     ) as MockBlueCastRegression, patch(
         "bluecast.blueprints.welcome.BlueCastCVRegression"
     ) as MockBlueCastCVRegression:
-
         # Binary classification, single model
         automl_instance = welcome.instantiate_bluecast_instance(
             "binary", 1, 5, "/path/to/oof", True, 100, 3600, True, True

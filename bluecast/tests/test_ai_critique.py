@@ -73,9 +73,7 @@ class TestCritiqueLoop:
 
     def test_needs_improvement_then_approved(self, context, mock_llm):
         mock_agent = MockAgent(mock_llm, context)
-        mock_agent.run = MagicMock(
-            side_effect=["Initial analysis", "Refined analysis"]
-        )
+        mock_agent.run = MagicMock(side_effect=["Initial analysis", "Refined analysis"])
 
         # Critic rejects first, approves second
         mock_llm.enqueue_responses(
@@ -94,9 +92,7 @@ class TestCritiqueLoop:
 
     def test_max_rounds_exhausted(self, context, mock_llm):
         mock_agent = MockAgent(mock_llm, context)
-        mock_agent.run = MagicMock(
-            side_effect=["Initial", "Refined 1", "Refined 2"]
-        )
+        mock_agent.run = MagicMock(side_effect=["Initial", "Refined 1", "Refined 2"])
 
         # Critic keeps rejecting
         mock_llm.enqueue_responses(
@@ -145,6 +141,7 @@ class TestCritiqueLoop:
     def test_fe_state_reset(self, context, mock_llm, sample_df):
         """Test that FeatureEngineer state is snapshot and reset during critique."""
         agent = FeatureEngineerAgent(mock_llm, context)
+
         # Simulate initial run adding a snippet
         def mock_initial_run(task):
             if "critique" not in task:

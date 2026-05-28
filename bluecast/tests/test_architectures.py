@@ -45,10 +45,10 @@ class TestArchitecturesRegistry:
         assert "xgboost" in archs
         assert "histgb" in archs
         assert "linear" in archs
-        
+
         # Test factory execution
         cb = archs["catboost"]["factory"]("binary")
-        assert cb is None # CatBoost uses default pipeline
+        assert cb is None  # CatBoost uses default pipeline
 
     def test_get_architectures_for_problem_multiclass(self):
         archs = get_architectures_for_problem("multiclass")
@@ -75,33 +75,37 @@ class TestHistGBArchitecture:
     @patch("optuna.create_study")
     def test_autotune(self, mock_optuna, tiny_regression_data):
         X, y = tiny_regression_data
-        X_num = X.drop(columns=["cat1"])
-        
+        X_num = __import__("pandas").DataFrame(
+            {col: X[col].values for col in X.columns if col != "cat1"}
+        )
+
         factory = get_architectures_for_problem("regression")["histgb"]["factory"]
         model = factory("regression")
-        
+
         mock_study = MagicMock()
         mock_study.best_params = {"max_depth": 5, "min_samples_leaf": 5}
         mock_study.best_value = 0.5
         mock_optuna.return_value = mock_study
-        
+
         model.autotune(X_num, X_num, y, y)
         assert model.model is not None
 
     def test_fit_predict(self, tiny_regression_data):
         X, y = tiny_regression_data
-        X_num = X.drop(columns=["cat1"])
-        
+        X_num = __import__("pandas").DataFrame(
+            {col: X[col].values for col in X.columns if col != "cat1"}
+        )
+
         factory = get_architectures_for_problem("regression")["histgb"]["factory"]
         model = factory("regression")
-        with patch.object(model.__class__, 'autotune') as mock_autotune:
+        with patch.object(model.__class__, "autotune") as mock_autotune:
             model.model = MagicMock()
             model.model.predict.return_value = np.zeros(len(y))
             model.imputer = MagicMock()
             model.imputer.transform.return_value = np.zeros((len(y), X_num.shape[1]))
             model.scaler = MagicMock()
             model.scaler.transform.return_value = np.zeros((len(y), X_num.shape[1]))
-            
+
             model.fit(X_num, X_num, y, y)
             preds = model.predict(X_num)
         assert len(preds) == len(y)
@@ -116,32 +120,36 @@ class TestRandomForestArchitecture:
     @patch("optuna.create_study")
     def test_autotune(self, mock_optuna, tiny_regression_data):
         X, y = tiny_regression_data
-        X_num = X.drop(columns=["cat1"])
-        
+        X_num = __import__("pandas").DataFrame(
+            {col: X[col].values for col in X.columns if col != "cat1"}
+        )
+
         factory = get_architectures_for_problem("regression")["randomforest"]["factory"]
         model = factory("regression")
-        
+
         mock_study = MagicMock()
         mock_study.best_params = {"max_depth": 10, "n_estimators": 50}
         mock_optuna.return_value = mock_study
-        
+
         model.autotune(X_num, X_num, y, y)
         assert model.model is not None
 
     def test_fit_predict(self, tiny_regression_data):
         X, y = tiny_regression_data
-        X_num = X.drop(columns=["cat1"])
-        
+        X_num = __import__("pandas").DataFrame(
+            {col: X[col].values for col in X.columns if col != "cat1"}
+        )
+
         factory = get_architectures_for_problem("regression")["randomforest"]["factory"]
         model = factory("regression")
-        with patch.object(model.__class__, 'autotune') as mock_autotune:
+        with patch.object(model.__class__, "autotune") as mock_autotune:
             model.model = MagicMock()
             model.model.predict.return_value = np.zeros(len(y))
             model.imputer = MagicMock()
             model.imputer.transform.return_value = np.zeros((len(y), X_num.shape[1]))
             model.scaler = MagicMock()
             model.scaler.transform.return_value = np.zeros((len(y), X_num.shape[1]))
-            
+
             model.fit(X_num, X_num, y, y)
             preds = model.predict(X_num)
         assert len(preds) == len(y)
@@ -156,10 +164,12 @@ class TestLinearArchitecture:
     @patch("optuna.create_study")
     def test_autotune(self, mock_optuna, tiny_regression_data):
         X, y = tiny_regression_data
-        X_num = X.drop(columns=["cat1"])
+        X_num = __import__("pandas").DataFrame(
+            {col: X[col].values for col in X.columns if col != "cat1"}
+        )
         factory = get_architectures_for_problem("regression")["linear"]["factory"]
         model = factory("regression")
-        
+
         mock_study = MagicMock()
         mock_study.best_params = {
             "model_type": "ridge",
@@ -172,28 +182,30 @@ class TestLinearArchitecture:
         }
         mock_study.best_value = 0.5
         mock_optuna.return_value = mock_study
-        
+
         model.autotune(X_num, X_num, y, y)
         assert model.model is not None
 
     @patch("bluecast.blueprints.custom_model_recipes.PyTorchMLPRegressor.fit")
     def test_fit_predict(self, mock_fit, tiny_regression_data):
         X, y = tiny_regression_data
-        X_num = X.drop(columns=["cat1"])
-        
+        X_num = __import__("pandas").DataFrame(
+            {col: X[col].values for col in X.columns if col != "cat1"}
+        )
+
         factory = get_architectures_for_problem("regression")["linear"]["factory"]
         model = factory("regression")
-        
-        with patch.object(model.__class__, 'autotune') as mock_autotune:
+
+        with patch.object(model.__class__, "autotune") as mock_autotune:
             # Fake the internal model and preprocessing
             model.model = MagicMock()
             model.model.predict.return_value = np.zeros(len(y))
             model.scaler = MagicMock()
             model.imputer = MagicMock()
-            
+
             model.fit(X_num, X_num, y, y)
             preds = model.predict(X_num)
-            
+
         assert len(preds) == len(y)
 
 
@@ -206,36 +218,43 @@ class TestMLPArchitecture:
     @patch("optuna.create_study")
     def test_autotune(self, mock_optuna, tiny_regression_data):
         X, y = tiny_regression_data
-        X_num = X.drop(columns=["cat1"])
-        
+        X_num = __import__("pandas").DataFrame(
+            {col: X[col].values for col in X.columns if col != "cat1"}
+        )
+
         factory = get_architectures_for_problem("regression")["mlp"]["factory"]
         model = factory("regression")
-        
+
         mock_study = MagicMock()
-        mock_study.best_params = {"hidden_layer_sizes": (50,), "learning_rate_init": 0.01}
+        mock_study.best_params = {
+            "hidden_layer_sizes": (50,),
+            "learning_rate_init": 0.01,
+        }
         mock_optuna.return_value = mock_study
-        
+
         model.autotune(X_num, X_num, y, y)
         assert model.model is not None
 
     @patch("bluecast.ml_modelling.pytorch_models.PyTorchMLPRegressor.fit")
     def test_fit_predict(self, mock_fit, tiny_regression_data):
         X, y = tiny_regression_data
-        X_num = X.drop(columns=["cat1"])
-        
+        X_num = __import__("pandas").DataFrame(
+            {col: X[col].values for col in X.columns if col != "cat1"}
+        )
+
         factory = get_architectures_for_problem("regression")["mlp"]["factory"]
         model = factory("regression")
-        
-        with patch.object(model.__class__, 'autotune') as mock_autotune:
+
+        with patch.object(model.__class__, "autotune") as mock_autotune:
             model.model = MagicMock()
             model.model.predict.return_value = np.zeros(len(y))
             model.imputer = MagicMock()
             model.imputer.transform.return_value = np.zeros((len(y), X_num.shape[1]))
             model.scaler = MagicMock()
             model.scaler.transform.return_value = np.zeros((len(y), X_num.shape[1]))
-            
+
             model.fit(X_num, X_num, y, y)
             preds = model.predict(X_num)
-            
+
         assert mock_autotune.called
         assert len(preds) == len(y)
