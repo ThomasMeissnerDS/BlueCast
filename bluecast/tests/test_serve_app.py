@@ -1,7 +1,14 @@
 import numpy as np
 import pytest
 from unittest.mock import MagicMock
-from fastapi.testclient import TestClient
+
+try:
+    from fastapi.testclient import TestClient
+    HAS_FASTAPI = True
+except ImportError:
+    HAS_FASTAPI = False
+
+pytestmark = pytest.mark.skipif(not HAS_FASTAPI, reason="fastapi not installed")
 
 from bluecast.serve.app import create_app, _format_prediction, _format_batch_prediction
 
