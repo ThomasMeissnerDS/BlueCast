@@ -35,7 +35,7 @@ jobs:
 
       - name: Install dependencies
         run: |
-          python -m poetry install
+          python -m poetry install --all-extras
       - name: Generate coverage report
         run: |
           source ./.venv/bin/activate  # Activate the virtual environment

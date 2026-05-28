@@ -36,7 +36,7 @@ def test_check_gpu_support_gpu_warning():
     import warnings
 
     def mock_train_with_warning(*args, **kwargs):
-        warnings.warn("Xgboost cannot be imported.", stacklevel=2)
+        warnings.warn("GPU-related warning: Xgboost cannot be imported.", stacklevel=2)
 
     with patch("xgboost.train", side_effect=mock_train_with_warning):
         params = check_gpu_support()
