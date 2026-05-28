@@ -1,6 +1,5 @@
 """Tests for AIFeaturePreprocessor."""
 
-import numpy as np
 import pandas as pd
 
 from bluecast.ai.fe_preprocessor import AIFeaturePreprocessor

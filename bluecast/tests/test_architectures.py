@@ -1,9 +1,10 @@
 """Tests for architecture factories and model registry."""
 
+from unittest.mock import MagicMock, patch
+
 import numpy as np
 import pandas as pd
 import pytest
-from unittest.mock import patch, MagicMock
 
 from bluecast.ai.architectures import get_architectures_for_problem
 
@@ -98,7 +99,7 @@ class TestHistGBArchitecture:
 
         factory = get_architectures_for_problem("regression")["histgb"]["factory"]
         model = factory("regression")
-        with patch.object(model.__class__, "autotune") as mock_autotune:
+        with patch.object(model.__class__, "autotune"):
             model.model = MagicMock()
             model.model.predict.return_value = np.zeros(len(y))
             model.imputer = MagicMock()
@@ -142,7 +143,7 @@ class TestRandomForestArchitecture:
 
         factory = get_architectures_for_problem("regression")["randomforest"]["factory"]
         model = factory("regression")
-        with patch.object(model.__class__, "autotune") as mock_autotune:
+        with patch.object(model.__class__, "autotune"):
             model.model = MagicMock()
             model.model.predict.return_value = np.zeros(len(y))
             model.imputer = MagicMock()
@@ -196,7 +197,7 @@ class TestLinearArchitecture:
         factory = get_architectures_for_problem("regression")["linear"]["factory"]
         model = factory("regression")
 
-        with patch.object(model.__class__, "autotune") as mock_autotune:
+        with patch.object(model.__class__, "autotune"):
             # Fake the internal model and preprocessing
             model.model = MagicMock()
             model.model.predict.return_value = np.zeros(len(y))

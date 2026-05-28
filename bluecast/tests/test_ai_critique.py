@@ -1,9 +1,10 @@
 """Tests for bluecast.ai.critique — adversarial review loop."""
 
+from unittest.mock import MagicMock
+
 import numpy as np
 import pandas as pd
 import pytest
-from unittest.mock import MagicMock
 
 from bluecast.ai.agents.base import BaseAgent
 from bluecast.ai.agents.feature_engineer import FeatureEngineerAgent
@@ -53,7 +54,7 @@ class MockAgent(BaseAgent):
 
     def run(self, task: str) -> str:
         # We'll use a mocked run method in tests
-        pass
+        return ""
 
 
 class TestCritiqueLoop:

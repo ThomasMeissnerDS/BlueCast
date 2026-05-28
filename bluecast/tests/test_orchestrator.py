@@ -2,11 +2,11 @@
 
 import os
 import tempfile
+from unittest.mock import MagicMock, patch
 
 import numpy as np
 import pandas as pd
 import pytest
-from unittest.mock import MagicMock, patch
 
 from bluecast.ai.config import AIConfig
 from bluecast.ai.orchestrator import Orchestrator
@@ -17,7 +17,6 @@ from bluecast.tests.test_ai_mock_provider import (
     make_text_response,
     make_tool_response,
 )
-
 
 # ---------------------------------------------------------------------------
 # Fixtures

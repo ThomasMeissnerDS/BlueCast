@@ -1,9 +1,10 @@
 """Extended tests for bluecast.ai.tools — covers all tool functions."""
 
+from unittest.mock import MagicMock, patch
+
 import numpy as np
 import pandas as pd
 import pytest
-from unittest.mock import MagicMock, patch
 
 from bluecast.ai.tools import (
     TOOL_DEFINITIONS,
@@ -23,9 +24,7 @@ from bluecast.ai.tools import (
     tool_inspect_rows,
     tool_l1_feature_selection,
     tool_run_sql_query,
-    tool_web_search,
 )
-
 
 # ---------------------------------------------------------------------------
 # Fixtures
@@ -521,7 +520,7 @@ class TestToolDefinitions:
             assert "type" in td.parameters
 
     def test_tool_definitions_have_properties(self):
-        for name, td in TOOL_DEFINITIONS.items():
+        for _name, td in TOOL_DEFINITIONS.items():
             assert hasattr(td, "name")
             assert hasattr(td, "description")
             assert hasattr(td, "parameters")

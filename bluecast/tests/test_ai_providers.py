@@ -1,6 +1,5 @@
 """Tests for bluecast.ai.providers — all LLM provider implementations."""
 
-import pytest
 import sys
 from unittest.mock import MagicMock
 
@@ -10,7 +9,7 @@ sys.modules["vertexai.generative_models"] = MagicMock()
 sys.modules["openai"] = MagicMock()
 sys.modules["anthropic"] = MagicMock()
 
-from bluecast.ai.providers.base import (
+from bluecast.ai.providers.base import (  # noqa: E402
     BaseLLMProvider,
     LLMResponse,
     Message,
@@ -169,8 +168,8 @@ class TestVertexAIProvider:
         assert isinstance(result, (list, tuple))
 
     def test_chat_text_response(self):
+
         from bluecast.ai.providers.vertexai_provider import VertexAIProvider
-        import vertexai
 
         mock_gm = sys.modules["vertexai.generative_models"]
 

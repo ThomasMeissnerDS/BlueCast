@@ -1,23 +1,21 @@
+import copy
 import logging
 import time
 
 import numpy as np
-import pandas as pd
-from sklearn.base import BaseEstimator, RegressorMixin, ClassifierMixin
 import torch
 import torch.nn as nn
 import torch.optim as optim
+from sklearn.base import BaseEstimator, ClassifierMixin, RegressorMixin
 from torch.utils.data import DataLoader, TensorDataset
-import copy
 
 logger = logging.getLogger(__name__)
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
-class _PyTorchBaseEstimator(BaseEstimator):
-    """Base estimator for PyTorch models with budget-aware training.
 
-    """
+class _PyTorchBaseEstimator(BaseEstimator):
+    """Base estimator for PyTorch models with budget-aware training."""
 
     def __init__(
         self,
@@ -47,7 +45,7 @@ class _PyTorchBaseEstimator(BaseEstimator):
         self.dropout_rate = dropout_rate
         self.scoring = scoring
         self.training_deadline = training_deadline
-        
+
         self.model_ = None
         self.classes_ = None
         self.convergence_info_ = {}
@@ -55,10 +53,10 @@ class _PyTorchBaseEstimator(BaseEstimator):
     def _build_model(self, input_dim, output_dim):
         if self.random_state is not None:
             torch.manual_seed(self.random_state)
-            
+
         layers = []
         in_dim = input_dim
-            
+
         for hidden_dim in self.hidden_layer_sizes:
             layers.append(nn.Linear(in_dim, hidden_dim))
             layers.append(nn.BatchNorm1d(hidden_dim))
@@ -66,20 +64,20 @@ class _PyTorchBaseEstimator(BaseEstimator):
             if self.dropout_rate > 0:
                 layers.append(nn.Dropout(p=self.dropout_rate))
             in_dim = hidden_dim
-            
+
         layers.append(nn.Linear(in_dim, output_dim))
-        
+
         model = nn.Sequential(*layers).to(device)
-        
+
         # Weight initialization: He for ReLU, Xavier for Tanh
         for m in model.modules():
             if isinstance(m, nn.Linear):
                 if self.activation == "relu":
-                    nn.init.kaiming_normal_(m.weight, nonlinearity='relu')
+                    nn.init.kaiming_normal_(m.weight, nonlinearity="relu")
                 else:
                     nn.init.xavier_normal_(m.weight)
                 nn.init.zeros_(m.bias)
-        
+
         return model
 
     def fit(self, X, y):
@@ -90,15 +88,15 @@ class _PyTorchBaseEstimator(BaseEstimator):
         if self.random_state is not None:
             torch.manual_seed(self.random_state)
             np.random.seed(self.random_state)
-            
+
         # Split a small validation set for early stopping (10%)
         val_size = max(32, int(0.15 * len(X_train)))
         indices = np.random.permutation(len(X_train))
         train_idx, val_idx = indices[val_size:], indices[:val_size]
-        
+
         X_t = torch.tensor(X_train[train_idx], dtype=torch.float32)
         X_v = torch.tensor(X_train[val_idx], dtype=torch.float32)
-        
+
         if is_classifier:
             y_t = torch.tensor(y_train[train_idx], dtype=torch.long)
             y_v = torch.tensor(y_train[val_idx], dtype=torch.long)
@@ -107,38 +105,47 @@ class _PyTorchBaseEstimator(BaseEstimator):
         else:
             y_t = torch.tensor(y_train[train_idx], dtype=torch.float32).view(-1, 1)
             y_v = torch.tensor(y_train[val_idx], dtype=torch.float32).view(-1, 1)
-            
+
             from bluecast.ai.metrics import get_pytorch_loss_from_scoring
+
             criterion = get_pytorch_loss_from_scoring(self.scoring)
-            
+
             output_dim = 1
-            
+
         train_dataset = TensorDataset(X_t, y_t)
         actual_batch_size = min(self.batch_size, len(X_t))
-        train_loader = DataLoader(train_dataset, batch_size=actual_batch_size, shuffle=True)
-        
+        train_loader = DataLoader(
+            train_dataset, batch_size=actual_batch_size, shuffle=True
+        )
+
         self.model_ = self._build_model(X_train.shape[1], output_dim)
-        
+
         # Optimizer with L2 regularization (weight_decay)
         # alpha is total penalty. L2 penalty is alpha * (1 - l1_ratio)
         l2_penalty = self.alpha * (1 - self.l1_ratio)
-        optimizer = optim.AdamW(self.model_.parameters(), lr=self.learning_rate_init, weight_decay=l2_penalty)
-        
+        optimizer = optim.AdamW(
+            self.model_.parameters(),
+            lr=self.learning_rate_init,
+            weight_decay=l2_penalty,
+        )
+
         patience_lr = max(2, self.early_stopping_rounds // 3)
-        scheduler = optim.lr_scheduler.ReduceLROnPlateau(optimizer, mode='min', factor=0.5, patience=patience_lr)
-        
-        best_val_loss = float('inf')
+        scheduler = optim.lr_scheduler.ReduceLROnPlateau(
+            optimizer, mode="min", factor=0.5, patience=patience_lr
+        )
+
+        best_val_loss = float("inf")
         best_model_wts = copy.deepcopy(self.model_.state_dict())
         patience_counter = 0
         val_losses = []
         budget_exhausted = False
         final_epoch = 0
-        
+
         for epoch in range(self.max_iter):
             if self.training_deadline and time.time() > self.training_deadline:
                 budget_exhausted = True
                 break
-                
+
             final_epoch = epoch
             self.model_.train()
             for batch_x, batch_y in train_loader:
@@ -146,37 +153,37 @@ class _PyTorchBaseEstimator(BaseEstimator):
                 optimizer.zero_grad()
                 outputs = self.model_(batch_x)
                 loss = criterion(outputs, batch_y)
-                
+
                 # L1 regularization
                 if self.l1_ratio > 0:
                     l1_penalty = 0
                     for param in self.model_.parameters():
                         l1_penalty += torch.sum(torch.abs(param))
                     loss += self.alpha * self.l1_ratio * l1_penalty
-                
+
                 loss.backward()
                 torch.nn.utils.clip_grad_norm_(self.model_.parameters(), max_norm=1.0)
                 optimizer.step()
-                
+
             self.model_.eval()
             with torch.no_grad():
                 val_outputs = self.model_(X_v.to(device))
                 val_loss = criterion(val_outputs, y_v.to(device)).item()
 
             val_losses.append(val_loss)
-                
+
             if val_loss < best_val_loss:
                 best_val_loss = val_loss
                 best_model_wts = copy.deepcopy(self.model_.state_dict())
                 patience_counter = 0
             else:
                 patience_counter += 1
-                
+
             scheduler.step(val_loss)
-                
+
             if patience_counter >= self.early_stopping_rounds:
                 break
-                
+
         self.model_.load_state_dict(best_model_wts)
 
         # Store convergence diagnostics
@@ -197,7 +204,7 @@ class PyTorchMLPRegressor(_PyTorchBaseEstimator, RegressorMixin):
         X = np.asarray(X)
         y = np.asarray(y)
         return self._train_loop(X, y, is_classifier=False)
-        
+
     def predict(self, X):
         X = np.asarray(X)
         self.model_.eval()
@@ -215,7 +222,7 @@ class PyTorchMLPClassifier(_PyTorchBaseEstimator, ClassifierMixin):
         # Map classes to 0, 1, 2...
         y_mapped = np.searchsorted(self.classes_, y)
         return self._train_loop(X, y_mapped, is_classifier=True)
-        
+
     def predict_proba(self, X):
         X = np.asarray(X)
         self.model_.eval()
@@ -224,7 +231,7 @@ class PyTorchMLPClassifier(_PyTorchBaseEstimator, ClassifierMixin):
             logits = self.model_(X_t)
             probs = torch.softmax(logits, dim=1).cpu().numpy()
         return probs
-        
+
     def predict(self, X):
         probs = self.predict_proba(X)
         return self.classes_[np.argmax(probs, axis=1)]
@@ -283,8 +290,13 @@ class _SoftOrdering1DCNN(nn.Module):
         # 1st conv layer — grouped (depthwise)
         self.batch_norm_c1 = nn.BatchNorm1d(cha_input)
         conv1 = nn.Conv1d(
-            cha_input, cha_input * K, kernel_size=5, stride=1, padding=2,
-            groups=cha_input, bias=False,
+            cha_input,
+            cha_input * K,
+            kernel_size=5,
+            stride=1,
+            padding=2,
+            groups=cha_input,
+            bias=False,
         )
         self.conv1 = nn.utils.weight_norm(conv1, dim=None)
         self.ave_po_c1 = nn.AdaptiveAvgPool1d(output_size=sign_size2)
@@ -293,7 +305,12 @@ class _SoftOrdering1DCNN(nn.Module):
         self.batch_norm_c2 = nn.BatchNorm1d(cha_input * K)
         self.dropout_c2 = nn.Dropout(dropout_hidden)
         conv2 = nn.Conv1d(
-            cha_input * K, cha_hidden, kernel_size=3, stride=1, padding=1, bias=False,
+            cha_input * K,
+            cha_hidden,
+            kernel_size=3,
+            stride=1,
+            padding=1,
+            bias=False,
         )
         self.conv2 = nn.utils.weight_norm(conv2, dim=None)
 
@@ -301,15 +318,25 @@ class _SoftOrdering1DCNN(nn.Module):
         self.batch_norm_c3 = nn.BatchNorm1d(cha_hidden)
         self.dropout_c3 = nn.Dropout(dropout_hidden)
         conv3 = nn.Conv1d(
-            cha_hidden, cha_hidden, kernel_size=3, stride=1, padding=1, bias=False,
+            cha_hidden,
+            cha_hidden,
+            kernel_size=3,
+            stride=1,
+            padding=1,
+            bias=False,
         )
         self.conv3 = nn.utils.weight_norm(conv3, dim=None)
 
         # 4th conv layer — grouped (depthwise) + residual
         self.batch_norm_c4 = nn.BatchNorm1d(cha_hidden)
         conv4 = nn.Conv1d(
-            cha_hidden, cha_hidden, kernel_size=5, stride=1, padding=2,
-            groups=cha_hidden, bias=False,
+            cha_hidden,
+            cha_hidden,
+            kernel_size=5,
+            stride=1,
+            padding=2,
+            groups=cha_hidden,
+            bias=False,
         )
         self.conv4 = nn.utils.weight_norm(conv4, dim=None)
         self.avg_po_c4 = nn.AvgPool1d(kernel_size=4, stride=2, padding=1)
@@ -456,4 +483,3 @@ class PyTorchSO1DCNNClassifier(_PyTorchSO1DCNNBase, ClassifierMixin):
     def predict(self, X):
         probs = self.predict_proba(X)
         return self.classes_[np.argmax(probs, axis=1)]
-

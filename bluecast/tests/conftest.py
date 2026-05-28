@@ -3,6 +3,7 @@
 Session-scoped fixtures avoid redundant model training across test files.
 """
 
+import numpy.core._methods as np_methods
 import pytest
 
 from bluecast.blueprints.cast import BlueCast
@@ -57,16 +58,14 @@ def trained_bluecast_regression(synthetic_regression_data):
     return automl
 
 
-import numpy.core._methods as np_methods
-
 # Monkey-patch numpy to fix pandas coverage crash
 original_amax = np_methods._amax
 
 
-def patched_amax(
-    a, axis=None, out=None, keepdims=False, initial=np_methods._NoValue, where=True
-):
-    if initial is np_methods._NoValue:
+def patched_amax(a, axis=None, out=None, keepdims=False, initial=None, where=True):
+    import numpy.core._methods as np_methods
+
+    if initial is getattr(np_methods, "_NoValue", None) or initial is None:
         return np_methods.umr_maximum(a, axis, None, out, keepdims, None, where)
     return np_methods.umr_maximum(a, axis, None, out, keepdims, initial, where)
 

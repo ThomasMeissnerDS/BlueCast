@@ -3,15 +3,12 @@
 import numpy as np
 import pandas as pd
 import pytest
-from unittest.mock import patch, MagicMock
-
-import torch
 
 from bluecast.ml_modelling.pytorch_models import (
-    PyTorchMLPRegressor,
-    PyTorchSO1DCNNRegressor,
     PyTorchMLPClassifier,
+    PyTorchMLPRegressor,
     PyTorchSO1DCNNClassifier,
+    PyTorchSO1DCNNRegressor,
 )
 
 # ---------------------------------------------------------------------------

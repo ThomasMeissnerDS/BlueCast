@@ -24431,3 +24431,12 @@
 {"timestamp": 1779964736.717797, "agent": "Reporter", "event_type": "response", "content": "Mock LLM response.", "metadata": {"response_length": 18, "usage": {"prompt_tokens": 10, "completion_tokens": 5}}}
 {"timestamp": 1779964736.7188063, "agent": "Orchestrator", "event_type": "checkpoint", "content": "Checkpoint saved after 'report'", "metadata": null}
 {"timestamp": 1779964736.7188451, "agent": "Orchestrator", "event_type": "info", "content": "Pipeline complete in 0.0s", "metadata": {"elapsed_seconds": 0.007016658782958984}}
+{"timestamp": 1779973027.5075605, "agent": "Orchestrator", "event_type": "checkpoint", "content": "Resuming from checkpoint. Completed steps: ['sampling', 'plan', 'analyze', 'build_loop', 'build_loop']", "metadata": null}
+{"timestamp": 1779973027.5303535, "agent": "Orchestrator", "event_type": "checkpoint", "content": "Checkpoint saved after 'sampling'", "metadata": null}
+{"timestamp": 1779973027.5326371, "agent": "Orchestrator", "event_type": "checkpoint", "content": "Checkpoint saved after 'plan'", "metadata": null}
+{"timestamp": 1779973027.5369167, "agent": "Orchestrator", "event_type": "checkpoint", "content": "Checkpoint saved after 'analyze'", "metadata": null}
+{"timestamp": 1779973027.5402222, "agent": "Orchestrator", "event_type": "checkpoint", "content": "Checkpoint saved after 'build_loop'", "metadata": null}
+{"timestamp": 1779973027.5403614, "agent": "Reporter", "event_type": "task", "content": "Write a comprehensive Markdown report for this BlueCastAI run.\n\nUser prompt: test\nMode: ultimate\nProblem type: None\n\nNo feature engineering was applied.\n\nAgent activity log (last 30 entries):\n  [14:57:07] [Orchestrator] (checkpoint) Checkpoint saved after 'sampling'\n  [14:57:07] [Orchestrator] (checkpoint) Checkpoint saved after 'plan'\n  [14:57:07] [Orchestrator] (checkpoint) Checkpoint saved after 'analyze'\n  [14:57:07] [Orchestrator] (checkpoint) Checkpoint saved after 'build_loop'", "metadata": {"full_task_length": 488}}
+{"timestamp": 1779973027.540439, "agent": "Reporter", "event_type": "response", "content": "Mock LLM response.", "metadata": {"response_length": 18, "usage": {"prompt_tokens": 10, "completion_tokens": 5}}}
+{"timestamp": 1779973027.5428371, "agent": "Orchestrator", "event_type": "checkpoint", "content": "Checkpoint saved after 'report'", "metadata": null}
+{"timestamp": 1779973027.5429358, "agent": "Orchestrator", "event_type": "info", "content": "Pipeline complete in 0.0s", "metadata": {"elapsed_seconds": 0.014688253402709961}}
