@@ -1,0 +1,70 @@
+============================= test session starts ==============================
+platform linux -- Python 3.11.4, pytest-7.4.4, pluggy-1.6.0
+rootdir: /home/thomas/IdeaProjects/BlueCast/BlueCast
+plugins: anyio-4.9.0, dash-3.1.1, mock-3.14.1, cov-7.1.0
+collected 100 items
+
+bluecast/tests/test_orchestrator.py .................................... [ 36%]
+...                                                                      [ 39%]
+bluecast/tests/test_ai_tools_extended.py ............................... [ 70%]
+...............                                                          [ 85%]
+bluecast/tests/test_architectures.py ...............                     [100%]
+
+=============================== warnings summary ===============================
+bluecast/blueprints/cast.py:14
+bluecast/blueprints/cast.py:14
+  /home/thomas/IdeaProjects/BlueCast/BlueCast/bluecast/blueprints/cast.py:14: UserWarning: The NumPy module was reloaded (imported a second time). This can in some cases result in small but subtle issues and is discouraged.
+    import numpy as np
+
+bluecast/tests/test_orchestrator.py::TestSmartSampling::test_row_sampling_classification
+  /home/thomas/IdeaProjects/BlueCast/BlueCast/bluecast/ai/orchestrator.py:212: FutureWarning: DataFrameGroupBy.apply operated on the grouping columns. This behavior is deprecated, and in a future version of pandas the grouping columns will be excluded from the operation. Either pass `include_groups=False` to exclude the groupings or explicitly select the grouping columns after groupby to silence this warning.
+    .apply(
+
+bluecast/tests/test_orchestrator.py::test_step_ultimate_build_loop
+bluecast/tests/test_orchestrator.py::test_step_ultimate_build_loop
+bluecast/tests/test_orchestrator.py::test_step_ultimate_build_loop
+bluecast/tests/test_orchestrator.py::test_step_ultimate_build_loop
+bluecast/tests/test_orchestrator.py::test_step_ultimate_build_loop
+bluecast/tests/test_orchestrator.py::test_step_ultimate_build_loop
+bluecast/tests/test_orchestrator.py::test_step_ultimate_build_loop
+  /home/thomas/.cache/pypoetry/virtualenvs/bluecast-uAIs9xjE-py3.11/lib/python3.11/site-packages/dill/_dill.py:422: PicklingWarning: Cannot locate reference to <class 'unittest.mock.MagicMock'>.
+    StockPickler.save(self, obj, save_persistent_id)
+
+bluecast/tests/test_orchestrator.py::test_step_ultimate_build_loop
+bluecast/tests/test_orchestrator.py::test_step_ultimate_build_loop
+bluecast/tests/test_orchestrator.py::test_step_ultimate_build_loop
+bluecast/tests/test_orchestrator.py::test_step_ultimate_build_loop
+bluecast/tests/test_orchestrator.py::test_step_ultimate_build_loop
+bluecast/tests/test_orchestrator.py::test_step_ultimate_build_loop
+bluecast/tests/test_orchestrator.py::test_step_ultimate_build_loop
+  /home/thomas/.cache/pypoetry/virtualenvs/bluecast-uAIs9xjE-py3.11/lib/python3.11/site-packages/dill/_dill.py:422: PicklingWarning: Cannot pickle <class 'unittest.mock.MagicMock'>: unittest.mock.MagicMock has recursive self-references that trigger a RecursionError.
+    StockPickler.save(self, obj, save_persistent_id)
+
+bluecast/tests/test_ai_tools_extended.py::TestCheckLeakage::test_with_leakage
+  /home/thomas/IdeaProjects/BlueCast/BlueCast/bluecast/ai/tools.py:112: UserWarning: Potential target leakage detected. Consider dropping the feature(s): ['leak']
+    num_leaky = detect_leakage_via_correlation(df, target_col, threshold=0.95)
+
+bluecast/tests/test_ai_tools_extended.py::TestCheckTemporalPatterns::test_no_datetime
+  /home/thomas/IdeaProjects/BlueCast/BlueCast/bluecast/ai/tools.py:987: UserWarning: Could not infer format, so each element will be parsed individually, falling back to `dateutil`. To ensure parsing is consistent and as-expected, please specify a format.
+    pd.to_datetime(sample)
+
+bluecast/tests/test_ai_tools_extended.py::TestL1FeatureSelection::test_classification
+  /home/thomas/.cache/pypoetry/virtualenvs/bluecast-uAIs9xjE-py3.11/lib/python3.11/site-packages/sklearn/linear_model/_logistic.py:1135: FutureWarning: 'penalty' was deprecated in version 1.8 and will be removed in 1.10. To avoid this warning, leave 'penalty' set to its default value and use 'l1_ratio' or 'C' instead. Use l1_ratio=0 instead of penalty='l2', l1_ratio=1 instead of penalty='l1', and C=np.inf instead of penalty=None.
+    warnings.warn(
+
+bluecast/tests/test_ai_tools_extended.py::TestL1FeatureSelection::test_classification
+  /home/thomas/.cache/pypoetry/virtualenvs/bluecast-uAIs9xjE-py3.11/lib/python3.11/site-packages/sklearn/linear_model/_logistic.py:1160: UserWarning: Inconsistent values: penalty=l1 with l1_ratio=0.0. penalty is deprecated. Please use l1_ratio only.
+    warnings.warn(
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+================================ tests coverage ================================
+_______________ coverage: platform linux, python 3.11.4-final-0 ________________
+
+Name                           Stmts   Miss  Cover   Missing
+------------------------------------------------------------
+bluecast/ai/architectures.py     455    272    40%   45-98, 107, 110-117, 161-225, 254-255, 261, 276-277, 336-422, 431, 434-442, 479-530, 567, 598-698, 707, 710-717, 755-805, 830-831, 838, 868, 897-962, 971, 974-981, 993-996, 1005-1150, 1159, 1162-1165, 1206
+bluecast/ai/orchestrator.py      872    422    52%   107, 109, 123, 134-137, 150-151, 190, 231, 241, 272, 292, 314-316, 343-346, 377, 390-391, 399-406, 419-423, 429-432, 445, 461-462, 466, 480-489, 500, 522, 530, 546-554, 583, 604-733, 739, 743-748, 760-768, 771, 780-781, 786-798, 818-822, 833-844, 848-851, 856, 863-868, 871, 881-886, 890, 892, 911-919, 922, 928, 939, 959-963, 971, 976-977, 986-991, 994-997, 1007, 1009, 1023-1043, 1046, 1062, 1078, 1083, 1104-1112, 1119-1228, 1260, 1264, 1269, 1273, 1318, 1342-1407, 1429, 1447-1460, 1473-1477, 1488, 1501-1512, 1518, 1529, 1552, 1562, 1570-1574, 1577-1589, 1595, 1604, 1613-1630, 1638-1639, 1674-1677, 1681-1712, 1727-1850, 1855, 1862, 1878, 1882, 1900-1958, 1978-1979
+bluecast/ai/tools.py             701    324    54%   57, 72, 89, 94-96, 117-118, 126-129, 149, 153, 180, 188, 190, 212-220, 229, 234, 262, 270, 275, 281, 299, 328, 355, 367-368, 375-376, 380-381, 384, 386, 466-467, 484, 498, 506-507, 526, 540, 567-568, 571-572, 582-610, 618-656, 661-690, 695-721, 728-771, 776-810, 817-840, 851-873, 897, 931-932, 952-953, 960-962, 970, 975-976, 988, 1025-1026, 1040-1092, 1100, 1108, 1114-1115, 1166, 1171, 1176, 1180-1190, 1195, 1202-1215, 1222-1235, 1250, 1253, 1256-1261, 1274-1279, 1287-1289, 1309-1310, 1324-1340
+------------------------------------------------------------
+TOTAL                           2028   1018    50%
+======================= 100 passed, 21 warnings in 5.69s =======================

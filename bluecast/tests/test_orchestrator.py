@@ -681,3 +681,44 @@ def test_step_ultimate_build_loop(mock_llm, sample_df, tmpdir):
 
     # Check that architectures were built
     assert orch._build_single_arch.call_count > 0
+
+def test_create_arch_fe_task(mock_llm, sample_df, tmpdir):
+    config = AIConfig(api_key="test", mode="ultimate", verbose=False)
+    orch = Orchestrator(mock_llm, config, sample_df, "target", "test")
+    
+    # test iteration 0
+    task0 = orch._create_arch_fe_task("xgboost", "XGBoost", 0, 2, None)
+    assert "FIRST iteration" in task0
+    
+    # test iteration 1 with inheritance
+    task1 = orch._create_arch_fe_task("xgboost", "XGBoost", 1, 3, ["df['a'] = 1"])
+    assert "improve on the best so far" in task1
+    assert "df['a'] = 1" in task1
+    
+    # test final iteration
+    task2 = orch._create_arch_fe_task("xgboost", "XGBoost", 2, 3, ["df['a'] = 1"])
+    assert "FINAL iteration" in task2
+
+@patch("bluecast.ai.tools.tool_build_and_run_pipeline")
+def test_build_single_arch(mock_tool, mock_llm, sample_df, tmpdir):
+    config = AIConfig(api_key="test", mode="ultimate", verbose=False)
+    orch = Orchestrator(mock_llm, config, sample_df, "target", "test")
+    
+    mock_tool.return_value = {
+        "success": True,
+        "metrics": {"roc_auc": 0.8},
+        "oof_preds": [0.1, 0.9],
+        "pipeline": MagicMock(),
+    }
+    
+    plan = {"class_problem": "binary"}
+    plan_config = orch._build_arch_config(plan, "xgboost")
+    res = orch._build_single_arch(plan_config, "xgboost", use_xgboost=True)
+    
+    assert res["success"] is True
+    assert mock_tool.call_count == 1
+    
+    # Test linear fallback to linear architecture
+    plan_config_linear = orch._build_arch_config(plan, "linear")
+    res_linear = orch._build_single_arch(plan_config_linear, "linear", use_xgboost=False)
+    assert res_linear["success"] is True

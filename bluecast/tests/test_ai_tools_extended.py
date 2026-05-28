@@ -524,3 +524,64 @@ class TestToolDefinitions:
             assert hasattr(td, "name")
             assert hasattr(td, "description")
             assert hasattr(td, "parameters")
+
+def test_tool_check_adversarial_validation(classification_df):
+    from bluecast.ai.tools import tool_check_adversarial_validation
+    classification_df["split"] = ["test"]*50 + ["train"]*50
+    res = tool_check_adversarial_validation(classification_df, "split == 'test'")
+    assert "Adversarial" in res
+
+def test_tool_check_mutual_information(classification_df):
+    from bluecast.ai.tools import tool_check_mutual_information
+    res = tool_check_mutual_information(classification_df, "target", "classification")
+    assert "Mutual Information" in res
+
+def test_tool_target_distribution_test(classification_df):
+    from bluecast.ai.tools import tool_target_distribution_test
+    res = tool_target_distribution_test(classification_df, "num1")
+    assert "Shapiro-Wilk Test" in res
+
+def test_tool_nlp_profiling():
+    from bluecast.ai.tools import tool_nlp_profiling
+    df = pd.DataFrame({"text": ["This is great", "This is terrible", "Neutral text"] * 10})
+    res = tool_nlp_profiling(df, "text")
+    assert "NLP Profiling" in res
+
+def test_tool_apply_target_encoding(classification_df):
+    from bluecast.ai.tools import tool_apply_target_encoding
+    res = tool_apply_target_encoding(classification_df, "cat", "target")
+    assert res["success"] is True
+
+def test_tool_automated_numeric_interactions(classification_df):
+    from bluecast.ai.tools import tool_automated_numeric_interactions
+    res = tool_automated_numeric_interactions(classification_df, "num1,num2")
+    assert res["success"] is True
+
+def test_tool_create_groupby_aggregations(classification_df):
+    from bluecast.ai.tools import tool_create_groupby_aggregations
+    res = tool_create_groupby_aggregations(classification_df, "cat", "num1", "mean,sum")
+    assert res["success"] is True
+
+def test_tool_inspect_residuals(regression_df):
+    from bluecast.ai.tools import tool_inspect_residuals
+    # Mocking residuals
+    regression_df["preds"] = regression_df["target"] + np.random.normal(0, 0.1, len(regression_df))
+    res = tool_inspect_residuals(regression_df, "target", "preds")
+    assert "Top 20 rows" in res
+
+def test_tool_apply_pseudo_labeling(classification_df):
+    from bluecast.ai.tools import tool_apply_pseudo_labeling
+    classification_df.loc[10:20, "target"] = np.nan
+    res = tool_apply_pseudo_labeling(classification_df, "target", "binary", 0.9)
+    assert "Pseudo-labeling" in res
+
+def test_tool_web_search():
+    from bluecast.ai.tools import tool_web_search
+    with patch("requests.get") as mock_get:
+        mock_response = MagicMock()
+        mock_response.status_code = 200
+        mock_response.json.return_value = {"items": [{"title": "t", "snippet": "s", "link": "l"}]}
+        mock_response.ok = True
+        mock_get.return_value = mock_response
+        res = tool_web_search("test query")
+        assert "t" in res

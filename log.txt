@@ -1,0 +1,33 @@
+============================= test session starts ==============================
+platform linux -- Python 3.11.4, pytest-7.4.4, pluggy-1.6.0
+rootdir: /home/thomas/IdeaProjects/BlueCast/BlueCast
+plugins: anyio-4.9.0, dash-3.1.1, mock-3.14.1, cov-7.1.0
+collected 0 items / 1 error
+
+==================================== ERRORS ====================================
+____________ ERROR collecting bluecast/tests/test_error_analysis.py ____________
+ImportError while importing test module '/home/thomas/IdeaProjects/BlueCast/BlueCast/bluecast/tests/test_error_analysis.py'.
+Hint: make sure your test modules/packages have valid Python names.
+Traceback:
+../../../anaconda3/lib/python3.11/importlib/__init__.py:126: in import_module
+    return _bootstrap._gcd_import(name[level:], package, level)
+bluecast/tests/test_error_analysis.py:9: in <module>
+    from bluecast.evaluation.error_analysis import (
+bluecast/evaluation/error_analysis.py:13: in <module>
+    import duckdb
+../../../.cache/pypoetry/virtualenvs/bluecast-uAIs9xjE-py3.11/lib/python3.11/site-packages/duckdb/__init__.py:4: in <module>
+    import duckdb.functional as functional
+../../../.cache/pypoetry/virtualenvs/bluecast-uAIs9xjE-py3.11/lib/python3.11/site-packages/duckdb/functional/__init__.py:1: in <module>
+    from duckdb.duckdb.functional import (
+E   ModuleNotFoundError: No module named 'duckdb.duckdb.functional'; 'duckdb.duckdb' is not a package
+=============================== warnings summary ===============================
+bluecast/blueprints/cast.py:14
+bluecast/blueprints/cast.py:14
+  /home/thomas/IdeaProjects/BlueCast/BlueCast/bluecast/blueprints/cast.py:14: UserWarning: The NumPy module was reloaded (imported a second time). This can in some cases result in small but subtle issues and is discouraged.
+    import numpy as np
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+ERROR bluecast/tests/test_error_analysis.py
+!!!!!!!!!!!!!!!!!!!! Interrupted: 1 error during collection !!!!!!!!!!!!!!!!!!!!
+========================= 2 warnings, 1 error in 0.49s =========================
