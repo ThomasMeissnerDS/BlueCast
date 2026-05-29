@@ -685,33 +685,51 @@ def test_step_ultimate_build_loop(mock_llm, sample_df, tmpdir):
     # Check that architectures were built
     assert orch._build_single_arch.call_count > 0
 
+
 def test_build_single_arch(mock_llm, sample_df, tmpdir):
-    from bluecast.ai.orchestrator import Orchestrator
-    from bluecast.ai.config import AIConfig
     from unittest.mock import patch
+
+    from bluecast.ai.config import AIConfig
+    from bluecast.ai.orchestrator import Orchestrator
 
     config = AIConfig(api_key="test", verbose=False, checkpoint_dir=str(tmpdir))
     orch = Orchestrator(mock_llm, config, sample_df.copy(), "target", "test")
 
-    with patch("bluecast.ml_modelling.xgboost.XgboostModel") as MockXGB, \
-         patch("bluecast.ml_modelling.xgboost_regression.XgboostModelRegression") as MockXGBReg, \
-         patch("bluecast.ai.tools.tool_build_and_run_pipeline") as mock_run:
-        
+    with patch("bluecast.ml_modelling.xgboost.XgboostModel"), patch(
+        "bluecast.ml_modelling.xgboost_regression.XgboostModelRegression"
+    ), patch("bluecast.ai.tools.tool_build_and_run_pipeline") as mock_run:
+
         # Test linear model
         arch_config = {"arch_type": "linear", "class_problem": "binary"}
-        mock_run.return_value = {"success": True, "metrics": {"auc": 0.9}, "oof_preds": [1]}
+        mock_run.return_value = {
+            "success": True,
+            "metrics": {"auc": 0.9},
+            "oof_preds": [1],
+        }
         res = orch._build_single_arch(arch_config, "linear", False)
         assert res["success"] is True
-        
+
         # Test xgboost
         arch_config = {"arch_type": "xgboost", "class_problem": "binary"}
-        mock_run.return_value = {"success": True, "metrics": {"auc": 0.8}, "oof_preds": [1]}
+        mock_run.return_value = {
+            "success": True,
+            "metrics": {"auc": 0.8},
+            "oof_preds": [1],
+        }
         res = orch._build_single_arch(arch_config, "xgboost", True)
         assert res["success"] is True
 
         # Test xgboost regression
-        arch_config = {"arch_type": "xgboost", "class_problem": "regression", "regression_eval_metric": "mae"}
-        mock_run.return_value = {"success": True, "metrics": {"mae": 0.8}, "oof_preds": [1]}
+        arch_config = {
+            "arch_type": "xgboost",
+            "class_problem": "regression",
+            "regression_eval_metric": "mae",
+        }
+        mock_run.return_value = {
+            "success": True,
+            "metrics": {"mae": 0.8},
+            "oof_preds": [1],
+        }
         res = orch._build_single_arch(arch_config, "xgboost", True)
         assert res["success"] is True
 
@@ -719,7 +737,11 @@ def test_build_single_arch(mock_llm, sample_df, tmpdir):
         orch.context.feature_code_snippets = ["def create_feature(df): return df"]
         orch.context.custom_preprocessor = None
         arch_config = {"arch_type": "xgboost", "class_problem": "binary"}
-        mock_run.return_value = {"success": True, "metrics": {"auc": 0.8}, "oof_preds": [1]}
+        mock_run.return_value = {
+            "success": True,
+            "metrics": {"auc": 0.8},
+            "oof_preds": [1],
+        }
         res = orch._build_single_arch(arch_config, "xgboost", True)
         assert res["success"] is True
 
@@ -729,9 +751,10 @@ def test_build_single_arch(mock_llm, sample_df, tmpdir):
         res = orch._build_single_arch(arch_config, "unknown", False)
         assert res["success"] is False
 
+
 def test_create_arch_fe_task(mock_llm, sample_df, tmpdir):
-    from bluecast.ai.orchestrator import Orchestrator
     from bluecast.ai.config import AIConfig
+    from bluecast.ai.orchestrator import Orchestrator
 
     config = AIConfig(api_key="test", verbose=False, checkpoint_dir=str(tmpdir))
     orch = Orchestrator(mock_llm, config, sample_df.copy(), "target", "test")
@@ -740,4 +763,3 @@ def test_create_arch_fe_task(mock_llm, sample_df, tmpdir):
     task_str = orch._create_arch_fe_task("xgboost", "XGBoost", 0)
     assert "xgboost" in task_str.lower()
     assert "strategy" in task_str.lower()
-
