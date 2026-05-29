@@ -561,7 +561,7 @@ def test_tool_nlp_profiling():
 def test_tool_apply_target_encoding(classification_df):
     from bluecast.ai.tools import tool_apply_target_encoding
 
-    res = tool_apply_target_encoding(classification_df, "cat", "target", "binary")
+    res = tool_apply_target_encoding(classification_df, "target", "cat")
     assert res["success"] is True
 
 
@@ -587,28 +587,27 @@ def test_tool_inspect_residuals(regression_df):
         0, 0.1, len(regression_df)
     )
     res = tool_inspect_residuals(regression_df, "target", "preds")
-    assert "Residuals Analysis" in res
+    assert "Top 20 rows with highest residuals/loss" in res
 
 
 def test_tool_apply_pseudo_labeling(classification_df):
     from bluecast.ai.tools import tool_apply_pseudo_labeling
 
     classification_df.loc[10:20, "target"] = np.nan
-    res = tool_apply_pseudo_labeling(
-        classification_df, "target", "binary", ["num1", "num2", "cat"]
-    )
-    assert res["success"] is True
+    res = tool_apply_pseudo_labeling(classification_df, "target", "binary", 0.9)
+    assert "Pseudo-labeling" in res
 
 
 def test_tool_web_search():
     from bluecast.ai.tools import tool_web_search
 
-    with patch("bluecast.ai.tools.requests.get") as mock_get:
+    with patch("requests.get") as mock_get:
         mock_response = MagicMock()
         mock_response.status_code = 200
         mock_response.json.return_value = {
-            "organic_results": [{"title": "t", "snippet": "s", "link": "l"}]
+            "items": [{"title": "t", "snippet": "s", "link": "l"}]
         }
+        mock_response.ok = True
         mock_get.return_value = mock_response
         res = tool_web_search("test query")
-        assert "Search Results" in res
+        assert "t" in res

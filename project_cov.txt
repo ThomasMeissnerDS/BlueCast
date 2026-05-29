@@ -156,12 +156,12 @@ bluecast/tests/test_analyse.py::test_plot_against_target_for_regression
 bluecast/tests/test_analyse.py::test_show_parameter_coverage
 bluecast/tests/test_analyse.py::test_show_parameter_coverage
   /home/thomas/IdeaProjects/BlueCast/BlueCast/bluecast/eda/analyse.py:588: FutureWarning:
-  
+
   Series.__getitem__ treating keys as positions is deprecated. In a future version, integer keys will always be treated as labels (consistent with DataFrame behavior). To access a value by position, use `ser.iloc[pos]`
 
 bluecast/tests/test_analyse.py::test_plot_distribution_by_time
   /home/thomas/IdeaProjects/BlueCast/BlueCast/bluecast/eda/analyse.py:1456: FutureWarning:
-  
+
   'M' is deprecated and will be removed in a future version, please use 'ME' instead.
 
 bluecast/tests/test_cast.py: 3 warnings
@@ -179,7 +179,7 @@ bluecast/tests/test_shap_explanations.py: 1 warning
 bluecast/tests/test_unified.py: 4 warnings
 bluecast/tests/test_xgboost_custom.py: 2 warnings
   /home/thomas/IdeaProjects/BlueCast/BlueCast/bluecast/blueprints/cast.py:300: UserWarning:
-  
+
   Feature selection is disabled. Update the TrainingConfig param 'enable_feature_selection'
               to enable it or make use of a custom preprocessor to do it manually during the last mile computations step.
               Feature selection is recommended for datasets with many features (>1000). For datasets with a small amount
@@ -193,11 +193,11 @@ bluecast/tests/test_cv_ensemble_architecture.py: 1 warning
 bluecast/tests/test_shap_explanations.py: 1 warning
 bluecast/tests/test_xgboost_custom.py: 2 warnings
   /home/thomas/IdeaProjects/BlueCast/BlueCast/bluecast/blueprints/cast.py:300: UserWarning:
-  
+
   SHAP values cannot be calculated when categorical encoding via ML algorithm is enabled due to
               incompatibility with the shap library. See this GitHub issue for more context:
               https://github.com/slundberg/shap/issues/266
-  
+
               Calculation of Shap values has been changed to false.
               Consider disabling categorical encoding via ML algorithm in the TrainingConfig if shap values are
               required. Alternatively use Xgboost as a custom model and calculate shap values manually via
@@ -209,7 +209,7 @@ bluecast/tests/test_cast.py::test_blueprint_xgboost
 bluecast/tests/test_catboost.py::test_bluecast_without_hyperparam_tuning
 bluecast/tests/test_xgboost_custom.py::test_bluecast_with_custom_xgboost_no_tuning
   /home/thomas/IdeaProjects/BlueCast/BlueCast/bluecast/blueprints/cast.py:300: UserWarning:
-  
+
   Categorical encoding via ML algorithm is enabled. Make sure to handle categorical features
               within the provided last mile computation or consider disabling categorical encoding via ML algorithm in the
               TrainingConfig alternatively.
@@ -219,7 +219,7 @@ bluecast/tests/test_cast_cv.py: 8 warnings
 bluecast/tests/test_shap_explanations.py: 1 warning
 bluecast/tests/test_xgboost_custom.py: 2 warnings
   /home/thomas/IdeaProjects/BlueCast/BlueCast/bluecast/blueprints/cast.py:300: UserWarning:
-  
+
   Categorical encoding via ML algorithm is enabled. The tree method 'exact' is not supported with categorical encoding within Xgboost. The tree method 'exact' has been removed. Using ['approx', 'hist'] only during hyperparameter tuning.
 
 bluecast/tests/test_cast.py: 4 warnings
@@ -233,7 +233,7 @@ bluecast/tests/test_unified.py: 7 warnings
 bluecast/tests/test_xgboost_custom.py: 1 warning
 bluecast/tests/test_xgboost_regression_custom.py: 1 warning
   /home/thomas/.cache/pypoetry/virtualenvs/bluecast-uAIs9xjE-py3.11/lib/python3.11/site-packages/optuna/_experimental.py:32: ExperimentalWarning:
-  
+
   Argument ``multivariate`` is an experimental feature. The interface can change in the future.
 
 bluecast/tests/test_cast.py: 42 warnings
@@ -248,7 +248,7 @@ bluecast/tests/test_eval_metrics.py: 49 warnings
 bluecast/tests/test_shap_explanations.py: 56 warnings
 bluecast/tests/test_unified.py: 42 warnings
   /home/thomas/.cache/pypoetry/virtualenvs/bluecast-uAIs9xjE-py3.11/lib/python3.11/site-packages/matplotlib/backends/_backend_tk.py:778: DeprecationWarning:
-  
+
   'mode' parameter is deprecated and will be removed in Pillow 13 (2026-10-15)
 
 bluecast/tests/test_cast.py: 1 warning
@@ -258,7 +258,7 @@ bluecast/tests/test_eval_metrics.py: 2 warnings
 bluecast/tests/test_shap_explanations.py: 1 warning
 bluecast/tests/test_unified.py: 2 warnings
   /home/thomas/IdeaProjects/BlueCast/BlueCast/bluecast/evaluation/eval_metrics.py:49: FutureWarning:
-  
+
   The default of observed=False is deprecated and will be changed to True in a future version of pandas. Pass observed=False to retain current behavior or observed=True to adopt the future default and silence this warning.
 
 bluecast/tests/test_cast.py::test_blueprint_xgboost
@@ -266,14 +266,14 @@ bluecast/tests/test_cast.py::test_blueprint_xgboost
 bluecast/tests/test_cast_regression.py::test_blueprint_xgboost
 bluecast/tests/test_catboost_regression.py::test_catboost_regression_with_disabled_ml_algorithm_encoding
   /home/thomas/IdeaProjects/BlueCast/BlueCast/bluecast/evaluation/shap_values.py:84: FutureWarning:
-  
+
   The NumPy global RNG was seeded by calling `np.random.seed`. In a future version this function will no longer use the global RNG. Pass `rng` explicitly to opt-in to the new behaviour and silence this warning.
 
 bluecast/tests/test_cast.py::test_blueprint_xgboost
 bluecast/tests/test_cast.py::test_bluecast_with_custom_model
 bluecast/tests/test_catboost.py::test_bluecast_with_fine_tune_hyperparam_tuning
   /home/thomas/IdeaProjects/BlueCast/BlueCast/bluecast/blueprints/cast.py:300: UserWarning:
-  
+
   Precise fine tuning has been enabled. Please make sure to transform your data to a normal
               distribution (yeo-johnson). This is an experimental feature as it includes a special
               evaluation (see more in the docs). If you plan to use this feature, please make sure to read the docs.
@@ -281,7 +281,7 @@ bluecast/tests/test_catboost.py::test_bluecast_with_fine_tune_hyperparam_tuning
 bluecast/tests/test_cast.py::test_blueprint_xgboost
 bluecast/tests/test_catboost.py::test_bluecast_with_fine_tune_hyperparam_tuning
   /home/thomas/IdeaProjects/BlueCast/BlueCast/bluecast/blueprints/cast.py:300: UserWarning:
-  
+
   Precise fine tuning has been enabled, but no custom_in_fold_preprocessor has been provided.
               This will cause long runtimes without benefit. If you plan to execute any overfitting risky preprocessing,
               please consider using custom_in_fold_preprocessor to execute the steps within the cross-validation folds
@@ -295,7 +295,7 @@ bluecast/tests/test_catboost.py: 5 warnings
 bluecast/tests/test_cv_ensemble_architecture.py: 5 warnings
 bluecast/tests/test_xgboost_custom.py: 2 warnings
   /home/thomas/IdeaProjects/BlueCast/BlueCast/bluecast/blueprints/cast.py:300: UserWarning:
-  
+
   Categorical encoding via ML algorithm is enabled. Make sure to handle categorical features
               within the provided ml model or consider disabling categorical encoding via ML algorithm in the
               TrainingConfig alternatively.
@@ -303,21 +303,21 @@ bluecast/tests/test_xgboost_custom.py: 2 warnings
 bluecast/tests/test_cast.py: 12 warnings
 bluecast/tests/test_cast_regression.py: 28 warnings
   /home/thomas/IdeaProjects/BlueCast/BlueCast/bluecast/tests/shared_test_helpers.py:125: SettingWithCopyWarning:
-  
-  
+
+
   A value is trying to be set on a copy of a slice from a DataFrame.
   Try using .loc[row_indexer,col_indexer] = value instead
-  
+
   See the caveats in the documentation: https://pandas.pydata.org/pandas-docs/stable/user_guide/indexing.html#returning-a-view-versus-a-copy
 
 bluecast/tests/test_cast.py: 12 warnings
 bluecast/tests/test_cast_regression.py: 28 warnings
   /home/thomas/IdeaProjects/BlueCast/BlueCast/bluecast/tests/shared_test_helpers.py:134: SettingWithCopyWarning:
-  
-  
+
+
   A value is trying to be set on a copy of a slice from a DataFrame.
   Try using .loc[row_indexer,col_indexer] = value instead
-  
+
   See the caveats in the documentation: https://pandas.pydata.org/pandas-docs/stable/user_guide/indexing.html#returning-a-view-versus-a-copy
 
 bluecast/tests/test_cast_cv.py: 8 warnings
@@ -327,11 +327,11 @@ bluecast/tests/test_cast_cv_multiclass_conformal_prediction.py: 5 warnings
 bluecast/tests/test_cv_ensemble_architecture.py: 5 warnings
 bluecast/tests/test_unified.py: 2 warnings
   /home/thomas/IdeaProjects/BlueCast/BlueCast/bluecast/blueprints/cast_cv.py:255: SettingWithCopyWarning:
-  
-  
+
+
   A value is trying to be set on a copy of a slice from a DataFrame.
   Try using .loc[row_indexer,col_indexer] = value instead
-  
+
   See the caveats in the documentation: https://pandas.pydata.org/pandas-docs/stable/user_guide/indexing.html#returning-a-view-versus-a-copy
 
 bluecast/tests/test_cast_cv.py::test_blueprint_cv_xgboost
@@ -340,7 +340,7 @@ bluecast/tests/test_cast_cv.py::test_blueprint_cv_xgboost
 bluecast/tests/test_cast_cv.py::test_blueprint_cv_xgboost
 bluecast/tests/test_cast_cv.py::test_blueprint_cv_xgboost
   /home/thomas/IdeaProjects/BlueCast/BlueCast/bluecast/blueprints/cast.py:300: UserWarning:
-  
+
   Feature selection is enabled but no feature selector has been provided. Falling back to
               cross-validated feature elimination. Specifically for small datasets check the logs to verify that not too
               many features have been removed. Otherwise, consider disabling feature selection or providing a custom
@@ -349,7 +349,7 @@ bluecast/tests/test_cast_cv.py::test_blueprint_cv_xgboost
 bluecast/tests/test_cast_cv_binary_conformal_prediction.py: 5 warnings
 bluecast/tests/test_cv_ensemble_architecture.py: 5 warnings
   /home/thomas/IdeaProjects/BlueCast/BlueCast/bluecast/blueprints/cast.py:543: UserWarning:
-  
+
   Failed to create lift chart. This indicates an issue with the classifier.
               Check if there is any varance in the predicted probabilities.
 
@@ -360,18 +360,18 @@ bluecast/tests/test_eval_metrics.py::test_eval_classifier_exceptions
 bluecast/tests/test_eval_metrics.py::test_eval_classifier_exceptions
 bluecast/tests/test_eval_metrics.py::test_eval_classifier_exceptions
   /home/thomas/.cache/pypoetry/virtualenvs/bluecast-uAIs9xjE-py3.11/lib/python3.11/site-packages/sklearn/metrics/_classification.py:1833: UndefinedMetricWarning:
-  
+
   Precision is ill-defined and being set to 0.0 in labels with no predicted samples. Use `zero_division` parameter to control this behavior.
 
 bluecast/tests/test_cast_cv_regression.py: 13 warnings
 bluecast/tests/test_cv_ensemble_architecture.py: 5 warnings
 bluecast/tests/test_unified.py: 2 warnings
   /home/thomas/IdeaProjects/BlueCast/BlueCast/bluecast/blueprints/cast_cv_regression.py:270: SettingWithCopyWarning:
-  
-  
+
+
   A value is trying to be set on a copy of a slice from a DataFrame.
   Try using .loc[row_indexer,col_indexer] = value instead
-  
+
   See the caveats in the documentation: https://pandas.pydata.org/pandas-docs/stable/user_guide/indexing.html#returning-a-view-versus-a-copy
 
 bluecast/tests/test_cast_cv_regression.py: 4 warnings
@@ -383,7 +383,7 @@ bluecast/tests/test_error_paths.py: 1 warning
 bluecast/tests/test_unified.py: 3 warnings
 bluecast/tests/test_xgboost_regression_custom.py: 2 warnings
   /home/thomas/IdeaProjects/BlueCast/BlueCast/bluecast/blueprints/cast_regression.py:277: UserWarning:
-  
+
   Feature selection is disabled. Update the TrainingConfig param 'enable_feature_selection'
               to enable it or make use of a custom preprocessor to do it manually during the last mile computations step.
               Feature selection is recommended for datasets with many features (>1000). For datasets with a small amount
@@ -396,11 +396,11 @@ bluecast/tests/test_conformal_prediction_evaluation.py: 1 warning
 bluecast/tests/test_cv_ensemble_architecture.py: 1 warning
 bluecast/tests/test_xgboost_regression_custom.py: 2 warnings
   /home/thomas/IdeaProjects/BlueCast/BlueCast/bluecast/blueprints/cast_regression.py:277: UserWarning:
-  
+
   SHAP values cannot be calculated when categorical encoding via ML algorithm is enabled due to
               incompatibility with the shap library. See this GitHub issue for more context:
               https://github.com/slundberg/shap/issues/266
-  
+
               Calculation of Shap values has been changed to false.
               Consider disabling categorical encoding via ML algorithm in the TrainingConfig if shap values are
               required. Alternatively use Xgboost as a custom model and calculate shap values manually via
@@ -410,13 +410,13 @@ bluecast/tests/test_cast_cv_regression.py: 19 warnings
 bluecast/tests/test_cast_regression.py: 6 warnings
 bluecast/tests/test_xgboost_regression_custom.py: 2 warnings
   /home/thomas/IdeaProjects/BlueCast/BlueCast/bluecast/blueprints/cast_regression.py:277: UserWarning:
-  
+
   Categorical encoding via ML algorithm is enabled. The tree method 'exact' is not supported with categorical encoding within Xgboost. The tree method 'exact' has been removed. Using ['approx', 'hist'] only during hyperparameter tuning.
 
 bluecast/tests/test_cast_cv_regression.py: 15 warnings
 bluecast/tests/test_cast_regression.py: 1 warning
   /home/thomas/IdeaProjects/BlueCast/BlueCast/bluecast/blueprints/cast_regression.py:277: UserWarning:
-  
+
   Feature selection is enabled but no feature selector has been provided. Falling back to
               cross-validated feature elimination. Specifically for small datasets check the logs to verify that not too
               many features have been removed. Otherwise, consider disabling feature selection or providing a custom
@@ -426,7 +426,7 @@ bluecast/tests/test_cast_cv_regression.py: 15 warnings
 bluecast/tests/test_cast_regression.py: 3 warnings
 bluecast/tests/test_catboost_regression.py: 1 warning
   /home/thomas/IdeaProjects/BlueCast/BlueCast/bluecast/blueprints/cast_regression.py:277: UserWarning:
-  
+
   Precise fine tuning has been enabled. Please make sure to transform your data to a normal
               distribution (yeo-johnson). This is an experimental feature as it includes a special
               evaluation (see more in the docs). If you plan to use this feature, please make sure to read the docs.
@@ -435,7 +435,7 @@ bluecast/tests/test_cast_cv_regression.py: 15 warnings
 bluecast/tests/test_cast_regression.py: 1 warning
 bluecast/tests/test_catboost_regression.py: 1 warning
   /home/thomas/IdeaProjects/BlueCast/BlueCast/bluecast/blueprints/cast_regression.py:277: UserWarning:
-  
+
   Precise fine tuning has been enabled, but no custom_in_fold_preprocessor has been provided.
               This will cause long runtimes without benefit. If you plan to execute any overfitting risky preprocessing,
               please consider using custom_in_fold_preprocessor to execute the steps within the cross-validation folds
@@ -448,7 +448,7 @@ bluecast/tests/test_catboost_regression.py: 11 warnings
 bluecast/tests/test_cv_ensemble_architecture.py: 5 warnings
 bluecast/tests/test_xgboost_regression_custom.py: 2 warnings
   /home/thomas/IdeaProjects/BlueCast/BlueCast/bluecast/blueprints/cast_regression.py:277: UserWarning:
-  
+
   Categorical encoding via ML algorithm is enabled. Make sure to handle categorical features
               within the provided ml model or consider disabling categorical encoding via ML algorithm in the
               TrainingConfig alternatively.
@@ -457,29 +457,29 @@ bluecast/tests/test_cast_regression.py::test_blueprint_xgboost
 bluecast/tests/test_catboost_regression.py::test_BlueCastRegression_without_hyperparam_tuning
 bluecast/tests/test_xgboost_regression_custom.py::test_bluecast_regression_with_custom_xgboost_no_tuning
   /home/thomas/IdeaProjects/BlueCast/BlueCast/bluecast/blueprints/cast_regression.py:277: UserWarning:
-  
+
   Categorical encoding via ML algorithm is enabled. Make sure to handle categorical features
               within the provided last mile computation or consider disabling categorical encoding via ML algorithm in the
               TrainingConfig alternatively.
 
 bluecast/tests/test_catboost.py::test_bluecast_with_hyperparam_tuning
   /home/thomas/IdeaProjects/BlueCast/BlueCast/bluecast/blueprints/cast.py:300: UserWarning:
-  
+
   Cross validation is disabled. Update the TrainingConfig param 'hypertuning_cv_folds'
               to enable it. Cross validation is disabled on default to allow fast prototyping. For robust hyperparameter
               tuning using at least 5 folds is recommended.
 
 bluecast/tests/test_catboost_regression.py::test_BlueCastRegression_with_hyperparam_tuning
   /home/thomas/IdeaProjects/BlueCast/BlueCast/bluecast/blueprints/cast_regression.py:277: UserWarning:
-  
+
   Cross validation is disabled. Update the TrainingConfig param 'hypertuning_cv_folds'
               to enable it. Cross validation is disabled on default to allow fast prototyping. For robust hyperparameter
               tuning using at least 5 folds is recommended.
 
 bluecast/tests/test_custom_model_recipes.py: 225 warnings
   /home/thomas/.cache/pypoetry/virtualenvs/bluecast-uAIs9xjE-py3.11/lib/python3.11/site-packages/sklearn/model_selection/_validation.py:945: UserWarning:
-  
-  Scoring failed. The score on this train-test partition for these parameters will be set to nan. Details: 
+
+  Scoring failed. The score on this train-test partition for these parameters will be set to nan. Details:
   Traceback (most recent call last):
     File "/home/thomas/.cache/pypoetry/virtualenvs/bluecast-uAIs9xjE-py3.11/lib/python3.11/site-packages/sklearn/metrics/_scorer.py", line 166, in __call__
       score = scorer._score(
@@ -496,22 +496,22 @@ bluecast/tests/test_custom_model_recipes.py: 225 warnings
 
 bluecast/tests/test_data_leakage_checks.py::test_detect_leakage_via_correlation
   /home/thomas/IdeaProjects/BlueCast/BlueCast/bluecast/tests/test_data_leakage_checks.py:46: UserWarning:
-  
+
   Potential target leakage detected. Consider dropping the feature(s): ['feature1']
 
 bluecast/tests/test_data_leakage_checks.py::test_detect_categorical_leakage
   /home/thomas/IdeaProjects/BlueCast/BlueCast/bluecast/tests/test_data_leakage_checks.py:63: UserWarning:
-  
+
   Potential target leakage or constant categorical columns detected. Consider dropping the feature(s): ['feature2']
 
 bluecast/tests/test_data_leakage_checks.py::test_detect_categorical_leakage
   /home/thomas/IdeaProjects/BlueCast/BlueCast/bluecast/tests/test_data_leakage_checks.py:72: UserWarning:
-  
+
   Potential target leakage or constant categorical columns detected. Consider dropping the feature(s): ['feature1', 'feature2']
 
 bluecast/tests/test_eval_metrics.py::test_eval_classifier_exceptions
   /home/thomas/IdeaProjects/BlueCast/BlueCast/bluecast/tests/test_eval_metrics.py:230: UserWarning:
-  
+
   Failed to create lift chart. This indicates an issue with the classifier.
               Check if there is any varance in the predicted probabilities.
 
@@ -523,24 +523,15 @@ bluecast/tests/test_feature_selection.py::test_boostaroota_wrapper_multiclass
 bluecast/tests/test_feature_selection.py::test_boostaroota_wrapper_multiclass
 bluecast/tests/test_feature_selection.py::test_boostaroota_wrapper_multiclass
   /home/thomas/.cache/pypoetry/virtualenvs/bluecast-uAIs9xjE-py3.11/lib/python3.11/site-packages/xgboost/core.py:158: UserWarning:
-  
-  [06:43:43] WARNING: /workspace/src/learner.cc:740: 
+
+  [06:43:43] WARNING: /workspace/src/learner.cc:740:
   Parameters: { "silent" } are not used.
 
 bluecast/tests/test_feature_selection.py::test_boostaroota_wrapper_multiclass
 bluecast/tests/test_feature_selection.py::test_boostaroota_wrapper_multiclass
   /home/thomas/.cache/pypoetry/virtualenvs/bluecast-uAIs9xjE-py3.11/lib/python3.11/site-packages/xgboost/core.py:158: UserWarning:
-  
-  [06:43:45] WARNING: /workspace/src/learner.cc:740: 
-  Parameters: { "silent" } are not used.
 
-bluecast/tests/test_feature_selection.py::test_boostaroota_wrapper_multiclass
-bluecast/tests/test_feature_selection.py::test_boostaroota_wrapper_multiclass
-bluecast/tests/test_feature_selection.py::test_boostaroota_wrapper_multiclass
-bluecast/tests/test_feature_selection.py::test_boostaroota_wrapper_multiclass
-  /home/thomas/.cache/pypoetry/virtualenvs/bluecast-uAIs9xjE-py3.11/lib/python3.11/site-packages/xgboost/core.py:158: UserWarning:
-  
-  [06:43:47] WARNING: /workspace/src/learner.cc:740: 
+  [06:43:45] WARNING: /workspace/src/learner.cc:740:
   Parameters: { "silent" } are not used.
 
 bluecast/tests/test_feature_selection.py::test_boostaroota_wrapper_multiclass
@@ -548,28 +539,8 @@ bluecast/tests/test_feature_selection.py::test_boostaroota_wrapper_multiclass
 bluecast/tests/test_feature_selection.py::test_boostaroota_wrapper_multiclass
 bluecast/tests/test_feature_selection.py::test_boostaroota_wrapper_multiclass
   /home/thomas/.cache/pypoetry/virtualenvs/bluecast-uAIs9xjE-py3.11/lib/python3.11/site-packages/xgboost/core.py:158: UserWarning:
-  
-  [06:43:48] WARNING: /workspace/src/learner.cc:740: 
-  Parameters: { "silent" } are not used.
 
-bluecast/tests/test_feature_selection.py::test_boostaroota_wrapper_multiclass
-  /home/thomas/.cache/pypoetry/virtualenvs/bluecast-uAIs9xjE-py3.11/lib/python3.11/site-packages/xgboost/core.py:158: UserWarning:
-  
-  [06:43:49] WARNING: /workspace/src/learner.cc:740: 
-  Parameters: { "silent" } are not used.
-
-bluecast/tests/test_feature_selection.py::test_boostaroota_wrapper_multiclass
-bluecast/tests/test_feature_selection.py::test_boostaroota_wrapper_multiclass
-  /home/thomas/.cache/pypoetry/virtualenvs/bluecast-uAIs9xjE-py3.11/lib/python3.11/site-packages/xgboost/core.py:158: UserWarning:
-  
-  [06:43:50] WARNING: /workspace/src/learner.cc:740: 
-  Parameters: { "silent" } are not used.
-
-bluecast/tests/test_feature_selection.py::test_boostaroota_wrapper_multiclass
-bluecast/tests/test_feature_selection.py::test_boostaroota_wrapper_multiclass
-  /home/thomas/.cache/pypoetry/virtualenvs/bluecast-uAIs9xjE-py3.11/lib/python3.11/site-packages/xgboost/core.py:158: UserWarning:
-  
-  [06:43:51] WARNING: /workspace/src/learner.cc:740: 
+  [06:43:47] WARNING: /workspace/src/learner.cc:740:
   Parameters: { "silent" } are not used.
 
 bluecast/tests/test_feature_selection.py::test_boostaroota_wrapper_multiclass
@@ -577,62 +548,44 @@ bluecast/tests/test_feature_selection.py::test_boostaroota_wrapper_multiclass
 bluecast/tests/test_feature_selection.py::test_boostaroota_wrapper_multiclass
 bluecast/tests/test_feature_selection.py::test_boostaroota_wrapper_multiclass
   /home/thomas/.cache/pypoetry/virtualenvs/bluecast-uAIs9xjE-py3.11/lib/python3.11/site-packages/xgboost/core.py:158: UserWarning:
-  
-  [06:43:52] WARNING: /workspace/src/learner.cc:740: 
+
+  [06:43:48] WARNING: /workspace/src/learner.cc:740:
+  Parameters: { "silent" } are not used.
+
+bluecast/tests/test_feature_selection.py::test_boostaroota_wrapper_multiclass
+  /home/thomas/.cache/pypoetry/virtualenvs/bluecast-uAIs9xjE-py3.11/lib/python3.11/site-packages/xgboost/core.py:158: UserWarning:
+
+  [06:43:49] WARNING: /workspace/src/learner.cc:740:
   Parameters: { "silent" } are not used.
 
 bluecast/tests/test_feature_selection.py::test_boostaroota_wrapper_multiclass
 bluecast/tests/test_feature_selection.py::test_boostaroota_wrapper_multiclass
   /home/thomas/.cache/pypoetry/virtualenvs/bluecast-uAIs9xjE-py3.11/lib/python3.11/site-packages/xgboost/core.py:158: UserWarning:
-  
-  [06:43:53] WARNING: /workspace/src/learner.cc:740: 
+
+  [06:43:50] WARNING: /workspace/src/learner.cc:740:
+  Parameters: { "silent" } are not used.
+
+bluecast/tests/test_feature_selection.py::test_boostaroota_wrapper_multiclass
+bluecast/tests/test_feature_selection.py::test_boostaroota_wrapper_multiclass
+  /home/thomas/.cache/pypoetry/virtualenvs/bluecast-uAIs9xjE-py3.11/lib/python3.11/site-packages/xgboost/core.py:158: UserWarning:
+
+  [06:43:51] WARNING: /workspace/src/learner.cc:740:
   Parameters: { "silent" } are not used.
 
 bluecast/tests/test_feature_selection.py::test_boostaroota_wrapper_multiclass
 bluecast/tests/test_feature_selection.py::test_boostaroota_wrapper_multiclass
 bluecast/tests/test_feature_selection.py::test_boostaroota_wrapper_multiclass
 bluecast/tests/test_feature_selection.py::test_boostaroota_wrapper_multiclass
-bluecast/tests/test_feature_selection.py::test_boostaroota_wrapper_multiclass
-bluecast/tests/test_feature_selection.py::test_boostaroota_wrapper_multiclass
   /home/thomas/.cache/pypoetry/virtualenvs/bluecast-uAIs9xjE-py3.11/lib/python3.11/site-packages/xgboost/core.py:158: UserWarning:
-  
-  [06:43:55] WARNING: /workspace/src/learner.cc:740: 
+
+  [06:43:52] WARNING: /workspace/src/learner.cc:740:
   Parameters: { "silent" } are not used.
 
 bluecast/tests/test_feature_selection.py::test_boostaroota_wrapper_multiclass
 bluecast/tests/test_feature_selection.py::test_boostaroota_wrapper_multiclass
   /home/thomas/.cache/pypoetry/virtualenvs/bluecast-uAIs9xjE-py3.11/lib/python3.11/site-packages/xgboost/core.py:158: UserWarning:
-  
-  [06:43:56] WARNING: /workspace/src/learner.cc:740: 
-  Parameters: { "silent" } are not used.
 
-bluecast/tests/test_feature_selection.py::test_boostaroota_wrapper_multiclass
-  /home/thomas/.cache/pypoetry/virtualenvs/bluecast-uAIs9xjE-py3.11/lib/python3.11/site-packages/xgboost/core.py:158: UserWarning:
-  
-  [06:43:57] WARNING: /workspace/src/learner.cc:740: 
-  Parameters: { "silent" } are not used.
-
-bluecast/tests/test_feature_selection.py::test_boostaroota_wrapper_multiclass
-bluecast/tests/test_feature_selection.py::test_boostaroota_wrapper_multiclass
-bluecast/tests/test_feature_selection.py::test_boostaroota_wrapper_multiclass
-  /home/thomas/.cache/pypoetry/virtualenvs/bluecast-uAIs9xjE-py3.11/lib/python3.11/site-packages/xgboost/core.py:158: UserWarning:
-  
-  [06:43:58] WARNING: /workspace/src/learner.cc:740: 
-  Parameters: { "silent" } are not used.
-
-bluecast/tests/test_feature_selection.py::test_boostaroota_wrapper_multiclass
-bluecast/tests/test_feature_selection.py::test_boostaroota_wrapper_multiclass
-bluecast/tests/test_feature_selection.py::test_boostaroota_wrapper_multiclass
-  /home/thomas/.cache/pypoetry/virtualenvs/bluecast-uAIs9xjE-py3.11/lib/python3.11/site-packages/xgboost/core.py:158: UserWarning:
-  
-  [06:43:59] WARNING: /workspace/src/learner.cc:740: 
-  Parameters: { "silent" } are not used.
-
-bluecast/tests/test_feature_selection.py::test_boostaroota_wrapper_multiclass
-bluecast/tests/test_feature_selection.py::test_boostaroota_wrapper_multiclass
-  /home/thomas/.cache/pypoetry/virtualenvs/bluecast-uAIs9xjE-py3.11/lib/python3.11/site-packages/xgboost/core.py:158: UserWarning:
-  
-  [06:44:00] WARNING: /workspace/src/learner.cc:740: 
+  [06:43:53] WARNING: /workspace/src/learner.cc:740:
   Parameters: { "silent" } are not used.
 
 bluecast/tests/test_feature_selection.py::test_boostaroota_wrapper_multiclass
@@ -640,9 +593,46 @@ bluecast/tests/test_feature_selection.py::test_boostaroota_wrapper_multiclass
 bluecast/tests/test_feature_selection.py::test_boostaroota_wrapper_multiclass
 bluecast/tests/test_feature_selection.py::test_boostaroota_wrapper_multiclass
 bluecast/tests/test_feature_selection.py::test_boostaroota_wrapper_multiclass
+bluecast/tests/test_feature_selection.py::test_boostaroota_wrapper_multiclass
   /home/thomas/.cache/pypoetry/virtualenvs/bluecast-uAIs9xjE-py3.11/lib/python3.11/site-packages/xgboost/core.py:158: UserWarning:
-  
-  [06:44:01] WARNING: /workspace/src/learner.cc:740: 
+
+  [06:43:55] WARNING: /workspace/src/learner.cc:740:
+  Parameters: { "silent" } are not used.
+
+bluecast/tests/test_feature_selection.py::test_boostaroota_wrapper_multiclass
+bluecast/tests/test_feature_selection.py::test_boostaroota_wrapper_multiclass
+  /home/thomas/.cache/pypoetry/virtualenvs/bluecast-uAIs9xjE-py3.11/lib/python3.11/site-packages/xgboost/core.py:158: UserWarning:
+
+  [06:43:56] WARNING: /workspace/src/learner.cc:740:
+  Parameters: { "silent" } are not used.
+
+bluecast/tests/test_feature_selection.py::test_boostaroota_wrapper_multiclass
+  /home/thomas/.cache/pypoetry/virtualenvs/bluecast-uAIs9xjE-py3.11/lib/python3.11/site-packages/xgboost/core.py:158: UserWarning:
+
+  [06:43:57] WARNING: /workspace/src/learner.cc:740:
+  Parameters: { "silent" } are not used.
+
+bluecast/tests/test_feature_selection.py::test_boostaroota_wrapper_multiclass
+bluecast/tests/test_feature_selection.py::test_boostaroota_wrapper_multiclass
+bluecast/tests/test_feature_selection.py::test_boostaroota_wrapper_multiclass
+  /home/thomas/.cache/pypoetry/virtualenvs/bluecast-uAIs9xjE-py3.11/lib/python3.11/site-packages/xgboost/core.py:158: UserWarning:
+
+  [06:43:58] WARNING: /workspace/src/learner.cc:740:
+  Parameters: { "silent" } are not used.
+
+bluecast/tests/test_feature_selection.py::test_boostaroota_wrapper_multiclass
+bluecast/tests/test_feature_selection.py::test_boostaroota_wrapper_multiclass
+bluecast/tests/test_feature_selection.py::test_boostaroota_wrapper_multiclass
+  /home/thomas/.cache/pypoetry/virtualenvs/bluecast-uAIs9xjE-py3.11/lib/python3.11/site-packages/xgboost/core.py:158: UserWarning:
+
+  [06:43:59] WARNING: /workspace/src/learner.cc:740:
+  Parameters: { "silent" } are not used.
+
+bluecast/tests/test_feature_selection.py::test_boostaroota_wrapper_multiclass
+bluecast/tests/test_feature_selection.py::test_boostaroota_wrapper_multiclass
+  /home/thomas/.cache/pypoetry/virtualenvs/bluecast-uAIs9xjE-py3.11/lib/python3.11/site-packages/xgboost/core.py:158: UserWarning:
+
+  [06:44:00] WARNING: /workspace/src/learner.cc:740:
   Parameters: { "silent" } are not used.
 
 bluecast/tests/test_feature_selection.py::test_boostaroota_wrapper_multiclass
@@ -651,22 +641,8 @@ bluecast/tests/test_feature_selection.py::test_boostaroota_wrapper_multiclass
 bluecast/tests/test_feature_selection.py::test_boostaroota_wrapper_multiclass
 bluecast/tests/test_feature_selection.py::test_boostaroota_wrapper_multiclass
   /home/thomas/.cache/pypoetry/virtualenvs/bluecast-uAIs9xjE-py3.11/lib/python3.11/site-packages/xgboost/core.py:158: UserWarning:
-  
-  [06:44:02] WARNING: /workspace/src/learner.cc:740: 
-  Parameters: { "silent" } are not used.
 
-bluecast/tests/test_feature_selection.py::test_boostaroota_wrapper_multiclass
-bluecast/tests/test_feature_selection.py::test_boostaroota_wrapper_multiclass
-  /home/thomas/.cache/pypoetry/virtualenvs/bluecast-uAIs9xjE-py3.11/lib/python3.11/site-packages/xgboost/core.py:158: UserWarning:
-  
-  [06:44:03] WARNING: /workspace/src/learner.cc:740: 
-  Parameters: { "silent" } are not used.
-
-bluecast/tests/test_feature_selection.py::test_boostaroota_wrapper_multiclass
-bluecast/tests/test_feature_selection.py::test_boostaroota_wrapper_multiclass
-  /home/thomas/.cache/pypoetry/virtualenvs/bluecast-uAIs9xjE-py3.11/lib/python3.11/site-packages/xgboost/core.py:158: UserWarning:
-  
-  [06:44:04] WARNING: /workspace/src/learner.cc:740: 
+  [06:44:01] WARNING: /workspace/src/learner.cc:740:
   Parameters: { "silent" } are not used.
 
 bluecast/tests/test_feature_selection.py::test_boostaroota_wrapper_multiclass
@@ -675,21 +651,45 @@ bluecast/tests/test_feature_selection.py::test_boostaroota_wrapper_multiclass
 bluecast/tests/test_feature_selection.py::test_boostaroota_wrapper_multiclass
 bluecast/tests/test_feature_selection.py::test_boostaroota_wrapper_multiclass
   /home/thomas/.cache/pypoetry/virtualenvs/bluecast-uAIs9xjE-py3.11/lib/python3.11/site-packages/xgboost/core.py:158: UserWarning:
-  
-  [06:44:05] WARNING: /workspace/src/learner.cc:740: 
+
+  [06:44:02] WARNING: /workspace/src/learner.cc:740:
   Parameters: { "silent" } are not used.
 
 bluecast/tests/test_feature_selection.py::test_boostaroota_wrapper_multiclass
 bluecast/tests/test_feature_selection.py::test_boostaroota_wrapper_multiclass
   /home/thomas/.cache/pypoetry/virtualenvs/bluecast-uAIs9xjE-py3.11/lib/python3.11/site-packages/xgboost/core.py:158: UserWarning:
-  
-  [06:44:06] WARNING: /workspace/src/learner.cc:740: 
+
+  [06:44:03] WARNING: /workspace/src/learner.cc:740:
+  Parameters: { "silent" } are not used.
+
+bluecast/tests/test_feature_selection.py::test_boostaroota_wrapper_multiclass
+bluecast/tests/test_feature_selection.py::test_boostaroota_wrapper_multiclass
+  /home/thomas/.cache/pypoetry/virtualenvs/bluecast-uAIs9xjE-py3.11/lib/python3.11/site-packages/xgboost/core.py:158: UserWarning:
+
+  [06:44:04] WARNING: /workspace/src/learner.cc:740:
+  Parameters: { "silent" } are not used.
+
+bluecast/tests/test_feature_selection.py::test_boostaroota_wrapper_multiclass
+bluecast/tests/test_feature_selection.py::test_boostaroota_wrapper_multiclass
+bluecast/tests/test_feature_selection.py::test_boostaroota_wrapper_multiclass
+bluecast/tests/test_feature_selection.py::test_boostaroota_wrapper_multiclass
+bluecast/tests/test_feature_selection.py::test_boostaroota_wrapper_multiclass
+  /home/thomas/.cache/pypoetry/virtualenvs/bluecast-uAIs9xjE-py3.11/lib/python3.11/site-packages/xgboost/core.py:158: UserWarning:
+
+  [06:44:05] WARNING: /workspace/src/learner.cc:740:
+  Parameters: { "silent" } are not used.
+
+bluecast/tests/test_feature_selection.py::test_boostaroota_wrapper_multiclass
+bluecast/tests/test_feature_selection.py::test_boostaroota_wrapper_multiclass
+  /home/thomas/.cache/pypoetry/virtualenvs/bluecast-uAIs9xjE-py3.11/lib/python3.11/site-packages/xgboost/core.py:158: UserWarning:
+
+  [06:44:06] WARNING: /workspace/src/learner.cc:740:
   Parameters: { "silent" } are not used.
 
 bluecast/tests/test_feature_selection.py: 12 warnings
   /home/thomas/.cache/pypoetry/virtualenvs/bluecast-uAIs9xjE-py3.11/lib/python3.11/site-packages/xgboost/core.py:158: UserWarning:
-  
-  [06:44:07] WARNING: /workspace/src/learner.cc:740: 
+
+  [06:44:07] WARNING: /workspace/src/learner.cc:740:
   Parameters: { "silent" } are not used.
 
 bluecast/tests/test_feature_selection.py::test_boostaroota_wrapper_multiclass
@@ -697,95 +697,86 @@ bluecast/tests/test_feature_selection.py::test_boostaroota_wrapper_multiclass
 bluecast/tests/test_feature_selection.py::test_boostaroota_wrapper_multiclass
 bluecast/tests/test_feature_selection.py::test_boostaroota_wrapper_multiclass
   /home/thomas/.cache/pypoetry/virtualenvs/bluecast-uAIs9xjE-py3.11/lib/python3.11/site-packages/xgboost/core.py:158: UserWarning:
-  
-  [06:44:08] WARNING: /workspace/src/learner.cc:740: 
+
+  [06:44:08] WARNING: /workspace/src/learner.cc:740:
   Parameters: { "silent" } are not used.
 
 bluecast/tests/test_feature_selection.py::test_boostaroota_wrapper_multiclass
   /home/thomas/.cache/pypoetry/virtualenvs/bluecast-uAIs9xjE-py3.11/lib/python3.11/site-packages/xgboost/core.py:158: UserWarning:
-  
-  [06:44:09] WARNING: /workspace/src/learner.cc:740: 
+
+  [06:44:09] WARNING: /workspace/src/learner.cc:740:
   Parameters: { "silent" } are not used.
 
 bluecast/tests/test_feature_selection.py::test_boostaroota_wrapper_multiclass
   /home/thomas/.cache/pypoetry/virtualenvs/bluecast-uAIs9xjE-py3.11/lib/python3.11/site-packages/xgboost/core.py:158: UserWarning:
-  
-  [06:44:11] WARNING: /workspace/src/learner.cc:740: 
+
+  [06:44:11] WARNING: /workspace/src/learner.cc:740:
   Parameters: { "silent" } are not used.
 
 bluecast/tests/test_feature_selection.py::test_boostaroota_wrapper_multiclass
   /home/thomas/.cache/pypoetry/virtualenvs/bluecast-uAIs9xjE-py3.11/lib/python3.11/site-packages/xgboost/core.py:158: UserWarning:
-  
-  [06:44:13] WARNING: /workspace/src/learner.cc:740: 
+
+  [06:44:13] WARNING: /workspace/src/learner.cc:740:
   Parameters: { "silent" } are not used.
 
 bluecast/tests/test_feature_selection.py::test_boostaroota_wrapper_multiclass
   /home/thomas/.cache/pypoetry/virtualenvs/bluecast-uAIs9xjE-py3.11/lib/python3.11/site-packages/xgboost/core.py:158: UserWarning:
-  
-  [06:44:14] WARNING: /workspace/src/learner.cc:740: 
+
+  [06:44:14] WARNING: /workspace/src/learner.cc:740:
   Parameters: { "silent" } are not used.
 
 bluecast/tests/test_feature_selection.py::test_boostaroota_wrapper_multiclass
   /home/thomas/.cache/pypoetry/virtualenvs/bluecast-uAIs9xjE-py3.11/lib/python3.11/site-packages/xgboost/core.py:158: UserWarning:
-  
-  [06:44:16] WARNING: /workspace/src/learner.cc:740: 
+
+  [06:44:16] WARNING: /workspace/src/learner.cc:740:
   Parameters: { "silent" } are not used.
 
 bluecast/tests/test_feature_selection.py::test_boostaroota_wrapper_multiclass
   /home/thomas/.cache/pypoetry/virtualenvs/bluecast-uAIs9xjE-py3.11/lib/python3.11/site-packages/xgboost/core.py:158: UserWarning:
-  
-  [06:44:19] WARNING: /workspace/src/learner.cc:740: 
+
+  [06:44:19] WARNING: /workspace/src/learner.cc:740:
   Parameters: { "silent" } are not used.
 
 bluecast/tests/test_feature_selection.py::test_boostaroota_wrapper_multiclass
   /home/thomas/.cache/pypoetry/virtualenvs/bluecast-uAIs9xjE-py3.11/lib/python3.11/site-packages/xgboost/core.py:158: UserWarning:
-  
-  [06:44:21] WARNING: /workspace/src/learner.cc:740: 
-  Parameters: { "silent" } are not used.
 
-bluecast/tests/test_feature_selection.py::test_boostaroota_wrapper_multiclass
-bluecast/tests/test_feature_selection.py::test_boostaroota_wrapper_multiclass
-  /home/thomas/.cache/pypoetry/virtualenvs/bluecast-uAIs9xjE-py3.11/lib/python3.11/site-packages/xgboost/core.py:158: UserWarning:
-  
-  [06:44:22] WARNING: /workspace/src/learner.cc:740: 
-  Parameters: { "silent" } are not used.
-
-bluecast/tests/test_feature_selection.py::test_boostaroota_wrapper_multiclass
-  /home/thomas/.cache/pypoetry/virtualenvs/bluecast-uAIs9xjE-py3.11/lib/python3.11/site-packages/xgboost/core.py:158: UserWarning:
-  
-  [06:44:23] WARNING: /workspace/src/learner.cc:740: 
+  [06:44:21] WARNING: /workspace/src/learner.cc:740:
   Parameters: { "silent" } are not used.
 
 bluecast/tests/test_feature_selection.py::test_boostaroota_wrapper_multiclass
 bluecast/tests/test_feature_selection.py::test_boostaroota_wrapper_multiclass
   /home/thomas/.cache/pypoetry/virtualenvs/bluecast-uAIs9xjE-py3.11/lib/python3.11/site-packages/xgboost/core.py:158: UserWarning:
-  
-  [06:44:25] WARNING: /workspace/src/learner.cc:740: 
+
+  [06:44:22] WARNING: /workspace/src/learner.cc:740:
+  Parameters: { "silent" } are not used.
+
+bluecast/tests/test_feature_selection.py::test_boostaroota_wrapper_multiclass
+  /home/thomas/.cache/pypoetry/virtualenvs/bluecast-uAIs9xjE-py3.11/lib/python3.11/site-packages/xgboost/core.py:158: UserWarning:
+
+  [06:44:23] WARNING: /workspace/src/learner.cc:740:
   Parameters: { "silent" } are not used.
 
 bluecast/tests/test_feature_selection.py::test_boostaroota_wrapper_multiclass
 bluecast/tests/test_feature_selection.py::test_boostaroota_wrapper_multiclass
-bluecast/tests/test_feature_selection.py::test_boostaroota_wrapper_multiclass
   /home/thomas/.cache/pypoetry/virtualenvs/bluecast-uAIs9xjE-py3.11/lib/python3.11/site-packages/xgboost/core.py:158: UserWarning:
-  
-  [06:44:26] WARNING: /workspace/src/learner.cc:740: 
+
+  [06:44:25] WARNING: /workspace/src/learner.cc:740:
   Parameters: { "silent" } are not used.
 
 bluecast/tests/test_feature_selection.py::test_boostaroota_wrapper_multiclass
 bluecast/tests/test_feature_selection.py::test_boostaroota_wrapper_multiclass
 bluecast/tests/test_feature_selection.py::test_boostaroota_wrapper_multiclass
   /home/thomas/.cache/pypoetry/virtualenvs/bluecast-uAIs9xjE-py3.11/lib/python3.11/site-packages/xgboost/core.py:158: UserWarning:
-  
-  [06:44:27] WARNING: /workspace/src/learner.cc:740: 
+
+  [06:44:26] WARNING: /workspace/src/learner.cc:740:
   Parameters: { "silent" } are not used.
 
 bluecast/tests/test_feature_selection.py::test_boostaroota_wrapper_multiclass
 bluecast/tests/test_feature_selection.py::test_boostaroota_wrapper_multiclass
 bluecast/tests/test_feature_selection.py::test_boostaroota_wrapper_multiclass
-bluecast/tests/test_feature_selection.py::test_boostaroota_wrapper_multiclass
   /home/thomas/.cache/pypoetry/virtualenvs/bluecast-uAIs9xjE-py3.11/lib/python3.11/site-packages/xgboost/core.py:158: UserWarning:
-  
-  [06:44:28] WARNING: /workspace/src/learner.cc:740: 
+
+  [06:44:27] WARNING: /workspace/src/learner.cc:740:
   Parameters: { "silent" } are not used.
 
 bluecast/tests/test_feature_selection.py::test_boostaroota_wrapper_multiclass
@@ -793,37 +784,17 @@ bluecast/tests/test_feature_selection.py::test_boostaroota_wrapper_multiclass
 bluecast/tests/test_feature_selection.py::test_boostaroota_wrapper_multiclass
 bluecast/tests/test_feature_selection.py::test_boostaroota_wrapper_multiclass
   /home/thomas/.cache/pypoetry/virtualenvs/bluecast-uAIs9xjE-py3.11/lib/python3.11/site-packages/xgboost/core.py:158: UserWarning:
-  
-  [06:44:29] WARNING: /workspace/src/learner.cc:740: 
+
+  [06:44:28] WARNING: /workspace/src/learner.cc:740:
   Parameters: { "silent" } are not used.
 
 bluecast/tests/test_feature_selection.py::test_boostaroota_wrapper_multiclass
 bluecast/tests/test_feature_selection.py::test_boostaroota_wrapper_multiclass
 bluecast/tests/test_feature_selection.py::test_boostaroota_wrapper_multiclass
 bluecast/tests/test_feature_selection.py::test_boostaroota_wrapper_multiclass
-bluecast/tests/test_feature_selection.py::test_boostaroota_wrapper_multiclass
-bluecast/tests/test_feature_selection.py::test_boostaroota_wrapper_multiclass
-bluecast/tests/test_feature_selection.py::test_boostaroota_wrapper_multiclass
-bluecast/tests/test_feature_selection.py::test_boostaroota_wrapper_multiclass
-bluecast/tests/test_feature_selection.py::test_boostaroota_wrapper_multiclass
   /home/thomas/.cache/pypoetry/virtualenvs/bluecast-uAIs9xjE-py3.11/lib/python3.11/site-packages/xgboost/core.py:158: UserWarning:
-  
-  [06:44:30] WARNING: /workspace/src/learner.cc:740: 
-  Parameters: { "silent" } are not used.
 
-bluecast/tests/test_feature_selection.py::test_boostaroota_wrapper_multiclass
-bluecast/tests/test_feature_selection.py::test_boostaroota_wrapper_multiclass
-  /home/thomas/.cache/pypoetry/virtualenvs/bluecast-uAIs9xjE-py3.11/lib/python3.11/site-packages/xgboost/core.py:158: UserWarning:
-  
-  [06:44:31] WARNING: /workspace/src/learner.cc:740: 
-  Parameters: { "silent" } are not used.
-
-bluecast/tests/test_feature_selection.py::test_boostaroota_wrapper_multiclass
-bluecast/tests/test_feature_selection.py::test_boostaroota_wrapper_multiclass
-bluecast/tests/test_feature_selection.py::test_boostaroota_wrapper_multiclass
-  /home/thomas/.cache/pypoetry/virtualenvs/bluecast-uAIs9xjE-py3.11/lib/python3.11/site-packages/xgboost/core.py:158: UserWarning:
-  
-  [06:44:33] WARNING: /workspace/src/learner.cc:740: 
+  [06:44:29] WARNING: /workspace/src/learner.cc:740:
   Parameters: { "silent" } are not used.
 
 bluecast/tests/test_feature_selection.py::test_boostaroota_wrapper_multiclass
@@ -834,33 +805,25 @@ bluecast/tests/test_feature_selection.py::test_boostaroota_wrapper_multiclass
 bluecast/tests/test_feature_selection.py::test_boostaroota_wrapper_multiclass
 bluecast/tests/test_feature_selection.py::test_boostaroota_wrapper_multiclass
 bluecast/tests/test_feature_selection.py::test_boostaroota_wrapper_multiclass
+bluecast/tests/test_feature_selection.py::test_boostaroota_wrapper_multiclass
   /home/thomas/.cache/pypoetry/virtualenvs/bluecast-uAIs9xjE-py3.11/lib/python3.11/site-packages/xgboost/core.py:158: UserWarning:
-  
-  [06:44:34] WARNING: /workspace/src/learner.cc:740: 
+
+  [06:44:30] WARNING: /workspace/src/learner.cc:740:
+  Parameters: { "silent" } are not used.
+
+bluecast/tests/test_feature_selection.py::test_boostaroota_wrapper_multiclass
+bluecast/tests/test_feature_selection.py::test_boostaroota_wrapper_multiclass
+  /home/thomas/.cache/pypoetry/virtualenvs/bluecast-uAIs9xjE-py3.11/lib/python3.11/site-packages/xgboost/core.py:158: UserWarning:
+
+  [06:44:31] WARNING: /workspace/src/learner.cc:740:
   Parameters: { "silent" } are not used.
 
 bluecast/tests/test_feature_selection.py::test_boostaroota_wrapper_multiclass
 bluecast/tests/test_feature_selection.py::test_boostaroota_wrapper_multiclass
 bluecast/tests/test_feature_selection.py::test_boostaroota_wrapper_multiclass
   /home/thomas/.cache/pypoetry/virtualenvs/bluecast-uAIs9xjE-py3.11/lib/python3.11/site-packages/xgboost/core.py:158: UserWarning:
-  
-  [06:44:35] WARNING: /workspace/src/learner.cc:740: 
-  Parameters: { "silent" } are not used.
 
-bluecast/tests/test_feature_selection.py::test_boostaroota_wrapper_multiclass
-bluecast/tests/test_feature_selection.py::test_boostaroota_wrapper_multiclass
-bluecast/tests/test_feature_selection.py::test_boostaroota_wrapper_multiclass
-  /home/thomas/.cache/pypoetry/virtualenvs/bluecast-uAIs9xjE-py3.11/lib/python3.11/site-packages/xgboost/core.py:158: UserWarning:
-  
-  [06:44:36] WARNING: /workspace/src/learner.cc:740: 
-  Parameters: { "silent" } are not used.
-
-bluecast/tests/test_feature_selection.py::test_boostaroota_wrapper_multiclass
-bluecast/tests/test_feature_selection.py::test_boostaroota_wrapper_multiclass
-bluecast/tests/test_feature_selection.py::test_boostaroota_wrapper_multiclass
-  /home/thomas/.cache/pypoetry/virtualenvs/bluecast-uAIs9xjE-py3.11/lib/python3.11/site-packages/xgboost/core.py:158: UserWarning:
-  
-  [06:44:37] WARNING: /workspace/src/learner.cc:740: 
+  [06:44:33] WARNING: /workspace/src/learner.cc:740:
   Parameters: { "silent" } are not used.
 
 bluecast/tests/test_feature_selection.py::test_boostaroota_wrapper_multiclass
@@ -869,41 +832,35 @@ bluecast/tests/test_feature_selection.py::test_boostaroota_wrapper_multiclass
 bluecast/tests/test_feature_selection.py::test_boostaroota_wrapper_multiclass
 bluecast/tests/test_feature_selection.py::test_boostaroota_wrapper_multiclass
 bluecast/tests/test_feature_selection.py::test_boostaroota_wrapper_multiclass
+bluecast/tests/test_feature_selection.py::test_boostaroota_wrapper_multiclass
+bluecast/tests/test_feature_selection.py::test_boostaroota_wrapper_multiclass
   /home/thomas/.cache/pypoetry/virtualenvs/bluecast-uAIs9xjE-py3.11/lib/python3.11/site-packages/xgboost/core.py:158: UserWarning:
-  
-  [06:44:38] WARNING: /workspace/src/learner.cc:740: 
-  Parameters: { "silent" } are not used.
 
-bluecast/tests/test_feature_selection.py::test_boostaroota_wrapper_multiclass
-bluecast/tests/test_feature_selection.py::test_boostaroota_wrapper_multiclass
-  /home/thomas/.cache/pypoetry/virtualenvs/bluecast-uAIs9xjE-py3.11/lib/python3.11/site-packages/xgboost/core.py:158: UserWarning:
-  
-  [06:44:39] WARNING: /workspace/src/learner.cc:740: 
-  Parameters: { "silent" } are not used.
-
-bluecast/tests/test_feature_selection.py::test_boostaroota_wrapper_multiclass
-  /home/thomas/.cache/pypoetry/virtualenvs/bluecast-uAIs9xjE-py3.11/lib/python3.11/site-packages/xgboost/core.py:158: UserWarning:
-  
-  [06:44:40] WARNING: /workspace/src/learner.cc:740: 
-  Parameters: { "silent" } are not used.
-
-bluecast/tests/test_feature_selection.py::test_boostaroota_wrapper_multiclass
-bluecast/tests/test_feature_selection.py::test_boostaroota_wrapper_multiclass
-bluecast/tests/test_feature_selection.py::test_boostaroota_wrapper_multiclass
-bluecast/tests/test_feature_selection.py::test_boostaroota_wrapper_multiclass
-bluecast/tests/test_feature_selection.py::test_boostaroota_wrapper_multiclass
-bluecast/tests/test_feature_selection.py::test_boostaroota_wrapper_multiclass
-  /home/thomas/.cache/pypoetry/virtualenvs/bluecast-uAIs9xjE-py3.11/lib/python3.11/site-packages/xgboost/core.py:158: UserWarning:
-  
-  [06:44:41] WARNING: /workspace/src/learner.cc:740: 
+  [06:44:34] WARNING: /workspace/src/learner.cc:740:
   Parameters: { "silent" } are not used.
 
 bluecast/tests/test_feature_selection.py::test_boostaroota_wrapper_multiclass
 bluecast/tests/test_feature_selection.py::test_boostaroota_wrapper_multiclass
 bluecast/tests/test_feature_selection.py::test_boostaroota_wrapper_multiclass
   /home/thomas/.cache/pypoetry/virtualenvs/bluecast-uAIs9xjE-py3.11/lib/python3.11/site-packages/xgboost/core.py:158: UserWarning:
-  
-  [06:44:42] WARNING: /workspace/src/learner.cc:740: 
+
+  [06:44:35] WARNING: /workspace/src/learner.cc:740:
+  Parameters: { "silent" } are not used.
+
+bluecast/tests/test_feature_selection.py::test_boostaroota_wrapper_multiclass
+bluecast/tests/test_feature_selection.py::test_boostaroota_wrapper_multiclass
+bluecast/tests/test_feature_selection.py::test_boostaroota_wrapper_multiclass
+  /home/thomas/.cache/pypoetry/virtualenvs/bluecast-uAIs9xjE-py3.11/lib/python3.11/site-packages/xgboost/core.py:158: UserWarning:
+
+  [06:44:36] WARNING: /workspace/src/learner.cc:740:
+  Parameters: { "silent" } are not used.
+
+bluecast/tests/test_feature_selection.py::test_boostaroota_wrapper_multiclass
+bluecast/tests/test_feature_selection.py::test_boostaroota_wrapper_multiclass
+bluecast/tests/test_feature_selection.py::test_boostaroota_wrapper_multiclass
+  /home/thomas/.cache/pypoetry/virtualenvs/bluecast-uAIs9xjE-py3.11/lib/python3.11/site-packages/xgboost/core.py:158: UserWarning:
+
+  [06:44:37] WARNING: /workspace/src/learner.cc:740:
   Parameters: { "silent" } are not used.
 
 bluecast/tests/test_feature_selection.py::test_boostaroota_wrapper_multiclass
@@ -911,9 +868,42 @@ bluecast/tests/test_feature_selection.py::test_boostaroota_wrapper_multiclass
 bluecast/tests/test_feature_selection.py::test_boostaroota_wrapper_multiclass
 bluecast/tests/test_feature_selection.py::test_boostaroota_wrapper_multiclass
 bluecast/tests/test_feature_selection.py::test_boostaroota_wrapper_multiclass
+bluecast/tests/test_feature_selection.py::test_boostaroota_wrapper_multiclass
   /home/thomas/.cache/pypoetry/virtualenvs/bluecast-uAIs9xjE-py3.11/lib/python3.11/site-packages/xgboost/core.py:158: UserWarning:
-  
-  [06:44:44] WARNING: /workspace/src/learner.cc:740: 
+
+  [06:44:38] WARNING: /workspace/src/learner.cc:740:
+  Parameters: { "silent" } are not used.
+
+bluecast/tests/test_feature_selection.py::test_boostaroota_wrapper_multiclass
+bluecast/tests/test_feature_selection.py::test_boostaroota_wrapper_multiclass
+  /home/thomas/.cache/pypoetry/virtualenvs/bluecast-uAIs9xjE-py3.11/lib/python3.11/site-packages/xgboost/core.py:158: UserWarning:
+
+  [06:44:39] WARNING: /workspace/src/learner.cc:740:
+  Parameters: { "silent" } are not used.
+
+bluecast/tests/test_feature_selection.py::test_boostaroota_wrapper_multiclass
+  /home/thomas/.cache/pypoetry/virtualenvs/bluecast-uAIs9xjE-py3.11/lib/python3.11/site-packages/xgboost/core.py:158: UserWarning:
+
+  [06:44:40] WARNING: /workspace/src/learner.cc:740:
+  Parameters: { "silent" } are not used.
+
+bluecast/tests/test_feature_selection.py::test_boostaroota_wrapper_multiclass
+bluecast/tests/test_feature_selection.py::test_boostaroota_wrapper_multiclass
+bluecast/tests/test_feature_selection.py::test_boostaroota_wrapper_multiclass
+bluecast/tests/test_feature_selection.py::test_boostaroota_wrapper_multiclass
+bluecast/tests/test_feature_selection.py::test_boostaroota_wrapper_multiclass
+bluecast/tests/test_feature_selection.py::test_boostaroota_wrapper_multiclass
+  /home/thomas/.cache/pypoetry/virtualenvs/bluecast-uAIs9xjE-py3.11/lib/python3.11/site-packages/xgboost/core.py:158: UserWarning:
+
+  [06:44:41] WARNING: /workspace/src/learner.cc:740:
+  Parameters: { "silent" } are not used.
+
+bluecast/tests/test_feature_selection.py::test_boostaroota_wrapper_multiclass
+bluecast/tests/test_feature_selection.py::test_boostaroota_wrapper_multiclass
+bluecast/tests/test_feature_selection.py::test_boostaroota_wrapper_multiclass
+  /home/thomas/.cache/pypoetry/virtualenvs/bluecast-uAIs9xjE-py3.11/lib/python3.11/site-packages/xgboost/core.py:158: UserWarning:
+
+  [06:44:42] WARNING: /workspace/src/learner.cc:740:
   Parameters: { "silent" } are not used.
 
 bluecast/tests/test_feature_selection.py::test_boostaroota_wrapper_multiclass
@@ -922,24 +912,8 @@ bluecast/tests/test_feature_selection.py::test_boostaroota_wrapper_multiclass
 bluecast/tests/test_feature_selection.py::test_boostaroota_wrapper_multiclass
 bluecast/tests/test_feature_selection.py::test_boostaroota_wrapper_multiclass
   /home/thomas/.cache/pypoetry/virtualenvs/bluecast-uAIs9xjE-py3.11/lib/python3.11/site-packages/xgboost/core.py:158: UserWarning:
-  
-  [06:44:45] WARNING: /workspace/src/learner.cc:740: 
-  Parameters: { "silent" } are not used.
 
-bluecast/tests/test_feature_selection.py::test_boostaroota_wrapper_multiclass
-bluecast/tests/test_feature_selection.py::test_boostaroota_wrapper_multiclass
-bluecast/tests/test_feature_selection.py::test_boostaroota_wrapper_multiclass
-bluecast/tests/test_feature_selection.py::test_boostaroota_wrapper_multiclass
-  /home/thomas/.cache/pypoetry/virtualenvs/bluecast-uAIs9xjE-py3.11/lib/python3.11/site-packages/xgboost/core.py:158: UserWarning:
-  
-  [06:44:46] WARNING: /workspace/src/learner.cc:740: 
-  Parameters: { "silent" } are not used.
-
-bluecast/tests/test_feature_selection.py::test_boostaroota_wrapper_multiclass
-bluecast/tests/test_feature_selection.py::test_boostaroota_wrapper_multiclass
-  /home/thomas/.cache/pypoetry/virtualenvs/bluecast-uAIs9xjE-py3.11/lib/python3.11/site-packages/xgboost/core.py:158: UserWarning:
-  
-  [06:44:47] WARNING: /workspace/src/learner.cc:740: 
+  [06:44:44] WARNING: /workspace/src/learner.cc:740:
   Parameters: { "silent" } are not used.
 
 bluecast/tests/test_feature_selection.py::test_boostaroota_wrapper_multiclass
@@ -948,22 +922,48 @@ bluecast/tests/test_feature_selection.py::test_boostaroota_wrapper_multiclass
 bluecast/tests/test_feature_selection.py::test_boostaroota_wrapper_multiclass
 bluecast/tests/test_feature_selection.py::test_boostaroota_wrapper_multiclass
   /home/thomas/.cache/pypoetry/virtualenvs/bluecast-uAIs9xjE-py3.11/lib/python3.11/site-packages/xgboost/core.py:158: UserWarning:
-  
-  [06:44:48] WARNING: /workspace/src/learner.cc:740: 
+
+  [06:44:45] WARNING: /workspace/src/learner.cc:740:
+  Parameters: { "silent" } are not used.
+
+bluecast/tests/test_feature_selection.py::test_boostaroota_wrapper_multiclass
+bluecast/tests/test_feature_selection.py::test_boostaroota_wrapper_multiclass
+bluecast/tests/test_feature_selection.py::test_boostaroota_wrapper_multiclass
+bluecast/tests/test_feature_selection.py::test_boostaroota_wrapper_multiclass
+  /home/thomas/.cache/pypoetry/virtualenvs/bluecast-uAIs9xjE-py3.11/lib/python3.11/site-packages/xgboost/core.py:158: UserWarning:
+
+  [06:44:46] WARNING: /workspace/src/learner.cc:740:
+  Parameters: { "silent" } are not used.
+
+bluecast/tests/test_feature_selection.py::test_boostaroota_wrapper_multiclass
+bluecast/tests/test_feature_selection.py::test_boostaroota_wrapper_multiclass
+  /home/thomas/.cache/pypoetry/virtualenvs/bluecast-uAIs9xjE-py3.11/lib/python3.11/site-packages/xgboost/core.py:158: UserWarning:
+
+  [06:44:47] WARNING: /workspace/src/learner.cc:740:
+  Parameters: { "silent" } are not used.
+
+bluecast/tests/test_feature_selection.py::test_boostaroota_wrapper_multiclass
+bluecast/tests/test_feature_selection.py::test_boostaroota_wrapper_multiclass
+bluecast/tests/test_feature_selection.py::test_boostaroota_wrapper_multiclass
+bluecast/tests/test_feature_selection.py::test_boostaroota_wrapper_multiclass
+bluecast/tests/test_feature_selection.py::test_boostaroota_wrapper_multiclass
+  /home/thomas/.cache/pypoetry/virtualenvs/bluecast-uAIs9xjE-py3.11/lib/python3.11/site-packages/xgboost/core.py:158: UserWarning:
+
+  [06:44:48] WARNING: /workspace/src/learner.cc:740:
   Parameters: { "silent" } are not used.
 
 bluecast/tests/test_feature_selection.py::test_boostaroota_wrapper_multiclass
 bluecast/tests/test_feature_selection.py::test_boostaroota_wrapper_multiclass
 bluecast/tests/test_feature_selection.py::test_boostaroota_wrapper_multiclass
   /home/thomas/.cache/pypoetry/virtualenvs/bluecast-uAIs9xjE-py3.11/lib/python3.11/site-packages/xgboost/core.py:158: UserWarning:
-  
-  [06:44:49] WARNING: /workspace/src/learner.cc:740: 
+
+  [06:44:49] WARNING: /workspace/src/learner.cc:740:
   Parameters: { "silent" } are not used.
 
 bluecast/tests/test_feature_selection.py: 10 warnings
   /home/thomas/.cache/pypoetry/virtualenvs/bluecast-uAIs9xjE-py3.11/lib/python3.11/site-packages/xgboost/core.py:158: UserWarning:
-  
-  [06:44:50] WARNING: /workspace/src/learner.cc:740: 
+
+  [06:44:50] WARNING: /workspace/src/learner.cc:740:
   Parameters: { "silent" } are not used.
 
 bluecast/tests/test_feature_selection.py::test_boostaroota_wrapper_multiclass
@@ -972,20 +972,8 @@ bluecast/tests/test_feature_selection.py::test_boostaroota_wrapper_multiclass
 bluecast/tests/test_feature_selection.py::test_boostaroota_wrapper_multiclass
 bluecast/tests/test_feature_selection.py::test_boostaroota_wrapper_multiclass
   /home/thomas/.cache/pypoetry/virtualenvs/bluecast-uAIs9xjE-py3.11/lib/python3.11/site-packages/xgboost/core.py:158: UserWarning:
-  
-  [06:44:51] WARNING: /workspace/src/learner.cc:740: 
-  Parameters: { "silent" } are not used.
 
-bluecast/tests/test_feature_selection.py::test_boostaroota_wrapper_multiclass
-bluecast/tests/test_feature_selection.py::test_boostaroota_wrapper_multiclass
-bluecast/tests/test_feature_selection.py::test_boostaroota_wrapper_multiclass
-bluecast/tests/test_feature_selection.py::test_boostaroota_wrapper_multiclass
-bluecast/tests/test_feature_selection.py::test_boostaroota_wrapper_multiclass
-bluecast/tests/test_feature_selection.py::test_boostaroota_wrapper_multiclass
-bluecast/tests/test_feature_selection.py::test_boostaroota_wrapper_multiclass
-  /home/thomas/.cache/pypoetry/virtualenvs/bluecast-uAIs9xjE-py3.11/lib/python3.11/site-packages/xgboost/core.py:158: UserWarning:
-  
-  [06:44:52] WARNING: /workspace/src/learner.cc:740: 
+  [06:44:51] WARNING: /workspace/src/learner.cc:740:
   Parameters: { "silent" } are not used.
 
 bluecast/tests/test_feature_selection.py::test_boostaroota_wrapper_multiclass
@@ -996,17 +984,8 @@ bluecast/tests/test_feature_selection.py::test_boostaroota_wrapper_multiclass
 bluecast/tests/test_feature_selection.py::test_boostaroota_wrapper_multiclass
 bluecast/tests/test_feature_selection.py::test_boostaroota_wrapper_multiclass
   /home/thomas/.cache/pypoetry/virtualenvs/bluecast-uAIs9xjE-py3.11/lib/python3.11/site-packages/xgboost/core.py:158: UserWarning:
-  
-  [06:44:53] WARNING: /workspace/src/learner.cc:740: 
-  Parameters: { "silent" } are not used.
 
-bluecast/tests/test_feature_selection.py::test_boostaroota_wrapper_multiclass
-bluecast/tests/test_feature_selection.py::test_boostaroota_wrapper_multiclass
-bluecast/tests/test_feature_selection.py::test_boostaroota_wrapper_multiclass
-bluecast/tests/test_feature_selection.py::test_boostaroota_wrapper_multiclass
-  /home/thomas/.cache/pypoetry/virtualenvs/bluecast-uAIs9xjE-py3.11/lib/python3.11/site-packages/xgboost/core.py:158: UserWarning:
-  
-  [06:44:54] WARNING: /workspace/src/learner.cc:740: 
+  [06:44:52] WARNING: /workspace/src/learner.cc:740:
   Parameters: { "silent" } are not used.
 
 bluecast/tests/test_feature_selection.py::test_boostaroota_wrapper_multiclass
@@ -1014,15 +993,36 @@ bluecast/tests/test_feature_selection.py::test_boostaroota_wrapper_multiclass
 bluecast/tests/test_feature_selection.py::test_boostaroota_wrapper_multiclass
 bluecast/tests/test_feature_selection.py::test_boostaroota_wrapper_multiclass
 bluecast/tests/test_feature_selection.py::test_boostaroota_wrapper_multiclass
+bluecast/tests/test_feature_selection.py::test_boostaroota_wrapper_multiclass
+bluecast/tests/test_feature_selection.py::test_boostaroota_wrapper_multiclass
   /home/thomas/.cache/pypoetry/virtualenvs/bluecast-uAIs9xjE-py3.11/lib/python3.11/site-packages/xgboost/core.py:158: UserWarning:
-  
-  [06:44:55] WARNING: /workspace/src/learner.cc:740: 
+
+  [06:44:53] WARNING: /workspace/src/learner.cc:740:
+  Parameters: { "silent" } are not used.
+
+bluecast/tests/test_feature_selection.py::test_boostaroota_wrapper_multiclass
+bluecast/tests/test_feature_selection.py::test_boostaroota_wrapper_multiclass
+bluecast/tests/test_feature_selection.py::test_boostaroota_wrapper_multiclass
+bluecast/tests/test_feature_selection.py::test_boostaroota_wrapper_multiclass
+  /home/thomas/.cache/pypoetry/virtualenvs/bluecast-uAIs9xjE-py3.11/lib/python3.11/site-packages/xgboost/core.py:158: UserWarning:
+
+  [06:44:54] WARNING: /workspace/src/learner.cc:740:
+  Parameters: { "silent" } are not used.
+
+bluecast/tests/test_feature_selection.py::test_boostaroota_wrapper_multiclass
+bluecast/tests/test_feature_selection.py::test_boostaroota_wrapper_multiclass
+bluecast/tests/test_feature_selection.py::test_boostaroota_wrapper_multiclass
+bluecast/tests/test_feature_selection.py::test_boostaroota_wrapper_multiclass
+bluecast/tests/test_feature_selection.py::test_boostaroota_wrapper_multiclass
+  /home/thomas/.cache/pypoetry/virtualenvs/bluecast-uAIs9xjE-py3.11/lib/python3.11/site-packages/xgboost/core.py:158: UserWarning:
+
+  [06:44:55] WARNING: /workspace/src/learner.cc:740:
   Parameters: { "silent" } are not used.
 
 bluecast/tests/test_feature_selection.py: 13 warnings
   /home/thomas/.cache/pypoetry/virtualenvs/bluecast-uAIs9xjE-py3.11/lib/python3.11/site-packages/xgboost/core.py:158: UserWarning:
-  
-  [06:44:56] WARNING: /workspace/src/learner.cc:740: 
+
+  [06:44:56] WARNING: /workspace/src/learner.cc:740:
   Parameters: { "silent" } are not used.
 
 bluecast/tests/test_feature_selection.py::test_boostaroota_wrapper_multiclass
@@ -1030,151 +1030,8 @@ bluecast/tests/test_feature_selection.py::test_boostaroota_wrapper_multiclass
 bluecast/tests/test_feature_selection.py::test_boostaroota_wrapper_multiclass
 bluecast/tests/test_feature_selection.py::test_boostaroota_wrapper_multiclass
   /home/thomas/.cache/pypoetry/virtualenvs/bluecast-uAIs9xjE-py3.11/lib/python3.11/site-packages/xgboost/core.py:158: UserWarning:
-  
-  [06:44:57] WARNING: /workspace/src/learner.cc:740: 
-  Parameters: { "silent" } are not used.
 
-bluecast/tests/test_feature_selection.py::test_boostaroota_wrapper_multiclass
-bluecast/tests/test_feature_selection.py::test_boostaroota_wrapper_multiclass
-bluecast/tests/test_feature_selection.py::test_boostaroota_wrapper_multiclass
-bluecast/tests/test_feature_selection.py::test_boostaroota_wrapper_multiclass
-bluecast/tests/test_feature_selection.py::test_boostaroota_wrapper_multiclass
-bluecast/tests/test_feature_selection.py::test_boostaroota_wrapper_multiclass
-bluecast/tests/test_feature_selection.py::test_boostaroota_wrapper_multiclass
-  /home/thomas/.cache/pypoetry/virtualenvs/bluecast-uAIs9xjE-py3.11/lib/python3.11/site-packages/xgboost/core.py:158: UserWarning:
-  
-  [06:44:58] WARNING: /workspace/src/learner.cc:740: 
-  Parameters: { "silent" } are not used.
-
-bluecast/tests/test_feature_selection.py::test_boostaroota_wrapper_multiclass
-  /home/thomas/.cache/pypoetry/virtualenvs/bluecast-uAIs9xjE-py3.11/lib/python3.11/site-packages/xgboost/core.py:158: UserWarning:
-  
-  [06:44:59] WARNING: /workspace/src/learner.cc:740: 
-  Parameters: { "silent" } are not used.
-
-bluecast/tests/test_feature_selection.py::test_boostaroota_wrapper_multiclass
-bluecast/tests/test_feature_selection.py::test_boostaroota_wrapper_multiclass
-bluecast/tests/test_feature_selection.py::test_boostaroota_wrapper_multiclass
-  /home/thomas/.cache/pypoetry/virtualenvs/bluecast-uAIs9xjE-py3.11/lib/python3.11/site-packages/xgboost/core.py:158: UserWarning:
-  
-  [06:45:00] WARNING: /workspace/src/learner.cc:740: 
-  Parameters: { "silent" } are not used.
-
-bluecast/tests/test_feature_selection.py::test_boostaroota_wrapper_multiclass
-bluecast/tests/test_feature_selection.py::test_boostaroota_wrapper_multiclass
-bluecast/tests/test_feature_selection.py::test_boostaroota_wrapper_multiclass
-bluecast/tests/test_feature_selection.py::test_boostaroota_wrapper_multiclass
-bluecast/tests/test_feature_selection.py::test_boostaroota_wrapper_multiclass
-bluecast/tests/test_feature_selection.py::test_boostaroota_wrapper_multiclass
-bluecast/tests/test_feature_selection.py::test_boostaroota_wrapper_multiclass
-bluecast/tests/test_feature_selection.py::test_boostaroota_wrapper_multiclass
-bluecast/tests/test_feature_selection.py::test_boostaroota_wrapper_multiclass
-  /home/thomas/.cache/pypoetry/virtualenvs/bluecast-uAIs9xjE-py3.11/lib/python3.11/site-packages/xgboost/core.py:158: UserWarning:
-  
-  [06:45:01] WARNING: /workspace/src/learner.cc:740: 
-  Parameters: { "silent" } are not used.
-
-bluecast/tests/test_feature_selection.py::test_boostaroota_wrapper_multiclass
-bluecast/tests/test_feature_selection.py::test_boostaroota_wrapper_multiclass
-  /home/thomas/.cache/pypoetry/virtualenvs/bluecast-uAIs9xjE-py3.11/lib/python3.11/site-packages/xgboost/core.py:158: UserWarning:
-  
-  [06:45:02] WARNING: /workspace/src/learner.cc:740: 
-  Parameters: { "silent" } are not used.
-
-bluecast/tests/test_feature_selection.py::test_boostaroota_wrapper_multiclass
-  /home/thomas/.cache/pypoetry/virtualenvs/bluecast-uAIs9xjE-py3.11/lib/python3.11/site-packages/xgboost/core.py:158: UserWarning:
-  
-  [06:45:03] WARNING: /workspace/src/learner.cc:740: 
-  Parameters: { "silent" } are not used.
-
-bluecast/tests/test_feature_selection.py::test_boostaroota_wrapper_multiclass
-bluecast/tests/test_feature_selection.py::test_boostaroota_wrapper_multiclass
-  /home/thomas/.cache/pypoetry/virtualenvs/bluecast-uAIs9xjE-py3.11/lib/python3.11/site-packages/xgboost/core.py:158: UserWarning:
-  
-  [06:45:04] WARNING: /workspace/src/learner.cc:740: 
-  Parameters: { "silent" } are not used.
-
-bluecast/tests/test_feature_selection.py::test_boostaroota_wrapper_multiclass
-  /home/thomas/.cache/pypoetry/virtualenvs/bluecast-uAIs9xjE-py3.11/lib/python3.11/site-packages/xgboost/core.py:158: UserWarning:
-  
-  [06:45:06] WARNING: /workspace/src/learner.cc:740: 
-  Parameters: { "silent" } are not used.
-
-bluecast/tests/test_feature_selection.py::test_boostaroota_wrapper_multiclass
-bluecast/tests/test_feature_selection.py::test_boostaroota_wrapper_multiclass
-  /home/thomas/.cache/pypoetry/virtualenvs/bluecast-uAIs9xjE-py3.11/lib/python3.11/site-packages/xgboost/core.py:158: UserWarning:
-  
-  [06:45:08] WARNING: /workspace/src/learner.cc:740: 
-  Parameters: { "silent" } are not used.
-
-bluecast/tests/test_feature_selection.py::test_boostaroota_wrapper_multiclass
-  /home/thomas/.cache/pypoetry/virtualenvs/bluecast-uAIs9xjE-py3.11/lib/python3.11/site-packages/xgboost/core.py:158: UserWarning:
-  
-  [06:45:09] WARNING: /workspace/src/learner.cc:740: 
-  Parameters: { "silent" } are not used.
-
-bluecast/tests/test_feature_selection.py::test_boostaroota_wrapper_multiclass
-  /home/thomas/.cache/pypoetry/virtualenvs/bluecast-uAIs9xjE-py3.11/lib/python3.11/site-packages/xgboost/core.py:158: UserWarning:
-  
-  [06:45:11] WARNING: /workspace/src/learner.cc:740: 
-  Parameters: { "silent" } are not used.
-
-bluecast/tests/test_feature_selection.py::test_boostaroota_wrapper_multiclass
-  /home/thomas/.cache/pypoetry/virtualenvs/bluecast-uAIs9xjE-py3.11/lib/python3.11/site-packages/xgboost/core.py:158: UserWarning:
-  
-  [06:45:12] WARNING: /workspace/src/learner.cc:740: 
-  Parameters: { "silent" } are not used.
-
-bluecast/tests/test_feature_selection.py::test_boostaroota_wrapper_multiclass
-  /home/thomas/.cache/pypoetry/virtualenvs/bluecast-uAIs9xjE-py3.11/lib/python3.11/site-packages/xgboost/core.py:158: UserWarning:
-  
-  [06:45:13] WARNING: /workspace/src/learner.cc:740: 
-  Parameters: { "silent" } are not used.
-
-bluecast/tests/test_feature_selection.py::test_boostaroota_wrapper_multiclass
-bluecast/tests/test_feature_selection.py::test_boostaroota_wrapper_multiclass
-  /home/thomas/.cache/pypoetry/virtualenvs/bluecast-uAIs9xjE-py3.11/lib/python3.11/site-packages/xgboost/core.py:158: UserWarning:
-  
-  [06:45:14] WARNING: /workspace/src/learner.cc:740: 
-  Parameters: { "silent" } are not used.
-
-bluecast/tests/test_feature_selection.py::test_boostaroota_wrapper_multiclass
-bluecast/tests/test_feature_selection.py::test_boostaroota_wrapper_multiclass
-  /home/thomas/.cache/pypoetry/virtualenvs/bluecast-uAIs9xjE-py3.11/lib/python3.11/site-packages/xgboost/core.py:158: UserWarning:
-  
-  [06:45:15] WARNING: /workspace/src/learner.cc:740: 
-  Parameters: { "silent" } are not used.
-
-bluecast/tests/test_feature_selection.py::test_boostaroota_wrapper_multiclass
-bluecast/tests/test_feature_selection.py::test_boostaroota_wrapper_multiclass
-  /home/thomas/.cache/pypoetry/virtualenvs/bluecast-uAIs9xjE-py3.11/lib/python3.11/site-packages/xgboost/core.py:158: UserWarning:
-  
-  [06:45:16] WARNING: /workspace/src/learner.cc:740: 
-  Parameters: { "silent" } are not used.
-
-bluecast/tests/test_feature_selection.py::test_boostaroota_wrapper_multiclass
-  /home/thomas/.cache/pypoetry/virtualenvs/bluecast-uAIs9xjE-py3.11/lib/python3.11/site-packages/xgboost/core.py:158: UserWarning:
-  
-  [06:45:17] WARNING: /workspace/src/learner.cc:740: 
-  Parameters: { "silent" } are not used.
-
-bluecast/tests/test_feature_selection.py::test_boostaroota_wrapper_multiclass
-  /home/thomas/.cache/pypoetry/virtualenvs/bluecast-uAIs9xjE-py3.11/lib/python3.11/site-packages/xgboost/core.py:158: UserWarning:
-  
-  [06:45:20] WARNING: /workspace/src/learner.cc:740: 
-  Parameters: { "silent" } are not used.
-
-bluecast/tests/test_feature_selection.py::test_boostaroota_wrapper_multiclass
-bluecast/tests/test_feature_selection.py::test_boostaroota_wrapper_multiclass
-bluecast/tests/test_feature_selection.py::test_boostaroota_wrapper_multiclass
-bluecast/tests/test_feature_selection.py::test_boostaroota_wrapper_multiclass
-bluecast/tests/test_feature_selection.py::test_boostaroota_wrapper_multiclass
-bluecast/tests/test_feature_selection.py::test_boostaroota_wrapper_multiclass
-bluecast/tests/test_feature_selection.py::test_boostaroota_wrapper_multiclass
-bluecast/tests/test_feature_selection.py::test_boostaroota_wrapper_multiclass
-  /home/thomas/.cache/pypoetry/virtualenvs/bluecast-uAIs9xjE-py3.11/lib/python3.11/site-packages/xgboost/core.py:158: UserWarning:
-  
-  [06:45:22] WARNING: /workspace/src/learner.cc:740: 
+  [06:44:57] WARNING: /workspace/src/learner.cc:740:
   Parameters: { "silent" } are not used.
 
 bluecast/tests/test_feature_selection.py::test_boostaroota_wrapper_multiclass
@@ -1185,8 +1042,22 @@ bluecast/tests/test_feature_selection.py::test_boostaroota_wrapper_multiclass
 bluecast/tests/test_feature_selection.py::test_boostaroota_wrapper_multiclass
 bluecast/tests/test_feature_selection.py::test_boostaroota_wrapper_multiclass
   /home/thomas/.cache/pypoetry/virtualenvs/bluecast-uAIs9xjE-py3.11/lib/python3.11/site-packages/xgboost/core.py:158: UserWarning:
-  
-  [06:45:23] WARNING: /workspace/src/learner.cc:740: 
+
+  [06:44:58] WARNING: /workspace/src/learner.cc:740:
+  Parameters: { "silent" } are not used.
+
+bluecast/tests/test_feature_selection.py::test_boostaroota_wrapper_multiclass
+  /home/thomas/.cache/pypoetry/virtualenvs/bluecast-uAIs9xjE-py3.11/lib/python3.11/site-packages/xgboost/core.py:158: UserWarning:
+
+  [06:44:59] WARNING: /workspace/src/learner.cc:740:
+  Parameters: { "silent" } are not used.
+
+bluecast/tests/test_feature_selection.py::test_boostaroota_wrapper_multiclass
+bluecast/tests/test_feature_selection.py::test_boostaroota_wrapper_multiclass
+bluecast/tests/test_feature_selection.py::test_boostaroota_wrapper_multiclass
+  /home/thomas/.cache/pypoetry/virtualenvs/bluecast-uAIs9xjE-py3.11/lib/python3.11/site-packages/xgboost/core.py:158: UserWarning:
+
+  [06:45:00] WARNING: /workspace/src/learner.cc:740:
   Parameters: { "silent" } are not used.
 
 bluecast/tests/test_feature_selection.py::test_boostaroota_wrapper_multiclass
@@ -1194,95 +1065,103 @@ bluecast/tests/test_feature_selection.py::test_boostaroota_wrapper_multiclass
 bluecast/tests/test_feature_selection.py::test_boostaroota_wrapper_multiclass
 bluecast/tests/test_feature_selection.py::test_boostaroota_wrapper_multiclass
 bluecast/tests/test_feature_selection.py::test_boostaroota_wrapper_multiclass
+bluecast/tests/test_feature_selection.py::test_boostaroota_wrapper_multiclass
+bluecast/tests/test_feature_selection.py::test_boostaroota_wrapper_multiclass
+bluecast/tests/test_feature_selection.py::test_boostaroota_wrapper_multiclass
+bluecast/tests/test_feature_selection.py::test_boostaroota_wrapper_multiclass
   /home/thomas/.cache/pypoetry/virtualenvs/bluecast-uAIs9xjE-py3.11/lib/python3.11/site-packages/xgboost/core.py:158: UserWarning:
-  
-  [06:45:24] WARNING: /workspace/src/learner.cc:740: 
-  Parameters: { "silent" } are not used.
 
-bluecast/tests/test_feature_selection.py::test_boostaroota_wrapper_multiclass
-bluecast/tests/test_feature_selection.py::test_boostaroota_wrapper_multiclass
-bluecast/tests/test_feature_selection.py::test_boostaroota_wrapper_multiclass
-bluecast/tests/test_feature_selection.py::test_boostaroota_wrapper_multiclass
-bluecast/tests/test_feature_selection.py::test_boostaroota_wrapper_multiclass
-  /home/thomas/.cache/pypoetry/virtualenvs/bluecast-uAIs9xjE-py3.11/lib/python3.11/site-packages/xgboost/core.py:158: UserWarning:
-  
-  [06:45:25] WARNING: /workspace/src/learner.cc:740: 
-  Parameters: { "silent" } are not used.
-
-bluecast/tests/test_feature_selection.py::test_boostaroota_wrapper_multiclass
-  /home/thomas/.cache/pypoetry/virtualenvs/bluecast-uAIs9xjE-py3.11/lib/python3.11/site-packages/xgboost/core.py:158: UserWarning:
-  
-  [06:45:26] WARNING: /workspace/src/learner.cc:740: 
+  [06:45:01] WARNING: /workspace/src/learner.cc:740:
   Parameters: { "silent" } are not used.
 
 bluecast/tests/test_feature_selection.py::test_boostaroota_wrapper_multiclass
 bluecast/tests/test_feature_selection.py::test_boostaroota_wrapper_multiclass
   /home/thomas/.cache/pypoetry/virtualenvs/bluecast-uAIs9xjE-py3.11/lib/python3.11/site-packages/xgboost/core.py:158: UserWarning:
-  
-  [06:45:27] WARNING: /workspace/src/learner.cc:740: 
+
+  [06:45:02] WARNING: /workspace/src/learner.cc:740:
   Parameters: { "silent" } are not used.
 
 bluecast/tests/test_feature_selection.py::test_boostaroota_wrapper_multiclass
-bluecast/tests/test_feature_selection.py::test_boostaroota_wrapper_multiclass
-bluecast/tests/test_feature_selection.py::test_boostaroota_wrapper_multiclass
   /home/thomas/.cache/pypoetry/virtualenvs/bluecast-uAIs9xjE-py3.11/lib/python3.11/site-packages/xgboost/core.py:158: UserWarning:
-  
-  [06:45:29] WARNING: /workspace/src/learner.cc:740: 
-  Parameters: { "silent" } are not used.
 
-bluecast/tests/test_feature_selection.py::test_boostaroota_wrapper_multiclass
-bluecast/tests/test_feature_selection.py::test_boostaroota_wrapper_multiclass
-bluecast/tests/test_feature_selection.py::test_boostaroota_wrapper_multiclass
-bluecast/tests/test_feature_selection.py::test_boostaroota_wrapper_multiclass
-bluecast/tests/test_feature_selection.py::test_boostaroota_wrapper_multiclass
-  /home/thomas/.cache/pypoetry/virtualenvs/bluecast-uAIs9xjE-py3.11/lib/python3.11/site-packages/xgboost/core.py:158: UserWarning:
-  
-  [06:45:30] WARNING: /workspace/src/learner.cc:740: 
+  [06:45:03] WARNING: /workspace/src/learner.cc:740:
   Parameters: { "silent" } are not used.
 
 bluecast/tests/test_feature_selection.py::test_boostaroota_wrapper_multiclass
 bluecast/tests/test_feature_selection.py::test_boostaroota_wrapper_multiclass
   /home/thomas/.cache/pypoetry/virtualenvs/bluecast-uAIs9xjE-py3.11/lib/python3.11/site-packages/xgboost/core.py:158: UserWarning:
-  
-  [06:45:32] WARNING: /workspace/src/learner.cc:740: 
+
+  [06:45:04] WARNING: /workspace/src/learner.cc:740:
   Parameters: { "silent" } are not used.
 
 bluecast/tests/test_feature_selection.py::test_boostaroota_wrapper_multiclass
   /home/thomas/.cache/pypoetry/virtualenvs/bluecast-uAIs9xjE-py3.11/lib/python3.11/site-packages/xgboost/core.py:158: UserWarning:
-  
-  [06:45:33] WARNING: /workspace/src/learner.cc:740: 
+
+  [06:45:06] WARNING: /workspace/src/learner.cc:740:
   Parameters: { "silent" } are not used.
 
 bluecast/tests/test_feature_selection.py::test_boostaroota_wrapper_multiclass
 bluecast/tests/test_feature_selection.py::test_boostaroota_wrapper_multiclass
-bluecast/tests/test_feature_selection.py::test_boostaroota_wrapper_multiclass
   /home/thomas/.cache/pypoetry/virtualenvs/bluecast-uAIs9xjE-py3.11/lib/python3.11/site-packages/xgboost/core.py:158: UserWarning:
-  
-  [06:45:34] WARNING: /workspace/src/learner.cc:740: 
+
+  [06:45:08] WARNING: /workspace/src/learner.cc:740:
   Parameters: { "silent" } are not used.
 
 bluecast/tests/test_feature_selection.py::test_boostaroota_wrapper_multiclass
   /home/thomas/.cache/pypoetry/virtualenvs/bluecast-uAIs9xjE-py3.11/lib/python3.11/site-packages/xgboost/core.py:158: UserWarning:
-  
-  [06:45:36] WARNING: /workspace/src/learner.cc:740: 
+
+  [06:45:09] WARNING: /workspace/src/learner.cc:740:
   Parameters: { "silent" } are not used.
 
 bluecast/tests/test_feature_selection.py::test_boostaroota_wrapper_multiclass
   /home/thomas/.cache/pypoetry/virtualenvs/bluecast-uAIs9xjE-py3.11/lib/python3.11/site-packages/xgboost/core.py:158: UserWarning:
-  
-  [06:45:37] WARNING: /workspace/src/learner.cc:740: 
+
+  [06:45:11] WARNING: /workspace/src/learner.cc:740:
   Parameters: { "silent" } are not used.
 
 bluecast/tests/test_feature_selection.py::test_boostaroota_wrapper_multiclass
   /home/thomas/.cache/pypoetry/virtualenvs/bluecast-uAIs9xjE-py3.11/lib/python3.11/site-packages/xgboost/core.py:158: UserWarning:
-  
-  [06:45:38] WARNING: /workspace/src/learner.cc:740: 
+
+  [06:45:12] WARNING: /workspace/src/learner.cc:740:
   Parameters: { "silent" } are not used.
 
 bluecast/tests/test_feature_selection.py::test_boostaroota_wrapper_multiclass
   /home/thomas/.cache/pypoetry/virtualenvs/bluecast-uAIs9xjE-py3.11/lib/python3.11/site-packages/xgboost/core.py:158: UserWarning:
-  
-  [06:45:39] WARNING: /workspace/src/learner.cc:740: 
+
+  [06:45:13] WARNING: /workspace/src/learner.cc:740:
+  Parameters: { "silent" } are not used.
+
+bluecast/tests/test_feature_selection.py::test_boostaroota_wrapper_multiclass
+bluecast/tests/test_feature_selection.py::test_boostaroota_wrapper_multiclass
+  /home/thomas/.cache/pypoetry/virtualenvs/bluecast-uAIs9xjE-py3.11/lib/python3.11/site-packages/xgboost/core.py:158: UserWarning:
+
+  [06:45:14] WARNING: /workspace/src/learner.cc:740:
+  Parameters: { "silent" } are not used.
+
+bluecast/tests/test_feature_selection.py::test_boostaroota_wrapper_multiclass
+bluecast/tests/test_feature_selection.py::test_boostaroota_wrapper_multiclass
+  /home/thomas/.cache/pypoetry/virtualenvs/bluecast-uAIs9xjE-py3.11/lib/python3.11/site-packages/xgboost/core.py:158: UserWarning:
+
+  [06:45:15] WARNING: /workspace/src/learner.cc:740:
+  Parameters: { "silent" } are not used.
+
+bluecast/tests/test_feature_selection.py::test_boostaroota_wrapper_multiclass
+bluecast/tests/test_feature_selection.py::test_boostaroota_wrapper_multiclass
+  /home/thomas/.cache/pypoetry/virtualenvs/bluecast-uAIs9xjE-py3.11/lib/python3.11/site-packages/xgboost/core.py:158: UserWarning:
+
+  [06:45:16] WARNING: /workspace/src/learner.cc:740:
+  Parameters: { "silent" } are not used.
+
+bluecast/tests/test_feature_selection.py::test_boostaroota_wrapper_multiclass
+  /home/thomas/.cache/pypoetry/virtualenvs/bluecast-uAIs9xjE-py3.11/lib/python3.11/site-packages/xgboost/core.py:158: UserWarning:
+
+  [06:45:17] WARNING: /workspace/src/learner.cc:740:
+  Parameters: { "silent" } are not used.
+
+bluecast/tests/test_feature_selection.py::test_boostaroota_wrapper_multiclass
+  /home/thomas/.cache/pypoetry/virtualenvs/bluecast-uAIs9xjE-py3.11/lib/python3.11/site-packages/xgboost/core.py:158: UserWarning:
+
+  [06:45:20] WARNING: /workspace/src/learner.cc:740:
   Parameters: { "silent" } are not used.
 
 bluecast/tests/test_feature_selection.py::test_boostaroota_wrapper_multiclass
@@ -1294,19 +1173,8 @@ bluecast/tests/test_feature_selection.py::test_boostaroota_wrapper_multiclass
 bluecast/tests/test_feature_selection.py::test_boostaroota_wrapper_multiclass
 bluecast/tests/test_feature_selection.py::test_boostaroota_wrapper_multiclass
   /home/thomas/.cache/pypoetry/virtualenvs/bluecast-uAIs9xjE-py3.11/lib/python3.11/site-packages/xgboost/core.py:158: UserWarning:
-  
-  [06:45:41] WARNING: /workspace/src/learner.cc:740: 
-  Parameters: { "silent" } are not used.
 
-bluecast/tests/test_feature_selection.py::test_boostaroota_wrapper_multiclass
-bluecast/tests/test_feature_selection.py::test_boostaroota_wrapper_multiclass
-bluecast/tests/test_feature_selection.py::test_boostaroota_wrapper_multiclass
-bluecast/tests/test_feature_selection.py::test_boostaroota_wrapper_multiclass
-bluecast/tests/test_feature_selection.py::test_boostaroota_wrapper_multiclass
-bluecast/tests/test_feature_selection.py::test_boostaroota_wrapper_multiclass
-  /home/thomas/.cache/pypoetry/virtualenvs/bluecast-uAIs9xjE-py3.11/lib/python3.11/site-packages/xgboost/core.py:158: UserWarning:
-  
-  [06:45:42] WARNING: /workspace/src/learner.cc:740: 
+  [06:45:22] WARNING: /workspace/src/learner.cc:740:
   Parameters: { "silent" } are not used.
 
 bluecast/tests/test_feature_selection.py::test_boostaroota_wrapper_multiclass
@@ -1316,10 +1184,9 @@ bluecast/tests/test_feature_selection.py::test_boostaroota_wrapper_multiclass
 bluecast/tests/test_feature_selection.py::test_boostaroota_wrapper_multiclass
 bluecast/tests/test_feature_selection.py::test_boostaroota_wrapper_multiclass
 bluecast/tests/test_feature_selection.py::test_boostaroota_wrapper_multiclass
-bluecast/tests/test_feature_selection.py::test_boostaroota_wrapper_multiclass
   /home/thomas/.cache/pypoetry/virtualenvs/bluecast-uAIs9xjE-py3.11/lib/python3.11/site-packages/xgboost/core.py:158: UserWarning:
-  
-  [06:45:43] WARNING: /workspace/src/learner.cc:740: 
+
+  [06:45:23] WARNING: /workspace/src/learner.cc:740:
   Parameters: { "silent" } are not used.
 
 bluecast/tests/test_feature_selection.py::test_boostaroota_wrapper_multiclass
@@ -1328,14 +1195,147 @@ bluecast/tests/test_feature_selection.py::test_boostaroota_wrapper_multiclass
 bluecast/tests/test_feature_selection.py::test_boostaroota_wrapper_multiclass
 bluecast/tests/test_feature_selection.py::test_boostaroota_wrapper_multiclass
   /home/thomas/.cache/pypoetry/virtualenvs/bluecast-uAIs9xjE-py3.11/lib/python3.11/site-packages/xgboost/core.py:158: UserWarning:
-  
-  [06:45:44] WARNING: /workspace/src/learner.cc:740: 
+
+  [06:45:24] WARNING: /workspace/src/learner.cc:740:
+  Parameters: { "silent" } are not used.
+
+bluecast/tests/test_feature_selection.py::test_boostaroota_wrapper_multiclass
+bluecast/tests/test_feature_selection.py::test_boostaroota_wrapper_multiclass
+bluecast/tests/test_feature_selection.py::test_boostaroota_wrapper_multiclass
+bluecast/tests/test_feature_selection.py::test_boostaroota_wrapper_multiclass
+bluecast/tests/test_feature_selection.py::test_boostaroota_wrapper_multiclass
+  /home/thomas/.cache/pypoetry/virtualenvs/bluecast-uAIs9xjE-py3.11/lib/python3.11/site-packages/xgboost/core.py:158: UserWarning:
+
+  [06:45:25] WARNING: /workspace/src/learner.cc:740:
+  Parameters: { "silent" } are not used.
+
+bluecast/tests/test_feature_selection.py::test_boostaroota_wrapper_multiclass
+  /home/thomas/.cache/pypoetry/virtualenvs/bluecast-uAIs9xjE-py3.11/lib/python3.11/site-packages/xgboost/core.py:158: UserWarning:
+
+  [06:45:26] WARNING: /workspace/src/learner.cc:740:
+  Parameters: { "silent" } are not used.
+
+bluecast/tests/test_feature_selection.py::test_boostaroota_wrapper_multiclass
+bluecast/tests/test_feature_selection.py::test_boostaroota_wrapper_multiclass
+  /home/thomas/.cache/pypoetry/virtualenvs/bluecast-uAIs9xjE-py3.11/lib/python3.11/site-packages/xgboost/core.py:158: UserWarning:
+
+  [06:45:27] WARNING: /workspace/src/learner.cc:740:
+  Parameters: { "silent" } are not used.
+
+bluecast/tests/test_feature_selection.py::test_boostaroota_wrapper_multiclass
+bluecast/tests/test_feature_selection.py::test_boostaroota_wrapper_multiclass
+bluecast/tests/test_feature_selection.py::test_boostaroota_wrapper_multiclass
+  /home/thomas/.cache/pypoetry/virtualenvs/bluecast-uAIs9xjE-py3.11/lib/python3.11/site-packages/xgboost/core.py:158: UserWarning:
+
+  [06:45:29] WARNING: /workspace/src/learner.cc:740:
+  Parameters: { "silent" } are not used.
+
+bluecast/tests/test_feature_selection.py::test_boostaroota_wrapper_multiclass
+bluecast/tests/test_feature_selection.py::test_boostaroota_wrapper_multiclass
+bluecast/tests/test_feature_selection.py::test_boostaroota_wrapper_multiclass
+bluecast/tests/test_feature_selection.py::test_boostaroota_wrapper_multiclass
+bluecast/tests/test_feature_selection.py::test_boostaroota_wrapper_multiclass
+  /home/thomas/.cache/pypoetry/virtualenvs/bluecast-uAIs9xjE-py3.11/lib/python3.11/site-packages/xgboost/core.py:158: UserWarning:
+
+  [06:45:30] WARNING: /workspace/src/learner.cc:740:
+  Parameters: { "silent" } are not used.
+
+bluecast/tests/test_feature_selection.py::test_boostaroota_wrapper_multiclass
+bluecast/tests/test_feature_selection.py::test_boostaroota_wrapper_multiclass
+  /home/thomas/.cache/pypoetry/virtualenvs/bluecast-uAIs9xjE-py3.11/lib/python3.11/site-packages/xgboost/core.py:158: UserWarning:
+
+  [06:45:32] WARNING: /workspace/src/learner.cc:740:
+  Parameters: { "silent" } are not used.
+
+bluecast/tests/test_feature_selection.py::test_boostaroota_wrapper_multiclass
+  /home/thomas/.cache/pypoetry/virtualenvs/bluecast-uAIs9xjE-py3.11/lib/python3.11/site-packages/xgboost/core.py:158: UserWarning:
+
+  [06:45:33] WARNING: /workspace/src/learner.cc:740:
+  Parameters: { "silent" } are not used.
+
+bluecast/tests/test_feature_selection.py::test_boostaroota_wrapper_multiclass
+bluecast/tests/test_feature_selection.py::test_boostaroota_wrapper_multiclass
+bluecast/tests/test_feature_selection.py::test_boostaroota_wrapper_multiclass
+  /home/thomas/.cache/pypoetry/virtualenvs/bluecast-uAIs9xjE-py3.11/lib/python3.11/site-packages/xgboost/core.py:158: UserWarning:
+
+  [06:45:34] WARNING: /workspace/src/learner.cc:740:
+  Parameters: { "silent" } are not used.
+
+bluecast/tests/test_feature_selection.py::test_boostaroota_wrapper_multiclass
+  /home/thomas/.cache/pypoetry/virtualenvs/bluecast-uAIs9xjE-py3.11/lib/python3.11/site-packages/xgboost/core.py:158: UserWarning:
+
+  [06:45:36] WARNING: /workspace/src/learner.cc:740:
+  Parameters: { "silent" } are not used.
+
+bluecast/tests/test_feature_selection.py::test_boostaroota_wrapper_multiclass
+  /home/thomas/.cache/pypoetry/virtualenvs/bluecast-uAIs9xjE-py3.11/lib/python3.11/site-packages/xgboost/core.py:158: UserWarning:
+
+  [06:45:37] WARNING: /workspace/src/learner.cc:740:
+  Parameters: { "silent" } are not used.
+
+bluecast/tests/test_feature_selection.py::test_boostaroota_wrapper_multiclass
+  /home/thomas/.cache/pypoetry/virtualenvs/bluecast-uAIs9xjE-py3.11/lib/python3.11/site-packages/xgboost/core.py:158: UserWarning:
+
+  [06:45:38] WARNING: /workspace/src/learner.cc:740:
+  Parameters: { "silent" } are not used.
+
+bluecast/tests/test_feature_selection.py::test_boostaroota_wrapper_multiclass
+  /home/thomas/.cache/pypoetry/virtualenvs/bluecast-uAIs9xjE-py3.11/lib/python3.11/site-packages/xgboost/core.py:158: UserWarning:
+
+  [06:45:39] WARNING: /workspace/src/learner.cc:740:
+  Parameters: { "silent" } are not used.
+
+bluecast/tests/test_feature_selection.py::test_boostaroota_wrapper_multiclass
+bluecast/tests/test_feature_selection.py::test_boostaroota_wrapper_multiclass
+bluecast/tests/test_feature_selection.py::test_boostaroota_wrapper_multiclass
+bluecast/tests/test_feature_selection.py::test_boostaroota_wrapper_multiclass
+bluecast/tests/test_feature_selection.py::test_boostaroota_wrapper_multiclass
+bluecast/tests/test_feature_selection.py::test_boostaroota_wrapper_multiclass
+bluecast/tests/test_feature_selection.py::test_boostaroota_wrapper_multiclass
+bluecast/tests/test_feature_selection.py::test_boostaroota_wrapper_multiclass
+  /home/thomas/.cache/pypoetry/virtualenvs/bluecast-uAIs9xjE-py3.11/lib/python3.11/site-packages/xgboost/core.py:158: UserWarning:
+
+  [06:45:41] WARNING: /workspace/src/learner.cc:740:
+  Parameters: { "silent" } are not used.
+
+bluecast/tests/test_feature_selection.py::test_boostaroota_wrapper_multiclass
+bluecast/tests/test_feature_selection.py::test_boostaroota_wrapper_multiclass
+bluecast/tests/test_feature_selection.py::test_boostaroota_wrapper_multiclass
+bluecast/tests/test_feature_selection.py::test_boostaroota_wrapper_multiclass
+bluecast/tests/test_feature_selection.py::test_boostaroota_wrapper_multiclass
+bluecast/tests/test_feature_selection.py::test_boostaroota_wrapper_multiclass
+  /home/thomas/.cache/pypoetry/virtualenvs/bluecast-uAIs9xjE-py3.11/lib/python3.11/site-packages/xgboost/core.py:158: UserWarning:
+
+  [06:45:42] WARNING: /workspace/src/learner.cc:740:
+  Parameters: { "silent" } are not used.
+
+bluecast/tests/test_feature_selection.py::test_boostaroota_wrapper_multiclass
+bluecast/tests/test_feature_selection.py::test_boostaroota_wrapper_multiclass
+bluecast/tests/test_feature_selection.py::test_boostaroota_wrapper_multiclass
+bluecast/tests/test_feature_selection.py::test_boostaroota_wrapper_multiclass
+bluecast/tests/test_feature_selection.py::test_boostaroota_wrapper_multiclass
+bluecast/tests/test_feature_selection.py::test_boostaroota_wrapper_multiclass
+bluecast/tests/test_feature_selection.py::test_boostaroota_wrapper_multiclass
+bluecast/tests/test_feature_selection.py::test_boostaroota_wrapper_multiclass
+  /home/thomas/.cache/pypoetry/virtualenvs/bluecast-uAIs9xjE-py3.11/lib/python3.11/site-packages/xgboost/core.py:158: UserWarning:
+
+  [06:45:43] WARNING: /workspace/src/learner.cc:740:
+  Parameters: { "silent" } are not used.
+
+bluecast/tests/test_feature_selection.py::test_boostaroota_wrapper_multiclass
+bluecast/tests/test_feature_selection.py::test_boostaroota_wrapper_multiclass
+bluecast/tests/test_feature_selection.py::test_boostaroota_wrapper_multiclass
+bluecast/tests/test_feature_selection.py::test_boostaroota_wrapper_multiclass
+bluecast/tests/test_feature_selection.py::test_boostaroota_wrapper_multiclass
+  /home/thomas/.cache/pypoetry/virtualenvs/bluecast-uAIs9xjE-py3.11/lib/python3.11/site-packages/xgboost/core.py:158: UserWarning:
+
+  [06:45:44] WARNING: /workspace/src/learner.cc:740:
   Parameters: { "silent" } are not used.
 
 bluecast/tests/test_feature_selection.py: 16 warnings
   /home/thomas/.cache/pypoetry/virtualenvs/bluecast-uAIs9xjE-py3.11/lib/python3.11/site-packages/xgboost/core.py:158: UserWarning:
-  
-  [06:45:45] WARNING: /workspace/src/learner.cc:740: 
+
+  [06:45:45] WARNING: /workspace/src/learner.cc:740:
   Parameters: { "silent" } are not used.
 
 bluecast/tests/test_feature_selection.py::test_boostaroota_wrapper_multiclass
@@ -1347,14 +1347,14 @@ bluecast/tests/test_feature_selection.py::test_boostaroota_wrapper_multiclass
 bluecast/tests/test_feature_selection.py::test_boostaroota_wrapper_multiclass
 bluecast/tests/test_feature_selection.py::test_boostaroota_wrapper_multiclass
   /home/thomas/.cache/pypoetry/virtualenvs/bluecast-uAIs9xjE-py3.11/lib/python3.11/site-packages/xgboost/core.py:158: UserWarning:
-  
-  [06:45:46] WARNING: /workspace/src/learner.cc:740: 
+
+  [06:45:46] WARNING: /workspace/src/learner.cc:740:
   Parameters: { "silent" } are not used.
 
 bluecast/tests/test_feature_selection.py: 10 warnings
   /home/thomas/.cache/pypoetry/virtualenvs/bluecast-uAIs9xjE-py3.11/lib/python3.11/site-packages/xgboost/core.py:158: UserWarning:
-  
-  [06:45:47] WARNING: /workspace/src/learner.cc:740: 
+
+  [06:45:47] WARNING: /workspace/src/learner.cc:740:
   Parameters: { "silent" } are not used.
 
 bluecast/tests/test_feature_selection.py::test_boostaroota_wrapper_multiclass
@@ -1365,14 +1365,14 @@ bluecast/tests/test_feature_selection.py::test_boostaroota_wrapper_multiclass
 bluecast/tests/test_feature_selection.py::test_boostaroota_wrapper_multiclass
 bluecast/tests/test_feature_selection.py::test_boostaroota_wrapper_multiclass
   /home/thomas/.cache/pypoetry/virtualenvs/bluecast-uAIs9xjE-py3.11/lib/python3.11/site-packages/xgboost/core.py:158: UserWarning:
-  
-  [06:45:48] WARNING: /workspace/src/learner.cc:740: 
+
+  [06:45:48] WARNING: /workspace/src/learner.cc:740:
   Parameters: { "silent" } are not used.
 
 bluecast/tests/test_feature_selection.py: 14 warnings
   /home/thomas/.cache/pypoetry/virtualenvs/bluecast-uAIs9xjE-py3.11/lib/python3.11/site-packages/xgboost/core.py:158: UserWarning:
-  
-  [06:45:49] WARNING: /workspace/src/learner.cc:740: 
+
+  [06:45:49] WARNING: /workspace/src/learner.cc:740:
   Parameters: { "silent" } are not used.
 
 bluecast/tests/test_feature_selection.py::test_boostaroota_wrapper_multiclass
@@ -1383,8 +1383,8 @@ bluecast/tests/test_feature_selection.py::test_boostaroota_wrapper_multiclass
 bluecast/tests/test_feature_selection.py::test_boostaroota_wrapper_multiclass
 bluecast/tests/test_feature_selection.py::test_boostaroota_wrapper_multiclass
   /home/thomas/.cache/pypoetry/virtualenvs/bluecast-uAIs9xjE-py3.11/lib/python3.11/site-packages/xgboost/core.py:158: UserWarning:
-  
-  [06:45:50] WARNING: /workspace/src/learner.cc:740: 
+
+  [06:45:50] WARNING: /workspace/src/learner.cc:740:
   Parameters: { "silent" } are not used.
 
 bluecast/tests/test_feature_selection.py::test_boostaroota_wrapper_multiclass
@@ -1396,189 +1396,101 @@ bluecast/tests/test_feature_selection.py::test_boostaroota_wrapper_multiclass
 bluecast/tests/test_feature_selection.py::test_boostaroota_wrapper_multiclass
 bluecast/tests/test_feature_selection.py::test_boostaroota_wrapper_multiclass
   /home/thomas/.cache/pypoetry/virtualenvs/bluecast-uAIs9xjE-py3.11/lib/python3.11/site-packages/xgboost/core.py:158: UserWarning:
-  
-  [06:45:51] WARNING: /workspace/src/learner.cc:740: 
-  Parameters: { "silent" } are not used.
 
-bluecast/tests/test_feature_selection.py: 11 warnings
-  /home/thomas/.cache/pypoetry/virtualenvs/bluecast-uAIs9xjE-py3.11/lib/python3.11/site-packages/xgboost/core.py:158: UserWarning:
-  
-  [06:45:52] WARNING: /workspace/src/learner.cc:740: 
-  Parameters: { "silent" } are not used.
-
-bluecast/tests/test_feature_selection.py::test_boostaroota_wrapper_multiclass
-bluecast/tests/test_feature_selection.py::test_boostaroota_wrapper_multiclass
-bluecast/tests/test_feature_selection.py::test_boostaroota_wrapper_multiclass
-bluecast/tests/test_feature_selection.py::test_boostaroota_wrapper_multiclass
-  /home/thomas/.cache/pypoetry/virtualenvs/bluecast-uAIs9xjE-py3.11/lib/python3.11/site-packages/xgboost/core.py:158: UserWarning:
-  
-  [06:45:53] WARNING: /workspace/src/learner.cc:740: 
-  Parameters: { "silent" } are not used.
-
-bluecast/tests/test_feature_selection.py::test_boostaroota_wrapper_multiclass
-bluecast/tests/test_feature_selection.py::test_boostaroota_wrapper_multiclass
-bluecast/tests/test_feature_selection.py::test_boostaroota_wrapper_multiclass
-bluecast/tests/test_feature_selection.py::test_boostaroota_wrapper_multiclass
-bluecast/tests/test_feature_selection.py::test_boostaroota_wrapper_multiclass
-bluecast/tests/test_feature_selection.py::test_boostaroota_wrapper_multiclass
-bluecast/tests/test_feature_selection.py::test_boostaroota_wrapper_multiclass
-bluecast/tests/test_feature_selection.py::test_boostaroota_wrapper_multiclass
-bluecast/tests/test_feature_selection.py::test_boostaroota_wrapper_multiclass
-  /home/thomas/.cache/pypoetry/virtualenvs/bluecast-uAIs9xjE-py3.11/lib/python3.11/site-packages/xgboost/core.py:158: UserWarning:
-  
-  [06:45:54] WARNING: /workspace/src/learner.cc:740: 
-  Parameters: { "silent" } are not used.
-
-bluecast/tests/test_feature_selection.py::test_boostaroota_wrapper_multiclass
-  /home/thomas/.cache/pypoetry/virtualenvs/bluecast-uAIs9xjE-py3.11/lib/python3.11/site-packages/xgboost/core.py:158: UserWarning:
-  
-  [06:45:55] WARNING: /workspace/src/learner.cc:740: 
-  Parameters: { "silent" } are not used.
-
-bluecast/tests/test_feature_selection.py::test_boostaroota_wrapper_multiclass
-  /home/thomas/.cache/pypoetry/virtualenvs/bluecast-uAIs9xjE-py3.11/lib/python3.11/site-packages/xgboost/core.py:158: UserWarning:
-  
-  [06:45:56] WARNING: /workspace/src/learner.cc:740: 
-  Parameters: { "silent" } are not used.
-
-bluecast/tests/test_feature_selection.py::test_boostaroota_wrapper_multiclass
-bluecast/tests/test_feature_selection.py::test_boostaroota_wrapper_multiclass
-bluecast/tests/test_feature_selection.py::test_boostaroota_wrapper_multiclass
-bluecast/tests/test_feature_selection.py::test_boostaroota_wrapper_multiclass
-bluecast/tests/test_feature_selection.py::test_boostaroota_wrapper_multiclass
-bluecast/tests/test_feature_selection.py::test_boostaroota_wrapper_multiclass
-  /home/thomas/.cache/pypoetry/virtualenvs/bluecast-uAIs9xjE-py3.11/lib/python3.11/site-packages/xgboost/core.py:158: UserWarning:
-  
-  [06:45:57] WARNING: /workspace/src/learner.cc:740: 
-  Parameters: { "silent" } are not used.
-
-bluecast/tests/test_feature_selection.py::test_boostaroota_wrapper_multiclass
-bluecast/tests/test_feature_selection.py::test_boostaroota_wrapper_multiclass
-bluecast/tests/test_feature_selection.py::test_boostaroota_wrapper_multiclass
-bluecast/tests/test_feature_selection.py::test_boostaroota_wrapper_multiclass
-bluecast/tests/test_feature_selection.py::test_boostaroota_wrapper_multiclass
-bluecast/tests/test_feature_selection.py::test_boostaroota_wrapper_multiclass
-  /home/thomas/.cache/pypoetry/virtualenvs/bluecast-uAIs9xjE-py3.11/lib/python3.11/site-packages/xgboost/core.py:158: UserWarning:
-  
-  [06:45:58] WARNING: /workspace/src/learner.cc:740: 
-  Parameters: { "silent" } are not used.
-
-bluecast/tests/test_feature_selection.py::test_boostaroota_wrapper_multiclass
-bluecast/tests/test_feature_selection.py::test_boostaroota_wrapper_multiclass
-bluecast/tests/test_feature_selection.py::test_boostaroota_wrapper_multiclass
-bluecast/tests/test_feature_selection.py::test_boostaroota_wrapper_multiclass
-bluecast/tests/test_feature_selection.py::test_boostaroota_wrapper_multiclass
-bluecast/tests/test_feature_selection.py::test_boostaroota_wrapper_multiclass
-bluecast/tests/test_feature_selection.py::test_boostaroota_wrapper_multiclass
-  /home/thomas/.cache/pypoetry/virtualenvs/bluecast-uAIs9xjE-py3.11/lib/python3.11/site-packages/xgboost/core.py:158: UserWarning:
-  
-  [06:45:59] WARNING: /workspace/src/learner.cc:740: 
-  Parameters: { "silent" } are not used.
-
-bluecast/tests/test_feature_selection.py::test_boostaroota_wrapper_multiclass
-bluecast/tests/test_feature_selection.py::test_boostaroota_wrapper_multiclass
-bluecast/tests/test_feature_selection.py::test_boostaroota_wrapper_multiclass
-bluecast/tests/test_feature_selection.py::test_boostaroota_wrapper_multiclass
-bluecast/tests/test_feature_selection.py::test_boostaroota_wrapper_multiclass
-bluecast/tests/test_feature_selection.py::test_boostaroota_wrapper_multiclass
-bluecast/tests/test_feature_selection.py::test_boostaroota_wrapper_multiclass
-  /home/thomas/.cache/pypoetry/virtualenvs/bluecast-uAIs9xjE-py3.11/lib/python3.11/site-packages/xgboost/core.py:158: UserWarning:
-  
-  [06:46:00] WARNING: /workspace/src/learner.cc:740: 
-  Parameters: { "silent" } are not used.
-
-bluecast/tests/test_feature_selection.py: 10 warnings
-  /home/thomas/.cache/pypoetry/virtualenvs/bluecast-uAIs9xjE-py3.11/lib/python3.11/site-packages/xgboost/core.py:158: UserWarning:
-  
-  [06:46:01] WARNING: /workspace/src/learner.cc:740: 
-  Parameters: { "silent" } are not used.
-
-bluecast/tests/test_feature_selection.py::test_boostaroota_wrapper_multiclass
-bluecast/tests/test_feature_selection.py::test_boostaroota_wrapper_multiclass
-bluecast/tests/test_feature_selection.py::test_boostaroota_wrapper_multiclass
-bluecast/tests/test_feature_selection.py::test_boostaroota_wrapper_multiclass
-bluecast/tests/test_feature_selection.py::test_boostaroota_wrapper_multiclass
-bluecast/tests/test_feature_selection.py::test_boostaroota_wrapper_multiclass
-  /home/thomas/.cache/pypoetry/virtualenvs/bluecast-uAIs9xjE-py3.11/lib/python3.11/site-packages/xgboost/core.py:158: UserWarning:
-  
-  [06:46:02] WARNING: /workspace/src/learner.cc:740: 
-  Parameters: { "silent" } are not used.
-
-bluecast/tests/test_feature_selection.py: 10 warnings
-  /home/thomas/.cache/pypoetry/virtualenvs/bluecast-uAIs9xjE-py3.11/lib/python3.11/site-packages/xgboost/core.py:158: UserWarning:
-  
-  [06:46:03] WARNING: /workspace/src/learner.cc:740: 
-  Parameters: { "silent" } are not used.
-
-bluecast/tests/test_feature_selection.py::test_boostaroota_wrapper_multiclass
-bluecast/tests/test_feature_selection.py::test_boostaroota_wrapper_multiclass
-bluecast/tests/test_feature_selection.py::test_boostaroota_wrapper_multiclass
-  /home/thomas/.cache/pypoetry/virtualenvs/bluecast-uAIs9xjE-py3.11/lib/python3.11/site-packages/xgboost/core.py:158: UserWarning:
-  
-  [06:46:04] WARNING: /workspace/src/learner.cc:740: 
-  Parameters: { "silent" } are not used.
-
-bluecast/tests/test_feature_selection.py: 10 warnings
-  /home/thomas/.cache/pypoetry/virtualenvs/bluecast-uAIs9xjE-py3.11/lib/python3.11/site-packages/xgboost/core.py:158: UserWarning:
-  
-  [06:46:05] WARNING: /workspace/src/learner.cc:740: 
-  Parameters: { "silent" } are not used.
-
-bluecast/tests/test_feature_selection.py::test_boostaroota_wrapper_multiclass
-bluecast/tests/test_feature_selection.py::test_boostaroota_wrapper_multiclass
-bluecast/tests/test_feature_selection.py::test_boostaroota_wrapper_multiclass
-bluecast/tests/test_feature_selection.py::test_boostaroota_wrapper_multiclass
-bluecast/tests/test_feature_selection.py::test_boostaroota_wrapper_multiclass
-bluecast/tests/test_feature_selection.py::test_boostaroota_wrapper_multiclass
-bluecast/tests/test_feature_selection.py::test_boostaroota_wrapper_multiclass
-  /home/thomas/.cache/pypoetry/virtualenvs/bluecast-uAIs9xjE-py3.11/lib/python3.11/site-packages/xgboost/core.py:158: UserWarning:
-  
-  [06:46:06] WARNING: /workspace/src/learner.cc:740: 
+  [06:45:51] WARNING: /workspace/src/learner.cc:740:
   Parameters: { "silent" } are not used.
 
 bluecast/tests/test_feature_selection.py: 11 warnings
   /home/thomas/.cache/pypoetry/virtualenvs/bluecast-uAIs9xjE-py3.11/lib/python3.11/site-packages/xgboost/core.py:158: UserWarning:
-  
-  [06:46:07] WARNING: /workspace/src/learner.cc:740: 
+
+  [06:45:52] WARNING: /workspace/src/learner.cc:740:
   Parameters: { "silent" } are not used.
 
 bluecast/tests/test_feature_selection.py::test_boostaroota_wrapper_multiclass
 bluecast/tests/test_feature_selection.py::test_boostaroota_wrapper_multiclass
 bluecast/tests/test_feature_selection.py::test_boostaroota_wrapper_multiclass
+bluecast/tests/test_feature_selection.py::test_boostaroota_wrapper_multiclass
   /home/thomas/.cache/pypoetry/virtualenvs/bluecast-uAIs9xjE-py3.11/lib/python3.11/site-packages/xgboost/core.py:158: UserWarning:
-  
-  [06:46:08] WARNING: /workspace/src/learner.cc:740: 
+
+  [06:45:53] WARNING: /workspace/src/learner.cc:740:
+  Parameters: { "silent" } are not used.
+
+bluecast/tests/test_feature_selection.py::test_boostaroota_wrapper_multiclass
+bluecast/tests/test_feature_selection.py::test_boostaroota_wrapper_multiclass
+bluecast/tests/test_feature_selection.py::test_boostaroota_wrapper_multiclass
+bluecast/tests/test_feature_selection.py::test_boostaroota_wrapper_multiclass
+bluecast/tests/test_feature_selection.py::test_boostaroota_wrapper_multiclass
+bluecast/tests/test_feature_selection.py::test_boostaroota_wrapper_multiclass
+bluecast/tests/test_feature_selection.py::test_boostaroota_wrapper_multiclass
+bluecast/tests/test_feature_selection.py::test_boostaroota_wrapper_multiclass
+bluecast/tests/test_feature_selection.py::test_boostaroota_wrapper_multiclass
+  /home/thomas/.cache/pypoetry/virtualenvs/bluecast-uAIs9xjE-py3.11/lib/python3.11/site-packages/xgboost/core.py:158: UserWarning:
+
+  [06:45:54] WARNING: /workspace/src/learner.cc:740:
+  Parameters: { "silent" } are not used.
+
+bluecast/tests/test_feature_selection.py::test_boostaroota_wrapper_multiclass
+  /home/thomas/.cache/pypoetry/virtualenvs/bluecast-uAIs9xjE-py3.11/lib/python3.11/site-packages/xgboost/core.py:158: UserWarning:
+
+  [06:45:55] WARNING: /workspace/src/learner.cc:740:
+  Parameters: { "silent" } are not used.
+
+bluecast/tests/test_feature_selection.py::test_boostaroota_wrapper_multiclass
+  /home/thomas/.cache/pypoetry/virtualenvs/bluecast-uAIs9xjE-py3.11/lib/python3.11/site-packages/xgboost/core.py:158: UserWarning:
+
+  [06:45:56] WARNING: /workspace/src/learner.cc:740:
+  Parameters: { "silent" } are not used.
+
+bluecast/tests/test_feature_selection.py::test_boostaroota_wrapper_multiclass
+bluecast/tests/test_feature_selection.py::test_boostaroota_wrapper_multiclass
+bluecast/tests/test_feature_selection.py::test_boostaroota_wrapper_multiclass
+bluecast/tests/test_feature_selection.py::test_boostaroota_wrapper_multiclass
+bluecast/tests/test_feature_selection.py::test_boostaroota_wrapper_multiclass
+bluecast/tests/test_feature_selection.py::test_boostaroota_wrapper_multiclass
+  /home/thomas/.cache/pypoetry/virtualenvs/bluecast-uAIs9xjE-py3.11/lib/python3.11/site-packages/xgboost/core.py:158: UserWarning:
+
+  [06:45:57] WARNING: /workspace/src/learner.cc:740:
+  Parameters: { "silent" } are not used.
+
+bluecast/tests/test_feature_selection.py::test_boostaroota_wrapper_multiclass
+bluecast/tests/test_feature_selection.py::test_boostaroota_wrapper_multiclass
+bluecast/tests/test_feature_selection.py::test_boostaroota_wrapper_multiclass
+bluecast/tests/test_feature_selection.py::test_boostaroota_wrapper_multiclass
+bluecast/tests/test_feature_selection.py::test_boostaroota_wrapper_multiclass
+bluecast/tests/test_feature_selection.py::test_boostaroota_wrapper_multiclass
+  /home/thomas/.cache/pypoetry/virtualenvs/bluecast-uAIs9xjE-py3.11/lib/python3.11/site-packages/xgboost/core.py:158: UserWarning:
+
+  [06:45:58] WARNING: /workspace/src/learner.cc:740:
+  Parameters: { "silent" } are not used.
+
+bluecast/tests/test_feature_selection.py::test_boostaroota_wrapper_multiclass
+bluecast/tests/test_feature_selection.py::test_boostaroota_wrapper_multiclass
+bluecast/tests/test_feature_selection.py::test_boostaroota_wrapper_multiclass
+bluecast/tests/test_feature_selection.py::test_boostaroota_wrapper_multiclass
+bluecast/tests/test_feature_selection.py::test_boostaroota_wrapper_multiclass
+bluecast/tests/test_feature_selection.py::test_boostaroota_wrapper_multiclass
+bluecast/tests/test_feature_selection.py::test_boostaroota_wrapper_multiclass
+  /home/thomas/.cache/pypoetry/virtualenvs/bluecast-uAIs9xjE-py3.11/lib/python3.11/site-packages/xgboost/core.py:158: UserWarning:
+
+  [06:45:59] WARNING: /workspace/src/learner.cc:740:
+  Parameters: { "silent" } are not used.
+
+bluecast/tests/test_feature_selection.py::test_boostaroota_wrapper_multiclass
+bluecast/tests/test_feature_selection.py::test_boostaroota_wrapper_multiclass
+bluecast/tests/test_feature_selection.py::test_boostaroota_wrapper_multiclass
+bluecast/tests/test_feature_selection.py::test_boostaroota_wrapper_multiclass
+bluecast/tests/test_feature_selection.py::test_boostaroota_wrapper_multiclass
+bluecast/tests/test_feature_selection.py::test_boostaroota_wrapper_multiclass
+bluecast/tests/test_feature_selection.py::test_boostaroota_wrapper_multiclass
+  /home/thomas/.cache/pypoetry/virtualenvs/bluecast-uAIs9xjE-py3.11/lib/python3.11/site-packages/xgboost/core.py:158: UserWarning:
+
+  [06:46:00] WARNING: /workspace/src/learner.cc:740:
   Parameters: { "silent" } are not used.
 
 bluecast/tests/test_feature_selection.py: 10 warnings
   /home/thomas/.cache/pypoetry/virtualenvs/bluecast-uAIs9xjE-py3.11/lib/python3.11/site-packages/xgboost/core.py:158: UserWarning:
-  
-  [06:46:09] WARNING: /workspace/src/learner.cc:740: 
-  Parameters: { "silent" } are not used.
 
-bluecast/tests/test_feature_selection.py::test_boostaroota_wrapper_multiclass
-bluecast/tests/test_feature_selection.py::test_boostaroota_wrapper_multiclass
-bluecast/tests/test_feature_selection.py::test_boostaroota_wrapper_multiclass
-bluecast/tests/test_feature_selection.py::test_boostaroota_wrapper_multiclass
-bluecast/tests/test_feature_selection.py::test_boostaroota_wrapper_multiclass
-  /home/thomas/.cache/pypoetry/virtualenvs/bluecast-uAIs9xjE-py3.11/lib/python3.11/site-packages/xgboost/core.py:158: UserWarning:
-  
-  [06:46:10] WARNING: /workspace/src/learner.cc:740: 
-  Parameters: { "silent" } are not used.
-
-bluecast/tests/test_feature_selection.py::test_boostaroota_wrapper_multiclass
-  /home/thomas/.cache/pypoetry/virtualenvs/bluecast-uAIs9xjE-py3.11/lib/python3.11/site-packages/xgboost/core.py:158: UserWarning:
-  
-  [06:46:13] WARNING: /workspace/src/learner.cc:740: 
-  Parameters: { "silent" } are not used.
-
-bluecast/tests/test_feature_selection.py::test_boostaroota_wrapper_multiclass
-bluecast/tests/test_feature_selection.py::test_boostaroota_wrapper_multiclass
-bluecast/tests/test_feature_selection.py::test_boostaroota_wrapper_multiclass
-bluecast/tests/test_feature_selection.py::test_boostaroota_wrapper_multiclass
-  /home/thomas/.cache/pypoetry/virtualenvs/bluecast-uAIs9xjE-py3.11/lib/python3.11/site-packages/xgboost/core.py:158: UserWarning:
-  
-  [06:46:15] WARNING: /workspace/src/learner.cc:740: 
+  [06:46:01] WARNING: /workspace/src/learner.cc:740:
   Parameters: { "silent" } are not used.
 
 bluecast/tests/test_feature_selection.py::test_boostaroota_wrapper_multiclass
@@ -1587,18 +1499,106 @@ bluecast/tests/test_feature_selection.py::test_boostaroota_wrapper_multiclass
 bluecast/tests/test_feature_selection.py::test_boostaroota_wrapper_multiclass
 bluecast/tests/test_feature_selection.py::test_boostaroota_wrapper_multiclass
 bluecast/tests/test_feature_selection.py::test_boostaroota_wrapper_multiclass
+  /home/thomas/.cache/pypoetry/virtualenvs/bluecast-uAIs9xjE-py3.11/lib/python3.11/site-packages/xgboost/core.py:158: UserWarning:
+
+  [06:46:02] WARNING: /workspace/src/learner.cc:740:
+  Parameters: { "silent" } are not used.
+
+bluecast/tests/test_feature_selection.py: 10 warnings
+  /home/thomas/.cache/pypoetry/virtualenvs/bluecast-uAIs9xjE-py3.11/lib/python3.11/site-packages/xgboost/core.py:158: UserWarning:
+
+  [06:46:03] WARNING: /workspace/src/learner.cc:740:
+  Parameters: { "silent" } are not used.
+
 bluecast/tests/test_feature_selection.py::test_boostaroota_wrapper_multiclass
 bluecast/tests/test_feature_selection.py::test_boostaroota_wrapper_multiclass
 bluecast/tests/test_feature_selection.py::test_boostaroota_wrapper_multiclass
   /home/thomas/.cache/pypoetry/virtualenvs/bluecast-uAIs9xjE-py3.11/lib/python3.11/site-packages/xgboost/core.py:158: UserWarning:
-  
-  [06:46:16] WARNING: /workspace/src/learner.cc:740: 
+
+  [06:46:04] WARNING: /workspace/src/learner.cc:740:
+  Parameters: { "silent" } are not used.
+
+bluecast/tests/test_feature_selection.py: 10 warnings
+  /home/thomas/.cache/pypoetry/virtualenvs/bluecast-uAIs9xjE-py3.11/lib/python3.11/site-packages/xgboost/core.py:158: UserWarning:
+
+  [06:46:05] WARNING: /workspace/src/learner.cc:740:
+  Parameters: { "silent" } are not used.
+
+bluecast/tests/test_feature_selection.py::test_boostaroota_wrapper_multiclass
+bluecast/tests/test_feature_selection.py::test_boostaroota_wrapper_multiclass
+bluecast/tests/test_feature_selection.py::test_boostaroota_wrapper_multiclass
+bluecast/tests/test_feature_selection.py::test_boostaroota_wrapper_multiclass
+bluecast/tests/test_feature_selection.py::test_boostaroota_wrapper_multiclass
+bluecast/tests/test_feature_selection.py::test_boostaroota_wrapper_multiclass
+bluecast/tests/test_feature_selection.py::test_boostaroota_wrapper_multiclass
+  /home/thomas/.cache/pypoetry/virtualenvs/bluecast-uAIs9xjE-py3.11/lib/python3.11/site-packages/xgboost/core.py:158: UserWarning:
+
+  [06:46:06] WARNING: /workspace/src/learner.cc:740:
+  Parameters: { "silent" } are not used.
+
+bluecast/tests/test_feature_selection.py: 11 warnings
+  /home/thomas/.cache/pypoetry/virtualenvs/bluecast-uAIs9xjE-py3.11/lib/python3.11/site-packages/xgboost/core.py:158: UserWarning:
+
+  [06:46:07] WARNING: /workspace/src/learner.cc:740:
+  Parameters: { "silent" } are not used.
+
+bluecast/tests/test_feature_selection.py::test_boostaroota_wrapper_multiclass
+bluecast/tests/test_feature_selection.py::test_boostaroota_wrapper_multiclass
+bluecast/tests/test_feature_selection.py::test_boostaroota_wrapper_multiclass
+  /home/thomas/.cache/pypoetry/virtualenvs/bluecast-uAIs9xjE-py3.11/lib/python3.11/site-packages/xgboost/core.py:158: UserWarning:
+
+  [06:46:08] WARNING: /workspace/src/learner.cc:740:
+  Parameters: { "silent" } are not used.
+
+bluecast/tests/test_feature_selection.py: 10 warnings
+  /home/thomas/.cache/pypoetry/virtualenvs/bluecast-uAIs9xjE-py3.11/lib/python3.11/site-packages/xgboost/core.py:158: UserWarning:
+
+  [06:46:09] WARNING: /workspace/src/learner.cc:740:
+  Parameters: { "silent" } are not used.
+
+bluecast/tests/test_feature_selection.py::test_boostaroota_wrapper_multiclass
+bluecast/tests/test_feature_selection.py::test_boostaroota_wrapper_multiclass
+bluecast/tests/test_feature_selection.py::test_boostaroota_wrapper_multiclass
+bluecast/tests/test_feature_selection.py::test_boostaroota_wrapper_multiclass
+bluecast/tests/test_feature_selection.py::test_boostaroota_wrapper_multiclass
+  /home/thomas/.cache/pypoetry/virtualenvs/bluecast-uAIs9xjE-py3.11/lib/python3.11/site-packages/xgboost/core.py:158: UserWarning:
+
+  [06:46:10] WARNING: /workspace/src/learner.cc:740:
+  Parameters: { "silent" } are not used.
+
+bluecast/tests/test_feature_selection.py::test_boostaroota_wrapper_multiclass
+  /home/thomas/.cache/pypoetry/virtualenvs/bluecast-uAIs9xjE-py3.11/lib/python3.11/site-packages/xgboost/core.py:158: UserWarning:
+
+  [06:46:13] WARNING: /workspace/src/learner.cc:740:
+  Parameters: { "silent" } are not used.
+
+bluecast/tests/test_feature_selection.py::test_boostaroota_wrapper_multiclass
+bluecast/tests/test_feature_selection.py::test_boostaroota_wrapper_multiclass
+bluecast/tests/test_feature_selection.py::test_boostaroota_wrapper_multiclass
+bluecast/tests/test_feature_selection.py::test_boostaroota_wrapper_multiclass
+  /home/thomas/.cache/pypoetry/virtualenvs/bluecast-uAIs9xjE-py3.11/lib/python3.11/site-packages/xgboost/core.py:158: UserWarning:
+
+  [06:46:15] WARNING: /workspace/src/learner.cc:740:
+  Parameters: { "silent" } are not used.
+
+bluecast/tests/test_feature_selection.py::test_boostaroota_wrapper_multiclass
+bluecast/tests/test_feature_selection.py::test_boostaroota_wrapper_multiclass
+bluecast/tests/test_feature_selection.py::test_boostaroota_wrapper_multiclass
+bluecast/tests/test_feature_selection.py::test_boostaroota_wrapper_multiclass
+bluecast/tests/test_feature_selection.py::test_boostaroota_wrapper_multiclass
+bluecast/tests/test_feature_selection.py::test_boostaroota_wrapper_multiclass
+bluecast/tests/test_feature_selection.py::test_boostaroota_wrapper_multiclass
+bluecast/tests/test_feature_selection.py::test_boostaroota_wrapper_multiclass
+bluecast/tests/test_feature_selection.py::test_boostaroota_wrapper_multiclass
+  /home/thomas/.cache/pypoetry/virtualenvs/bluecast-uAIs9xjE-py3.11/lib/python3.11/site-packages/xgboost/core.py:158: UserWarning:
+
+  [06:46:16] WARNING: /workspace/src/learner.cc:740:
   Parameters: { "silent" } are not used.
 
 bluecast/tests/test_feature_selection.py: 12 warnings
   /home/thomas/.cache/pypoetry/virtualenvs/bluecast-uAIs9xjE-py3.11/lib/python3.11/site-packages/xgboost/core.py:158: UserWarning:
-  
-  [06:46:17] WARNING: /workspace/src/learner.cc:740: 
+
+  [06:46:17] WARNING: /workspace/src/learner.cc:740:
   Parameters: { "silent" } are not used.
 
 bluecast/tests/test_feature_selection.py::test_boostaroota_wrapper_multiclass
@@ -1610,16 +1610,16 @@ bluecast/tests/test_feature_selection.py::test_boostaroota_wrapper_multiclass
 bluecast/tests/test_feature_selection.py::test_boostaroota_wrapper_multiclass
 bluecast/tests/test_feature_selection.py::test_boostaroota_wrapper_multiclass
   /home/thomas/.cache/pypoetry/virtualenvs/bluecast-uAIs9xjE-py3.11/lib/python3.11/site-packages/xgboost/core.py:158: UserWarning:
-  
-  [06:46:18] WARNING: /workspace/src/learner.cc:740: 
+
+  [06:46:18] WARNING: /workspace/src/learner.cc:740:
   Parameters: { "silent" } are not used.
 
 bluecast/tests/test_feature_selection.py::test_boostaroota_wrapper_multiclass
 bluecast/tests/test_feature_selection.py::test_boostaroota_wrapper_multiclass
 bluecast/tests/test_feature_selection.py::test_boostaroota_wrapper_multiclass
   /home/thomas/.cache/pypoetry/virtualenvs/bluecast-uAIs9xjE-py3.11/lib/python3.11/site-packages/xgboost/core.py:158: UserWarning:
-  
-  [06:46:19] WARNING: /workspace/src/learner.cc:740: 
+
+  [06:46:19] WARNING: /workspace/src/learner.cc:740:
   Parameters: { "silent" } are not used.
 
 bluecast/tests/test_feature_selection.py::test_boostaroota_wrapper_multiclass
@@ -1631,14 +1631,14 @@ bluecast/tests/test_feature_selection.py::test_boostaroota_wrapper_multiclass
 bluecast/tests/test_feature_selection.py::test_boostaroota_wrapper_multiclass
 bluecast/tests/test_feature_selection.py::test_boostaroota_wrapper_multiclass
   /home/thomas/.cache/pypoetry/virtualenvs/bluecast-uAIs9xjE-py3.11/lib/python3.11/site-packages/xgboost/core.py:158: UserWarning:
-  
-  [06:46:20] WARNING: /workspace/src/learner.cc:740: 
+
+  [06:46:20] WARNING: /workspace/src/learner.cc:740:
   Parameters: { "silent" } are not used.
 
 bluecast/tests/test_feature_selection.py: 12 warnings
   /home/thomas/.cache/pypoetry/virtualenvs/bluecast-uAIs9xjE-py3.11/lib/python3.11/site-packages/xgboost/core.py:158: UserWarning:
-  
-  [06:46:21] WARNING: /workspace/src/learner.cc:740: 
+
+  [06:46:21] WARNING: /workspace/src/learner.cc:740:
   Parameters: { "silent" } are not used.
 
 bluecast/tests/test_feature_selection.py::test_boostaroota_wrapper_multiclass
@@ -1649,8 +1649,8 @@ bluecast/tests/test_feature_selection.py::test_boostaroota_wrapper_multiclass
 bluecast/tests/test_feature_selection.py::test_boostaroota_wrapper_multiclass
 bluecast/tests/test_feature_selection.py::test_boostaroota_wrapper_multiclass
   /home/thomas/.cache/pypoetry/virtualenvs/bluecast-uAIs9xjE-py3.11/lib/python3.11/site-packages/xgboost/core.py:158: UserWarning:
-  
-  [06:46:22] WARNING: /workspace/src/learner.cc:740: 
+
+  [06:46:22] WARNING: /workspace/src/learner.cc:740:
   Parameters: { "silent" } are not used.
 
 bluecast/tests/test_feature_selection.py::test_boostaroota_wrapper_multiclass
@@ -1662,8 +1662,8 @@ bluecast/tests/test_feature_selection.py::test_boostaroota_wrapper_multiclass
 bluecast/tests/test_feature_selection.py::test_boostaroota_wrapper_multiclass
 bluecast/tests/test_feature_selection.py::test_boostaroota_wrapper_multiclass
   /home/thomas/.cache/pypoetry/virtualenvs/bluecast-uAIs9xjE-py3.11/lib/python3.11/site-packages/xgboost/core.py:158: UserWarning:
-  
-  [06:46:23] WARNING: /workspace/src/learner.cc:740: 
+
+  [06:46:23] WARNING: /workspace/src/learner.cc:740:
   Parameters: { "silent" } are not used.
 
 bluecast/tests/test_feature_selection.py::test_boostaroota_wrapper_multiclass
@@ -1676,20 +1676,20 @@ bluecast/tests/test_feature_selection.py::test_boostaroota_wrapper_multiclass
 bluecast/tests/test_feature_selection.py::test_boostaroota_wrapper_multiclass
 bluecast/tests/test_feature_selection.py::test_boostaroota_wrapper_multiclass
   /home/thomas/.cache/pypoetry/virtualenvs/bluecast-uAIs9xjE-py3.11/lib/python3.11/site-packages/xgboost/core.py:158: UserWarning:
-  
-  [06:46:24] WARNING: /workspace/src/learner.cc:740: 
+
+  [06:46:24] WARNING: /workspace/src/learner.cc:740:
   Parameters: { "silent" } are not used.
 
 bluecast/tests/test_feature_selection.py: 10 warnings
   /home/thomas/.cache/pypoetry/virtualenvs/bluecast-uAIs9xjE-py3.11/lib/python3.11/site-packages/xgboost/core.py:158: UserWarning:
-  
-  [06:46:25] WARNING: /workspace/src/learner.cc:740: 
+
+  [06:46:25] WARNING: /workspace/src/learner.cc:740:
   Parameters: { "silent" } are not used.
 
 bluecast/tests/test_feature_selection.py: 11 warnings
   /home/thomas/.cache/pypoetry/virtualenvs/bluecast-uAIs9xjE-py3.11/lib/python3.11/site-packages/xgboost/core.py:158: UserWarning:
-  
-  [06:46:26] WARNING: /workspace/src/learner.cc:740: 
+
+  [06:46:26] WARNING: /workspace/src/learner.cc:740:
   Parameters: { "silent" } are not used.
 
 bluecast/tests/test_feature_selection.py::test_boostaroota_wrapper_multiclass
@@ -1698,39 +1698,8 @@ bluecast/tests/test_feature_selection.py::test_boostaroota_wrapper_multiclass
 bluecast/tests/test_feature_selection.py::test_boostaroota_wrapper_multiclass
 bluecast/tests/test_feature_selection.py::test_boostaroota_wrapper_multiclass
   /home/thomas/.cache/pypoetry/virtualenvs/bluecast-uAIs9xjE-py3.11/lib/python3.11/site-packages/xgboost/core.py:158: UserWarning:
-  
-  [06:46:27] WARNING: /workspace/src/learner.cc:740: 
-  Parameters: { "silent" } are not used.
 
-bluecast/tests/test_feature_selection.py::test_boostaroota_wrapper_multiclass
-bluecast/tests/test_feature_selection.py::test_boostaroota_wrapper_multiclass
-bluecast/tests/test_feature_selection.py::test_boostaroota_wrapper_multiclass
-bluecast/tests/test_feature_selection.py::test_boostaroota_wrapper_multiclass
-bluecast/tests/test_feature_selection.py::test_boostaroota_wrapper_multiclass
-bluecast/tests/test_feature_selection.py::test_boostaroota_wrapper_multiclass
-  /home/thomas/.cache/pypoetry/virtualenvs/bluecast-uAIs9xjE-py3.11/lib/python3.11/site-packages/xgboost/core.py:158: UserWarning:
-  
-  [06:46:29] WARNING: /workspace/src/learner.cc:740: 
-  Parameters: { "silent" } are not used.
-
-bluecast/tests/test_feature_selection.py::test_boostaroota_wrapper_multiclass
-bluecast/tests/test_feature_selection.py::test_boostaroota_wrapper_multiclass
-bluecast/tests/test_feature_selection.py::test_boostaroota_wrapper_multiclass
-bluecast/tests/test_feature_selection.py::test_boostaroota_wrapper_multiclass
-bluecast/tests/test_feature_selection.py::test_boostaroota_wrapper_multiclass
-bluecast/tests/test_feature_selection.py::test_boostaroota_wrapper_multiclass
-bluecast/tests/test_feature_selection.py::test_boostaroota_wrapper_multiclass
-  /home/thomas/.cache/pypoetry/virtualenvs/bluecast-uAIs9xjE-py3.11/lib/python3.11/site-packages/xgboost/core.py:158: UserWarning:
-  
-  [06:46:30] WARNING: /workspace/src/learner.cc:740: 
-  Parameters: { "silent" } are not used.
-
-bluecast/tests/test_feature_selection.py::test_boostaroota_wrapper_multiclass
-bluecast/tests/test_feature_selection.py::test_boostaroota_wrapper_multiclass
-bluecast/tests/test_feature_selection.py::test_boostaroota_wrapper_multiclass
-  /home/thomas/.cache/pypoetry/virtualenvs/bluecast-uAIs9xjE-py3.11/lib/python3.11/site-packages/xgboost/core.py:158: UserWarning:
-  
-  [06:46:31] WARNING: /workspace/src/learner.cc:740: 
+  [06:46:27] WARNING: /workspace/src/learner.cc:740:
   Parameters: { "silent" } are not used.
 
 bluecast/tests/test_feature_selection.py::test_boostaroota_wrapper_multiclass
@@ -1740,8 +1709,39 @@ bluecast/tests/test_feature_selection.py::test_boostaroota_wrapper_multiclass
 bluecast/tests/test_feature_selection.py::test_boostaroota_wrapper_multiclass
 bluecast/tests/test_feature_selection.py::test_boostaroota_wrapper_multiclass
   /home/thomas/.cache/pypoetry/virtualenvs/bluecast-uAIs9xjE-py3.11/lib/python3.11/site-packages/xgboost/core.py:158: UserWarning:
-  
-  [06:46:32] WARNING: /workspace/src/learner.cc:740: 
+
+  [06:46:29] WARNING: /workspace/src/learner.cc:740:
+  Parameters: { "silent" } are not used.
+
+bluecast/tests/test_feature_selection.py::test_boostaroota_wrapper_multiclass
+bluecast/tests/test_feature_selection.py::test_boostaroota_wrapper_multiclass
+bluecast/tests/test_feature_selection.py::test_boostaroota_wrapper_multiclass
+bluecast/tests/test_feature_selection.py::test_boostaroota_wrapper_multiclass
+bluecast/tests/test_feature_selection.py::test_boostaroota_wrapper_multiclass
+bluecast/tests/test_feature_selection.py::test_boostaroota_wrapper_multiclass
+bluecast/tests/test_feature_selection.py::test_boostaroota_wrapper_multiclass
+  /home/thomas/.cache/pypoetry/virtualenvs/bluecast-uAIs9xjE-py3.11/lib/python3.11/site-packages/xgboost/core.py:158: UserWarning:
+
+  [06:46:30] WARNING: /workspace/src/learner.cc:740:
+  Parameters: { "silent" } are not used.
+
+bluecast/tests/test_feature_selection.py::test_boostaroota_wrapper_multiclass
+bluecast/tests/test_feature_selection.py::test_boostaroota_wrapper_multiclass
+bluecast/tests/test_feature_selection.py::test_boostaroota_wrapper_multiclass
+  /home/thomas/.cache/pypoetry/virtualenvs/bluecast-uAIs9xjE-py3.11/lib/python3.11/site-packages/xgboost/core.py:158: UserWarning:
+
+  [06:46:31] WARNING: /workspace/src/learner.cc:740:
+  Parameters: { "silent" } are not used.
+
+bluecast/tests/test_feature_selection.py::test_boostaroota_wrapper_multiclass
+bluecast/tests/test_feature_selection.py::test_boostaroota_wrapper_multiclass
+bluecast/tests/test_feature_selection.py::test_boostaroota_wrapper_multiclass
+bluecast/tests/test_feature_selection.py::test_boostaroota_wrapper_multiclass
+bluecast/tests/test_feature_selection.py::test_boostaroota_wrapper_multiclass
+bluecast/tests/test_feature_selection.py::test_boostaroota_wrapper_multiclass
+  /home/thomas/.cache/pypoetry/virtualenvs/bluecast-uAIs9xjE-py3.11/lib/python3.11/site-packages/xgboost/core.py:158: UserWarning:
+
+  [06:46:32] WARNING: /workspace/src/learner.cc:740:
   Parameters: { "silent" } are not used.
 
 bluecast/tests/test_feature_selection.py::test_boostaroota_wrapper_multiclass
@@ -1754,20 +1754,20 @@ bluecast/tests/test_feature_selection.py::test_boostaroota_wrapper_multiclass
 bluecast/tests/test_feature_selection.py::test_boostaroota_wrapper_multiclass
 bluecast/tests/test_feature_selection.py::test_boostaroota_wrapper_multiclass
   /home/thomas/.cache/pypoetry/virtualenvs/bluecast-uAIs9xjE-py3.11/lib/python3.11/site-packages/xgboost/core.py:158: UserWarning:
-  
-  [06:46:33] WARNING: /workspace/src/learner.cc:740: 
-  Parameters: { "silent" } are not used.
 
-bluecast/tests/test_feature_selection.py: 12 warnings
-  /home/thomas/.cache/pypoetry/virtualenvs/bluecast-uAIs9xjE-py3.11/lib/python3.11/site-packages/xgboost/core.py:158: UserWarning:
-  
-  [06:46:34] WARNING: /workspace/src/learner.cc:740: 
+  [06:46:33] WARNING: /workspace/src/learner.cc:740:
   Parameters: { "silent" } are not used.
 
 bluecast/tests/test_feature_selection.py: 12 warnings
   /home/thomas/.cache/pypoetry/virtualenvs/bluecast-uAIs9xjE-py3.11/lib/python3.11/site-packages/xgboost/core.py:158: UserWarning:
-  
-  [06:46:35] WARNING: /workspace/src/learner.cc:740: 
+
+  [06:46:34] WARNING: /workspace/src/learner.cc:740:
+  Parameters: { "silent" } are not used.
+
+bluecast/tests/test_feature_selection.py: 12 warnings
+  /home/thomas/.cache/pypoetry/virtualenvs/bluecast-uAIs9xjE-py3.11/lib/python3.11/site-packages/xgboost/core.py:158: UserWarning:
+
+  [06:46:35] WARNING: /workspace/src/learner.cc:740:
   Parameters: { "silent" } are not used.
 
 bluecast/tests/test_feature_selection.py::test_boostaroota_wrapper_multiclass
@@ -1776,14 +1776,14 @@ bluecast/tests/test_feature_selection.py::test_boostaroota_wrapper_multiclass
 bluecast/tests/test_feature_selection.py::test_boostaroota_wrapper_multiclass
 bluecast/tests/test_feature_selection.py::test_boostaroota_wrapper_multiclass
   /home/thomas/.cache/pypoetry/virtualenvs/bluecast-uAIs9xjE-py3.11/lib/python3.11/site-packages/xgboost/core.py:158: UserWarning:
-  
-  [06:46:36] WARNING: /workspace/src/learner.cc:740: 
+
+  [06:46:36] WARNING: /workspace/src/learner.cc:740:
   Parameters: { "silent" } are not used.
 
 bluecast/tests/test_feature_selection.py: 10 warnings
   /home/thomas/.cache/pypoetry/virtualenvs/bluecast-uAIs9xjE-py3.11/lib/python3.11/site-packages/xgboost/core.py:158: UserWarning:
-  
-  [06:46:37] WARNING: /workspace/src/learner.cc:740: 
+
+  [06:46:37] WARNING: /workspace/src/learner.cc:740:
   Parameters: { "silent" } are not used.
 
 bluecast/tests/test_feature_selection.py::test_boostaroota_wrapper_multiclass
@@ -1792,34 +1792,8 @@ bluecast/tests/test_feature_selection.py::test_boostaroota_wrapper_multiclass
 bluecast/tests/test_feature_selection.py::test_boostaroota_wrapper_multiclass
 bluecast/tests/test_feature_selection.py::test_boostaroota_wrapper_multiclass
   /home/thomas/.cache/pypoetry/virtualenvs/bluecast-uAIs9xjE-py3.11/lib/python3.11/site-packages/xgboost/core.py:158: UserWarning:
-  
-  [06:46:38] WARNING: /workspace/src/learner.cc:740: 
-  Parameters: { "silent" } are not used.
 
-bluecast/tests/test_feature_selection.py::test_boostaroota_wrapper_multiclass
-bluecast/tests/test_feature_selection.py::test_boostaroota_wrapper_multiclass
-bluecast/tests/test_feature_selection.py::test_boostaroota_wrapper_multiclass
-bluecast/tests/test_feature_selection.py::test_boostaroota_wrapper_multiclass
-bluecast/tests/test_feature_selection.py::test_boostaroota_wrapper_multiclass
-bluecast/tests/test_feature_selection.py::test_boostaroota_wrapper_multiclass
-bluecast/tests/test_feature_selection.py::test_boostaroota_wrapper_multiclass
-  /home/thomas/.cache/pypoetry/virtualenvs/bluecast-uAIs9xjE-py3.11/lib/python3.11/site-packages/xgboost/core.py:158: UserWarning:
-  
-  [06:46:39] WARNING: /workspace/src/learner.cc:740: 
-  Parameters: { "silent" } are not used.
-
-bluecast/tests/test_feature_selection.py: 11 warnings
-  /home/thomas/.cache/pypoetry/virtualenvs/bluecast-uAIs9xjE-py3.11/lib/python3.11/site-packages/xgboost/core.py:158: UserWarning:
-  
-  [06:46:40] WARNING: /workspace/src/learner.cc:740: 
-  Parameters: { "silent" } are not used.
-
-bluecast/tests/test_feature_selection.py::test_boostaroota_wrapper_multiclass
-bluecast/tests/test_feature_selection.py::test_boostaroota_wrapper_multiclass
-bluecast/tests/test_feature_selection.py::test_boostaroota_wrapper_multiclass
-  /home/thomas/.cache/pypoetry/virtualenvs/bluecast-uAIs9xjE-py3.11/lib/python3.11/site-packages/xgboost/core.py:158: UserWarning:
-  
-  [06:46:41] WARNING: /workspace/src/learner.cc:740: 
+  [06:46:38] WARNING: /workspace/src/learner.cc:740:
   Parameters: { "silent" } are not used.
 
 bluecast/tests/test_feature_selection.py::test_boostaroota_wrapper_multiclass
@@ -1830,32 +1804,22 @@ bluecast/tests/test_feature_selection.py::test_boostaroota_wrapper_multiclass
 bluecast/tests/test_feature_selection.py::test_boostaroota_wrapper_multiclass
 bluecast/tests/test_feature_selection.py::test_boostaroota_wrapper_multiclass
   /home/thomas/.cache/pypoetry/virtualenvs/bluecast-uAIs9xjE-py3.11/lib/python3.11/site-packages/xgboost/core.py:158: UserWarning:
-  
-  [06:46:42] WARNING: /workspace/src/learner.cc:740: 
-  Parameters: { "silent" } are not used.
 
-bluecast/tests/test_feature_selection.py::test_boostaroota_wrapper_multiclass
-bluecast/tests/test_feature_selection.py::test_boostaroota_wrapper_multiclass
-bluecast/tests/test_feature_selection.py::test_boostaroota_wrapper_multiclass
-bluecast/tests/test_feature_selection.py::test_boostaroota_wrapper_multiclass
-bluecast/tests/test_feature_selection.py::test_boostaroota_wrapper_multiclass
-bluecast/tests/test_feature_selection.py::test_boostaroota_wrapper_multiclass
-bluecast/tests/test_feature_selection.py::test_boostaroota_wrapper_multiclass
-  /home/thomas/.cache/pypoetry/virtualenvs/bluecast-uAIs9xjE-py3.11/lib/python3.11/site-packages/xgboost/core.py:158: UserWarning:
-  
-  [06:46:43] WARNING: /workspace/src/learner.cc:740: 
-  Parameters: { "silent" } are not used.
-
-bluecast/tests/test_feature_selection.py::test_boostaroota_wrapper_multiclass
-  /home/thomas/.cache/pypoetry/virtualenvs/bluecast-uAIs9xjE-py3.11/lib/python3.11/site-packages/xgboost/core.py:158: UserWarning:
-  
-  [06:46:44] WARNING: /workspace/src/learner.cc:740: 
+  [06:46:39] WARNING: /workspace/src/learner.cc:740:
   Parameters: { "silent" } are not used.
 
 bluecast/tests/test_feature_selection.py: 11 warnings
   /home/thomas/.cache/pypoetry/virtualenvs/bluecast-uAIs9xjE-py3.11/lib/python3.11/site-packages/xgboost/core.py:158: UserWarning:
-  
-  [06:46:45] WARNING: /workspace/src/learner.cc:740: 
+
+  [06:46:40] WARNING: /workspace/src/learner.cc:740:
+  Parameters: { "silent" } are not used.
+
+bluecast/tests/test_feature_selection.py::test_boostaroota_wrapper_multiclass
+bluecast/tests/test_feature_selection.py::test_boostaroota_wrapper_multiclass
+bluecast/tests/test_feature_selection.py::test_boostaroota_wrapper_multiclass
+  /home/thomas/.cache/pypoetry/virtualenvs/bluecast-uAIs9xjE-py3.11/lib/python3.11/site-packages/xgboost/core.py:158: UserWarning:
+
+  [06:46:41] WARNING: /workspace/src/learner.cc:740:
   Parameters: { "silent" } are not used.
 
 bluecast/tests/test_feature_selection.py::test_boostaroota_wrapper_multiclass
@@ -1866,15 +1830,8 @@ bluecast/tests/test_feature_selection.py::test_boostaroota_wrapper_multiclass
 bluecast/tests/test_feature_selection.py::test_boostaroota_wrapper_multiclass
 bluecast/tests/test_feature_selection.py::test_boostaroota_wrapper_multiclass
   /home/thomas/.cache/pypoetry/virtualenvs/bluecast-uAIs9xjE-py3.11/lib/python3.11/site-packages/xgboost/core.py:158: UserWarning:
-  
-  [06:46:46] WARNING: /workspace/src/learner.cc:740: 
-  Parameters: { "silent" } are not used.
 
-bluecast/tests/test_feature_selection.py::test_boostaroota_wrapper_multiclass
-bluecast/tests/test_feature_selection.py::test_boostaroota_wrapper_multiclass
-  /home/thomas/.cache/pypoetry/virtualenvs/bluecast-uAIs9xjE-py3.11/lib/python3.11/site-packages/xgboost/core.py:158: UserWarning:
-  
-  [06:46:47] WARNING: /workspace/src/learner.cc:740: 
+  [06:46:42] WARNING: /workspace/src/learner.cc:740:
   Parameters: { "silent" } are not used.
 
 bluecast/tests/test_feature_selection.py::test_boostaroota_wrapper_multiclass
@@ -1884,33 +1841,76 @@ bluecast/tests/test_feature_selection.py::test_boostaroota_wrapper_multiclass
 bluecast/tests/test_feature_selection.py::test_boostaroota_wrapper_multiclass
 bluecast/tests/test_feature_selection.py::test_boostaroota_wrapper_multiclass
 bluecast/tests/test_feature_selection.py::test_boostaroota_wrapper_multiclass
-bluecast/tests/test_feature_selection.py::test_boostaroota_wrapper_multiclass
   /home/thomas/.cache/pypoetry/virtualenvs/bluecast-uAIs9xjE-py3.11/lib/python3.11/site-packages/xgboost/core.py:158: UserWarning:
-  
-  [06:46:48] WARNING: /workspace/src/learner.cc:740: 
+
+  [06:46:43] WARNING: /workspace/src/learner.cc:740:
   Parameters: { "silent" } are not used.
 
 bluecast/tests/test_feature_selection.py::test_boostaroota_wrapper_multiclass
-bluecast/tests/test_feature_selection.py::test_boostaroota_wrapper_multiclass
-bluecast/tests/test_feature_selection.py::test_boostaroota_wrapper_multiclass
-bluecast/tests/test_feature_selection.py::test_boostaroota_wrapper_multiclass
-bluecast/tests/test_feature_selection.py::test_boostaroota_wrapper_multiclass
-bluecast/tests/test_feature_selection.py::test_boostaroota_wrapper_multiclass
   /home/thomas/.cache/pypoetry/virtualenvs/bluecast-uAIs9xjE-py3.11/lib/python3.11/site-packages/xgboost/core.py:158: UserWarning:
-  
-  [06:46:49] WARNING: /workspace/src/learner.cc:740: 
+
+  [06:46:44] WARNING: /workspace/src/learner.cc:740:
   Parameters: { "silent" } are not used.
 
 bluecast/tests/test_feature_selection.py: 11 warnings
   /home/thomas/.cache/pypoetry/virtualenvs/bluecast-uAIs9xjE-py3.11/lib/python3.11/site-packages/xgboost/core.py:158: UserWarning:
-  
-  [06:46:50] WARNING: /workspace/src/learner.cc:740: 
+
+  [06:46:45] WARNING: /workspace/src/learner.cc:740:
+  Parameters: { "silent" } are not used.
+
+bluecast/tests/test_feature_selection.py::test_boostaroota_wrapper_multiclass
+bluecast/tests/test_feature_selection.py::test_boostaroota_wrapper_multiclass
+bluecast/tests/test_feature_selection.py::test_boostaroota_wrapper_multiclass
+bluecast/tests/test_feature_selection.py::test_boostaroota_wrapper_multiclass
+bluecast/tests/test_feature_selection.py::test_boostaroota_wrapper_multiclass
+bluecast/tests/test_feature_selection.py::test_boostaroota_wrapper_multiclass
+bluecast/tests/test_feature_selection.py::test_boostaroota_wrapper_multiclass
+  /home/thomas/.cache/pypoetry/virtualenvs/bluecast-uAIs9xjE-py3.11/lib/python3.11/site-packages/xgboost/core.py:158: UserWarning:
+
+  [06:46:46] WARNING: /workspace/src/learner.cc:740:
+  Parameters: { "silent" } are not used.
+
+bluecast/tests/test_feature_selection.py::test_boostaroota_wrapper_multiclass
+bluecast/tests/test_feature_selection.py::test_boostaroota_wrapper_multiclass
+  /home/thomas/.cache/pypoetry/virtualenvs/bluecast-uAIs9xjE-py3.11/lib/python3.11/site-packages/xgboost/core.py:158: UserWarning:
+
+  [06:46:47] WARNING: /workspace/src/learner.cc:740:
+  Parameters: { "silent" } are not used.
+
+bluecast/tests/test_feature_selection.py::test_boostaroota_wrapper_multiclass
+bluecast/tests/test_feature_selection.py::test_boostaroota_wrapper_multiclass
+bluecast/tests/test_feature_selection.py::test_boostaroota_wrapper_multiclass
+bluecast/tests/test_feature_selection.py::test_boostaroota_wrapper_multiclass
+bluecast/tests/test_feature_selection.py::test_boostaroota_wrapper_multiclass
+bluecast/tests/test_feature_selection.py::test_boostaroota_wrapper_multiclass
+bluecast/tests/test_feature_selection.py::test_boostaroota_wrapper_multiclass
+bluecast/tests/test_feature_selection.py::test_boostaroota_wrapper_multiclass
+  /home/thomas/.cache/pypoetry/virtualenvs/bluecast-uAIs9xjE-py3.11/lib/python3.11/site-packages/xgboost/core.py:158: UserWarning:
+
+  [06:46:48] WARNING: /workspace/src/learner.cc:740:
+  Parameters: { "silent" } are not used.
+
+bluecast/tests/test_feature_selection.py::test_boostaroota_wrapper_multiclass
+bluecast/tests/test_feature_selection.py::test_boostaroota_wrapper_multiclass
+bluecast/tests/test_feature_selection.py::test_boostaroota_wrapper_multiclass
+bluecast/tests/test_feature_selection.py::test_boostaroota_wrapper_multiclass
+bluecast/tests/test_feature_selection.py::test_boostaroota_wrapper_multiclass
+bluecast/tests/test_feature_selection.py::test_boostaroota_wrapper_multiclass
+  /home/thomas/.cache/pypoetry/virtualenvs/bluecast-uAIs9xjE-py3.11/lib/python3.11/site-packages/xgboost/core.py:158: UserWarning:
+
+  [06:46:49] WARNING: /workspace/src/learner.cc:740:
+  Parameters: { "silent" } are not used.
+
+bluecast/tests/test_feature_selection.py: 11 warnings
+  /home/thomas/.cache/pypoetry/virtualenvs/bluecast-uAIs9xjE-py3.11/lib/python3.11/site-packages/xgboost/core.py:158: UserWarning:
+
+  [06:46:50] WARNING: /workspace/src/learner.cc:740:
   Parameters: { "silent" } are not used.
 
 bluecast/tests/test_feature_selection.py: 12 warnings
   /home/thomas/.cache/pypoetry/virtualenvs/bluecast-uAIs9xjE-py3.11/lib/python3.11/site-packages/xgboost/core.py:158: UserWarning:
-  
-  [06:46:51] WARNING: /workspace/src/learner.cc:740: 
+
+  [06:46:51] WARNING: /workspace/src/learner.cc:740:
   Parameters: { "silent" } are not used.
 
 bluecast/tests/test_feature_selection.py::test_boostaroota_wrapper_multiclass
@@ -1922,32 +1922,32 @@ bluecast/tests/test_feature_selection.py::test_boostaroota_wrapper_multiclass
 bluecast/tests/test_feature_selection.py::test_boostaroota_wrapper_multiclass
 bluecast/tests/test_feature_selection.py::test_boostaroota_wrapper_multiclass
   /home/thomas/.cache/pypoetry/virtualenvs/bluecast-uAIs9xjE-py3.11/lib/python3.11/site-packages/xgboost/core.py:158: UserWarning:
-  
-  [06:46:52] WARNING: /workspace/src/learner.cc:740: 
+
+  [06:46:52] WARNING: /workspace/src/learner.cc:740:
   Parameters: { "silent" } are not used.
 
 bluecast/tests/test_feature_selection.py: 11 warnings
   /home/thomas/.cache/pypoetry/virtualenvs/bluecast-uAIs9xjE-py3.11/lib/python3.11/site-packages/xgboost/core.py:158: UserWarning:
-  
-  [06:46:53] WARNING: /workspace/src/learner.cc:740: 
+
+  [06:46:53] WARNING: /workspace/src/learner.cc:740:
   Parameters: { "silent" } are not used.
 
 bluecast/tests/test_feature_selection.py: 14 warnings
   /home/thomas/.cache/pypoetry/virtualenvs/bluecast-uAIs9xjE-py3.11/lib/python3.11/site-packages/xgboost/core.py:158: UserWarning:
-  
-  [06:46:54] WARNING: /workspace/src/learner.cc:740: 
+
+  [06:46:54] WARNING: /workspace/src/learner.cc:740:
   Parameters: { "silent" } are not used.
 
 bluecast/tests/test_feature_selection.py: 11 warnings
   /home/thomas/.cache/pypoetry/virtualenvs/bluecast-uAIs9xjE-py3.11/lib/python3.11/site-packages/xgboost/core.py:158: UserWarning:
-  
-  [06:46:55] WARNING: /workspace/src/learner.cc:740: 
+
+  [06:46:55] WARNING: /workspace/src/learner.cc:740:
   Parameters: { "silent" } are not used.
 
 bluecast/tests/test_feature_selection.py: 11 warnings
   /home/thomas/.cache/pypoetry/virtualenvs/bluecast-uAIs9xjE-py3.11/lib/python3.11/site-packages/xgboost/core.py:158: UserWarning:
-  
-  [06:46:56] WARNING: /workspace/src/learner.cc:740: 
+
+  [06:46:56] WARNING: /workspace/src/learner.cc:740:
   Parameters: { "silent" } are not used.
 
 bluecast/tests/test_feature_selection.py::test_boostaroota_wrapper_multiclass
@@ -1958,89 +1958,8 @@ bluecast/tests/test_feature_selection.py::test_boostaroota_wrapper_multiclass
 bluecast/tests/test_feature_selection.py::test_boostaroota_wrapper_multiclass
 bluecast/tests/test_feature_selection.py::test_boostaroota_wrapper_multiclass
   /home/thomas/.cache/pypoetry/virtualenvs/bluecast-uAIs9xjE-py3.11/lib/python3.11/site-packages/xgboost/core.py:158: UserWarning:
-  
-  [06:46:57] WARNING: /workspace/src/learner.cc:740: 
-  Parameters: { "silent" } are not used.
 
-bluecast/tests/test_feature_selection.py::test_boostaroota_wrapper_multiclass
-bluecast/tests/test_feature_selection.py::test_boostaroota_wrapper_multiclass
-bluecast/tests/test_feature_selection.py::test_boostaroota_wrapper_multiclass
-bluecast/tests/test_feature_selection.py::test_boostaroota_wrapper_multiclass
-bluecast/tests/test_feature_selection.py::test_boostaroota_wrapper_multiclass
-bluecast/tests/test_feature_selection.py::test_boostaroota_wrapper_multiclass
-bluecast/tests/test_feature_selection.py::test_boostaroota_wrapper_multiclass
-bluecast/tests/test_feature_selection.py::test_boostaroota_wrapper_multiclass
-  /home/thomas/.cache/pypoetry/virtualenvs/bluecast-uAIs9xjE-py3.11/lib/python3.11/site-packages/xgboost/core.py:158: UserWarning:
-  
-  [06:46:58] WARNING: /workspace/src/learner.cc:740: 
-  Parameters: { "silent" } are not used.
-
-bluecast/tests/test_feature_selection.py::test_boostaroota_wrapper_multiclass
-bluecast/tests/test_feature_selection.py::test_boostaroota_wrapper_multiclass
-bluecast/tests/test_feature_selection.py::test_boostaroota_wrapper_multiclass
-bluecast/tests/test_feature_selection.py::test_boostaroota_wrapper_multiclass
-bluecast/tests/test_feature_selection.py::test_boostaroota_wrapper_multiclass
-bluecast/tests/test_feature_selection.py::test_boostaroota_wrapper_multiclass
-  /home/thomas/.cache/pypoetry/virtualenvs/bluecast-uAIs9xjE-py3.11/lib/python3.11/site-packages/xgboost/core.py:158: UserWarning:
-  
-  [06:46:59] WARNING: /workspace/src/learner.cc:740: 
-  Parameters: { "silent" } are not used.
-
-bluecast/tests/test_feature_selection.py: 10 warnings
-  /home/thomas/.cache/pypoetry/virtualenvs/bluecast-uAIs9xjE-py3.11/lib/python3.11/site-packages/xgboost/core.py:158: UserWarning:
-  
-  [06:47:00] WARNING: /workspace/src/learner.cc:740: 
-  Parameters: { "silent" } are not used.
-
-bluecast/tests/test_feature_selection.py::test_boostaroota_wrapper_multiclass
-bluecast/tests/test_feature_selection.py::test_boostaroota_wrapper_multiclass
-  /home/thomas/.cache/pypoetry/virtualenvs/bluecast-uAIs9xjE-py3.11/lib/python3.11/site-packages/xgboost/core.py:158: UserWarning:
-  
-  [06:47:01] WARNING: /workspace/src/learner.cc:740: 
-  Parameters: { "silent" } are not used.
-
-bluecast/tests/test_feature_selection.py::test_boostaroota_wrapper_multiclass
-bluecast/tests/test_feature_selection.py::test_boostaroota_wrapper_multiclass
-bluecast/tests/test_feature_selection.py::test_boostaroota_wrapper_multiclass
-bluecast/tests/test_feature_selection.py::test_boostaroota_wrapper_multiclass
-bluecast/tests/test_feature_selection.py::test_boostaroota_wrapper_multiclass
-  /home/thomas/.cache/pypoetry/virtualenvs/bluecast-uAIs9xjE-py3.11/lib/python3.11/site-packages/xgboost/core.py:158: UserWarning:
-  
-  [06:47:02] WARNING: /workspace/src/learner.cc:740: 
-  Parameters: { "silent" } are not used.
-
-bluecast/tests/test_feature_selection.py::test_boostaroota_wrapper_multiclass
-bluecast/tests/test_feature_selection.py::test_boostaroota_wrapper_multiclass
-bluecast/tests/test_feature_selection.py::test_boostaroota_wrapper_multiclass
-bluecast/tests/test_feature_selection.py::test_boostaroota_wrapper_multiclass
-bluecast/tests/test_feature_selection.py::test_boostaroota_wrapper_multiclass
-bluecast/tests/test_feature_selection.py::test_boostaroota_wrapper_multiclass
-bluecast/tests/test_feature_selection.py::test_boostaroota_wrapper_multiclass
-  /home/thomas/.cache/pypoetry/virtualenvs/bluecast-uAIs9xjE-py3.11/lib/python3.11/site-packages/xgboost/core.py:158: UserWarning:
-  
-  [06:47:03] WARNING: /workspace/src/learner.cc:740: 
-  Parameters: { "silent" } are not used.
-
-bluecast/tests/test_feature_selection.py::test_boostaroota_wrapper_multiclass
-bluecast/tests/test_feature_selection.py::test_boostaroota_wrapper_multiclass
-bluecast/tests/test_feature_selection.py::test_boostaroota_wrapper_multiclass
-bluecast/tests/test_feature_selection.py::test_boostaroota_wrapper_multiclass
-bluecast/tests/test_feature_selection.py::test_boostaroota_wrapper_multiclass
-bluecast/tests/test_feature_selection.py::test_boostaroota_wrapper_multiclass
-bluecast/tests/test_feature_selection.py::test_boostaroota_wrapper_multiclass
-bluecast/tests/test_feature_selection.py::test_boostaroota_wrapper_multiclass
-bluecast/tests/test_feature_selection.py::test_boostaroota_wrapper_multiclass
-  /home/thomas/.cache/pypoetry/virtualenvs/bluecast-uAIs9xjE-py3.11/lib/python3.11/site-packages/xgboost/core.py:158: UserWarning:
-  
-  [06:47:04] WARNING: /workspace/src/learner.cc:740: 
-  Parameters: { "silent" } are not used.
-
-bluecast/tests/test_feature_selection.py::test_boostaroota_wrapper_multiclass
-bluecast/tests/test_feature_selection.py::test_boostaroota_wrapper_multiclass
-bluecast/tests/test_feature_selection.py::test_boostaroota_wrapper_multiclass
-  /home/thomas/.cache/pypoetry/virtualenvs/bluecast-uAIs9xjE-py3.11/lib/python3.11/site-packages/xgboost/core.py:158: UserWarning:
-  
-  [06:47:05] WARNING: /workspace/src/learner.cc:740: 
+  [06:46:57] WARNING: /workspace/src/learner.cc:740:
   Parameters: { "silent" } are not used.
 
 bluecast/tests/test_feature_selection.py::test_boostaroota_wrapper_multiclass
@@ -2052,8 +1971,8 @@ bluecast/tests/test_feature_selection.py::test_boostaroota_wrapper_multiclass
 bluecast/tests/test_feature_selection.py::test_boostaroota_wrapper_multiclass
 bluecast/tests/test_feature_selection.py::test_boostaroota_wrapper_multiclass
   /home/thomas/.cache/pypoetry/virtualenvs/bluecast-uAIs9xjE-py3.11/lib/python3.11/site-packages/xgboost/core.py:158: UserWarning:
-  
-  [06:47:06] WARNING: /workspace/src/learner.cc:740: 
+
+  [06:46:58] WARNING: /workspace/src/learner.cc:740:
   Parameters: { "silent" } are not used.
 
 bluecast/tests/test_feature_selection.py::test_boostaroota_wrapper_multiclass
@@ -2063,59 +1982,43 @@ bluecast/tests/test_feature_selection.py::test_boostaroota_wrapper_multiclass
 bluecast/tests/test_feature_selection.py::test_boostaroota_wrapper_multiclass
 bluecast/tests/test_feature_selection.py::test_boostaroota_wrapper_multiclass
   /home/thomas/.cache/pypoetry/virtualenvs/bluecast-uAIs9xjE-py3.11/lib/python3.11/site-packages/xgboost/core.py:158: UserWarning:
-  
-  [06:47:07] WARNING: /workspace/src/learner.cc:740: 
-  Parameters: { "silent" } are not used.
 
-bluecast/tests/test_feature_selection.py::test_boostaroota_wrapper_multiclass
-bluecast/tests/test_feature_selection.py::test_boostaroota_wrapper_multiclass
-bluecast/tests/test_feature_selection.py::test_boostaroota_wrapper_multiclass
-bluecast/tests/test_feature_selection.py::test_boostaroota_wrapper_multiclass
-bluecast/tests/test_feature_selection.py::test_boostaroota_wrapper_multiclass
-  /home/thomas/.cache/pypoetry/virtualenvs/bluecast-uAIs9xjE-py3.11/lib/python3.11/site-packages/xgboost/core.py:158: UserWarning:
-  
-  [06:47:08] WARNING: /workspace/src/learner.cc:740: 
-  Parameters: { "silent" } are not used.
-
-bluecast/tests/test_feature_selection.py::test_boostaroota_wrapper_multiclass
-bluecast/tests/test_feature_selection.py::test_boostaroota_wrapper_multiclass
-bluecast/tests/test_feature_selection.py::test_boostaroota_wrapper_multiclass
-bluecast/tests/test_feature_selection.py::test_boostaroota_wrapper_multiclass
-bluecast/tests/test_feature_selection.py::test_boostaroota_wrapper_multiclass
-bluecast/tests/test_feature_selection.py::test_boostaroota_wrapper_multiclass
-  /home/thomas/.cache/pypoetry/virtualenvs/bluecast-uAIs9xjE-py3.11/lib/python3.11/site-packages/xgboost/core.py:158: UserWarning:
-  
-  [06:47:09] WARNING: /workspace/src/learner.cc:740: 
-  Parameters: { "silent" } are not used.
-
-bluecast/tests/test_feature_selection.py::test_boostaroota_wrapper_multiclass
-bluecast/tests/test_feature_selection.py::test_boostaroota_wrapper_multiclass
-bluecast/tests/test_feature_selection.py::test_boostaroota_wrapper_multiclass
-bluecast/tests/test_feature_selection.py::test_boostaroota_wrapper_multiclass
-bluecast/tests/test_feature_selection.py::test_boostaroota_wrapper_multiclass
-bluecast/tests/test_feature_selection.py::test_boostaroota_wrapper_multiclass
-bluecast/tests/test_feature_selection.py::test_boostaroota_wrapper_multiclass
-  /home/thomas/.cache/pypoetry/virtualenvs/bluecast-uAIs9xjE-py3.11/lib/python3.11/site-packages/xgboost/core.py:158: UserWarning:
-  
-  [06:47:10] WARNING: /workspace/src/learner.cc:740: 
-  Parameters: { "silent" } are not used.
-
-bluecast/tests/test_feature_selection.py::test_boostaroota_wrapper_multiclass
-bluecast/tests/test_feature_selection.py::test_boostaroota_wrapper_multiclass
-bluecast/tests/test_feature_selection.py::test_boostaroota_wrapper_multiclass
-bluecast/tests/test_feature_selection.py::test_boostaroota_wrapper_multiclass
-bluecast/tests/test_feature_selection.py::test_boostaroota_wrapper_multiclass
-bluecast/tests/test_feature_selection.py::test_boostaroota_wrapper_multiclass
-bluecast/tests/test_feature_selection.py::test_boostaroota_wrapper_multiclass
-  /home/thomas/.cache/pypoetry/virtualenvs/bluecast-uAIs9xjE-py3.11/lib/python3.11/site-packages/xgboost/core.py:158: UserWarning:
-  
-  [06:47:11] WARNING: /workspace/src/learner.cc:740: 
+  [06:46:59] WARNING: /workspace/src/learner.cc:740:
   Parameters: { "silent" } are not used.
 
 bluecast/tests/test_feature_selection.py: 10 warnings
   /home/thomas/.cache/pypoetry/virtualenvs/bluecast-uAIs9xjE-py3.11/lib/python3.11/site-packages/xgboost/core.py:158: UserWarning:
-  
-  [06:47:12] WARNING: /workspace/src/learner.cc:740: 
+
+  [06:47:00] WARNING: /workspace/src/learner.cc:740:
+  Parameters: { "silent" } are not used.
+
+bluecast/tests/test_feature_selection.py::test_boostaroota_wrapper_multiclass
+bluecast/tests/test_feature_selection.py::test_boostaroota_wrapper_multiclass
+  /home/thomas/.cache/pypoetry/virtualenvs/bluecast-uAIs9xjE-py3.11/lib/python3.11/site-packages/xgboost/core.py:158: UserWarning:
+
+  [06:47:01] WARNING: /workspace/src/learner.cc:740:
+  Parameters: { "silent" } are not used.
+
+bluecast/tests/test_feature_selection.py::test_boostaroota_wrapper_multiclass
+bluecast/tests/test_feature_selection.py::test_boostaroota_wrapper_multiclass
+bluecast/tests/test_feature_selection.py::test_boostaroota_wrapper_multiclass
+bluecast/tests/test_feature_selection.py::test_boostaroota_wrapper_multiclass
+bluecast/tests/test_feature_selection.py::test_boostaroota_wrapper_multiclass
+  /home/thomas/.cache/pypoetry/virtualenvs/bluecast-uAIs9xjE-py3.11/lib/python3.11/site-packages/xgboost/core.py:158: UserWarning:
+
+  [06:47:02] WARNING: /workspace/src/learner.cc:740:
+  Parameters: { "silent" } are not used.
+
+bluecast/tests/test_feature_selection.py::test_boostaroota_wrapper_multiclass
+bluecast/tests/test_feature_selection.py::test_boostaroota_wrapper_multiclass
+bluecast/tests/test_feature_selection.py::test_boostaroota_wrapper_multiclass
+bluecast/tests/test_feature_selection.py::test_boostaroota_wrapper_multiclass
+bluecast/tests/test_feature_selection.py::test_boostaroota_wrapper_multiclass
+bluecast/tests/test_feature_selection.py::test_boostaroota_wrapper_multiclass
+bluecast/tests/test_feature_selection.py::test_boostaroota_wrapper_multiclass
+  /home/thomas/.cache/pypoetry/virtualenvs/bluecast-uAIs9xjE-py3.11/lib/python3.11/site-packages/xgboost/core.py:158: UserWarning:
+
+  [06:47:03] WARNING: /workspace/src/learner.cc:740:
   Parameters: { "silent" } are not used.
 
 bluecast/tests/test_feature_selection.py::test_boostaroota_wrapper_multiclass
@@ -2128,8 +2031,40 @@ bluecast/tests/test_feature_selection.py::test_boostaroota_wrapper_multiclass
 bluecast/tests/test_feature_selection.py::test_boostaroota_wrapper_multiclass
 bluecast/tests/test_feature_selection.py::test_boostaroota_wrapper_multiclass
   /home/thomas/.cache/pypoetry/virtualenvs/bluecast-uAIs9xjE-py3.11/lib/python3.11/site-packages/xgboost/core.py:158: UserWarning:
-  
-  [06:47:13] WARNING: /workspace/src/learner.cc:740: 
+
+  [06:47:04] WARNING: /workspace/src/learner.cc:740:
+  Parameters: { "silent" } are not used.
+
+bluecast/tests/test_feature_selection.py::test_boostaroota_wrapper_multiclass
+bluecast/tests/test_feature_selection.py::test_boostaroota_wrapper_multiclass
+bluecast/tests/test_feature_selection.py::test_boostaroota_wrapper_multiclass
+  /home/thomas/.cache/pypoetry/virtualenvs/bluecast-uAIs9xjE-py3.11/lib/python3.11/site-packages/xgboost/core.py:158: UserWarning:
+
+  [06:47:05] WARNING: /workspace/src/learner.cc:740:
+  Parameters: { "silent" } are not used.
+
+bluecast/tests/test_feature_selection.py::test_boostaroota_wrapper_multiclass
+bluecast/tests/test_feature_selection.py::test_boostaroota_wrapper_multiclass
+bluecast/tests/test_feature_selection.py::test_boostaroota_wrapper_multiclass
+bluecast/tests/test_feature_selection.py::test_boostaroota_wrapper_multiclass
+bluecast/tests/test_feature_selection.py::test_boostaroota_wrapper_multiclass
+bluecast/tests/test_feature_selection.py::test_boostaroota_wrapper_multiclass
+bluecast/tests/test_feature_selection.py::test_boostaroota_wrapper_multiclass
+bluecast/tests/test_feature_selection.py::test_boostaroota_wrapper_multiclass
+  /home/thomas/.cache/pypoetry/virtualenvs/bluecast-uAIs9xjE-py3.11/lib/python3.11/site-packages/xgboost/core.py:158: UserWarning:
+
+  [06:47:06] WARNING: /workspace/src/learner.cc:740:
+  Parameters: { "silent" } are not used.
+
+bluecast/tests/test_feature_selection.py::test_boostaroota_wrapper_multiclass
+bluecast/tests/test_feature_selection.py::test_boostaroota_wrapper_multiclass
+bluecast/tests/test_feature_selection.py::test_boostaroota_wrapper_multiclass
+bluecast/tests/test_feature_selection.py::test_boostaroota_wrapper_multiclass
+bluecast/tests/test_feature_selection.py::test_boostaroota_wrapper_multiclass
+bluecast/tests/test_feature_selection.py::test_boostaroota_wrapper_multiclass
+  /home/thomas/.cache/pypoetry/virtualenvs/bluecast-uAIs9xjE-py3.11/lib/python3.11/site-packages/xgboost/core.py:158: UserWarning:
+
+  [06:47:07] WARNING: /workspace/src/learner.cc:740:
   Parameters: { "silent" } are not used.
 
 bluecast/tests/test_feature_selection.py::test_boostaroota_wrapper_multiclass
@@ -2138,8 +2073,73 @@ bluecast/tests/test_feature_selection.py::test_boostaroota_wrapper_multiclass
 bluecast/tests/test_feature_selection.py::test_boostaroota_wrapper_multiclass
 bluecast/tests/test_feature_selection.py::test_boostaroota_wrapper_multiclass
   /home/thomas/.cache/pypoetry/virtualenvs/bluecast-uAIs9xjE-py3.11/lib/python3.11/site-packages/xgboost/core.py:158: UserWarning:
-  
-  [06:47:14] WARNING: /workspace/src/learner.cc:740: 
+
+  [06:47:08] WARNING: /workspace/src/learner.cc:740:
+  Parameters: { "silent" } are not used.
+
+bluecast/tests/test_feature_selection.py::test_boostaroota_wrapper_multiclass
+bluecast/tests/test_feature_selection.py::test_boostaroota_wrapper_multiclass
+bluecast/tests/test_feature_selection.py::test_boostaroota_wrapper_multiclass
+bluecast/tests/test_feature_selection.py::test_boostaroota_wrapper_multiclass
+bluecast/tests/test_feature_selection.py::test_boostaroota_wrapper_multiclass
+bluecast/tests/test_feature_selection.py::test_boostaroota_wrapper_multiclass
+  /home/thomas/.cache/pypoetry/virtualenvs/bluecast-uAIs9xjE-py3.11/lib/python3.11/site-packages/xgboost/core.py:158: UserWarning:
+
+  [06:47:09] WARNING: /workspace/src/learner.cc:740:
+  Parameters: { "silent" } are not used.
+
+bluecast/tests/test_feature_selection.py::test_boostaroota_wrapper_multiclass
+bluecast/tests/test_feature_selection.py::test_boostaroota_wrapper_multiclass
+bluecast/tests/test_feature_selection.py::test_boostaroota_wrapper_multiclass
+bluecast/tests/test_feature_selection.py::test_boostaroota_wrapper_multiclass
+bluecast/tests/test_feature_selection.py::test_boostaroota_wrapper_multiclass
+bluecast/tests/test_feature_selection.py::test_boostaroota_wrapper_multiclass
+bluecast/tests/test_feature_selection.py::test_boostaroota_wrapper_multiclass
+  /home/thomas/.cache/pypoetry/virtualenvs/bluecast-uAIs9xjE-py3.11/lib/python3.11/site-packages/xgboost/core.py:158: UserWarning:
+
+  [06:47:10] WARNING: /workspace/src/learner.cc:740:
+  Parameters: { "silent" } are not used.
+
+bluecast/tests/test_feature_selection.py::test_boostaroota_wrapper_multiclass
+bluecast/tests/test_feature_selection.py::test_boostaroota_wrapper_multiclass
+bluecast/tests/test_feature_selection.py::test_boostaroota_wrapper_multiclass
+bluecast/tests/test_feature_selection.py::test_boostaroota_wrapper_multiclass
+bluecast/tests/test_feature_selection.py::test_boostaroota_wrapper_multiclass
+bluecast/tests/test_feature_selection.py::test_boostaroota_wrapper_multiclass
+bluecast/tests/test_feature_selection.py::test_boostaroota_wrapper_multiclass
+  /home/thomas/.cache/pypoetry/virtualenvs/bluecast-uAIs9xjE-py3.11/lib/python3.11/site-packages/xgboost/core.py:158: UserWarning:
+
+  [06:47:11] WARNING: /workspace/src/learner.cc:740:
+  Parameters: { "silent" } are not used.
+
+bluecast/tests/test_feature_selection.py: 10 warnings
+  /home/thomas/.cache/pypoetry/virtualenvs/bluecast-uAIs9xjE-py3.11/lib/python3.11/site-packages/xgboost/core.py:158: UserWarning:
+
+  [06:47:12] WARNING: /workspace/src/learner.cc:740:
+  Parameters: { "silent" } are not used.
+
+bluecast/tests/test_feature_selection.py::test_boostaroota_wrapper_multiclass
+bluecast/tests/test_feature_selection.py::test_boostaroota_wrapper_multiclass
+bluecast/tests/test_feature_selection.py::test_boostaroota_wrapper_multiclass
+bluecast/tests/test_feature_selection.py::test_boostaroota_wrapper_multiclass
+bluecast/tests/test_feature_selection.py::test_boostaroota_wrapper_multiclass
+bluecast/tests/test_feature_selection.py::test_boostaroota_wrapper_multiclass
+bluecast/tests/test_feature_selection.py::test_boostaroota_wrapper_multiclass
+bluecast/tests/test_feature_selection.py::test_boostaroota_wrapper_multiclass
+bluecast/tests/test_feature_selection.py::test_boostaroota_wrapper_multiclass
+  /home/thomas/.cache/pypoetry/virtualenvs/bluecast-uAIs9xjE-py3.11/lib/python3.11/site-packages/xgboost/core.py:158: UserWarning:
+
+  [06:47:13] WARNING: /workspace/src/learner.cc:740:
+  Parameters: { "silent" } are not used.
+
+bluecast/tests/test_feature_selection.py::test_boostaroota_wrapper_multiclass
+bluecast/tests/test_feature_selection.py::test_boostaroota_wrapper_multiclass
+bluecast/tests/test_feature_selection.py::test_boostaroota_wrapper_multiclass
+bluecast/tests/test_feature_selection.py::test_boostaroota_wrapper_multiclass
+bluecast/tests/test_feature_selection.py::test_boostaroota_wrapper_multiclass
+  /home/thomas/.cache/pypoetry/virtualenvs/bluecast-uAIs9xjE-py3.11/lib/python3.11/site-packages/xgboost/core.py:158: UserWarning:
+
+  [06:47:14] WARNING: /workspace/src/learner.cc:740:
   Parameters: { "silent" } are not used.
 
 bluecast/tests/test_feature_selection.py::test_boostaroota_wrapper_multiclass
@@ -2147,16 +2147,16 @@ bluecast/tests/test_feature_selection.py::test_boostaroota_wrapper_multiclass
 bluecast/tests/test_feature_selection.py::test_boostaroota_wrapper_multiclass
 bluecast/tests/test_feature_selection.py::test_boostaroota_wrapper_multiclass
   /home/thomas/.cache/pypoetry/virtualenvs/bluecast-uAIs9xjE-py3.11/lib/python3.11/site-packages/xgboost/core.py:158: UserWarning:
-  
-  [06:47:15] WARNING: /workspace/src/learner.cc:740: 
+
+  [06:47:15] WARNING: /workspace/src/learner.cc:740:
   Parameters: { "silent" } are not used.
 
 bluecast/tests/test_feature_selection.py::test_boostaroota_wrapper_fit_transform_multiclass
 bluecast/tests/test_feature_selection.py::test_boostaroota_wrapper_fit_transform_multiclass
 bluecast/tests/test_feature_selection.py::test_boostaroota_wrapper_fit_transform_multiclass
   /home/thomas/.cache/pypoetry/virtualenvs/bluecast-uAIs9xjE-py3.11/lib/python3.11/site-packages/xgboost/core.py:158: UserWarning:
-  
-  [06:47:23] WARNING: /workspace/src/learner.cc:740: 
+
+  [06:47:23] WARNING: /workspace/src/learner.cc:740:
   Parameters: { "silent" } are not used.
 
 bluecast/tests/test_feature_selection.py::test_boostaroota_wrapper_fit_transform_multiclass
@@ -2167,13 +2167,13 @@ bluecast/tests/test_feature_selection.py::test_boostaroota_wrapper_fit_transform
 bluecast/tests/test_feature_selection.py::test_boostaroota_wrapper_fit_transform_multiclass
 bluecast/tests/test_feature_selection.py::test_boostaroota_wrapper_fit_transform_multiclass
   /home/thomas/.cache/pypoetry/virtualenvs/bluecast-uAIs9xjE-py3.11/lib/python3.11/site-packages/xgboost/core.py:158: UserWarning:
-  
-  [06:47:24] WARNING: /workspace/src/learner.cc:740: 
+
+  [06:47:24] WARNING: /workspace/src/learner.cc:740:
   Parameters: { "silent" } are not used.
 
 bluecast/tests/test_orchestrator.py::TestSmartSampling::test_row_sampling_classification
   /home/thomas/IdeaProjects/BlueCast/BlueCast/bluecast/ai/orchestrator.py:212: FutureWarning:
-  
+
   DataFrameGroupBy.apply operated on the grouping columns. This behavior is deprecated, and in a future version of pandas the grouping columns will be excluded from the operation. Either pass `include_groups=False` to exclude the groupings or explicitly select the grouping columns after groupby to silence this warning.
 
 bluecast/tests/test_orchestrator.py::test_step_ultimate_build_loop
@@ -2184,7 +2184,7 @@ bluecast/tests/test_orchestrator.py::test_step_ultimate_build_loop
 bluecast/tests/test_orchestrator.py::test_step_ultimate_build_loop
 bluecast/tests/test_orchestrator.py::test_step_ultimate_build_loop
   /home/thomas/.cache/pypoetry/virtualenvs/bluecast-uAIs9xjE-py3.11/lib/python3.11/site-packages/dill/_dill.py:422: PicklingWarning:
-  
+
   Cannot locate reference to <class 'unittest.mock.MagicMock'>.
 
 bluecast/tests/test_orchestrator.py::test_step_ultimate_build_loop
@@ -2195,30 +2195,30 @@ bluecast/tests/test_orchestrator.py::test_step_ultimate_build_loop
 bluecast/tests/test_orchestrator.py::test_step_ultimate_build_loop
 bluecast/tests/test_orchestrator.py::test_step_ultimate_build_loop
   /home/thomas/.cache/pypoetry/virtualenvs/bluecast-uAIs9xjE-py3.11/lib/python3.11/site-packages/dill/_dill.py:422: PicklingWarning:
-  
+
   Cannot pickle <class 'unittest.mock.MagicMock'>: unittest.mock.MagicMock has recursive self-references that trigger a RecursionError.
 
 bluecast/tests/test_preprocessing_recipes.py::test_no_numerical_columns
   /home/thomas/IdeaProjects/BlueCast/BlueCast/bluecast/blueprints/preprocessing_recipes.py:158: FutureWarning:
-  
+
   Setting an item of incompatible dtype is deprecated and will raise in a future error of pandas. Value '[ 0.70710678 -1.41421356  0.70710678]' has dtype incompatible with int64, please explicitly cast to a compatible dtype first.
 
 bluecast/tests/test_target_encoding_binary.py::test_transform_target_encode_binary_class
   /home/thomas/IdeaProjects/BlueCast/BlueCast/bluecast/preprocessing/target_encoding.py:54: SettingWithCopyWarning:
-  
-  
+
+
   A value is trying to be set on a copy of a slice from a DataFrame.
   Try using .loc[row_indexer,col_indexer] = value instead
-  
+
   See the caveats in the documentation: https://pandas.pydata.org/pandas-docs/stable/user_guide/indexing.html#returning-a-view-versus-a-copy
 
 bluecast/tests/test_target_encoding_binary.py::test_transform_target_encode_binary_class
   /home/thomas/IdeaProjects/BlueCast/BlueCast/bluecast/preprocessing/target_encoding.py:63: SettingWithCopyWarning:
-  
-  
+
+
   A value is trying to be set on a copy of a slice from a DataFrame.
   Try using .loc[row_indexer,col_indexer] = value instead
-  
+
   See the caveats in the documentation: https://pandas.pydata.org/pandas-docs/stable/user_guide/indexing.html#returning-a-view-versus-a-copy
 
 -- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html

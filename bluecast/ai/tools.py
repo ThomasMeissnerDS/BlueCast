@@ -590,9 +590,12 @@ def tool_check_adversarial_validation(df: pd.DataFrame, test_condition: str) -> 
 
         drift = DataDrift()
         cat_cols = df.select_dtypes(include=["object", "category"]).columns.tolist()
-        auc = drift.adversarial_validation(
+        auc_raw = drift.adversarial_validation(
             subset_train, subset_test, cat_columns=cat_cols
         )
+        import numpy as np
+
+        auc = float(np.ravel(auc_raw)[0])
 
         res = f"Adversarial Validation AUC: {auc:.4f}\n"
         if auc > 0.6:
