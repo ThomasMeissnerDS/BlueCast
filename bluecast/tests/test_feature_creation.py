@@ -472,3 +472,46 @@ def test_add_datetime_features():
     assert df_out["dt_year"].iloc[0] == 2023
     assert df_out["dt_month"].iloc[1] == 12
     assert df_out["dt_hour"].iloc[0] == 12
+
+
+def test_tfidf_text_encoder():
+    from bluecast.preprocessing.feature_creation import TfIdfTextEncoder
+
+    df = pd.DataFrame({"text": ["hello world", "hello again", "world is good"] * 10})
+    encoder = TfIdfTextEncoder(max_features=10)
+    df_transformed = encoder.fit_transform(df.copy(), "text")
+    assert "tfidf_text_hello" in df_transformed.columns
+    df_inference = pd.DataFrame({"text": ["hello"]})
+    df_inf_transformed = encoder.transform(df_inference, "text")
+    assert "tfidf_text_hello" in df_inf_transformed.columns
+
+
+def test_state_aware_groupby_aggregator():
+    from bluecast.preprocessing.feature_creation import StateAwareGroupbyAggregator
+
+    df = pd.DataFrame({"cat": ["a", "a", "b"], "num": [1, 2, 3]})
+    agg = StateAwareGroupbyAggregator(
+        groupby_cols=["cat"], agg_cols=["num"], aggregations=["mean"]
+    )
+    df_transformed = agg.fit_transform(df.copy())
+    assert "state_agg_num_mean" in df_transformed.columns
+    df_inference = pd.DataFrame({"cat": ["a", "c"]})
+    df_inf_transformed = agg.transform(df_inference)
+    assert "state_agg_num_mean" in df_inf_transformed.columns
+
+
+def test_add_pca_features():
+    from bluecast.preprocessing.feature_creation import add_pca_features
+
+    df = pd.DataFrame({"x": [1, 2, 3], "y": [4, 5, 6]})
+    state = {}
+    df_transformed = add_pca_features(
+        df.copy(), ["x", "y"], n_components=1, is_fit=True, state=state
+    )
+    assert "pca_1" in df_transformed.columns
+    assert "pca_pca_x_y" in state
+    df_inference = pd.DataFrame({"x": [2, 3], "y": [5, 6]})
+    df_inf_transformed = add_pca_features(
+        df_inference, ["x", "y"], n_components=1, is_fit=False, state=state
+    )
+    assert "pca_1" in df_inf_transformed.columns
