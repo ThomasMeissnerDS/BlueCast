@@ -178,7 +178,7 @@ class MLPRegressionModel(BaseClassMlRegressionModel):
             )
 
             imputer_strategy = trial.suggest_categorical(
-                "imputer_strategy", ["mean", "median", "most_frequent", "constant"]
+                "imputer_strategy", ["mean", "median", "constant"]
             )
 
             if target_transformer_type == "standard":
@@ -633,7 +633,7 @@ class RandomForestClassificationModel(BaseClassMlModel):
             }
 
             imputer_strategy = trial.suggest_categorical(
-                "imputer_strategy", ["mean", "median", "most_frequent", "constant"]
+                "imputer_strategy", ["mean", "median", "constant"]
             )
             if imputer_strategy == "constant":
                 imputer = SimpleImputer(strategy="constant", fill_value=0)
@@ -776,7 +776,7 @@ class RandomForestRegressionModel(BaseClassMlRegressionModel):
             }
 
             imputer_strategy = trial.suggest_categorical(
-                "imputer_strategy", ["mean", "median", "most_frequent", "constant"]
+                "imputer_strategy", ["mean", "median", "constant"]
             )
             if imputer_strategy == "constant":
                 imputer = SimpleImputer(strategy="constant", fill_value=0)
@@ -1043,7 +1043,7 @@ class SO1DCNNRegressionModel(BaseClassMlRegressionModel):
                 "target_transformer_type", target_transformer_choices
             )
             imputer_strategy = trial.suggest_categorical(
-                "imputer_strategy", ["mean", "median", "most_frequent", "constant"]
+                "imputer_strategy", ["mean", "median", "constant"]
             )
 
             if target_transformer_type == "standard":

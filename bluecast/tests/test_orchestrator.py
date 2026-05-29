@@ -661,8 +661,11 @@ def test_step_ultimate_build_loop(mock_llm, sample_df, tmpdir):
         mode="ultimate",
         verbose=False,
         checkpoint_dir=str(tmpdir),
+        ultimate_iterations_per_arch=2,
     )
     orch = Orchestrator(mock_llm, config, sample_df, "target", "test")
+    orch.evaluator = MagicMock()
+    orch.evaluator.run.return_value = '```json\n{"tuning_rounds": 10}\n```'
 
     # Mock the internal architecture building
     orch._build_single_arch = MagicMock()
@@ -681,3 +684,60 @@ def test_step_ultimate_build_loop(mock_llm, sample_df, tmpdir):
 
     # Check that architectures were built
     assert orch._build_single_arch.call_count > 0
+
+def test_build_single_arch(mock_llm, sample_df, tmpdir):
+    from bluecast.ai.orchestrator import Orchestrator
+    from bluecast.ai.config import AIConfig
+    from unittest.mock import patch
+
+    config = AIConfig(api_key="test", verbose=False, checkpoint_dir=str(tmpdir))
+    orch = Orchestrator(mock_llm, config, sample_df.copy(), "target", "test")
+
+    with patch("bluecast.ml_modelling.xgboost.XgboostModel") as MockXGB, \
+         patch("bluecast.ml_modelling.xgboost_regression.XgboostModelRegression") as MockXGBReg, \
+         patch("bluecast.ai.tools.tool_build_and_run_pipeline") as mock_run:
+        
+        # Test linear model
+        arch_config = {"arch_type": "linear", "class_problem": "binary"}
+        mock_run.return_value = {"success": True, "metrics": {"auc": 0.9}, "oof_preds": [1]}
+        res = orch._build_single_arch(arch_config, "linear", False)
+        assert res["success"] is True
+        
+        # Test xgboost
+        arch_config = {"arch_type": "xgboost", "class_problem": "binary"}
+        mock_run.return_value = {"success": True, "metrics": {"auc": 0.8}, "oof_preds": [1]}
+        res = orch._build_single_arch(arch_config, "xgboost", True)
+        assert res["success"] is True
+
+        # Test xgboost regression
+        arch_config = {"arch_type": "xgboost", "class_problem": "regression", "regression_eval_metric": "mae"}
+        mock_run.return_value = {"success": True, "metrics": {"mae": 0.8}, "oof_preds": [1]}
+        res = orch._build_single_arch(arch_config, "xgboost", True)
+        assert res["success"] is True
+
+        # Test AIFeaturePreprocessor creation
+        orch.context.feature_code_snippets = ["def create_feature(df): return df"]
+        orch.context.custom_preprocessor = None
+        arch_config = {"arch_type": "xgboost", "class_problem": "binary"}
+        mock_run.return_value = {"success": True, "metrics": {"auc": 0.8}, "oof_preds": [1]}
+        res = orch._build_single_arch(arch_config, "xgboost", True)
+        assert res["success"] is True
+
+        # Test failure
+        arch_config = {"arch_type": "unknown", "class_problem": "binary"}
+        mock_run.return_value = {"success": False, "error": "test err"}
+        res = orch._build_single_arch(arch_config, "unknown", False)
+        assert res["success"] is False
+
+def test_create_arch_fe_task(mock_llm, sample_df, tmpdir):
+    from bluecast.ai.orchestrator import Orchestrator
+    from bluecast.ai.config import AIConfig
+
+    config = AIConfig(api_key="test", verbose=False, checkpoint_dir=str(tmpdir))
+    orch = Orchestrator(mock_llm, config, sample_df.copy(), "target", "test")
+
+    # Since _create_arch_fe_task returns a string, not a task object!
+    task_str = orch._create_arch_fe_task("xgboost", "XGBoost", 0)
+    assert "xgboost" in task_str.lower()
+    assert "strategy" in task_str.lower()
+
