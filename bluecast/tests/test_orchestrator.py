@@ -367,6 +367,73 @@ class TestStepResearch:
         assert orchestrator.context.web_research == "Found relevant papers."
 
 
+class TestStepFeatureEngineer:
+    def test_step_feature_engineer_no_critique(self, orchestrator, sample_df, mock_llm):
+        orchestrator.context.df_train = sample_df.copy()
+        orchestrator.context.target_col = "target"
+        orchestrator.config.mode = "fast"
+        orchestrator.config.verbose = True
+
+        # Mock the engineer run to inject a valid snippet
+        def mock_engineer_run(*args, **kwargs):
+            orchestrator.context.feature_code_snippets = [
+                "df['new_col'] = df['num1'] * 2"
+            ]
+
+        orchestrator.engineer.run = mock_engineer_run
+
+        plan = {"feature_engineering_hints": ["Use num1"]}
+        orchestrator._step_feature_engineer(plan)
+
+        # Verify snippet ran and engineered_df is updated
+        assert orchestrator.context.engineered_df is not None
+        assert "new_col" in orchestrator.context.engineered_df.columns
+        assert len(orchestrator.context.feature_code_snippets) == 1
+
+    def test_step_feature_engineer_pruning(self, orchestrator, sample_df, mock_llm):
+        orchestrator.context.df_train = sample_df.copy()
+        orchestrator.context.target_col = "target"
+        orchestrator.config.mode = "fast"
+
+        def mock_engineer_run(*args, **kwargs):
+            orchestrator.context.feature_code_snippets = [
+                "df['valid_col'] = df['num1'] + 1",
+                "df['bad_col'] = df['nonexistent'] + 1",  # Will fail exec
+                "df['const_col'] = 1",  # Will be pruned for constant column
+            ]
+
+        orchestrator.engineer.run = mock_engineer_run
+
+        plan = {}
+        orchestrator._step_feature_engineer(plan)
+
+        # Verify bad and const snippets were pruned
+        assert len(orchestrator.context.feature_code_snippets) == 1
+        assert (
+            "df['valid_col'] = df['num1'] + 1"
+            in orchestrator.context.feature_code_snippets[0]
+        )
+        assert "bad_col" not in orchestrator.context.engineered_df.columns
+        assert "valid_col" in orchestrator.context.engineered_df.columns
+
+    def test_step_feature_engineer_with_critique(
+        self, orchestrator, sample_df, mock_llm
+    ):
+        orchestrator.context.df_train = sample_df.copy()
+        orchestrator.context.target_col = "target"
+        orchestrator.config.mode = "precise"
+        orchestrator.config.critique_max_rounds = 1
+
+        from unittest.mock import patch
+
+        with patch(
+            "bluecast.ai.critique.CritiqueLoop.run_with_critique"
+        ) as mock_critique:
+            plan = {}
+            orchestrator._step_feature_engineer(plan)
+            mock_critique.assert_called_once()
+
+
 class TestReconstructPlan:
     def test_reconstruct_from_log(self, orchestrator):
         plan = {"class_problem": "regression", "max_iterations": 3}
@@ -763,3 +830,196 @@ def test_create_arch_fe_task(mock_llm, sample_df, tmpdir):
     task_str = orch._create_arch_fe_task("xgboost", "XGBoost", 0)
     assert "xgboost" in task_str.lower()
     assert "strategy" in task_str.lower()
+
+
+def test_step_ultimate_build_loop_failure(mock_llm, sample_df, tmpdir):
+    from bluecast.ai.config import AIConfig
+    from bluecast.ai.orchestrator import Orchestrator
+
+    config = AIConfig(
+        api_key="test",
+        mode="ultimate",
+        verbose=True,
+        checkpoint_dir=str(tmpdir),
+        ultimate_iterations_per_arch=1,
+    )
+    orch = Orchestrator(mock_llm, config, sample_df, "target", "test")
+    orch.evaluator = MagicMock()
+    orch.evaluator.run.return_value = '```json\n{"tuning_rounds": 1}\n```'
+
+    orch._build_single_arch = MagicMock()
+    orch._build_single_arch.return_value = {
+        "success": False,
+        "error": "Forced Failure",
+        "config_used": {},
+    }
+
+    plan = {"class_problem": "binary"}
+    orch._step_ultimate_build_loop(plan)
+
+    # Check that failure was recorded
+    assert orch._build_single_arch.call_count > 0
+    assert len(orch.context.run_history) > 0
+    assert orch.context.run_history[0]["success"] is False
+    assert orch.context.run_history[0]["error"] == "Forced Failure"
+
+
+class TestStepBuildEnsemble:
+    def test_build_ensemble_classification(self, mock_llm, sample_df, tmpdir):
+        from unittest.mock import MagicMock
+
+        import numpy as np
+
+        from bluecast.ai.config import AIConfig
+        from bluecast.ai.orchestrator import Orchestrator
+
+        config = AIConfig(api_key="test", verbose=True, checkpoint_dir=str(tmpdir))
+        orch = Orchestrator(mock_llm, config, sample_df.copy(), "target", "test")
+        orch.context.class_problem = "binary"
+        orch.context.df_train = sample_df.copy()
+
+        n_rows = len(sample_df)
+
+        # Create two fake pipelines
+        p1 = MagicMock()
+        p1.oof_predictions_ = np.random.rand(n_rows)
+        p1.oof_valid_mask_ = np.ones(n_rows, dtype=bool)
+
+        p2 = MagicMock()
+        p2.oof_predictions_ = np.random.rand(n_rows)
+        p2.oof_valid_mask_ = np.ones(n_rows, dtype=bool)
+
+        orch.context.best_pipelines = [p1, p2]
+
+        from unittest.mock import patch
+
+        with patch(
+            "bluecast.ensemble.hill_climbing.HillClimbingEnsemble.fit"
+        ) as mock_fit:
+            orch._assemble_result()
+            mock_fit.assert_called_once()
+
+    def test_build_ensemble_regression_filtering(self, mock_llm, sample_df, tmpdir):
+        from unittest.mock import MagicMock
+
+        import numpy as np
+
+        from bluecast.ai.config import AIConfig
+        from bluecast.ai.orchestrator import Orchestrator
+
+        config = AIConfig(api_key="test", verbose=True, checkpoint_dir=str(tmpdir))
+        orch = Orchestrator(mock_llm, config, sample_df.copy(), "target", "test")
+        orch.context.class_problem = "regression"
+
+        df_train = sample_df.copy()
+        n_rows = len(df_train)
+
+        # Mock actual target values
+        df_train["target"] = np.arange(n_rows, dtype=float)
+        orch.context.df_train = df_train
+
+        # Create pipelines with different MAE
+        p1 = MagicMock()
+        # Perfect predictions (MAE 0.0)
+        p1.oof_predictions_ = np.arange(n_rows, dtype=float)
+        p1.oof_valid_mask_ = np.ones(n_rows, dtype=bool)
+
+        p2 = MagicMock()
+        # Terrible predictions (MAE 100.0) -> Should be filtered out
+        p2.oof_predictions_ = np.arange(n_rows, dtype=float) + 100.0
+        p2.oof_valid_mask_ = np.ones(n_rows, dtype=bool)
+
+        orch.context.best_pipelines = [p1, p2]
+
+        from unittest.mock import patch
+
+        with patch(
+            "bluecast.ensemble.hill_climbing.HillClimbingEnsemble.fit"
+        ) as mock_fit:
+            orch._assemble_result()
+            mock_fit.assert_called_once()
+            # Verify only p1's predictions were passed to the ensemble
+            called_args, _ = mock_fit.call_args
+            assert len(called_args[0]) == 1  # Only 1 model left after filtering
+            assert called_args[2] == ["arch_0"]  # Filtered model names
+
+
+class TestExtractors:
+    def test_extract_feature_importances_cv_model(self, mock_llm, sample_df, tmpdir):
+        from unittest.mock import MagicMock
+
+        from bluecast.ai.config import AIConfig
+        from bluecast.ai.orchestrator import Orchestrator
+
+        config = AIConfig(api_key="test", verbose=True, checkpoint_dir=str(tmpdir))
+        orch = Orchestrator(mock_llm, config, sample_df, "target", "test")
+
+        # Mock a CV pipeline
+        pipeline = MagicMock()
+        pipeline.feature_importances = None
+
+        first_model = MagicMock()
+        first_model.feature_importances = {"feat1": 0.8, "feat2": 0.2}
+        pipeline.bluecast_models = [first_model]
+
+        result = {"pipeline": pipeline}
+        orch._extract_feature_importances("test_arch", result)
+
+        assert "test_arch" in orch.context.arch_feature_importances
+        assert orch.context.arch_feature_importances["test_arch"] == {
+            "feat1": 0.8,
+            "feat2": 0.2,
+        }
+
+    def test_extract_error_analysis(self, mock_llm, sample_df, tmpdir):
+        from unittest.mock import MagicMock
+
+        import numpy as np
+
+        from bluecast.ai.config import AIConfig
+        from bluecast.ai.orchestrator import Orchestrator
+
+        config = AIConfig(api_key="test", verbose=True, checkpoint_dir=str(tmpdir))
+        orch = Orchestrator(mock_llm, config, sample_df.copy(), "target", "test")
+        orch.context.class_problem = "binary"
+
+        # Need to match the length of sample_df
+        n_rows = len(sample_df)
+
+        pipeline = MagicMock()
+        inner_pipeline = MagicMock()
+        inner_pipeline.oof_predictions_ = np.random.rand(n_rows)
+        inner_pipeline.oof_valid_mask_ = np.ones(n_rows, dtype=bool)
+
+        # Test case: getattr returns inner_pipeline
+        pipeline.auto_pipeline = inner_pipeline
+        result = {"pipeline": pipeline}
+
+        orch._extract_error_analysis("test_arch", result)
+
+        assert "test_arch" in orch.context.arch_error_analysis
+
+    def test_extract_error_analysis_exceptions(self, mock_llm, sample_df, tmpdir):
+        from unittest.mock import MagicMock
+
+        from bluecast.ai.config import AIConfig
+        from bluecast.ai.orchestrator import Orchestrator
+
+        config = AIConfig(api_key="test", verbose=True, checkpoint_dir=str(tmpdir))
+        orch = Orchestrator(mock_llm, config, sample_df, "target", "test")
+
+        # Test early returns
+        orch._extract_error_analysis("test_arch", {"pipeline": None})
+        assert "test_arch" not in orch.context.arch_error_analysis
+
+        pipeline = MagicMock()
+        del pipeline.oof_predictions_  # Ensure it doesn't have it
+        del pipeline.auto_pipeline
+        orch._extract_error_analysis("test_arch", {"pipeline": pipeline})
+        assert "test_arch" not in orch.context.arch_error_analysis
+
+        # Test exception path
+        pipeline.oof_predictions_ = "not an array"
+        pipeline.oof_valid_mask_ = "not an array"
+        orch._extract_error_analysis("test_arch", {"pipeline": pipeline})
+        assert "test_arch" not in orch.context.arch_error_analysis
