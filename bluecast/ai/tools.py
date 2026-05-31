@@ -607,7 +607,8 @@ def tool_check_adversarial_validation(df: pd.DataFrame, test_condition: str) -> 
         if top_features:
             res += "Top features driving the drift:\n"
             for f, s in top_features:
-                res += f"  {f}: {s:.4f}\n"
+                s_val = float(np.ravel(s)[0])
+                res += f"  {f}: {s_val:.4f}\n"
         return res
     except Exception as e:
         return f"Adversarial validation failed: {e}"
@@ -676,6 +677,10 @@ def tool_target_distribution_test(df: pd.DataFrame, target_col: str) -> str:
 
         stat, p = shapiro(y)
         sk = skew(y)
+        
+        stat = float(np.ravel(stat)[0])
+        p = float(np.ravel(p)[0])
+        sk = float(np.ravel(sk)[0])
 
         res = f"Shapiro-Wilk Test on '{target_col}':\n"
         res += f"  Statistic: {stat:.4f}, p-value: {p:.4e}\n"
