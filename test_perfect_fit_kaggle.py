@@ -94,8 +94,6 @@ def main():
     print("\nGenerating predictions on the test set...")
     preds = result.predict(test)
 
-    if
-
     # Handle potential tuple return (predictions, probabilities/intervals)
     if isinstance(preds, tuple):
         final_preds = preds[0]

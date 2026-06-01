@@ -81,8 +81,6 @@ class TestBuildDashboardLayout:
         with patch.dict(
             sys.modules, {"dash": None, "dash.dcc": None, "dash.html": None}
         ):
-            from bluecast.eda import dashboard
-
             # Force reimport to trigger ImportError
             try:
                 import dash  # noqa: F401
