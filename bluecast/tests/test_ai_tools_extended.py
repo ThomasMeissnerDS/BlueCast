@@ -531,6 +531,7 @@ def test_tool_check_adversarial_validation(classification_df):
 
     classification_df["split"] = ["test"] * 50 + ["train"] * 50
     res = tool_check_adversarial_validation(classification_df, "split == 'test'")
+    print(res)
     assert "Adversarial Validation AUC" in res
 
 
@@ -545,6 +546,7 @@ def test_tool_target_distribution_test(classification_df):
     from bluecast.ai.tools import tool_target_distribution_test
 
     res = tool_target_distribution_test(classification_df, "num1")
+    print(res)
     assert "Shapiro-Wilk Test" in res
 
 
@@ -615,43 +617,53 @@ def test_tool_web_search():
 
 def test_tool_check_mutual_information_edge_cases(classification_df):
     from bluecast.ai.tools import tool_check_mutual_information
-    
+
     # Missing target col
     res = tool_check_mutual_information(classification_df, "missing_target")
     assert "not found" in str(res)
-    
+
     # Large dataframe downsampling
-    import pandas as pd
     import numpy as np
-    large_df = pd.DataFrame({"num": np.random.rand(10005), "target": np.random.randint(0, 2, 10005)})
+    import pandas as pd
+
+    large_df = pd.DataFrame(
+        {"num": np.random.rand(10005), "target": np.random.randint(0, 2, 10005)}
+    )
     res2 = tool_check_mutual_information(large_df, "target")
     assert "Mutual Information" in str(res2)
 
+
 def test_tool_nlp_profiling_edge_cases():
-    from bluecast.ai.tools import tool_nlp_profiling
     import pandas as pd
-    
+
+    from bluecast.ai.tools import tool_nlp_profiling
+
     # Missing text col
     df = pd.DataFrame({"other": [1, 2]})
     res = tool_nlp_profiling(df, "text")
     assert "Column 'text' not found." in str(res)
-    
+
     # Empty text or NaNs
     df2 = pd.DataFrame({"text": [None, ""]})
     res2 = tool_nlp_profiling(df2, "text")
     assert "No valid text found" in str(res2) or "NLP Profiling" in str(res2)
-    
+
+
 def test_tool_create_groupby_aggregations_edge_cases(classification_df):
     from bluecast.ai.tools import tool_create_groupby_aggregations
-    
+
     # Missing group col
-    res = tool_create_groupby_aggregations(classification_df, "missing_target", "cat", "mean")
+    res = tool_create_groupby_aggregations(
+        classification_df, "missing_target", "cat", "mean"
+    )
     assert "Group column" in str(res)
-    
+
+
 def test_tool_create_tfidf_features_edge_cases():
-    from bluecast.ai.tools import tool_create_tfidf_features
     import pandas as pd
-    
+
+    from bluecast.ai.tools import tool_create_tfidf_features
+
     df = pd.DataFrame({"other": [1, 2]})
     res = tool_create_tfidf_features(df, "text_col")
     assert "Column 'text_col' not found" in str(res)

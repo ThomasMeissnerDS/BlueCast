@@ -281,3 +281,46 @@ class TestBlueCastAIResult:
         captured = capsys.readouterr()
         assert "binary" in captured.out
         assert "0.85" in captured.out
+
+
+class TestBlueCastAIInit:
+    def test_create_gemini_provider(self):
+        from bluecast.ai import BlueCastAI
+        from bluecast.ai.providers.gemini import GeminiProvider
+
+        ai = BlueCastAI(api_key="test_key", provider="gemini")
+        assert isinstance(ai._llm, GeminiProvider)
+
+    def test_create_openai_provider(self):
+        from bluecast.ai import BlueCastAI
+        from bluecast.ai.providers.openai_provider import OpenAIProvider
+
+        ai = BlueCastAI(api_key="test_key", provider="openai")
+        assert isinstance(ai._llm, OpenAIProvider)
+
+    def test_create_anthropic_provider(self):
+        from bluecast.ai import BlueCastAI
+        from bluecast.ai.providers.anthropic_provider import AnthropicProvider
+
+        ai = BlueCastAI(api_key="test_key", provider="anthropic")
+        assert isinstance(ai._llm, AnthropicProvider)
+
+    def test_create_vertexai_provider(self):
+        from bluecast.ai import BlueCastAI
+        from bluecast.ai.providers.vertexai_provider import VertexAIProvider
+
+        ai = BlueCastAI(
+            api_key="test_key",
+            provider="vertexai",
+            project_id="test_proj",
+            location="us-central1",
+        )
+        assert isinstance(ai._llm, VertexAIProvider)
+
+    def test_create_unknown_provider(self):
+        import pytest
+
+        from bluecast.ai import BlueCastAI
+
+        with pytest.raises(ValueError, match="Unknown provider"):
+            BlueCastAI(api_key="test_key", provider="unknown")

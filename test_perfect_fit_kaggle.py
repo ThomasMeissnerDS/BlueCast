@@ -94,9 +94,7 @@ def main():
     print("\nGenerating predictions on the test set...")
     preds = result.predict(test)
 
-    if not isinstance(preds, pd.DataFrame):
-        submission = pd.DataFrame({"id": test.index, "target": preds})
-        submission.to_csv("output/predictions.csv", index=False)
+    if
 
     # Handle potential tuple return (predictions, probabilities/intervals)
     if isinstance(preds, tuple):

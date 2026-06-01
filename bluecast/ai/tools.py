@@ -677,7 +677,7 @@ def tool_target_distribution_test(df: pd.DataFrame, target_col: str) -> str:
 
         stat, p = shapiro(y)
         sk = skew(y)
-        
+
         stat = float(np.ravel(stat)[0])
         p = float(np.ravel(p)[0])
         sk = float(np.ravel(sk)[0])

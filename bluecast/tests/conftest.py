@@ -62,15 +62,24 @@ def trained_bluecast_regression(synthetic_regression_data):
 original_amax = np_methods._amax
 
 
-def patched_amax(a, axis=None, out=None, keepdims=False, initial=None, where=True):
+def patched_amax(*args, **kwargs):
     import numpy.core._methods as np_methods
 
+    a = args[0] if len(args) > 0 else kwargs.get("a")
+    axis = args[1] if len(args) > 1 else kwargs.get("axis", None)
+    out = args[2] if len(args) > 2 else kwargs.get("out", None)
+    keepdims = args[3] if len(args) > 3 else kwargs.get("keepdims", False)
+    initial = (
+        args[4]
+        if len(args) > 4
+        else kwargs.get("initial", getattr(np_methods, "_NoValue", None))
+    )
+    where = args[5] if len(args) > 5 else kwargs.get("where", True)
+
     if initial is getattr(np_methods, "_NoValue", None) or initial is None:
-        return np_methods.umr_maximum(a, axis, None, out, keepdims, None, where)
+        initial = None
+
     return np_methods.umr_maximum(a, axis, None, out, keepdims, initial, where)
-
-
-np_methods._amax = patched_amax
 
 
 def patched_amin(*args, **kwargs):
