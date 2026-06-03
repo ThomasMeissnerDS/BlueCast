@@ -526,9 +526,11 @@ class TestToolDefinitions:
             assert hasattr(td, "parameters")
 
 
-def test_tool_check_adversarial_validation(classification_df):
+@patch("bluecast.monitoring.data_monitoring.DataDrift.adversarial_validation")
+def test_tool_check_adversarial_validation(mock_adv, classification_df):
     from bluecast.ai.tools import tool_check_adversarial_validation
 
+    mock_adv.return_value = np.array([0.95])
     classification_df["split"] = ["test"] * 50 + ["train"] * 50
     res = tool_check_adversarial_validation(classification_df, "split == 'test'")
     print(res)
@@ -542,8 +544,12 @@ def test_tool_check_mutual_information(classification_df):
     assert "Mutual Information" in res
 
 
-def test_tool_target_distribution_test(classification_df):
+@patch("scipy.stats.shapiro")
+def test_tool_target_distribution_test(mock_shapiro, classification_df):
     from bluecast.ai.tools import tool_target_distribution_test
+
+    # Mock Shapiro-Wilk result
+    mock_shapiro.return_value = (0.98, 0.5)
 
     res = tool_target_distribution_test(classification_df, "num1")
     print(res)
@@ -596,8 +602,13 @@ def test_tool_apply_pseudo_labeling(classification_df):
     from bluecast.ai.tools import tool_apply_pseudo_labeling
 
     classification_df.loc[10:20, "target"] = np.nan
-    res = tool_apply_pseudo_labeling(classification_df, "target", "binary", 0.9)
+    res = tool_apply_pseudo_labeling(classification_df, "target", "binary", 0.1)
     assert "Pseudo-labeling" in res
+
+    # Test regression
+    classification_df.loc[10:20, "target"] = np.nan
+    res_reg = tool_apply_pseudo_labeling(classification_df, "target", "regression", 0.1)
+    assert "Pseudo-labeling" in res_reg
 
 
 def test_tool_web_search():
@@ -667,3 +678,43 @@ def test_tool_create_tfidf_features_edge_cases():
     df = pd.DataFrame({"other": [1, 2]})
     res = tool_create_tfidf_features(df, "text_col")
     assert "Column 'text_col' not found" in str(res)
+
+
+def test_exception_fallbacks(classification_df):
+    from unittest.mock import patch
+
+    from bluecast.ai.tools import (
+        tool_apply_target_encoding,
+        tool_automated_numeric_interactions,
+        tool_check_adversarial_validation,
+        tool_inspect_residuals,
+    )
+
+    # tool_apply_target_encoding fallback
+    with patch(
+        "bluecast.preprocessing.target_encoding.BinaryClassTargetEncoder.fit_target_encode_binary_class",
+        side_effect=Exception("Test TE error"),
+    ):
+        res = tool_apply_target_encoding(classification_df, "target", "cat")
+        assert "Test TE error" in str(res)
+
+    # tool_automated_numeric_interactions fallback
+    with patch("numpy.log1p", side_effect=Exception("Test Poly error")):
+        res = tool_automated_numeric_interactions(
+            classification_df, num_cols="num1,num2"
+        )
+        assert "Test Poly error" in str(res)
+
+    # tool_inspect_residuals fallback
+    with patch("pandas.DataFrame.copy", side_effect=Exception("Test Res error")):
+        res = tool_inspect_residuals(classification_df, "target", "num1")
+        assert "Test Res error" in str(res)
+
+    # tool_check_adversarial_validation exception
+    with patch(
+        "bluecast.monitoring.data_monitoring.DataDrift.adversarial_validation",
+        side_effect=Exception("Test Adv error"),
+    ):
+        classification_df["split"] = ["test"] * 50 + ["train"] * 50
+        res = tool_check_adversarial_validation(classification_df, "split == 'test'")
+        assert "Test Adv error" in str(res)

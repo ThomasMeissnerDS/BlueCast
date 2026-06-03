@@ -128,6 +128,30 @@ class TestVertexAIProvider:
         )
         assert provider.model == "gemini-2.5-flash"
 
+    def test_init_import_error(self):
+        from unittest.mock import patch
+
+        from bluecast.ai.providers.vertexai_provider import VertexAIProvider
+
+        with patch("bluecast.ai.providers.vertexai_provider.vertexai", None):
+            import pytest
+
+            with pytest.raises(
+                ImportError, match="google-cloud-aiplatform is required"
+            ):
+                VertexAIProvider(api_key="test")
+
+    def test_init_no_args(self):
+        from unittest.mock import patch
+
+        from bluecast.ai.providers.vertexai_provider import VertexAIProvider
+
+        with patch(
+            "bluecast.ai.providers.vertexai_provider.vertexai.init"
+        ) as mock_init:
+            VertexAIProvider(api_key="test")
+            mock_init.assert_called_with()
+
     def test_convert_tools(self):
         from bluecast.ai.providers.vertexai_provider import VertexAIProvider
 
@@ -150,6 +174,13 @@ class TestVertexAIProvider:
         result = provider._convert_tools(tools)
         assert result is not None
 
+        # Test empty declarations
+        assert provider._convert_tools([]) == []
+
+        # Test no generative_models
+        provider._generative_models = None
+        assert provider._convert_tools(tools) == []
+
     def test_convert_messages(self):
         from bluecast.ai.providers.vertexai_provider import VertexAIProvider
 
@@ -167,24 +198,47 @@ class TestVertexAIProvider:
         result = provider._convert_messages(messages)
         assert isinstance(result, (list, tuple))
 
+        # Test tool result handling
+        messages_with_tool = [
+            Message(
+                role="assistant",
+                content=None,
+                tool_calls=[ToolCall(id="call_1", name="tool", arguments={"a": 1})],
+            ),
+            Message(
+                role="tool_result", content={"result": "ok"}, tool_call_id="call_1"
+            ),
+            Message(role="user", content="Next"),
+        ]
+        result2 = provider._convert_messages(messages_with_tool)
+        assert (
+            len(result2[1]) == 3
+        )  # 1 for assistant, 1 flush for the tool result, 1 for the user msg
+
+        # Test raw_tool_call
+        messages_raw = [
+            Message(
+                role="assistant",
+                content=None,
+                tool_calls=[
+                    ToolCall(
+                        id="call_2", name="tool", arguments={}, raw_tool_call="raw_obj"
+                    )
+                ],
+            )
+        ]
+        provider._convert_messages(messages_raw)
+
+        # Test no generative_models
+        provider._generative_models = None
+        assert provider._convert_messages([]) == (None, [])
+
     def test_chat_text_response(self):
 
+        from unittest.mock import patch
+
+        from bluecast.ai.providers.base import ToolDefinition
         from bluecast.ai.providers.vertexai_provider import VertexAIProvider
-
-        mock_gm = sys.modules["vertexai.generative_models"]
-
-        mock_model = MagicMock()
-        mock_response = MagicMock()
-        mock_part = MagicMock()
-        mock_part.text = "VertexAI response"
-        mock_part.function_call = None
-        mock_response.candidates = [MagicMock()]
-        mock_response.candidates[0].content.parts = [mock_part]
-        mock_response.usage_metadata = MagicMock()
-        mock_response.usage_metadata.prompt_token_count = 10
-        mock_response.usage_metadata.candidates_token_count = 5
-        mock_model.generate_content.return_value = mock_response
-        mock_gm.GenerativeModel.return_value = mock_model
 
         provider = VertexAIProvider(
             api_key="test",
@@ -192,9 +246,103 @@ class TestVertexAIProvider:
             project_id="test-project",
             location="us-central1",
         )
+
+        mock_model = MagicMock()
+        mock_response = MagicMock()
+
+        # We need part to behave nicely with hasattr
+        class MockPart:
+            def __init__(self, text=None, function_call=None):
+                self.text = text
+                self.function_call = function_call
+
+        class MockFC:
+            def __init__(self, name, args):
+                self.name = name
+                self.args = args
+
+        mock_fc = MockFC("my_tool", {"arg1": "val"})
+        mock_part = MockPart(text="VertexAI response", function_call=mock_fc)
+
+        mock_response.candidates = [MagicMock()]
+        mock_response.candidates[0].content.parts = [mock_part]
+        mock_response.usage_metadata = MagicMock()
+        mock_response.usage_metadata.prompt_token_count = 10
+        mock_response.usage_metadata.candidates_token_count = 5
+        mock_model.generate_content.return_value = mock_response
+
+        with patch.object(
+            provider._generative_models, "GenerativeModel", return_value=mock_model
+        ):
+            messages = [
+                Message(role="system", content="System"),
+                Message(role="user", content="Hello"),
+            ]
+            tools = [
+                ToolDefinition(
+                    name="my_tool",
+                    description="",
+                    parameters={"type": "object", "properties": {}},
+                )
+            ]
+            result = provider.chat(messages, tools=tools)
+            assert result is not None
+            assert result.text == "VertexAI response"
+            assert len(result.tool_calls) == 1
+
+    def test_chat_delay_and_auth_error(self):
+        from unittest.mock import patch
+
+        from bluecast.ai.providers.vertexai_provider import VertexAIProvider
+
+        provider = VertexAIProvider(
+            api_key="test", model="gemini-2.5-flash", delay_in_seconds=0.1
+        )
         messages = [Message(role="user", content="Hello")]
-        result = provider.chat(messages)
-        assert result is not None
+
+        # Test auth error handling
+        mock_model = MagicMock()
+        mock_model.generate_content.side_effect = Exception(
+            "metadata.google.internal is unreachable"
+        )
+
+        with patch.object(
+            provider._generative_models, "GenerativeModel", return_value=mock_model
+        ):
+            with patch("time.sleep") as mock_sleep:
+                import pytest
+
+                with pytest.raises(Exception, match="metadata.google.internal"):
+                    provider.chat(messages)
+                mock_sleep.assert_called_once_with(0.1)
+
+                # Now provider._auth_broken should be True, test circuit breaker
+                with pytest.raises(
+                    RuntimeError, match="Vertex AI authentication is unavailable"
+                ):
+                    provider.chat(messages)
+
+    def test_chat_retry_exhaustion(self):
+        from unittest.mock import patch
+
+        from bluecast.ai.providers.vertexai_provider import VertexAIProvider
+
+        provider = VertexAIProvider(api_key="test", delay_in_seconds=0)
+        messages = [Message(role="user", content="Hello")]
+
+        mock_model = MagicMock()
+        mock_model.generate_content.side_effect = Exception("General Error")
+
+        with patch.object(
+            provider._generative_models, "GenerativeModel", return_value=mock_model
+        ):
+            with patch("time.sleep") as mock_sleep:
+                import pytest
+
+                with pytest.raises(Exception, match="General Error"):
+                    provider.chat(messages)
+                # It should retry max_retries-1 times. It's actually called max_retries-1 times with delays, so call_count should be 4
+                assert mock_sleep.call_count == 4
 
 
 # ---------------------------------------------------------------------------

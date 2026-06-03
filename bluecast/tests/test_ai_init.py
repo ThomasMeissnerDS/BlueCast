@@ -30,5 +30,3 @@ class TestBlueCastAI:
             assert isinstance(result, BlueCastAIResult)
             assert result.metrics["auc"] == 0.9
             mock_orch_instance.run.assert_called_once_with()
-
-
