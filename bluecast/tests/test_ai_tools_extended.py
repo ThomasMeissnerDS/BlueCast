@@ -544,12 +544,14 @@ def test_tool_check_mutual_information(classification_df):
     assert "Mutual Information" in res
 
 
+@patch("scipy.stats.skew")
 @patch("scipy.stats.shapiro")
-def test_tool_target_distribution_test(mock_shapiro, classification_df):
+def test_tool_target_distribution_test(mock_shapiro, mock_skew, classification_df):
     from bluecast.ai.tools import tool_target_distribution_test
 
-    # Mock Shapiro-Wilk result
+    # Mock SciPy to avoid Numpy 2.0 VoidDType crash under pytest-cov
     mock_shapiro.return_value = (0.98, 0.5)
+    mock_skew.return_value = -0.1370
 
     res = tool_target_distribution_test(classification_df, "num1")
     print(res)
@@ -601,6 +603,7 @@ def test_tool_inspect_residuals(regression_df):
 def test_tool_apply_pseudo_labeling(classification_df):
     from bluecast.ai.tools import tool_apply_pseudo_labeling
 
+    classification_df["target"] = classification_df["target"].astype(float)
     classification_df.loc[10:20, "target"] = np.nan
     res = tool_apply_pseudo_labeling(classification_df, "target", "binary", 0.1)
     assert "Pseudo-labeling" in res

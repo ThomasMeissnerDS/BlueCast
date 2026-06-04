@@ -73,6 +73,82 @@ class TestIsResultBetter:
         assert orch._is_result_better({"metrics": {"other_metric": 0.8}}) is False
 
 
+class TestFeatureEngineeringException:
+    def test_feature_engineering_exception_handled(self, mock_llm, sample_df, tmpdir):
+        from unittest.mock import patch
+
+        orch = _make_orch(mock_llm, sample_df, tmpdir, verbose=True)
+        orch.context.step_checkpoints = {}
+        plan = {"needs_feature_engineering": True}
+
+        with patch.object(orch, "_step_plan", return_value=plan):
+            with patch.object(orch, "_step_research"):
+                with patch.object(orch, "_step_analyze"):
+                    with patch.object(
+                        orch,
+                        "_step_feature_engineer",
+                        side_effect=Exception("Test FE Error"),
+                    ):
+                        with patch.object(orch, "_step_build_loop"):
+                            with patch.object(orch, "_step_ultimate_build_loop"):
+                                with patch.object(orch, "_step_report"):
+                                    orch.run()
+
+        # It should have saved a checkpoint for feature_engineering despite the exception
+        assert "feature_engineering" in orch.context.completed_steps
+
+
+class TestLoadContextFiles:
+    def test_load_pdf(self, mock_llm, sample_df, tmpdir):
+        from unittest.mock import MagicMock, patch
+
+        orch = _make_orch(mock_llm, sample_df, tmpdir, verbose=True)
+        orch.config.context_files = ["test.pdf", "test.docx", "test.txt"]
+
+        # We mock the internal extract methods to avoid actual file I/O
+        with patch.object(orch, "_extract_pdf_text", return_value="PDF text"):
+            with patch.object(orch, "_extract_docx_text", return_value="DOCX text"):
+                with patch("builtins.open") as mock_open:
+                    mock_file = MagicMock()
+                    mock_file.read.return_value = "TXT text"
+                    mock_open.return_value.__enter__.return_value = mock_file
+                    orch._load_context_files()
+        assert len(orch.context.context_file_contents) == 3
+        assert "PDF text" in orch.context.context_file_contents[0]
+
+    def test_extract_pdf_text(self, mock_llm, sample_df, tmpdir):
+        orch = _make_orch(mock_llm, sample_df, tmpdir)
+        from unittest.mock import MagicMock, patch
+
+        with patch("builtins.open"):
+            import sys
+
+            mock_pypdf = MagicMock()
+            mock_reader = MagicMock()
+            mock_page = MagicMock()
+            mock_page.extract_text.return_value = "Page 1"
+            mock_reader.pages = [mock_page]
+            mock_pypdf.PdfReader.return_value = mock_reader
+            with patch.dict(sys.modules, {"pypdf": mock_pypdf}):
+                text = orch._extract_pdf_text("test.pdf")
+                assert text == "Page 1"
+
+    def test_extract_docx_text(self, mock_llm, sample_df, tmpdir):
+        orch = _make_orch(mock_llm, sample_df, tmpdir)
+        import sys
+        from unittest.mock import MagicMock, patch
+
+        mock_docx = MagicMock()
+        mock_doc = MagicMock()
+        mock_para = MagicMock()
+        mock_para.text = "Para 1"
+        mock_doc.paragraphs = [mock_para]
+        mock_docx.Document.return_value = mock_doc
+        with patch.dict(sys.modules, {"docx": mock_docx}):
+            text = orch._extract_docx_text("test.docx")
+            assert text == "Para 1"
+
+
 class TestCompareResults:
     def test_new_better_auc(self, mock_llm, sample_df, tmpdir):
         orch = _make_orch(mock_llm, sample_df, tmpdir)
