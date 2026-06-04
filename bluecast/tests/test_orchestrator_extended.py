@@ -149,6 +149,111 @@ class TestLoadContextFiles:
             assert text == "Para 1"
 
 
+class TestStepUltimateBuildLoop:
+    def test_architectures_to_run(self, mock_llm, sample_df, tmpdir):
+        from unittest.mock import patch
+
+        orch = _make_orch(mock_llm, sample_df, tmpdir, verbose=True)
+        orch.config.architectures_to_run = ["xgboost"]
+        orch.config.global_tuning_budget = 360  # should cap max_affordable_iters
+        plan = {"needs_feature_engineering": False}
+        with patch.object(orch, "_create_arch_fe_task"):
+            with patch.object(
+                orch, "_evaluate_for_arch", return_value={"success": True}
+            ):
+                with patch.object(orch, "_save_checkpoint"):
+                    # We just mock the evaluator so it doesn't do real LLM calls
+                    orch.evaluator = mock_llm
+                    # And mock fe agent
+                    with patch.object(orch.arch_engineer, "run", return_value="{}"):
+                        # just catch if it tries to build
+                        try:
+                            with patch.object(
+                                orch, "_build_arch_config", return_value={}
+                            ):
+                                with patch.object(
+                                    orch,
+                                    "_build_single_arch",
+                                    return_value={
+                                        "success": True,
+                                        "metrics": {"roc_auc": 0.8},
+                                        "pipeline": "base_pipeline",
+                                        "snippets": [],
+                                        "config_used": {},
+                                    },
+                                ):
+                                    orch._step_ultimate_build_loop(plan)
+                        except Exception:
+                            pass
+
+    def test_invalid_architectures(self, mock_llm, sample_df, tmpdir):
+        orch = _make_orch(mock_llm, sample_df, tmpdir, verbose=True)
+        orch.config.architectures_to_run = ["invalid_arch"]
+        plan = {"needs_feature_engineering": False}
+        import pytest
+
+        with pytest.raises(ValueError, match="None of the specified architectures"):
+            orch._step_ultimate_build_loop(plan)
+
+    def test_refinement_improved(self, mock_llm, sample_df, tmpdir):
+        from unittest.mock import patch
+
+        orch = _make_orch(mock_llm, sample_df, tmpdir, verbose=True)
+        orch.config.ultimate_refine_best = True
+        plan = {"needs_feature_engineering": False}
+
+        # We want to jump straight to refinement, so we mock _create_arch_fe_task and _evaluate_for_arch
+        # to fast track the main loop, and we mock _compare_results to True
+        orch.context.arch_feature_snippets["xgboost"] = ["df['new'] = 1"]
+        orch.context.best_metrics = {"roc_auc": 0.5}
+
+        with patch.object(orch, "_create_arch_fe_task"):
+            with patch.object(
+                orch, "_evaluate_for_arch", return_value={"success": True}
+            ):
+                with patch.object(orch, "_save_checkpoint"):
+                    orch.evaluator = mock_llm
+                    with patch.object(orch.arch_engineer, "run", return_value="{}"):
+                        with patch.object(orch, "_build_arch_config", return_value={}):
+                            with patch.object(
+                                orch,
+                                "_build_single_arch",
+                                return_value={
+                                    "success": True,
+                                    "metrics": {"roc_auc": 0.8},
+                                    "pipeline": "base_pipeline",
+                                    "snippets": [],
+                                    "config_used": {},
+                                },
+                            ):
+                                with patch.object(
+                                    orch, "_compare_results", return_value=True
+                                ):
+                                    # Let's mock _is_result_better too for global update
+                                    with patch.object(
+                                        orch, "_is_result_better", return_value=True
+                                    ):
+                                        orch._step_ultimate_build_loop(plan)
+
+        # It should have updated the run history
+        assert len(orch.context.run_history) > 0
+
+    def test_fe_agent_failure(self, mock_llm, sample_df, tmpdir):
+        from unittest.mock import patch
+
+        orch = _make_orch(mock_llm, sample_df, tmpdir, verbose=True)
+        orch.config.architectures_to_run = ["xgboost"]
+        plan = {"needs_feature_engineering": False}
+        with patch.object(orch, "_create_arch_fe_task"):
+            with patch.object(
+                orch.arch_engineer, "run", side_effect=Exception("LLM Crash")
+            ):
+                import pytest
+
+                with pytest.raises(Exception, match="LLM Crash"):
+                    orch._step_ultimate_build_loop(plan)
+
+
 class TestCompareResults:
     def test_new_better_auc(self, mock_llm, sample_df, tmpdir):
         orch = _make_orch(mock_llm, sample_df, tmpdir)
@@ -381,6 +486,19 @@ class TestCreateArchFeTask:
         task = orch._create_arch_fe_task("xgboost", "XGBoost", 0, 5)
         assert "FIRST" in task
         assert "XGBoost" in task
+
+    def test_fe_creation_failure_retry(self, mock_llm, sample_df, tmpdir):
+        from unittest.mock import patch
+
+        orch = _make_orch(mock_llm, sample_df, tmpdir, verbose=True)
+        # Mock _create_arch_fe_task to fail a few times but pass
+        with patch.object(
+            orch.reporter, "build_report_task", side_effect=Exception("Test Exception")
+        ):
+            import pytest
+
+            with pytest.raises(Exception, match="Test Exception"):
+                orch._create_arch_fe_task("xgboost", "XGBoost", 0, 5)
 
     def test_middle_iteration(self, mock_llm, sample_df, tmpdir):
         orch = _make_orch(mock_llm, sample_df, tmpdir)

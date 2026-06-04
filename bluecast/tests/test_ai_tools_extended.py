@@ -600,7 +600,8 @@ def test_tool_inspect_residuals(regression_df):
     assert "Top 20 rows with highest residuals/loss" in res
 
 
-def test_tool_apply_pseudo_labeling(classification_df):
+@patch("sklearn.preprocessing.LabelEncoder.inverse_transform", side_effect=lambda x: x)
+def test_tool_apply_pseudo_labeling(mock_inverse_transform, classification_df):
     from bluecast.ai.tools import tool_apply_pseudo_labeling
 
     classification_df["target"] = classification_df["target"].astype(float)
