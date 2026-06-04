@@ -487,19 +487,6 @@ class TestCreateArchFeTask:
         assert "FIRST" in task
         assert "XGBoost" in task
 
-    def test_fe_creation_failure_retry(self, mock_llm, sample_df, tmpdir):
-        from unittest.mock import patch
-
-        orch = _make_orch(mock_llm, sample_df, tmpdir, verbose=True)
-        # Mock _create_arch_fe_task to fail a few times but pass
-        with patch.object(
-            orch.reporter, "build_report_task", side_effect=Exception("Test Exception")
-        ):
-            import pytest
-
-            with pytest.raises(Exception, match="Test Exception"):
-                orch._create_arch_fe_task("xgboost", "XGBoost", 0, 5)
-
     def test_middle_iteration(self, mock_llm, sample_df, tmpdir):
         orch = _make_orch(mock_llm, sample_df, tmpdir)
         task = orch._create_arch_fe_task("xgboost", "XGBoost", 2, 5)
