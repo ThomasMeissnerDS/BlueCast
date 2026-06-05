@@ -110,6 +110,11 @@ class TestDescribeData:
         result = tool_describe_data(regression_df, "target")
         assert "Shape" in result
 
+    def test_multiclass(self):
+        df = pd.DataFrame({"num": [1, 2, 3, 4, 5], "target": [0, 1, 2, 0, 1]})
+        result = tool_describe_data(df, "target")
+        assert "multiclass" in result.lower()
+
     def test_with_nulls(self, df_with_nulls):
         result = tool_describe_data(df_with_nulls, "target")
         assert (
@@ -134,6 +139,65 @@ class TestCheckCorrelations:
     def test_with_threshold(self, classification_df):
         result = tool_check_correlations(classification_df, "target", threshold=0.3)
         assert isinstance(result, str)
+
+    def test_no_numeric_columns(self):
+        df = pd.DataFrame({"cat": ["a", "b", "c"], "target": ["A", "B", "A"]})
+        result = tool_check_correlations(df, "target")
+        assert "No numeric columns found" in result
+
+    def test_highly_correlated_pairs(self):
+        df = pd.DataFrame({"num1": [1, 2, 3], "num2": [2, 4, 6], "target": [0, 1, 0]})
+        result = tool_check_correlations(df, "target", threshold=0.9)
+        assert "Highly correlated feature pairs" in result
+
+
+class TestEvaluateFeatureQuality:
+    def test_missing_target(self):
+        from bluecast.ai.tools import tool_check_feature_quality
+
+        df = pd.DataFrame({"f1": [1, 2, 3]})
+        res = tool_check_feature_quality(df, "target", ["f1"])
+        assert "Target column 'target' not found" in res
+
+    def test_missing_feature(self):
+        from bluecast.ai.tools import tool_check_feature_quality
+
+        df = pd.DataFrame({"target": [1, 2, 3]})
+        res = tool_check_feature_quality(df, "target", ["f1"])
+        assert "MISSING (not found in DataFrame)" in res
+
+    def test_insufficient_data(self):
+        from bluecast.ai.tools import tool_check_feature_quality
+
+        df = pd.DataFrame({"f1": [1, np.nan, 3], "target": [1, 2, np.nan]})
+        res = tool_check_feature_quality(df, "target", ["f1"])
+        assert "insufficient non-null data" in res
+
+    def test_success(self):
+        from bluecast.ai.tools import tool_check_feature_quality
+
+        df = pd.DataFrame({"f1": list(range(40)), "target": list(range(40))})
+        res = tool_check_feature_quality(df, "target", ["f1"])
+        assert "correlation=" in res
+        assert "mutual_info=" in res
+
+
+class TestEvaluateImputationStrategies:
+    def test_no_numerical_columns(self):
+        from bluecast.ai.tools import tool_evaluate_imputations
+
+        df = pd.DataFrame({"cat": ["a", "b", "c"], "target": [1, 2, 3]})
+        res = tool_evaluate_imputations(df, "target")
+        assert "No numerical columns with missing values" in res
+
+    def test_sentinel_values(self):
+        from bluecast.ai.tools import tool_evaluate_imputations
+
+        # Create a df with one -999 as sentinel so it falls outside 2 std deviations
+        df = pd.DataFrame({"f1": [-999] * 3 + [10] * 97, "target": [0] * 50 + [1] * 50})
+        res = tool_evaluate_imputations(df, "target")
+        assert "Detected Sentinel Values" in res
+        assert "-999" in res
 
 
 # ---------------------------------------------------------------------------

@@ -98,6 +98,35 @@ class TestFeatureEngineeringException:
         assert "feature_engineering" in orch.context.completed_steps
 
 
+class TestStepPlan:
+    def test_planner_exception(self, mock_llm, sample_df, tmpdir):
+        from unittest.mock import patch
+
+        orch = _make_orch(mock_llm, sample_df, tmpdir, verbose=True)
+        with patch.object(orch.planner, "run", side_effect=Exception("Planner Failed")):
+            plan = orch._step_plan()
+            # It should fallback to the default plan
+            assert plan["class_problem"] in ["binary", "multiclass", "regression"]
+
+
+class TestStepAnalyze:
+    def test_critique_rounds(self, mock_llm, sample_df, tmpdir):
+        from unittest.mock import patch
+
+        orch = _make_orch(mock_llm, sample_df, tmpdir, verbose=True)
+        # Mock _get_critique_rounds to return 1
+        with patch.object(orch, "_get_critique_rounds", return_value=1):
+            with patch(
+                "bluecast.ai.critique.CritiqueLoop.run_with_critique",
+                return_value="Data Summary with Imputation Strategy Evaluation",
+            ):
+                orch._step_analyze()
+                assert (
+                    orch.context.data_profile["summary"]
+                    == "Data Summary with Imputation Strategy Evaluation"
+                )
+
+
 class TestLoadContextFiles:
     def test_load_pdf(self, mock_llm, sample_df, tmpdir):
         from unittest.mock import MagicMock, patch
