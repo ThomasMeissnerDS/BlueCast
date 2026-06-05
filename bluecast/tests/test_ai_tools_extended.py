@@ -786,3 +786,320 @@ def test_exception_fallbacks(classification_df):
         classification_df["split"] = ["test"] * 50 + ["train"] * 50
         res = tool_check_adversarial_validation(classification_df, "split == 'test'")
         assert "Test Adv error" in str(res)
+
+
+# ---------------------------------------------------------------------------
+# Additional coverage tests for uncovered tool function paths
+# ---------------------------------------------------------------------------
+
+
+class TestMutualInformation:
+    def test_classification_success(self, classification_df):
+        from bluecast.ai.tools import tool_check_mutual_information
+
+        res = tool_check_mutual_information(
+            classification_df, "target", task_type="classification"
+        )
+        assert "Mutual Information" in res
+        assert "num1" in res or "num2" in res
+
+    def test_regression_success(self, regression_df):
+        from bluecast.ai.tools import tool_check_mutual_information
+
+        res = tool_check_mutual_information(
+            regression_df, "target", task_type="regression"
+        )
+        assert "Mutual Information" in res
+
+    def test_missing_target(self, classification_df):
+        from bluecast.ai.tools import tool_check_mutual_information
+
+        res = tool_check_mutual_information(classification_df, "nonexistent")
+        assert "not found" in res
+
+
+class TestTargetDistribution:
+    def test_normal_distribution(self):
+        from bluecast.ai.tools import tool_target_distribution_test
+
+        rng = np.random.default_rng(42)
+        df = pd.DataFrame({"target": rng.normal(0, 1, 100)})
+        with patch("scipy.stats.shapiro", return_value=(0.99, 0.5)):
+            with patch("scipy.stats.skew", return_value=0.1):
+                res = tool_target_distribution_test(df, "target")
+                assert "appears normal" in res
+
+    def test_non_normal_skewed(self):
+        from bluecast.ai.tools import tool_target_distribution_test
+
+        df = pd.DataFrame({"target": list(range(100))})
+        with patch("scipy.stats.shapiro", return_value=(0.8, 0.001)):
+            with patch("scipy.stats.skew", return_value=2.0):
+                res = tool_target_distribution_test(df, "target")
+                assert "NOT normal" in res
+                assert "High skew" in res
+
+    def test_missing_target(self):
+        from bluecast.ai.tools import tool_target_distribution_test
+
+        df = pd.DataFrame({"other": [1, 2, 3]})
+        res = tool_target_distribution_test(df, "target")
+        assert "not found" in res
+
+    def test_non_numeric_target(self):
+        from bluecast.ai.tools import tool_target_distribution_test
+
+        df = pd.DataFrame({"target": ["a", "b", "c"]})
+        res = tool_target_distribution_test(df, "target")
+        assert "not numeric" in res
+
+
+class TestNLPProfiling:
+    def test_success(self, df_with_text):
+        from bluecast.ai.tools import tool_nlp_profiling
+
+        res = tool_nlp_profiling(df_with_text, "text_col")
+        assert "NLP Profiling" in res
+        assert "vocabulary" in res.lower()
+        assert "Word Count" in res
+
+    def test_missing_col(self, classification_df):
+        from bluecast.ai.tools import tool_nlp_profiling
+
+        res = tool_nlp_profiling(classification_df, "nonexistent")
+        assert "not found" in res
+
+
+class TestTargetEncodingSuccess:
+    def test_binary_success(self):
+        from bluecast.ai.tools import tool_apply_target_encoding
+
+        df = pd.DataFrame(
+            {
+                "cat": ["a", "b", "a", "b", "a", "b"] * 10,
+                "target": [0, 1, 0, 1, 0, 1] * 10,
+            }
+        )
+        res = tool_apply_target_encoding(df, "target", "cat")
+        assert res["success"] is True
+
+    def test_missing_cols(self):
+        from bluecast.ai.tools import tool_apply_target_encoding
+
+        df = pd.DataFrame({"target": [0, 1, 0]})
+        res = tool_apply_target_encoding(df, "target", "nonexistent")
+        assert res["success"] is False
+        assert "not found" in str(res["error"])
+
+
+class TestNumericInteractionsSuccess:
+    def test_success(self, classification_df):
+        from bluecast.ai.tools import tool_automated_numeric_interactions
+
+        res = tool_automated_numeric_interactions(
+            classification_df.copy(), num_cols="num1,num2"
+        )
+        assert res["success"] is True
+        assert len(res["new_columns"]) > 0
+        assert any("mult" in c for c in res["new_columns"])
+        assert any("div" in c for c in res["new_columns"])
+        assert any("log" in c for c in res["new_columns"])
+
+    def test_insufficient_cols(self, classification_df):
+        from bluecast.ai.tools import tool_automated_numeric_interactions
+
+        res = tool_automated_numeric_interactions(classification_df, num_cols="num1")
+        assert res["success"] is False
+
+
+class TestGroupByAggregations:
+    def test_success(self, classification_df):
+        from bluecast.ai.tools import tool_create_groupby_aggregations
+
+        res = tool_create_groupby_aggregations(
+            classification_df.copy(), "cat", "num1", "mean,std"
+        )
+        assert res["success"] is True
+        assert len(res["new_columns"]) > 0
+
+    def test_missing_group_col(self, classification_df):
+        from bluecast.ai.tools import tool_create_groupby_aggregations
+
+        res = tool_create_groupby_aggregations(
+            classification_df, "nonexistent", "num1", "mean"
+        )
+        assert res["success"] is False
+
+
+class TestInspectResidualsSuccess:
+    def test_regression_residuals(self):
+        from bluecast.ai.tools import tool_inspect_residuals
+
+        df = pd.DataFrame(
+            {"target": list(range(30)), "pred": [x + 1 for x in range(30)]}
+        )
+        res = tool_inspect_residuals(df, "target", "pred", task_type="regression")
+        assert "rows" in res.lower() or "residual" in res.lower()
+
+    def test_classification_residuals(self):
+        from bluecast.ai.tools import tool_inspect_residuals
+
+        df = pd.DataFrame({"target": [0, 1] * 15, "pred": [0.1, 0.9] * 15})
+        res = tool_inspect_residuals(df, "target", "pred", task_type="classification")
+        assert isinstance(res, str)
+
+    def test_missing_col(self):
+        from bluecast.ai.tools import tool_inspect_residuals
+
+        df = pd.DataFrame({"target": [1, 2, 3]})
+        res = tool_inspect_residuals(df, "target", "nonexistent")
+        assert "not found" in res
+
+
+class TestInspectRowsPaths:
+    def test_with_condition(self, classification_df):
+        from bluecast.ai.tools import tool_inspect_rows
+
+        res = tool_inspect_rows(classification_df, condition="num1 > 0")
+        assert "rows" in res.lower()
+
+    def test_with_indices(self, classification_df):
+        from bluecast.ai.tools import tool_inspect_rows
+
+        res = tool_inspect_rows(classification_df, indices="0,1,2")
+        assert "rows" in res.lower()
+
+    def test_empty_args(self, classification_df):
+        from bluecast.ai.tools import tool_inspect_rows
+
+        res = tool_inspect_rows(classification_df)
+        assert "Provide" in res
+
+
+class TestRunSqlQueryPaths:
+    def test_sql_success(self, classification_df):
+        from bluecast.ai.tools import tool_run_sql_query
+
+        res = tool_run_sql_query(classification_df, "SELECT * FROM df LIMIT 5")
+        assert "rows" in res.lower() or "Query" in res
+
+    def test_sql_error(self, classification_df):
+        from bluecast.ai.tools import tool_run_sql_query
+
+        res = tool_run_sql_query(classification_df, "INVALID SQL QUERY !!!")
+        assert "failed" in res.lower() or "error" in res.lower()
+
+
+class TestGroupStatistics:
+    def test_success(self, classification_df):
+        from bluecast.ai.tools import tool_check_group_statistics
+
+        res = tool_check_group_statistics(classification_df, "cat", "num1")
+        assert "Group statistics" in res
+        assert "mean" in res
+
+    def test_missing_group(self, classification_df):
+        from bluecast.ai.tools import tool_check_group_statistics
+
+        res = tool_check_group_statistics(classification_df, "nonexistent", "num1")
+        assert "not found" in res
+
+    def test_missing_agg(self, classification_df):
+        from bluecast.ai.tools import tool_check_group_statistics
+
+        res = tool_check_group_statistics(classification_df, "cat", "nonexistent")
+        assert "not found" in res
+
+
+class TestLeakageExceptionPaths:
+    def test_correlation_exception(self, classification_df):
+        from bluecast.ai.tools import tool_check_leakage
+
+        with patch(
+            "bluecast.eda.data_leakage_checks.detect_leakage_via_correlation",
+            side_effect=Exception("Corr error"),
+        ):
+            res = tool_check_leakage(classification_df, "target")
+            assert "Corr error" in res
+
+    def test_categorical_leakage_found(self):
+        from bluecast.ai.tools import tool_check_leakage
+
+        df = pd.DataFrame(
+            {
+                "cat": ["a", "b", "a", "b"] * 25,
+                "target": [0, 1, 0, 1] * 25,
+            }
+        )
+        with patch(
+            "bluecast.eda.data_leakage_checks.detect_categorical_leakage",
+            return_value=["cat"],
+        ):
+            res = tool_check_leakage(df, "target")
+            assert "Categorical leakage suspects" in res
+
+    def test_categorical_exception(self):
+        from bluecast.ai.tools import tool_check_leakage
+
+        df = pd.DataFrame(
+            {
+                "cat": ["a", "b", "a", "b"] * 25,
+                "target": [0, 1, 0, 1] * 25,
+            }
+        )
+        with patch(
+            "bluecast.eda.data_leakage_checks.detect_categorical_leakage",
+            side_effect=Exception("Cat error"),
+        ):
+            res = tool_check_leakage(df, "target")
+            assert "Cat error" in res
+
+
+class TestDropCollinearSuccess:
+    def test_drop_with_target(self):
+        from bluecast.ai.tools import tool_drop_collinear_features
+
+        df = pd.DataFrame(
+            {
+                "a": [1, 2, 3, 4, 5],
+                "b": [2, 4, 6, 8, 10],
+                "target": [0, 1, 0, 1, 0],
+            }
+        )
+        res = tool_drop_collinear_features(
+            df.copy(), threshold=0.9, target_col="target"
+        )
+        assert res["success"] is True
+
+    def test_drop_without_target(self):
+        from bluecast.ai.tools import tool_drop_collinear_features
+
+        df = pd.DataFrame(
+            {
+                "a": [1, 2, 3, 4, 5],
+                "b": [2, 4, 6, 8, 10],
+                "c": [5, 4, 3, 2, 1],
+            }
+        )
+        res = tool_drop_collinear_features(df.copy(), threshold=0.9)
+        assert res["success"] is True
+
+
+class TestCreateFeatureEdgeCases:
+    def test_exec_failure(self):
+        from bluecast.ai.tools import tool_create_feature
+
+        df = pd.DataFrame({"a": [1, 2, 3]})
+        res = tool_create_feature(df, "raise ValueError('bad code')")
+        assert res["success"] is False
+        assert "bad code" in res["error"]
+
+
+class TestTfidfEdgeCases:
+    def test_missing_column(self):
+        from bluecast.ai.tools import tool_create_tfidf_features
+
+        df = pd.DataFrame({"a": [1, 2, 3]})
+        res = tool_create_tfidf_features(df, "nonexistent")
+        assert res["success"] is False
+        assert "not found" in res["error"]
