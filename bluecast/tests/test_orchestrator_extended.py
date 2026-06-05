@@ -127,6 +127,90 @@ class TestStepAnalyze:
                 )
 
 
+class TestStepResearch:
+    def test_research(self, mock_llm, sample_df, tmpdir):
+        from unittest.mock import patch
+
+        orch = _make_orch(mock_llm, sample_df, tmpdir, verbose=True)
+        with patch.object(orch.researcher, "run", return_value="Search Results"):
+            orch._step_research(["query1", "query2"])
+            assert orch.context.web_research == "Search Results"
+
+
+class TestUltimateBuildLoopBudget:
+    def test_budget_capping(self, mock_llm, sample_df, tmpdir):
+        from unittest.mock import patch
+
+        orch = _make_orch(mock_llm, sample_df, tmpdir, verbose=True)
+        orch.config.global_tuning_budget = 100  # very low budget
+        orch.config.architectures_to_run = ["xgboost", "linear"]
+        plan = {"needs_feature_engineering": False}
+        with patch.object(orch, "_create_arch_fe_task"):
+            with patch.object(
+                orch,
+                "_build_single_arch",
+                return_value={
+                    "success": True,
+                    "metrics": {"roc_auc": 0.8},
+                    "pipeline": "base_pipeline",
+                    "snippets": [],
+                    "config_used": {},
+                },
+            ):
+                with patch.object(orch, "_compare_results", return_value=True):
+                    orch._step_ultimate_build_loop(plan)
+
+    def test_custom_preprocessor_execution(self, mock_llm, sample_df, tmpdir):
+        from unittest.mock import MagicMock, patch
+
+        orch = _make_orch(mock_llm, sample_df, tmpdir, verbose=True)
+        orch.config.architectures_to_run = ["xgboost"]
+        orch.context.custom_preprocessor = MagicMock()
+        plan = {"needs_feature_engineering": False}
+        with patch.object(orch, "_create_arch_fe_task"):
+            with patch.object(
+                orch,
+                "_build_single_arch",
+                return_value={
+                    "success": True,
+                    "metrics": {"roc_auc": 0.8},
+                    "pipeline": "base_pipeline",
+                    "snippets": [],
+                    "config_used": {},
+                },
+            ) as mock_build:
+                with patch.object(orch, "_compare_results", return_value=True):
+                    orch._step_ultimate_build_loop(plan)
+                    assert (
+                        mock_build.call_args[1]["preprocessor"]
+                        == orch.context.custom_preprocessor
+                    )
+
+    def test_combined_snippets_preprocessor(self, mock_llm, sample_df, tmpdir):
+        from unittest.mock import patch
+
+        orch = _make_orch(mock_llm, sample_df, tmpdir, verbose=True)
+        orch.config.architectures_to_run = ["xgboost"]
+        orch.context.feature_code_snippets = ["df['new'] = 1"]
+        plan = {"needs_feature_engineering": False}
+        with patch.object(orch, "_create_arch_fe_task"):
+            with patch.object(orch.arch_engineer, "run", return_value="{}"):
+                with patch.object(
+                    orch,
+                    "_build_single_arch",
+                    return_value={
+                        "success": True,
+                        "metrics": {"roc_auc": 0.8},
+                        "pipeline": "base_pipeline",
+                        "snippets": [],
+                        "config_used": {},
+                    },
+                ) as mock_build:
+                    with patch.object(orch, "_compare_results", return_value=True):
+                        orch._step_ultimate_build_loop(plan)
+                        assert mock_build.call_args[1]["preprocessor"] is not None
+
+
 class TestLoadContextFiles:
     def test_load_pdf(self, mock_llm, sample_df, tmpdir):
         from unittest.mock import MagicMock, patch
