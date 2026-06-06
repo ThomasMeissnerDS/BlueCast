@@ -19,7 +19,7 @@ Usage::
 """
 
 import logging
-from typing import List, Literal, Optional
+from typing import Any, List, Literal, Optional
 
 import pandas as pd
 
@@ -70,6 +70,7 @@ def _create_provider(config: AIConfig):
             delay_in_seconds=config.llm_sleep_time,
             project_id=config.project_id,
             location=config.location,
+            credentials=config.credentials,
         )
     else:
         raise ValueError(
@@ -148,6 +149,7 @@ class BlueCastAI:
         critique_max_rounds: Optional[int] = None,
         autotune_on_device: Literal["cpu", "gpu", "auto"] = "auto",
         architectures_to_run: Optional[List[str]] = None,
+        credentials: Optional[Any] = None,
     ):
         self.config = AIConfig(
             api_key=api_key,
@@ -164,6 +166,7 @@ class BlueCastAI:
             critique_max_rounds=critique_max_rounds,
             autotune_on_device=autotune_on_device,
             architectures_to_run=architectures_to_run,
+            credentials=credentials,
         )
         self._llm = _create_provider(self.config)
 

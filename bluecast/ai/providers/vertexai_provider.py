@@ -1,7 +1,7 @@
 """Google Cloud Vertex AI LLM provider using the google-genai SDK."""
 
 import logging
-from typing import List, Optional
+from typing import Any, List, Optional
 
 try:
     from google import genai
@@ -32,6 +32,7 @@ class VertexAIProvider(BaseLLMProvider):
         delay_in_seconds: float = 0.0,
         project_id: Optional[str] = None,
         location: Optional[str] = None,
+        credentials: Optional[Any] = None,
     ):
         super().__init__(api_key, model, temperature, delay_in_seconds)
 
@@ -50,6 +51,8 @@ class VertexAIProvider(BaseLLMProvider):
             client_kwargs["project"] = project_id
         if location:
             client_kwargs["location"] = location
+        if credentials:
+            client_kwargs["credentials"] = credentials
 
         self._client = genai.Client(**client_kwargs)
 
