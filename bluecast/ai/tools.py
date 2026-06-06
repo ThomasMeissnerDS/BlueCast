@@ -350,19 +350,36 @@ def tool_check_feature_quality(
     :returns: Per-feature quality assessment string.
     """
     from sklearn.feature_selection import mutual_info_regression
+    from sklearn.preprocessing import LabelEncoder
 
     if target_col not in df.columns:
         return f"Target column '{target_col}' not found."
 
-    y = df[target_col].values
+    y_raw = df[target_col]
+    if y_raw.dtype == "object" or y_raw.dtype.name == "category" or y_raw.dtype == "string":
+        try:
+            y = LabelEncoder().fit_transform(y_raw.astype(str)).astype(np.float64)
+        except Exception:
+            y = pd.to_numeric(y_raw, errors="coerce").values
+    else:
+        y = pd.to_numeric(y_raw, errors="coerce").values
+
     results = []
     for col in feature_cols:
         if col not in df.columns:
             results.append(f"{col}: MISSING (not found in DataFrame)")
             continue
 
-        x = df[col].values.astype(np.float64)
-        mask = ~(np.isnan(x) | np.isinf(x) | np.isnan(y))
+        x_raw = df[col]
+        if x_raw.dtype == "object" or x_raw.dtype.name == "category" or x_raw.dtype == "string":
+            try:
+                x = LabelEncoder().fit_transform(x_raw.astype(str)).astype(np.float64)
+            except Exception:
+                x = pd.to_numeric(x_raw, errors="coerce").values
+        else:
+            x = pd.to_numeric(x_raw, errors="coerce").values
+
+        mask = ~(np.isnan(x) | np.isinf(x) | np.isnan(y) | np.isinf(y))
         if mask.sum() < 30:
             results.append(f"{col}: insufficient non-null data ({mask.sum()} rows)")
             continue
