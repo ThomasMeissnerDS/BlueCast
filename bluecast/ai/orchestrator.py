@@ -213,7 +213,8 @@ class Orchestrator:
                         lambda x: x.sample(
                             n=min(len(x), max(1, int(max_rows * len(x) / n_rows))),
                             random_state=42,
-                        )
+                        ),
+                        include_groups=False
                     )
                     .reset_index(drop=True)
                 )
