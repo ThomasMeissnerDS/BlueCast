@@ -53,9 +53,24 @@ class VertexAIProvider(BaseLLMProvider):
             client_kwargs["location"] = location
         if credentials:
             if isinstance(credentials, str):
-                from google.oauth2.credentials import Credentials
+                import json
 
-                credentials = Credentials(token=credentials)
+                try:
+                    info = json.loads(credentials)
+                    if info.get("type") == "service_account":
+                        from google.oauth2.service_account import (
+                            Credentials as SACredentials,
+                        )
+
+                        credentials = SACredentials.from_service_account_info(info)
+                    else:
+                        from google.oauth2.credentials import Credentials
+
+                        credentials = Credentials.from_authorized_user_info(info)
+                except ValueError:
+                    from google.oauth2.credentials import Credentials
+
+                    credentials = Credentials(token=credentials)
             elif isinstance(credentials, tuple) and len(credentials) == 2:
                 credentials = credentials[0]
             client_kwargs["credentials"] = credentials
