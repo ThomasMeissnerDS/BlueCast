@@ -214,7 +214,7 @@ class Orchestrator:
                             n=min(len(x), max(1, int(max_rows * len(x) / n_rows))),
                             random_state=42,
                         ),
-                        include_groups=False
+                        include_groups=False,
                     )
                     .reset_index(drop=True)
                 )
@@ -1325,6 +1325,13 @@ class Orchestrator:
 
         if arch_name in ["linear", "randomforest", "mlp", "so1dcnn"]:
             config["cat_encoding_via_ml_algorithm"] = False
+
+        if (
+            self.config.conf_training is not None
+            and hasattr(self.config.conf_training, "conf_tuning")
+            and self.config.conf_training.conf_tuning
+        ):
+            config.update(self.config.conf_training.conf_tuning)
 
         return config
 

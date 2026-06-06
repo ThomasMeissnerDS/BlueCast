@@ -3,6 +3,8 @@
 from dataclasses import dataclass, field
 from typing import Any, Callable, List, Literal, Optional
 
+from bluecast.config.training_config import TrainingConfig
+
 
 @dataclass
 class AIConfig:
@@ -70,6 +72,7 @@ class AIConfig:
     architectures_to_run: Optional[List[str]] = None
     credentials: Optional[Any] = None
     ultimate_iterations_per_arch: int = 1
+    conf_training: Optional[TrainingConfig] = None
 
     def get_model_name(self) -> str:
         if self.model:

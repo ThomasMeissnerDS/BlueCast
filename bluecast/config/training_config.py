@@ -6,7 +6,7 @@ pipeline. Pydantic dataclasses are used to allow users a pythonic way to define 
 Default configurations can be loaded, adjusted and passed into the blueprints.
 """
 
-from typing import Dict, List, Optional, Tuple
+from typing import Any, Dict, List, Optional, Tuple
 
 from bluecast.config.config_validations import check_types_init
 
@@ -75,6 +75,7 @@ class TrainingConfig:
     :param fairness_sensitive_columns: Optional list of column names identifying sensitive attributes for fairness
         evaluation (e.g. ["gender", "age_group"]). When set, fit_eval will automatically compute fairness metrics
         alongside standard evaluation metrics. The columns must be present in the evaluation DataFrame.
+    :param conf_tuning: Optional dictionary with custom tuning overrides for specific ML models (e.g. nn_batch_size_choices).
     """
 
     def __init__(
@@ -116,6 +117,7 @@ class TrainingConfig:
         out_of_fold_dataset_store_path: Optional[str] = None,
         optuna_db_backend_path: Optional[str] = None,
         fairness_sensitive_columns: Optional[List[str]] = None,
+        conf_tuning: Optional[Dict[str, Any]] = None,
     ):
         self.global_random_state = global_random_state
         self.increase_random_state_in_bluecast_cv_by = (
@@ -167,6 +169,7 @@ class TrainingConfig:
         self.out_of_fold_dataset_store_path = out_of_fold_dataset_store_path
         self.optuna_db_backend_path = optuna_db_backend_path
         self.fairness_sensitive_columns = fairness_sensitive_columns
+        self.conf_tuning = conf_tuning if conf_tuning is not None else {}
 
     def dict(self):
         """

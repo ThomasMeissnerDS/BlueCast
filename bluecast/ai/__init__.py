@@ -25,6 +25,7 @@ import pandas as pd
 
 from bluecast.ai.config import AIConfig
 from bluecast.ai.result import BlueCastAIResult
+from bluecast.config.training_config import TrainingConfig
 
 logger = logging.getLogger(__name__)
 
@@ -150,6 +151,7 @@ class BlueCastAI:
         autotune_on_device: Literal["cpu", "gpu", "auto"] = "auto",
         architectures_to_run: Optional[List[str]] = None,
         credentials: Optional[Any] = None,
+        conf_training: Optional[TrainingConfig] = None,
     ):
         self.config = AIConfig(
             api_key=api_key,
