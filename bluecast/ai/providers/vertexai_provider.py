@@ -52,6 +52,12 @@ class VertexAIProvider(BaseLLMProvider):
         if location:
             client_kwargs["location"] = location
         if credentials:
+            if isinstance(credentials, str):
+                from google.oauth2.credentials import Credentials
+
+                credentials = Credentials(token=credentials)
+            elif isinstance(credentials, tuple) and len(credentials) == 2:
+                credentials = credentials[0]
             client_kwargs["credentials"] = credentials
 
         self._client = genai.Client(**client_kwargs)
