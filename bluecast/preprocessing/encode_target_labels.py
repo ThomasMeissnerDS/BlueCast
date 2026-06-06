@@ -99,14 +99,22 @@ class TargetLabelEncoder:
         )
         return targets
 
-    def label_encoder_reverse_transform(self, targets: pd.Series) -> pd.DataFrame:
+    def label_encoder_reverse_transform(
+        self, targets: Union[pd.DataFrame, pd.Series]
+    ) -> Union[pd.DataFrame, pd.Series]:
         """Reverse numerical encodings back to original categories."""
         logging.info("Start reverse-encoding target labels.")
-        if isinstance(targets, pd.Series):
-            targets = targets.to_frame()
-
         reverse_mapping = {
             value: key for key, value in self.target_label_mapping.items()
         }
+
+        is_series = False
+        if isinstance(targets, pd.Series):
+            is_series = True
+            targets = targets.to_frame()
+
         targets = targets.replace(reverse_mapping)
+
+        if is_series:
+            return targets.iloc[:, 0]
         return targets
