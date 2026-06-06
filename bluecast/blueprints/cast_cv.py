@@ -364,6 +364,7 @@ class BlueCastCV:
         df: pd.DataFrame,
         return_sub_models_preds: bool = False,
         save_shap_values: bool = False,
+        return_original_labels: bool = False,
     ) -> Tuple[Union[pd.DataFrame, pd.Series], Union[pd.DataFrame, pd.Series]]:
         """Predict on unseen data using multiple trained BlueCast instances.
 
@@ -403,7 +404,10 @@ class BlueCastCV:
             else:
                 classes = result_df.loc[:, class_cols].mode(axis=1)[0].astype(int)
 
-                if self.bluecast_models[0].feat_type_detector:
+                if (
+                    return_original_labels
+                    and self.bluecast_models[0].feat_type_detector
+                ):
                     if (
                         self.bluecast_models[0].target_label_encoder
                         and self.bluecast_models[0].feat_type_detector
@@ -443,7 +447,8 @@ class BlueCastCV:
                 y_classes = (y_probs > classification_threshold).astype(int)
 
                 if (
-                    self.bluecast_models[0].feat_type_detector
+                    return_original_labels
+                    and self.bluecast_models[0].feat_type_detector
                     and self.bluecast_models[0].target_label_encoder
                 ):
                     y_classes = self.bluecast_models[
