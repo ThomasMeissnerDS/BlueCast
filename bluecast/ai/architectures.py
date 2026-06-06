@@ -925,7 +925,8 @@ class SO1DCNNClassificationModel(BaseClassMlModel):
                     "learning_rate_init", 1e-4, 1e-1, log=True
                 ),
                 "batch_size": trial.suggest_categorical(
-                    "batch_size", [32, 64, 128, 256, 512]
+                    "batch_size",
+                    conf_tuning.get("nn_batch_size_choices", [128, 256, 512, 1024]),
                 ),
             }
             model = PyTorchSO1DCNNClassifier(
@@ -1036,7 +1037,8 @@ class SO1DCNNRegressionModel(BaseClassMlRegressionModel):
                     "learning_rate_init", 1e-4, 1e-1, log=True
                 ),
                 "batch_size": trial.suggest_categorical(
-                    "batch_size", [32, 64, 128, 256, 512]
+                    "batch_size",
+                    conf_tuning.get("nn_batch_size_choices", [128, 256, 512, 1024]),
                 ),
             }
             target_transformer_type = trial.suggest_categorical(
