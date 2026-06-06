@@ -12,6 +12,7 @@ import numpy as np
 import pandas as pd
 from sklearn.metrics import (
     accuracy_score,
+    balanced_accuracy_score,
     classification_report,
     confusion_matrix,
     f1_score,
@@ -171,6 +172,8 @@ def eval_classifier(
     logging.info(f"The Matthew correlation is {matthews}")
     accuracy = accuracy_score(y_true, y_classes)
     logging.info(f"The accuracy is {accuracy}")
+    balanced_accuracy = balanced_accuracy_score(y_true, y_classes)
+    logging.info(f"The balanced accuracy is {balanced_accuracy}")
     recall = recall_score(y_true, y_classes, average="weighted")
     logging.info(f"The recall is {recall}")
     f1_score_macro = f1_score(y_true, y_classes, average="macro", zero_division=0)
@@ -215,6 +218,7 @@ def eval_classifier(
     evaluation_scores = {
         "matthews": matthews,
         "accuracy": accuracy,
+        "balanced_accuracy": balanced_accuracy,
         "recall": recall,
         "f1_score_macro": f1_score_macro,
         "f1_score_micro": f1_score_micro,
