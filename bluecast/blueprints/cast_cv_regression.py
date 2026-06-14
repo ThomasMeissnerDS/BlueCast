@@ -264,8 +264,8 @@ class BlueCastCVRegression:
         all_splits = list(self.stratifier.split(X, y_binned))
 
         for fn, (trn_idx, val_idx) in enumerate(all_splits):
-            X_train, X_val = X.iloc[trn_idx], X.iloc[val_idx]
-            y_train, y_val = y.iloc[trn_idx], y.iloc[val_idx]
+            X_train, X_val = X.iloc[trn_idx].copy(), X.iloc[val_idx].copy()
+            y_train, y_val = y.iloc[trn_idx].copy(), y.iloc[val_idx].copy()
 
             X_train.loc[:, target_col] = y_train
 

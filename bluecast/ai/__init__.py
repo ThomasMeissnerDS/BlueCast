@@ -152,6 +152,7 @@ class BlueCastAI:
         architectures_to_run: Optional[List[str]] = None,
         credentials: Optional[Any] = None,
         conf_training: Optional[TrainingConfig] = None,
+        max_rows_for_agents: int = 50_000,
     ):
         self.config = AIConfig(
             api_key=api_key,
@@ -169,6 +170,8 @@ class BlueCastAI:
             autotune_on_device=autotune_on_device,
             architectures_to_run=architectures_to_run,
             credentials=credentials,
+            max_rows_for_agents=max_rows_for_agents,
+            conf_training=conf_training,
         )
         self._llm = _create_provider(self.config)
 

@@ -356,7 +356,11 @@ def tool_check_feature_quality(
         return f"Target column '{target_col}' not found."
 
     y_raw = df[target_col]
-    if y_raw.dtype == "object" or y_raw.dtype.name == "category" or y_raw.dtype == "string":
+    if (
+        y_raw.dtype == "object"
+        or y_raw.dtype.name == "category"
+        or y_raw.dtype == "string"
+    ):
         try:
             y = LabelEncoder().fit_transform(y_raw.astype(str)).astype(np.float64)
         except Exception:
@@ -371,7 +375,11 @@ def tool_check_feature_quality(
             continue
 
         x_raw = df[col]
-        if x_raw.dtype == "object" or x_raw.dtype.name == "category" or x_raw.dtype == "string":
+        if (
+            x_raw.dtype == "object"
+            or x_raw.dtype.name == "category"
+            or x_raw.dtype == "string"
+        ):
             try:
                 x = LabelEncoder().fit_transform(x_raw.astype(str)).astype(np.float64)
             except Exception:
@@ -432,7 +440,18 @@ def tool_create_feature(
             "state": state,
             "is_fit": True,
         }
-        exec(feature_code, local_vars)
+        import contextlib
+        import io
+
+        stdout_capture = io.StringIO()
+        with contextlib.redirect_stdout(stdout_capture):
+            exec(feature_code, local_vars)
+
+        captured_out = stdout_capture.getvalue()
+        if captured_out.strip():
+            # Log the captured print statements to standard python logger instead of notebook stdout
+            logger.info(f"Captured output from feature code: {captured_out.strip()}")
+
         df_result = local_vars.get("df", df)
         new_cols = list(set(df_result.columns) - original_cols)
         return {
@@ -1145,12 +1164,13 @@ def tool_check_group_statistics(df: pd.DataFrame, group_col: str, agg_col: str) 
 # ---------------------------------------------------------------------------
 
 
-def tool_build_and_run_pipeline(
+def tool_build_and_run_pipeline(  # noqa: C901
     df: pd.DataFrame,
     target_col: str,
     config: Dict[str, Any],
     custom_preprocessor=None,
     ml_model=None,
+    conf_training: Optional[Any] = None,
 ) -> Dict[str, Any]:
     """Build and evaluate a BlueCast pipeline from a config dict.
 
@@ -1171,21 +1191,46 @@ def tool_build_and_run_pipeline(
     class_problem = config.get("class_problem", "binary")
     use_cv = config.get("use_cv", True)
 
-    training_config = TrainingConfig(
-        hyperparameter_tuning_rounds=int(config.get("tuning_rounds", 50)),
-        hyperparameter_tuning_max_runtime_secs=int(
-            config.get("tuning_max_runtime", 120)
-        ),
-        enable_feature_selection=bool(config.get("enable_feature_selection", False)),
-        calculate_shap_values=False,
-        plot_hyperparameter_tuning_overview=False,
-        hypertuning_cv_folds=int(config.get("hypertuning_cv_folds", 3)),
-        autotune_on_device=config.get("autotune_on_device", "cpu"),
-        bluecast_cv_train_n_model=(
-            int(config.get("n_folds", 5)),
-            int(config.get("n_repeats", 1)),
-        ),
+    if conf_training is not None:
+        import copy
+
+        training_config = copy.deepcopy(conf_training)
+    else:
+        training_config = TrainingConfig()
+
+    training_config.hyperparameter_tuning_rounds = int(
+        config.get("tuning_rounds", training_config.hyperparameter_tuning_rounds)
     )
+    training_config.hyperparameter_tuning_max_runtime_secs = int(
+        config.get(
+            "tuning_max_runtime", training_config.hyperparameter_tuning_max_runtime_secs
+        )
+    )
+    training_config.hypertuning_cv_folds = int(
+        config.get("hypertuning_cv_folds", training_config.hypertuning_cv_folds)
+    )
+    if "autotune_on_device" in config:
+        training_config.autotune_on_device = config.get("autotune_on_device")
+
+    if "n_folds" in config or "n_repeats" in config:
+        # Only override CV models if the user hasn't explicitly set a custom one
+        if training_config.bluecast_cv_train_n_model == (5, 1):
+            training_config.bluecast_cv_train_n_model = (
+                int(
+                    config.get("n_folds", training_config.bluecast_cv_train_n_model[0])
+                ),
+                int(
+                    config.get(
+                        "n_repeats", training_config.bluecast_cv_train_n_model[1]
+                    )
+                ),
+            )
+
+    # Apply standard fallbacks if not explicitly provided
+    if "enable_feature_selection" in config:
+        training_config.enable_feature_selection = bool(
+            config.get("enable_feature_selection")
+        )
 
     if "out_of_fold_dataset_store_path" in config:
         training_config.out_of_fold_dataset_store_path = config[
@@ -1244,11 +1289,25 @@ def tool_build_and_run_pipeline(
         # orchestrator's tuning_rounds / tuning_max_runtime settings.
         # Custom PyTorch models (RegularizedRegressionModel, MLPRegressionModel,
         # SO1DCNNRegressionModel) read from self.conf_tuning as a dict.
-        ml_model.conf_tuning = {
-            "tuning_rounds": int(config.get("tuning_rounds", 15)),
-            "tuning_max_runtime": int(config.get("tuning_max_runtime", 120)),
-            "nn_max_iter": int(config.get("nn_max_iter", 200)),
-        }
+        if not hasattr(ml_model, "conf_tuning") or ml_model.conf_tuning is None:
+            ml_model.conf_tuning = {}
+
+        ml_model.conf_tuning.update(
+            {
+                "tuning_rounds": int(config.get("tuning_rounds", 15)),
+                "tuning_max_runtime": int(config.get("tuning_max_runtime", 120)),
+                "nn_max_iter": int(config.get("nn_max_iter", 200)),
+            }
+        )
+
+        for k, v in config.items():
+            if k.startswith("nn_"):
+                ml_model.conf_tuning[k] = v
+
+        if hasattr(ml_model, "cv_folds"):
+            ml_model.cv_folds = int(
+                config.get("hypertuning_cv_folds", training_config.hypertuning_cv_folds)
+            )
 
         # Custom models do their own internal CV during autotune() and
         # completely ignore the x_test/y_test from cast_regression's inner

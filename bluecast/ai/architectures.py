@@ -936,12 +936,29 @@ class SO1DCNNClassificationModel(BaseClassMlModel):
                 scoring=self.scoring,
                 **params,
             )
-            skfold = StratifiedKFold(
-                n_splits=self.cv_folds, shuffle=True, random_state=self.random_state
-            )
-            return cross_val_score(
-                model, x_train, y_train, cv=skfold, scoring=self.scoring
-            ).mean()
+            if self.cv_folds <= 1:
+                from sklearn.model_selection import train_test_split
+
+                X_tr, X_val, y_tr, y_val = train_test_split(
+                    x_train,
+                    y_train,
+                    test_size=0.2,
+                    random_state=self.random_state,
+                    stratify=y_train,
+                )
+                model.fit(X_tr, y_tr)
+                # To simulate cross_val_score, just score on the validation set.
+                from sklearn.metrics import get_scorer
+
+                scorer = get_scorer(self.scoring)
+                return scorer(model, X_val, y_val)
+            else:
+                skfold = StratifiedKFold(
+                    n_splits=self.cv_folds, shuffle=True, random_state=self.random_state
+                )
+                return cross_val_score(
+                    model, x_train, y_train, cv=skfold, scoring=self.scoring
+                ).mean()
 
         optuna.logging.set_verbosity(optuna.logging.ERROR)
         study = optuna.create_study(
@@ -1079,18 +1096,30 @@ class SO1DCNNRegressionModel(BaseClassMlRegressionModel):
             ]
             pipeline = Pipeline(steps)
 
-            from sklearn.model_selection import StratifiedKFold
-            from sklearn.preprocessing import LabelEncoder
+            if self.cv_folds <= 1:
+                from sklearn.model_selection import train_test_split
 
-            le = LabelEncoder()
-            y_binned = le.fit_transform(pd.qcut(y_train, 5, duplicates="drop"))
-            cv = StratifiedKFold(
-                n_splits=self.cv_folds, shuffle=True, random_state=self.random_state
-            )
-            splits = list(cv.split(x_train, y_binned))
-            return cross_val_score(
-                pipeline, x_train, y_train, cv=splits, scoring=self.scoring
-            ).mean()
+                X_tr, X_val, y_tr, y_val = train_test_split(
+                    x_train, y_train, test_size=0.2, random_state=self.random_state
+                )
+                pipeline.fit(X_tr, y_tr)
+                from sklearn.metrics import get_scorer
+
+                scorer = get_scorer(self.scoring)
+                return scorer(pipeline, X_val, y_val)
+            else:
+                from sklearn.model_selection import StratifiedKFold
+                from sklearn.preprocessing import LabelEncoder
+
+                le = LabelEncoder()
+                y_binned = le.fit_transform(pd.qcut(y_train, 5, duplicates="drop"))
+                cv = StratifiedKFold(
+                    n_splits=self.cv_folds, shuffle=True, random_state=self.random_state
+                )
+                splits = list(cv.split(x_train, y_binned))
+                return cross_val_score(
+                    pipeline, x_train, y_train, cv=splits, scoring=self.scoring
+                ).mean()
 
         optuna.logging.set_verbosity(optuna.logging.ERROR)
         study = optuna.create_study(

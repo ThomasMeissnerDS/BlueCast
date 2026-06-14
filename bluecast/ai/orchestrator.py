@@ -205,10 +205,18 @@ class Orchestrator:
 
         if needs_row_sample:
             target = self.context.target_col
-            if target in df.columns and df[target].nunique() <= 20:
-                # Stratified sampling for classification
+            if target in df.columns:
+                is_classification = df[target].nunique() <= 20
+                if is_classification:
+                    stratify_col = df[target]
+                else:
+                    # Stratified sampling for regression using quantiles
+                    stratify_col = pd.qcut(
+                        df[target], q=10, labels=False, duplicates="drop"
+                    )
+
                 sample_df = (
-                    df.groupby(target, group_keys=False)
+                    df.groupby(stratify_col, group_keys=False)
                     .apply(
                         lambda x: x.sample(
                             n=min(len(x), max(1, int(max_rows * len(x) / n_rows))),
@@ -825,7 +833,7 @@ class Orchestrator:
                     f"support problem type '{problem}' or exist in the registry."
                 )
 
-        iters = self.config.ultimate_iterations_per_arch
+        iters = plan.get("max_iterations", self.config.ultimate_iterations_per_arch)
         total_archs = len(archs)
 
         # Cap iterations per arch based on budget so every architecture gets
@@ -846,9 +854,19 @@ class Orchestrator:
 
         override_max_runtime = None
         if self.config.global_tuning_budget and self.config.global_tuning_budget > 0:
-            tunable_archs = max(1, total_archs - 1)
             n_folds = plan.get("n_folds", 5)
-            total_jobs = max(1, tunable_archs * iters * n_folds)
+            n_repeats = plan.get("n_repeats", 1)
+
+            if (
+                self.config.conf_training is not None
+                and hasattr(self.config.conf_training, "bluecast_cv_train_n_model")
+                and self.config.conf_training.bluecast_cv_train_n_model != (5, 1)
+            ):
+                n_folds = self.config.conf_training.bluecast_cv_train_n_model[0]
+                n_repeats = self.config.conf_training.bluecast_cv_train_n_model[1]
+
+            # Include all architectures, all exploration iterations + 1 refinement, folds, and repeats
+            total_jobs = max(1, total_archs * (iters + 1) * n_folds * n_repeats)
             override_max_runtime = max(
                 10, int(self.config.global_tuning_budget / total_jobs)
             )
@@ -912,7 +930,10 @@ class Orchestrator:
                     elapsed = time.time() - getattr(
                         self.context, "pipeline_start_time", time.time()
                     )
-                    if elapsed > self.config.global_tuning_budget * 0.8:
+                    if (
+                        elapsed > self.config.global_tuning_budget * 0.8
+                        and iteration > 0
+                    ):
                         if self.config.verbose:
                             print(
                                 f"\n  [TIMEOUT] Global budget nearly exhausted ({elapsed:.0f}s). Skipping further iterations for {arch_name}."
@@ -1292,12 +1313,23 @@ class Orchestrator:
         class_problem = plan.get(
             "class_problem", self.context.class_problem or "binary"
         )
+
+        n_folds = plan.get("n_folds", 5)
+        n_repeats = plan.get("n_repeats", 1)
+        if (
+            self.config.conf_training is not None
+            and hasattr(self.config.conf_training, "bluecast_cv_train_n_model")
+            and self.config.conf_training.bluecast_cv_train_n_model != (5, 1)
+        ):
+            n_folds = self.config.conf_training.bluecast_cv_train_n_model[0]
+            n_repeats = self.config.conf_training.bluecast_cv_train_n_model[1]
+
         config = {
             "class_problem": class_problem,
             "use_cv": plan.get("use_cv", True),
             "ensemble_strategy": plan.get("ensemble_strategy", "hill_climbing"),
-            "n_folds": plan.get("n_folds", 5),
-            "n_repeats": plan.get("n_repeats", 1),
+            "n_folds": n_folds,
+            "n_repeats": n_repeats,
             "tuning_rounds": plan.get("tuning_rounds", 50),
             "tuning_max_runtime": (
                 override_max_runtime
@@ -1418,6 +1450,7 @@ class Orchestrator:
             config,
             custom_preprocessor=preprocessor,
             ml_model=ml_model,
+            conf_training=self.config.conf_training,
         )
 
     def _create_arch_fe_task(

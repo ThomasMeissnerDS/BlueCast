@@ -199,7 +199,7 @@ class _PyTorchBaseEstimator(BaseEstimator):
         return self
 
 
-class PyTorchMLPRegressor(_PyTorchBaseEstimator, RegressorMixin):
+class PyTorchMLPRegressor(RegressorMixin, _PyTorchBaseEstimator):
     def fit(self, X, y):
         X = np.asarray(X)
         y = np.asarray(y)
@@ -214,7 +214,7 @@ class PyTorchMLPRegressor(_PyTorchBaseEstimator, RegressorMixin):
         return preds
 
 
-class PyTorchMLPClassifier(_PyTorchBaseEstimator, ClassifierMixin):
+class PyTorchMLPClassifier(ClassifierMixin, _PyTorchBaseEstimator):
     def fit(self, X, y):
         X = np.asarray(X)
         y = np.asarray(y)
@@ -448,7 +448,7 @@ class _PyTorchSO1DCNNBase(_PyTorchBaseEstimator):
         return model
 
 
-class PyTorchSO1DCNNRegressor(_PyTorchSO1DCNNBase, RegressorMixin):
+class PyTorchSO1DCNNRegressor(RegressorMixin, _PyTorchSO1DCNNBase):
     def fit(self, X, y):
         X = np.asarray(X)
         y = np.asarray(y)
@@ -463,7 +463,7 @@ class PyTorchSO1DCNNRegressor(_PyTorchSO1DCNNBase, RegressorMixin):
         return preds
 
 
-class PyTorchSO1DCNNClassifier(_PyTorchSO1DCNNBase, ClassifierMixin):
+class PyTorchSO1DCNNClassifier(ClassifierMixin, _PyTorchSO1DCNNBase):
     def fit(self, X, y):
         X = np.asarray(X)
         y = np.asarray(y)
