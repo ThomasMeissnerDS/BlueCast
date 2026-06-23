@@ -1284,6 +1284,34 @@ def tool_build_and_run_pipeline(  # noqa: C901
 
         single_fold_eval_metric_func = get_bluecast_eval_wrapper(metric_name)
 
+    # Create a default CatBoost tuning config if none was provided and
+    # apply mode-specific overrides (e.g. catboost_depth_max) from the
+    # config dict.  This ensures non-ultimate modes use tighter search
+    # spaces without requiring users to manually configure them.
+    _has_catboost_overrides = any(k.startswith("catboost_") for k in config)
+    if conf_tuning is None and _has_catboost_overrides:
+        if class_problem == "regression":
+            from bluecast.config.training_config import (
+                CatboostTuneParamsRegressionConfig,
+            )
+
+            conf_tuning = CatboostTuneParamsRegressionConfig()
+        else:
+            from bluecast.config.training_config import CatboostTuneParamsConfig
+
+            conf_tuning = CatboostTuneParamsConfig()
+
+    if conf_tuning is not None and _has_catboost_overrides:
+        for attr in [
+            "depth_max",
+            "border_count_max",
+            "learning_rate_min",
+            "iterations_max",
+        ]:
+            key = f"catboost_{attr}"
+            if key in config:
+                setattr(conf_tuning, attr, config[key])
+
     if ml_model is not None:
         # Inject tuning budget into custom models so they respect the
         # orchestrator's tuning_rounds / tuning_max_runtime settings.
@@ -1301,7 +1329,7 @@ def tool_build_and_run_pipeline(  # noqa: C901
         )
 
         for k, v in config.items():
-            if k.startswith("nn_"):
+            if k.startswith(("nn_", "histgb_", "rf_")):
                 ml_model.conf_tuning[k] = v
 
         if hasattr(ml_model, "cv_folds"):

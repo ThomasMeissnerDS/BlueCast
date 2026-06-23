@@ -1252,6 +1252,11 @@ class Orchestrator:
                             )
 
             if arch_best_pipeline is not None:
+                # Store the OOF metric so _assemble_result can filter weak architectures
+                oof_score = None
+                if best_arch_result is not None:
+                    oof_score = best_arch_result.get("metrics", {}).get("oof_mean")
+                arch_best_pipeline._bluecastai_oof_score = oof_score
                 self.context.best_pipelines.append(arch_best_pipeline)
 
             self._save_checkpoint(f"build_arch_{arch_name}")
@@ -1365,7 +1370,82 @@ class Orchestrator:
         ):
             config.update(self.config.conf_training.conf_tuning)
 
+        # Apply mode-aware tuning overrides (fast/balanced/precise get
+        # tighter search spaces; ultimate keeps full power).  User-provided
+        # conf_training.conf_tuning keys above take precedence because they
+        # were merged first and _get_mode_tuning_overrides only sets keys
+        # that are not already present.
+        mode_overrides = self._get_mode_tuning_overrides()
+        for k, v in mode_overrides.items():
+            if k not in config:
+                config[k] = v
+
         return config
+
+    def _get_mode_tuning_overrides(self) -> dict:
+        """Return mode-specific hyperparameter search space overrides.
+
+        Non-ultimate modes receive tighter search bounds so that tuning
+        completes faster.  ``ultimate`` returns an empty dict (full power).
+        Keys use architecture-specific prefixes (``catboost_``, ``xgboost_``,
+        ``histgb_``, ``rf_``, ``nn_``) so they can be routed to the correct
+        config objects downstream in ``tool_build_and_run_pipeline``.
+        """
+        if self.config.mode == "fast":
+            return {
+                # CatBoost
+                "catboost_depth_max": 6,
+                "catboost_border_count_max": 64,
+                "catboost_learning_rate_min": 0.03,
+                "catboost_iterations_max": 500,
+                # XGBoost
+                "xgboost_max_depth_max": 6,
+                "xgboost_max_bin_max": 256,
+                "xgboost_eta_min": 0.03,
+                "xgboost_steps_max": 500,
+                # HistGradientBoosting
+                "histgb_depth_max": 6,
+                "histgb_max_iter_max": 500,
+                "histgb_lr_min": 0.03,
+                # RandomForest
+                "rf_max_depth_max": 10,
+                "rf_estimators_max": 100,
+                # MLP / SO1DCNN / Linear
+                "nn_max_iter": 100,
+                # Optuna internal CV
+                "hypertuning_cv_folds": 2,
+            }
+        elif self.config.mode == "balanced":
+            return {
+                # CatBoost
+                "catboost_depth_max": 8,
+                "catboost_border_count_max": 128,
+                "catboost_learning_rate_min": 0.01,
+                # XGBoost
+                "xgboost_max_depth_max": 8,
+                "xgboost_max_bin_max": 512,
+                "xgboost_eta_min": 0.01,
+                # HistGradientBoosting
+                "histgb_depth_max": 8,
+                "histgb_max_iter_max": 800,
+                # RandomForest
+                "rf_max_depth_max": 12,
+                # MLP / SO1DCNN / Linear
+                "nn_max_iter": 150,
+                # Optuna internal CV
+                "hypertuning_cv_folds": 3,
+            }
+        elif self.config.mode == "precise":
+            return {
+                # CatBoost
+                "catboost_depth_max": 8,
+                "catboost_border_count_max": 192,
+                # XGBoost
+                "xgboost_max_depth_max": 8,
+                "xgboost_max_bin_max": 768,
+            }
+        # ultimate: no overrides
+        return {}
 
     def _build_single_arch(
         self,
@@ -1436,13 +1516,44 @@ class Orchestrator:
                         "xgboost_loss"
                     ]
 
+                # Apply mode-specific XGBoost overrides
+                if conf_xgboost is None:
+                    from bluecast.config.training_config import (
+                        XgboostTuneParamsRegressionConfig,
+                    )
+
+                    conf_xgboost = XgboostTuneParamsRegressionConfig()
+                for attr in [
+                    "max_depth_max",
+                    "max_bin_max",
+                    "eta_min",
+                    "steps_max",
+                ]:
+                    key = f"xgboost_{attr}"
+                    if key in config:
+                        setattr(conf_xgboost, attr, config[key])
+
                 ml_model = XgboostModelRegression(
                     class_problem="regression",
                     conf_xgboost=conf_xgboost,
                     conf_params_xgboost=conf_params_xgboost,
                 )
             else:
-                ml_model = XgboostModel(class_problem=problem)
+                from bluecast.config.training_config import XgboostTuneParamsConfig
+
+                conf_xgboost_clf = XgboostTuneParamsConfig()
+                for attr in [
+                    "max_depth_max",
+                    "max_bin_max",
+                    "eta_min",
+                    "steps_max",
+                ]:
+                    key = f"xgboost_{attr}"
+                    if key in config:
+                        setattr(conf_xgboost_clf, attr, config[key])
+                ml_model = XgboostModel(
+                    class_problem=problem, conf_xgboost=conf_xgboost_clf
+                )
 
         return tool_build_and_run_pipeline(
             self.context.df_train,
@@ -1679,6 +1790,26 @@ class Orchestrator:
         except Exception as e:
             logger.debug(f"Could not extract error analysis: {e}")
 
+    def _get_error_metrics(self) -> list:
+        """Return the list of metrics where lower is better.
+
+        ``oof_mean`` is only an error metric for regression (MAE/RMSE).
+        For classification it represents accuracy/balanced_accuracy where
+        higher is better.
+        """
+        base = [
+            "mae",
+            "rmse",
+            "mse",
+            "mean_absolute_error",
+            "mean_squared_error",
+            "median_absolute_error",
+            "mean_squared_log_error",
+        ]
+        if (self.context.class_problem or "binary") == "regression":
+            base.append("oof_mean")
+        return base
+
     def _is_result_better(self, result: dict) -> bool:
         """Check if a result is better than the current best."""
         if self.context.best_metrics is None:
@@ -1698,16 +1829,7 @@ class Orchestrator:
             "median_absolute_error",
             "mean_squared_log_error",
         ]
-        error_metrics = [
-            "oof_mean",
-            "mae",
-            "rmse",
-            "mse",
-            "mean_absolute_error",
-            "mean_squared_error",
-            "median_absolute_error",
-            "mean_squared_log_error",
-        ]
+        error_metrics = self._get_error_metrics()
         for key in eval_metrics:
             if key in new_m and key in old_m:
                 if key in error_metrics:
@@ -1735,16 +1857,7 @@ class Orchestrator:
             "median_absolute_error",
             "mean_squared_log_error",
         ]
-        error_metrics = [
-            "oof_mean",
-            "mae",
-            "rmse",
-            "mse",
-            "mean_absolute_error",
-            "mean_squared_error",
-            "median_absolute_error",
-            "mean_squared_log_error",
-        ]
+        error_metrics = self._get_error_metrics()
         for key in eval_metrics:
             if key in new_m and key in old_m:
                 if key in error_metrics:
@@ -1928,7 +2041,7 @@ class Orchestrator:
             f"Call build_and_run_pipeline with these parameters."
         )
 
-    def _assemble_result(self) -> BlueCastAIResult:
+    def _assemble_result(self) -> BlueCastAIResult:  # noqa: C901
         from bluecast.ensemble.hill_climbing import (
             HillClimbingEnsemble,
             _mae_regression_metric,
@@ -1937,7 +2050,36 @@ class Orchestrator:
         hc_ensemble = None
         valid_pipelines = []
 
+        is_classification = self.context.class_problem != "regression"
+        is_multiclass = self.context.class_problem == "multiclass"
+
         if len(self.context.best_pipelines) > 1:
+            # --- Classification filtering using stored OOF metric scores ---
+            # Remove architectures whose OOF metric is far below the best.
+            # Uses the same metric that was optimised during tuning.
+            if is_classification:
+                scored = [
+                    (p, getattr(p, "_bluecastai_oof_score", None))
+                    for p in self.context.best_pipelines
+                ]
+                known_scores = [s for _, s in scored if s is not None]
+                if known_scores:
+                    best_score = max(known_scores)
+                    threshold = best_score * 0.5
+                    filtered_pipelines = []
+                    for p, s in scored:
+                        if s is not None and s < threshold:
+                            if self.config.verbose:
+                                print(
+                                    f"    [SKIP ENSEMBLE] Architecture OOF score "
+                                    f"{s:.4f} is below threshold "
+                                    f"{threshold:.4f} (best={best_score:.4f}). "
+                                    f"Excluding."
+                                )
+                        else:
+                            filtered_pipelines.append(p)
+                    self.context.best_pipelines = filtered_pipelines
+
             oof_list = []
             valid_masks = []
             for p in self.context.best_pipelines:
@@ -1958,12 +2100,10 @@ class Orchestrator:
                 # Mask OOF predictions
                 filtered_oof_list = [oof[common_valid_mask] for oof in oof_list]
 
-                is_classification = self.context.class_problem != "regression"
                 eval_metric = _mae_regression_metric if not is_classification else None
 
-                # --- NEW FILTERING LOGIC ---
+                # --- Regression filtering: exclude architectures with MAE > 1.5x best ---
                 if not is_classification and eval_metric == _mae_regression_metric:
-                    # Calculate negative MAE for each architecture
                     arch_scores = [
                         eval_metric(y_true, oof) for oof in filtered_oof_list
                     ]
@@ -1978,23 +2118,27 @@ class Orchestrator:
                             final_pipelines.append(valid_pipelines[i])
                         elif self.config.verbose:
                             print(
-                                f"    [SKIP ENSEMBLE] Architecture {i} OOF MAE {mae:.2f} is more than 2x worse than best {best_mae:.2f}. Excluding."
+                                f"    [SKIP ENSEMBLE] Architecture {i} OOF MAE {mae:.2f} "
+                                f"is more than 1.5x worse than best {best_mae:.2f}. Excluding."
                             )
 
                     filtered_oof_list = final_oof_list
                     valid_pipelines = final_pipelines
-                # ---------------------------
 
-                if len(filtered_oof_list) > 0:
+                # --- Hill climbing ensemble ---
+                # HC operates on 1D OOF predictions with roc_auc_score.
+                # For multiclass, OOF predictions are 1D averages that lose
+                # per-class information, so HC cannot produce valid weights.
+                # Fall through to probability-averaging in BlueCastAIResult.
+                if len(filtered_oof_list) > 0 and not is_multiclass:
                     hc_ensemble = HillClimbingEnsemble(
                         is_classification=is_classification,
                         eval_metric=eval_metric,
-                        blending_method="probability",  # Use raw predictions for Regression
+                        blending_method="probability",
                         weight_min=0.0,
                         tolerance=1e-4,
                     )
 
-                    # Fit global ensemble
                     model_names = [f"arch_{i}" for i in range(len(filtered_oof_list))]
                     hc_ensemble.fit(filtered_oof_list, y_true, model_names)
         else:

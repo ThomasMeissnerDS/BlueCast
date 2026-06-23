@@ -49,26 +49,65 @@ class BlueCastAIResult:
         For classification pipelines this returns class labels (not probabilities).
         For regression pipelines this returns continuous predictions.
         """
-        hc = getattr(self, "hill_climbing_ensemble", None)
-        if hc is not None:
-            all_preds = []
-            for p in self.pipelines:
-                p_preds = p.predict(df)
-                if isinstance(p_preds, tuple) and len(p_preds) == 2:
-                    p_preds = p_preds[1]
-                all_preds.append(
-                    p_preds.values if hasattr(p_preds, "values") else p_preds
-                )
-            return hc.predict(all_preds)
+        is_classification = self.class_problem != "regression"
+        is_multiclass = self.class_problem == "multiclass"
 
-        if getattr(self, "pipelines", None):
+        hc = getattr(self, "hill_climbing_ensemble", None)
+        if hc is not None and not is_multiclass:
             all_preds = []
             for p in self.pipelines:
                 p_preds = p.predict(df)
                 if isinstance(p_preds, tuple) and len(p_preds) == 2:
-                    p_preds = p_preds[1]
-                all_preds.append(p_preds)
-            return np.mean(all_preds, axis=0)
+                    # Use probabilities for classification (HC was fitted on OOF probas)
+                    p_preds = p_preds[0] if is_classification else p_preds[1]
+                all_preds.append(
+                    p_preds.values
+                    if hasattr(p_preds, "values")
+                    else np.asarray(p_preds)
+                )
+            blended = hc.predict(all_preds)
+            if is_classification:
+                return (blended > 0.5).astype(int)
+            return blended
+
+        if getattr(self, "pipelines", None) and len(self.pipelines) > 1:
+            if is_multiclass:
+                # Average probability matrices across architectures, then argmax
+                all_proba = []
+                for p in self.pipelines:
+                    p_preds = p.predict(df)
+                    if isinstance(p_preds, tuple) and len(p_preds) == 2:
+                        proba = p_preds[0]  # probability matrix
+                    else:
+                        proba = p_preds
+                    all_proba.append(
+                        proba.values if hasattr(proba, "values") else np.asarray(proba)
+                    )
+                avg_proba = np.mean(all_proba, axis=0)
+                return np.argmax(avg_proba, axis=1)
+            elif is_classification:
+                # Binary: average probabilities, then threshold
+                all_proba = []
+                for p in self.pipelines:
+                    p_preds = p.predict(df)
+                    if isinstance(p_preds, tuple) and len(p_preds) == 2:
+                        p_preds = p_preds[0]  # probabilities
+                    all_proba.append(
+                        p_preds.values
+                        if hasattr(p_preds, "values")
+                        else np.asarray(p_preds)
+                    )
+                avg_proba = np.mean(all_proba, axis=0)
+                return (avg_proba > 0.5).astype(int)
+            else:
+                # Regression: average predictions
+                all_preds = []
+                for p in self.pipelines:
+                    p_preds = p.predict(df)
+                    if isinstance(p_preds, tuple) and len(p_preds) == 2:
+                        p_preds = p_preds[1]
+                    all_preds.append(p_preds)
+                return np.mean(all_preds, axis=0)
 
         if self.pipeline is None:
             raise RuntimeError("No trained pipeline available.")

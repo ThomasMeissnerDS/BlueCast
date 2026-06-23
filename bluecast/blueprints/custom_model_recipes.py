@@ -96,7 +96,7 @@ class LogisticRegressionModel(BaseClassMlModel):
                 l1_ratio = 0.0
 
             params = {
-                "alpha": 1.0 / C,
+                "alpha": 1.0 / (C * len(x_train)),
                 "l1_ratio": l1_ratio,
             }
 
@@ -147,7 +147,7 @@ class LogisticRegressionModel(BaseClassMlModel):
             elif penalty == "l2":
                 best_params["l1_ratio"] = 0.0
 
-            best_params["alpha"] = 1.0 / best_params.pop("C")
+            best_params["alpha"] = 1.0 / (best_params.pop("C") * len(x_train))
 
             if "class_weight" in best_params:
                 del best_params["class_weight"]
@@ -262,11 +262,13 @@ class RegularizedRegressionModel(BaseClassMlRegressionModel):
             )
             dropout_rate = trial.suggest_float("dropout_rate", 0.0, 0.5)
 
+            scaled_alpha = alpha / len(x_train)
+
             if model_type == "ridge":
                 estimator = PyTorchMLPRegressor(
                     hidden_layer_sizes=(16,),
                     max_iter=100000,
-                    alpha=alpha,
+                    alpha=scaled_alpha,
                     l1_ratio=0.0,
                     random_state=self.random_state,
                     scoring=self.scoring,
@@ -278,7 +280,7 @@ class RegularizedRegressionModel(BaseClassMlRegressionModel):
             elif model_type == "lasso":
                 estimator = PyTorchMLPRegressor(
                     hidden_layer_sizes=(16,),
-                    alpha=alpha,
+                    alpha=scaled_alpha,
                     l1_ratio=1.0,
                     max_iter=100000,
                     random_state=self.random_state,
@@ -296,7 +298,7 @@ class RegularizedRegressionModel(BaseClassMlRegressionModel):
                 )
                 estimator = PyTorchMLPRegressor(
                     hidden_layer_sizes=(16,),
-                    alpha=alpha,
+                    alpha=scaled_alpha,
                     l1_ratio=l1_ratio,
                     max_iter=100000,
                     random_state=self.random_state,
@@ -392,11 +394,14 @@ class RegularizedRegressionModel(BaseClassMlRegressionModel):
         else:
             self.imputer = SimpleImputer(strategy=imputer_strategy)
 
+        alpha_val = best_params.get("alpha", 1.0)
+        scaled_alpha = alpha_val / len(x_train)  # type: ignore
+
         if model_type == "ridge":
             base_model = PyTorchMLPRegressor(
                 hidden_layer_sizes=(16,),
                 max_iter=100000,
-                alpha=best_params.get("alpha"),
+                alpha=scaled_alpha,
                 l1_ratio=0.0,
                 random_state=self.random_state,
                 scoring=self.scoring,
@@ -410,7 +415,7 @@ class RegularizedRegressionModel(BaseClassMlRegressionModel):
                 hidden_layer_sizes=(16,),
                 max_iter=100000,
                 random_state=self.random_state,
-                alpha=best_params.get("alpha"),
+                alpha=scaled_alpha,
                 l1_ratio=1.0,
                 scoring=self.scoring,
                 learning_rate_init=best_params.get("learning_rate_init", 0.05),
@@ -423,7 +428,7 @@ class RegularizedRegressionModel(BaseClassMlRegressionModel):
                 hidden_layer_sizes=(16,),
                 max_iter=100000,
                 random_state=self.random_state,
-                alpha=best_params.get("alpha"),
+                alpha=scaled_alpha,
                 l1_ratio=best_params.get("l1_ratio"),
                 scoring=self.scoring,
                 learning_rate_init=best_params.get("learning_rate_init", 0.05),

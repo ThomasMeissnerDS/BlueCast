@@ -884,10 +884,12 @@ class TestStepBuildEnsemble:
         p1 = MagicMock()
         p1.oof_predictions_ = np.random.rand(n_rows)
         p1.oof_valid_mask_ = np.ones(n_rows, dtype=bool)
+        p1._bluecastai_oof_score = 0.85
 
         p2 = MagicMock()
         p2.oof_predictions_ = np.random.rand(n_rows)
         p2.oof_valid_mask_ = np.ones(n_rows, dtype=bool)
+        p2._bluecastai_oof_score = 0.82
 
         orch.context.best_pipelines = [p1, p2]
 
