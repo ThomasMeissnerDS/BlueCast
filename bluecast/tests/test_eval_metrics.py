@@ -110,7 +110,7 @@ def test_regression_run_with_args(sample_data_regression):
     assert score == expected_score
 
 
-def test_regression_run_witouth_args(sample_data_regression):
+def test_regression_run_without_args(sample_data_regression):
     y_true, y_hat = sample_data_regression
     wrapper = RegressionEvalWrapper(
         higher_is_better=False, metric_func=mean_squared_error
@@ -183,7 +183,7 @@ def test_eval_classifier_binary():
     assert "log_loss" in result
     assert "balanced_logloss" in result
     assert "roc_auc" in result
-    assert "classfication_report" in result
+    assert "classification_report" in result
     assert "confusion_matrix" in result
 
 
@@ -205,7 +205,7 @@ def test_eval_classifier_multiclass():
     assert "log_loss" in result
     assert "balanced_logloss" in result
     assert "roc_auc" in result
-    assert "classfication_report" in result
+    assert "classification_report" in result
     assert "confusion_matrix" in result
 
 

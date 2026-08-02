@@ -48,7 +48,7 @@ class AddRowLevelAggFeatures:
         :param df: Pandas DataFrame holding all features.
         :param feature_to_agg: List of column names indicating which features to aggregate.
         :param agg_col_name: Name of the new column.
-        :return: Original Pandas DataFrame with added row level means.
+        :return: Original Pandas DataFrame with added row level standard deviations.
         """
         df[agg_col_name] = df[feature_to_agg].std(axis=1)
         return df
@@ -65,7 +65,7 @@ class AddRowLevelAggFeatures:
         :param df: Pandas DataFrame holding all features.
         :param feature_to_agg: List of column names indicating which features to aggregate.
         :param agg_col_name: Name of the new column.
-        :return: Original Pandas DataFrame with added row level means.
+        :return: Original Pandas DataFrame with added row level minimums.
         """
         df[agg_col_name] = df[feature_to_agg].min(axis=1)
         return df
@@ -82,7 +82,7 @@ class AddRowLevelAggFeatures:
         :param df: Pandas DataFrame holding all features.
         :param feature_to_agg: List of column names indicating which features to aggregate.
         :param agg_col_name: Name of the new column.
-        :return: Original Pandas DataFrame with added row level means.
+        :return: Original Pandas DataFrame with added row level maximums.
         """
         df[agg_col_name] = df[feature_to_agg].max(axis=1)
         return df
@@ -99,7 +99,7 @@ class AddRowLevelAggFeatures:
         :param df: Pandas DataFrame holding all features.
         :param feature_to_agg: List of column names indicating which features to aggregate.
         :param agg_col_name: Name of the new column.
-        :return: Original Pandas DataFrame with added row level means.
+        :return: Original Pandas DataFrame with added row level sums.
         """
         df[agg_col_name] = df[feature_to_agg].sum(axis=1)
         return df
@@ -224,9 +224,9 @@ class FeatureClusteringScorer:
     ):
         self.random_state = random_state  # control randomness
         self.cluster_settings = cluster_settings  # settings for each feature
-        self.scalers: Dict[str, MinMaxScaler] = {}  # storing scalers per feature
-        self.cluster_classes: Dict[str, KMeans] = {}  # storing Kmeans class per feature
-        self.cluster_mappings: Dict[str, Dict[int, int]] = (
+        self.scalers: dict[str, MinMaxScaler] = {}  # storing scalers per feature
+        self.cluster_classes: dict[str, KMeans] = {}  # storing Kmeans class per feature
+        self.cluster_mappings: dict[str, dict[int, int]] = (
             {}
         )  # storing reindex mapping for cluster ids
 
@@ -399,3 +399,341 @@ class FeatureClusteringScorer:
             self.cluster_settings.keys()
         ].sum(axis=1)
         return cluster_results_df
+
+
+# ---------------------------------------------------------------------------
+# Stateless Feature Engineering Utilities (LLM-Friendly)
+# ---------------------------------------------------------------------------
+
+
+def add_polynomial_features(
+    df: pd.DataFrame, cols: List[str], degree: int = 2
+) -> pd.DataFrame:
+    """
+    Statelessly adds polynomial features (power) for selected columns.
+    Great for non-linear regression relationships.
+    """
+    df_out = df.copy()
+    for col in cols:
+        if col in df_out.columns:
+            for d in range(2, degree + 1):
+                df_out[f"{col}_pow_{d}"] = df_out[col] ** d
+    return df_out
+
+
+def add_interaction_features(
+    df: pd.DataFrame,
+    cols_a: List[str],
+    cols_b: List[str],
+    operations: Optional[List[str]] = None,
+) -> pd.DataFrame:
+    """
+    Creates interaction features among two lists of numeric columns.
+    Supported ops: 'mul', 'div', 'add', 'sub'.
+    """
+    if operations is None:
+        operations = ["mul", "div"]
+    df_out = df.copy()
+    for col1 in cols_a:
+        for col2 in cols_b:
+            if col1 == col2:
+                continue
+            if "mul" in operations:
+                df_out[f"{col1}_mul_{col2}"] = df_out[col1] * df_out[col2]
+            if "add" in operations:
+                df_out[f"{col1}_add_{col2}"] = df_out[col1] + df_out[col2]
+            if "sub" in operations:
+                df_out[f"{col1}_sub_{col2}"] = df_out[col1] - df_out[col2]
+            if "div" in operations:
+                # Add a small epsilon to avoid division by zero
+                df_out[f"{col1}_div_{col2}"] = df_out[col1] / (df_out[col2] + 1e-6)
+    return df_out
+
+
+def add_binned_features(
+    df: pd.DataFrame,
+    cols: List[str],
+    num_bins: int = 5,
+    state: Optional[Dict[str, Any]] = None,
+    is_fit: bool = True,
+) -> pd.DataFrame:
+    """Bin continuous features into quantile bins.
+
+    When ``state`` is provided, bin edges are stored during fit and reused
+    during transform so that train and test data use identical bin boundaries.
+    Without ``state`` the function is stateless (bin edges computed from the
+    input data each time), which can cause train/test inconsistency.
+
+    :param df: Input DataFrame.
+    :param cols: Columns to bin.
+    :param num_bins: Number of quantile bins.
+    :param state: Optional dict to store/retrieve bin edges across fit/transform.
+    :param is_fit: If True, compute bin edges; if False, reuse stored edges.
+    :returns: DataFrame with ``{col}_binned`` columns added.
+    """
+    df_out = df.copy()
+    for col in cols:
+        if col not in df_out.columns:
+            continue
+
+        state_key = f"_binned_edges_{col}_{num_bins}"
+
+        # Transform mode: reuse stored bin edges
+        if state is not None and not is_fit and state_key in state:
+            bins = state[state_key]
+            df_out[f"{col}_binned"] = (
+                pd.cut(
+                    df_out[col],
+                    bins=bins,
+                    labels=False,
+                    include_lowest=True,
+                )
+                .fillna(-1)
+                .astype(int)
+            )
+        else:
+            # Fit mode (or stateless fallback): compute bin edges
+            try:
+                result, bins = pd.qcut(
+                    df_out[col],
+                    q=num_bins,
+                    labels=False,
+                    retbins=True,
+                    duplicates="drop",
+                )
+                df_out[f"{col}_binned"] = result
+                if state is not None:
+                    # Extend outer bins to -inf/+inf for unseen test values
+                    bins = bins.copy()
+                    bins[0] = -np.inf
+                    bins[-1] = np.inf
+                    state[state_key] = bins
+            except Exception:
+                df_out[f"{col}_binned"] = pd.cut(
+                    df_out[col],
+                    bins=num_bins,
+                    labels=False,
+                )
+    return df_out
+
+
+def add_datetime_features(df: pd.DataFrame, date_cols: List[str]) -> pd.DataFrame:
+    """
+    A lightweight stateless datetime extractor for pandas.
+    Extracts year, month, day, dayofweek, and hour.
+    """
+    df_out = df.copy()
+    for col in date_cols:
+        if col in df_out.columns:
+            # Attempt to convert to datetime if it's not already
+            try:
+                dt_series = pd.to_datetime(df_out[col], errors="coerce")
+                df_out[f"{col}_year"] = dt_series.dt.year
+                df_out[f"{col}_month"] = dt_series.dt.month
+                df_out[f"{col}_day"] = dt_series.dt.day
+                df_out[f"{col}_dayofweek"] = dt_series.dt.dayofweek
+                df_out[f"{col}_hour"] = dt_series.dt.hour
+                df_out = df_out.drop(columns=[col])
+            except Exception:
+                pass
+    return df_out
+
+
+class TfIdfTextEncoder:
+    """
+    Stateful TF-IDF encoder for seamless integration into AIFeaturePreprocessor.
+    Safely separates fit_transform (training data) from transform (inference data).
+    """
+
+    def __init__(self, max_features: int = 50, stop_words: str = "english"):
+        from sklearn.feature_extraction.text import TfidfVectorizer
+
+        self.vectorizer = TfidfVectorizer(
+            max_features=max_features, stop_words=stop_words
+        )
+        self.is_fitted = False
+        self.feature_names: list[str] = []
+
+    def fit_transform(self, df: pd.DataFrame, text_col: str) -> pd.DataFrame:
+        if text_col not in df.columns:
+            return df
+
+        text_series = df[text_col].fillna("").astype(str)
+        tfidf_matrix = self.vectorizer.fit_transform(text_series)
+        self.is_fitted = True
+
+        try:
+            words = self.vectorizer.get_feature_names_out()
+        except AttributeError:
+            words = self.vectorizer.get_feature_names()
+
+        self.feature_names = [f"tfidf_{text_col}_{w}" for w in words]
+        tfidf_df = pd.DataFrame(
+            tfidf_matrix.toarray(), columns=self.feature_names, index=df.index
+        )
+
+        for col in self.feature_names:
+            df[col] = tfidf_df[col]
+
+        return df
+
+    def transform(self, df: pd.DataFrame, text_col: str) -> pd.DataFrame:
+        if text_col not in df.columns or not self.is_fitted:
+            return df
+
+        text_series = df[text_col].fillna("").astype(str)
+        tfidf_matrix = self.vectorizer.transform(text_series)
+
+        tfidf_df = pd.DataFrame(
+            tfidf_matrix.toarray(), columns=self.feature_names, index=df.index
+        )
+
+        for col in self.feature_names:
+            df[col] = tfidf_df[col]
+
+        return df
+
+
+class StateAwareGroupbyAggregator:
+    """
+    Stateless-acting Groupby Aggregator for AIFeaturePreprocessor.
+    Calculates aggregations during 'fit_transform' and stores them in state.
+    Mappings are applied during 'transform' to ensure no leakage from test set.
+    """
+
+    def __init__(
+        self,
+        groupby_cols: List[str],
+        agg_cols: List[str],
+        aggregations: Optional[List[str]] = None,
+        prefix: str = "state_agg",
+    ):
+        self.groupby_cols = groupby_cols
+        self.agg_cols = agg_cols
+        self.aggregations = aggregations if aggregations is not None else ["mean"]
+        self.prefix = prefix
+        self.mappings: Dict[str, pd.DataFrame] = {}
+        self.is_fitted = False
+
+    def fit_transform(self, df: pd.DataFrame) -> pd.DataFrame:
+        df_out = df.copy()
+        # Perform aggregations
+        agg_results = (
+            df_out.groupby(self.groupby_cols)[self.agg_cols]
+            .agg(self.aggregations)
+            .reset_index()
+        )
+
+        # Flatten column names
+        new_cols = []
+        for col in agg_results.columns.values:
+            if isinstance(col, tuple):
+                # MultiIndex: (feature, agg)
+                if col[0] in self.groupby_cols:
+                    new_cols.append(col[0])
+                else:
+                    new_cols.append(f"{self.prefix}_{col[0]}_{col[1]}")
+            else:
+                # Single index
+                new_cols.append(col)
+
+        agg_results.columns = new_cols
+        self.mappings["aggs"] = agg_results
+        self.is_fitted = True
+
+        # Drop columns from df_out that will be added by the merge to prevent duplicates
+        cols_to_drop = [
+            c
+            for c in agg_results.columns
+            if c in df_out.columns and c not in self.groupby_cols
+        ]
+        if cols_to_drop:
+            df_out = df_out.drop(columns=cols_to_drop)
+
+        # Merge back to original df
+        df_out = df_out.merge(agg_results, on=self.groupby_cols, how="left")
+        return df_out
+
+    def transform(self, df: pd.DataFrame) -> pd.DataFrame:
+        if not self.is_fitted:
+            return df
+
+        df_out = df.copy()
+
+        cols_to_drop = [
+            c
+            for c in self.mappings["aggs"].columns
+            if c in df_out.columns and c not in self.groupby_cols
+        ]
+        if cols_to_drop:
+            df_out = df_out.drop(columns=cols_to_drop)
+
+        df_out = df_out.merge(self.mappings["aggs"], on=self.groupby_cols, how="left")
+        return df_out
+
+
+def add_pca_features(
+    df: pd.DataFrame,
+    cols: List[str],
+    n_components: int = 3,
+    state: Optional[Dict[str, Any]] = None,
+    is_fit: bool = True,
+    prefix: str = "pca",
+) -> pd.DataFrame:
+    """Add PCA components as new features. Stateful: stores the fitted PCA in state.
+
+    During fit (is_fit=True), fits a PCA on the specified columns and stores
+    the fitted PCA scaler in `state` under key ``f'{prefix}_pca'``.
+    During transform (is_fit=False), uses the previously fitted PCA from state.
+
+    Missing values are filled with 0 before PCA. Columns are scaled to zero
+    mean and unit variance before PCA.
+
+    :param df: DataFrame with the columns to transform.
+    :param cols: List of numeric column names to include in PCA.
+    :param n_components: Number of PCA components to create.
+    :param state: Mutable dict for storing fitted transformers between
+        fit and transform phases (required for CV consistency).
+    :param is_fit: True during training, False during inference/validation.
+    :param prefix: Prefix for the new PCA column names.
+    :return: DataFrame with added PCA columns.
+    """
+    from sklearn.decomposition import PCA
+    from sklearn.preprocessing import StandardScaler
+
+    if state is None:
+        state = {}
+
+    # Filter to columns that actually exist
+    valid_cols = [c for c in cols if c in df.columns]
+    if len(valid_cols) < 2:
+        return df
+
+    cols_hash = "_".join(valid_cols)
+    state_key = f"{prefix}_pca_{cols_hash}"
+
+    # Clamp n_components to the number of available columns
+    n_components = min(n_components, len(valid_cols))
+
+    X = df[valid_cols].fillna(0).values
+
+    if is_fit:
+        scaler = StandardScaler()
+        X_scaled = scaler.fit_transform(X)
+
+        pca = PCA(n_components=n_components, random_state=42)
+        components = pca.fit_transform(X_scaled)
+
+        state[state_key] = {"scaler": scaler, "pca": pca, "cols": valid_cols}
+    else:
+        if state_key not in state:
+            # Not fitted yet — skip gracefully
+            return df
+        fitted = state[state_key]
+        X_scaled = fitted["scaler"].transform(X)
+        components = fitted["pca"].transform(X_scaled)
+
+    for i in range(components.shape[1]):
+        df[f"{prefix}_{i + 1}"] = components[:, i]
+
+    return df

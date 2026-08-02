@@ -1,23 +1,23 @@
 default_stages: [pre-commit]
 repos:
   -   repo: https://github.com/pre-commit/pre-commit-hooks
-      rev: v4.5.0 #v4.0.1
+      rev: v6.0.0 #v4.0.1
       hooks:
         -   id: end-of-file-fixer
         -   id: trailing-whitespace
   -   repo: https://github.com/psf/black
-      rev: 25.1.0
+      rev: 26.1.0
       hooks:
         -   id: black
             exclude: ^.github/
   -   repo: https://github.com/pre-commit/mirrors-mypy
-      rev: v1.17.0 #0.910
+      rev: v1.19.1 #0.910
       hooks:
         -   id: mypy
             additional_dependencies: [types-requests]
             exclude: ^.github/
   -   repo: https://github.com/pycqa/isort
-      rev: 5.13.2
+      rev: 8.0.1
       hooks:
         - id: isort
           args: [--profile, black, --filter-files]
@@ -42,7 +42,7 @@ repos:
             files: ^README\.md$
             args: [-i, --bullets, "*"]
   -   repo: https://github.com/DavidAnson/markdownlint-cli2
-      rev: v0.18.1 #v0.2.0
+      rev: v0.21.0 #v0.2.0
       hooks:
         -   id: markdownlint-cli2
             exclude: ^.github/

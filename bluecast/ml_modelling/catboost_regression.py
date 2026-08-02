@@ -91,7 +91,7 @@ class CatboostModelRegression(CatboostBaseModel):
                 x_train, y_train
             )
             x_test, y_test = self.custom_in_fold_preprocessor.transform(
-                x_test, y_test, predicton_mode=False
+                x_test, y_test, prediction_mode=False
             )
 
         if self.conf_training.use_full_data_for_final_model:
@@ -119,7 +119,7 @@ class CatboostModelRegression(CatboostBaseModel):
 
         # If we detect XGBoost parameters, it means configuration got corrupted
         # Fall back to safe CatBoost defaults
-        if "objective" in final_params or "booster" in final_params:
+        if "booster" in final_params:
             print(
                 "WARNING: Detected XGBoost parameters in CatBoost regression config. Using safe defaults."
             )
@@ -173,7 +173,7 @@ class CatboostModelRegression(CatboostBaseModel):
 
         self.model = CatBoostRegressor(**final_params)
 
-        if test_pool is not None and not test_pool.is_empty():
+        if test_pool is not None and not test_pool.is_empty_:
             self.model.fit(
                 train_pool,
                 eval_set=test_pool,
@@ -214,7 +214,7 @@ class CatboostModelRegression(CatboostBaseModel):
         def objective(trial):
             # Typical CatBoost regression params
             params = {
-                "objective": self.conf_catboost.catboost_objective,
+                "loss_function": self.conf_catboost.catboost_loss_function,
                 "eval_metric": self.conf_catboost.catboost_eval_metric,
                 "random_seed": self.conf_training.global_random_state,
                 "learning_rate": trial.suggest_float(
@@ -271,8 +271,8 @@ class CatboostModelRegression(CatboostBaseModel):
             }
 
             if params["bootstrap_type"] in ["Bayesian", "No"]:
-                params["bagging_temperature"] = None
-                params["subsample"] = None
+                params.pop("bagging_temperature", None)
+                params.pop("subsample", None)
 
             params = {**params, **train_on}
 
@@ -352,7 +352,7 @@ class CatboostModelRegression(CatboostBaseModel):
                     training_config=self.conf_training,
                     model_parameters=params,
                     eval_scores=avg_score,
-                    metric_used="catboost regression cv average",
+                    metric_used=self.single_fold_eval_metric_func.metric_name,
                     metric_higher_is_better=False,
                 )
                 return avg_score
@@ -408,7 +408,7 @@ class CatboostModelRegression(CatboostBaseModel):
                 catboost_best_param = study.best_trial.params
 
                 final_best_params = {
-                    "objective": self.conf_catboost.catboost_objective,
+                    "loss_function": self.conf_catboost.catboost_loss_function,
                     "eval_metric": self.conf_catboost.catboost_eval_metric,
                     "random_seed": self.conf_training.global_random_state,
                     "depth": catboost_best_param["depth"],
@@ -470,7 +470,7 @@ class CatboostModelRegression(CatboostBaseModel):
             training_config=self.conf_training,
             model_parameters=params,
             eval_scores=score,
-            metric_used="catboost_single_fold_regression",
+            metric_used=self.single_fold_eval_metric_func.metric_name,
             metric_higher_is_better=False,
         )
         return score
@@ -502,7 +502,7 @@ class CatboostModelRegression(CatboostBaseModel):
                     )
                 )
                 X_val_fold, y_val_fold = self.custom_in_fold_preprocessor.transform(
-                    X_val_fold, y_val_fold, predicton_mode=False
+                    X_val_fold, y_val_fold, prediction_mode=False
                 )
                 X_test_fold, y_test_fold = self.custom_in_fold_preprocessor.transform(
                     x_test, y_test
@@ -558,7 +558,7 @@ class CatboostModelRegression(CatboostBaseModel):
             training_config=self.conf_training,
             model_parameters=tuned_params,
             eval_scores=mean_score,
-            metric_used="catboost_oof_regression",
+            metric_used=self.single_fold_eval_metric_func.metric_name,
             metric_higher_is_better=False,
         )
         return mean_score
@@ -573,7 +573,7 @@ class CatboostModelRegression(CatboostBaseModel):
         logging.info("Start grid search fine tuning of CatBoost regression model.")
 
         def objective(trial):
-            tuned_params = self._get_param_space_fpr_grid_search(trial)
+            tuned_params = self._get_param_space_for_grid_search(trial)
 
             train_pool = Pool(x_train, label=y_train, cat_features=self.cat_columns)
             test_pool = Pool(x_test, label=y_test, cat_features=self.cat_columns)
@@ -633,7 +633,7 @@ class CatboostModelRegression(CatboostBaseModel):
                     training_config=self.conf_training,
                     model_parameters=tuned_params,
                     eval_scores=avg_score,
-                    metric_used="catboost fine_tune gridsearch regression",
+                    metric_used=self.single_fold_eval_metric_func.metric_name,
                     metric_higher_is_better=False,
                 )
                 return avg_score
@@ -650,7 +650,7 @@ class CatboostModelRegression(CatboostBaseModel):
 
         if self.custom_in_fold_preprocessor:
             df, _ = self.custom_in_fold_preprocessor.transform(
-                df, None, predicton_mode=True
+                df, None, prediction_mode=True
             )
 
         # Filter categorical columns to only include those that actually exist in the data

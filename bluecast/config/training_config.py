@@ -6,7 +6,7 @@ pipeline. Pydantic dataclasses are used to allow users a pythonic way to define 
 Default configurations can be loaded, adjusted and passed into the blueprints.
 """
 
-from typing import Dict, List, Optional, Tuple
+from typing import Any, Dict, List, Optional, Tuple
 
 from bluecast.config.config_validations import check_types_init
 
@@ -28,8 +28,6 @@ class TrainingConfig:
     :param sample_data_during_tuning: Whether to sample the data during tuning. Not used when custom ML model is passed.
     :param sample_data_during_tuning_alpha: Alpha value for sampling the data during tuning. The higher alpha the
         fewer samples will be left. Not used when custom ML model is passed.
-    :param class_weight_during_dmatrix_creation: Whether to use class weights during DMatrix creation. Not used when
-        custom ML model is passed.
     :param early_stopping_rounds: Number of early stopping rounds during final training or when hyperparameter tuning
         follows a single train-test split. Not used when custom ML model is passed.
     :param autotune_model: Whether to autotune the model. Not used when custom ML model is passed.
@@ -74,6 +72,10 @@ class TrainingConfig:
     :param optuna_db_backend_path: Path to the Optuna database backend file. If provided as a string, Optuna will use
         a persistent SQLite database to store hyperparameter tuning progress, allowing resumption if tuning fails.
         If None (default), Optuna will use in-memory storage. Example: "/path/to/optuna_study.db"
+    :param fairness_sensitive_columns: Optional list of column names identifying sensitive attributes for fairness
+        evaluation (e.g. ["gender", "age_group"]). When set, fit_eval will automatically compute fairness metrics
+        alongside standard evaluation metrics. The columns must be present in the evaluation DataFrame.
+    :param conf_tuning: Optional dictionary with custom tuning overrides for specific ML models (e.g. nn_batch_size_choices).
     """
 
     def __init__(
@@ -114,6 +116,8 @@ class TrainingConfig:
         experiment_name: str = "new experiment",
         out_of_fold_dataset_store_path: Optional[str] = None,
         optuna_db_backend_path: Optional[str] = None,
+        fairness_sensitive_columns: Optional[List[str]] = None,
+        conf_tuning: Optional[Dict[str, Any]] = None,
     ):
         self.global_random_state = global_random_state
         self.increase_random_state_in_bluecast_cv_by = (
@@ -139,6 +143,8 @@ class TrainingConfig:
 
         if shap_waterfall_indices is None:
             self.shap_waterfall_indices: List[Optional[int]] = []
+        else:
+            self.shap_waterfall_indices = shap_waterfall_indices
 
         self.show_dependence_plots_of_top_n_features = (
             show_dependence_plots_of_top_n_features
@@ -162,6 +168,8 @@ class TrainingConfig:
         self.experiment_name = experiment_name
         self.out_of_fold_dataset_store_path = out_of_fold_dataset_store_path
         self.optuna_db_backend_path = optuna_db_backend_path
+        self.fairness_sensitive_columns = fairness_sensitive_columns
+        self.conf_tuning = conf_tuning if conf_tuning is not None else {}
 
     def dict(self):
         """
@@ -170,6 +178,10 @@ class TrainingConfig:
         The implementation keeps backwards compatibility as this class has been a Pydantic Basemodel before.
         """
         return vars(self)
+
+    def __repr__(self) -> str:
+        params = ", ".join(f"{k}={v!r}" for k, v in vars(self).items())
+        return f"{self.__class__.__name__}({params})"
 
 
 # Xgboost
@@ -292,6 +304,10 @@ class XgboostTuneParamsConfig:
         """
         return vars(self)
 
+    def __repr__(self) -> str:
+        params = ", ".join(f"{k}={v!r}" for k, v in vars(self).items())
+        return f"{self.__class__.__name__}({params})"
+
 
 class XgboostTuneParamsRegressionConfig:
     """Define hyperparameter tuning search space.
@@ -412,53 +428,67 @@ class XgboostTuneParamsRegressionConfig:
         """
         return vars(self)
 
+    def __repr__(self) -> str:
+        params = ", ".join(f"{k}={v!r}" for k, v in vars(self).items())
+        return f"{self.__class__.__name__}({params})"
+
 
 class XgboostFinalParamConfig:
     """Define final hyper parameters."""
 
-    params = {
-        "booster": "gbtree",
-        "max_depth": 10,  # maximum depth of the decision trees being trained
-        "alpha": 0.0,
-        "lambda": 1.0,
-        "gamma": 0.0,
-        "subsample": 1.0,
-        "min_child_weight": 1.0,
-        "colsample_bytree": 1.0,
-        "colsample_bylevel": 1.0,
-        "eta": 0.05,
-        "steps": 1000,
-        "objective": "multi:softprob",
-        "eval_metric": "mlogloss",
-        "tree_method": "hist",
-        "device": "cpu",
-    }
-    sample_weight: Optional[Dict[str, float]] = None
-    classification_threshold: float = 0.5
+    def __init__(self):
+        self.params = {
+            "booster": "gbtree",
+            "max_depth": 10,
+            "alpha": 0.0,
+            "lambda": 1.0,
+            "gamma": 0.0,
+            "subsample": 1.0,
+            "min_child_weight": 1.0,
+            "colsample_bytree": 1.0,
+            "colsample_bylevel": 1.0,
+            "eta": 0.05,
+            "steps": 1000,
+            "objective": "multi:softprob",
+            "eval_metric": "mlogloss",
+            "tree_method": "hist",
+            "device": "cpu",
+        }
+        self.sample_weight: Optional[Dict[str, float]] = None
+        self.classification_threshold: float = 0.5
+
+    def __repr__(self) -> str:
+        params = ", ".join(f"{k}={v!r}" for k, v in vars(self).items())
+        return f"{self.__class__.__name__}({params})"
 
 
 class XgboostRegressionFinalParamConfig:
     """Define final hyper parameters."""
 
-    params = {
-        "booster": "gbtree",
-        "max_depth": 10,  # maximum depth of the decision trees being trained
-        "alpha": 0.0,
-        "lambda": 1.0,
-        "gamma": 0.0,
-        "subsample": 1.0,
-        "min_child_weight": 1.0,
-        "colsample_bytree": 1.0,
-        "colsample_bylevel": 1.0,
-        "eta": 0.05,
-        "steps": 1000,
-        "objective": "reg:squarederror",
-        "eval_metric": "rmse",
-        "tree_method": "hist",
-        "device": "cpu",
-    }
-    sample_weight: Optional[Dict[str, float]] = None
-    classification_threshold: float = 999
+    def __init__(self):
+        self.params = {
+            "booster": "gbtree",
+            "max_depth": 10,
+            "alpha": 0.0,
+            "lambda": 1.0,
+            "gamma": 0.0,
+            "subsample": 1.0,
+            "min_child_weight": 1.0,
+            "colsample_bytree": 1.0,
+            "colsample_bylevel": 1.0,
+            "eta": 0.05,
+            "steps": 1000,
+            "objective": "reg:squarederror",
+            "eval_metric": "rmse",
+            "tree_method": "hist",
+            "device": "cpu",
+        }
+        self.sample_weight: Optional[Dict[str, float]] = None
+        self.classification_threshold: float = 999
+
+    def __repr__(self) -> str:
+        params = ", ".join(f"{k}={v!r}" for k, v in vars(self).items())
+        return f"{self.__class__.__name__}({params})"
 
     # Catboost
 
@@ -486,7 +516,7 @@ class CatboostTuneParamsConfig:
     :param verbosity_during_final_model_training: Verbosity level during final model training. Defaults to 0.
     :param bootstrap_type: List of bootstrap types to consider. Defaults to ["Bayesian", "Poisson", "MVS", "No"].
     :param grow_policy: List of grow policies. Defaults to ["SymmetricTree"].
-    :param catboost_objective: CatBoost objective. Defaults to "MultiClass".
+    :param catboost_loss_function: CatBoost objective. Defaults to "MultiClass".
     :param catboost_eval_metric: CatBoost evaluation metric. Defaults to "MultiClass".
     :param catboost_eval_metric_tune_direction: Direction to tune the evaluation metric. Defaults to "minimize".
                                                 Must be any of ['minimize', 'maximize']
@@ -515,7 +545,7 @@ class CatboostTuneParamsConfig:
         verbosity_during_final_model_training: int = 0,
         bootstrap_type: Optional[List[str]] = None,
         grow_policy: Optional[List[str]] = None,
-        catboost_objective: str = "MultiClass",
+        catboost_loss_function: str = "MultiClass",
         catboost_eval_metric: str = "MultiClass",
         catboost_eval_metric_tune_direction: str = "minimize",
     ):
@@ -551,7 +581,7 @@ class CatboostTuneParamsConfig:
         )
         self.bootstrap_type = bootstrap_type
         self.grow_policy = grow_policy
-        self.catboost_objective = catboost_objective
+        self.catboost_loss_function = catboost_loss_function
         self.catboost_eval_metric = catboost_eval_metric
         self.catboost_eval_metric_tune_direction = catboost_eval_metric_tune_direction
 
@@ -562,6 +592,10 @@ class CatboostTuneParamsConfig:
         The implementation keeps backwards compatibility as this class mimics a Pydantic BaseModel.
         """
         return vars(self)
+
+    def __repr__(self) -> str:
+        params = ", ".join(f"{k}={v!r}" for k, v in vars(self).items())
+        return f"{self.__class__.__name__}({params})"
 
 
 class CatboostTuneParamsRegressionConfig:
@@ -587,7 +621,7 @@ class CatboostTuneParamsRegressionConfig:
     :param verbosity_during_final_model_training: Verbosity level during final model training. Defaults to 0.
     :param bootstrap_type: List of bootstrap types to consider. Defaults to ["Bayesian", "Poisson", "MVS", "No"].
     :param grow_policy: List of grow policies. Defaults to ["SymmetricTree"].
-    :param catboost_objective: CatBoost objective. Defaults to "RMSE".
+    :param catboost_loss_function: CatBoost objective. Defaults to "RMSE".
     :param catboost_eval_metric: CatBoost evaluation metric. Defaults to "RMSE".
     :param catboost_eval_metric_tune_direction: Direction to tune the evaluation metric. Defaults to "minimize".
                                                 Must be any of ['minimize', 'maximize']
@@ -616,7 +650,7 @@ class CatboostTuneParamsRegressionConfig:
         verbosity_during_final_model_training: int = 0,
         bootstrap_type: Optional[List[str]] = None,
         grow_policy: Optional[List[str]] = None,
-        catboost_objective: str = "RMSE",
+        catboost_loss_function: str = "RMSE",
         catboost_eval_metric: str = "RMSE",
         catboost_eval_metric_tune_direction: str = "minimize",
     ):
@@ -649,7 +683,7 @@ class CatboostTuneParamsRegressionConfig:
         )
         self.bootstrap_type = bootstrap_type
         self.grow_policy = grow_policy
-        self.catboost_objective = catboost_objective
+        self.catboost_loss_function = catboost_loss_function
         self.catboost_eval_metric = catboost_eval_metric
         self.catboost_eval_metric_tune_direction = catboost_eval_metric_tune_direction
 
@@ -661,38 +695,50 @@ class CatboostTuneParamsRegressionConfig:
         """
         return vars(self)
 
+    def __repr__(self) -> str:
+        params = ", ".join(f"{k}={v!r}" for k, v in vars(self).items())
+        return f"{self.__class__.__name__}({params})"
+
 
 class CatboostFinalParamConfig:
     """Define final hyperparameters for CatBoost (classification or multiclass) using CatBoost defaults."""
 
-    params = {
-        "iterations": 1000,
-        "depth": 6,
-        "learning_rate": 0.03,
-        "l2_leaf_reg": 3.0,
-        "eval_metric": "MultiClass",
-        "loss_function": "MultiClass",
-        "random_seed": 0,
-        "logging_level": "Silent",
-    }
-    sample_weight: Optional[Dict[str, float]] = None
-    classification_threshold: float = 0.5
+    def __init__(self):
+        self.params = {
+            "iterations": 1000,
+            "depth": 6,
+            "learning_rate": 0.03,
+            "l2_leaf_reg": 3.0,
+            "eval_metric": "MultiClass",
+            "loss_function": "MultiClass",
+            "random_seed": 0,
+            "logging_level": "Silent",
+        }
+        self.sample_weight: Optional[Dict[str, float]] = None
+        self.classification_threshold: float = 0.5
+
+    def __repr__(self) -> str:
+        params = ", ".join(f"{k}={v!r}" for k, v in vars(self).items())
+        return f"{self.__class__.__name__}({params})"
 
 
 class CatboostRegressionFinalParamConfig:
     """Define final hyperparameters for CatBoost (regression) using CatBoost defaults."""
 
-    params = {
-        "iterations": 1000,
-        "depth": 6,
-        "learning_rate": 0.03,
-        "l2_leaf_reg": 3.0,
-        "eval_metric": "RMSE",
-        "loss_function": "RMSE",
-        "random_seed": 0,
-        "logging_level": "Silent",
-    }
-    sample_weight: Optional[Dict[str, float]] = None
-    classification_threshold: float = (
-        999  # Not typically used in regression but kept for compatibility
-    )
+    def __init__(self):
+        self.params = {
+            "iterations": 1000,
+            "depth": 6,
+            "learning_rate": 0.03,
+            "l2_leaf_reg": 3.0,
+            "eval_metric": "RMSE",
+            "loss_function": "RMSE",
+            "random_seed": 0,
+            "logging_level": "Silent",
+        }
+        self.sample_weight: Optional[Dict[str, float]] = None
+        self.classification_threshold: float = 999
+
+    def __repr__(self) -> str:
+        params = ", ".join(f"{k}={v!r}" for k, v in vars(self).items())
+        return f"{self.__class__.__name__}({params})"

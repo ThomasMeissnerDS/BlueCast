@@ -26,16 +26,17 @@ class SchemaDetector:
         logging.info(
             "Start checking if DataFrame schema of new data is consistent with previous data."
         )
-        if len(df.columns) > len(self.train_schema):
-            new_cols = [col for col in df.columns if col not in self.train_schema]
+        new_cols = [col for col in df.columns if col not in self.train_schema]
+        missing_cols = [col for col in self.train_schema if col not in df.columns]
+
+        if new_cols:
             raise ValueError(
-                f"""The number of columns in the test dataset is greater than the number of columns
-            in the train dataset. Found the following new columns: {new_cols}."""
+                f"""The test dataset contains columns not present in the train dataset.
+            Found the following new columns: {new_cols}."""
             )
-        elif len(df.columns) < len(self.train_schema):
-            missing_cols = [col for col in self.train_schema if col not in df.columns]
+        if missing_cols:
             raise ValueError(
-                f"""The number of columns in the test dataset is smaller than the number of columns
-            in the train dataset. Missing the following columns: {missing_cols}."""
+                f"""The test dataset is missing columns present in the train dataset.
+            Missing the following columns: {missing_cols}."""
             )
         return df[self.train_schema]

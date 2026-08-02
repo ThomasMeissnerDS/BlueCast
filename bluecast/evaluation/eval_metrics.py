@@ -12,6 +12,7 @@ import numpy as np
 import pandas as pd
 from sklearn.metrics import (
     accuracy_score,
+    balanced_accuracy_score,
     classification_report,
     confusion_matrix,
     f1_score,
@@ -24,8 +25,14 @@ from sklearn.metrics import (
     recall_score,
     roc_auc_score,
     roc_curve,
-    root_mean_squared_error,
 )
+
+try:
+    from sklearn.metrics import root_mean_squared_error
+except ImportError:
+
+    def root_mean_squared_error(y_true, y_pred, **kwargs):
+        return mean_squared_error(y_true, y_pred, squared=False, **kwargs)
 
 
 def plot_lift_chart(y_probs: np.array, y_true: np.array, num_bins: int = 20) -> None:
@@ -165,6 +172,8 @@ def eval_classifier(
     logging.info(f"The Matthew correlation is {matthews}")
     accuracy = accuracy_score(y_true, y_classes)
     logging.info(f"The accuracy is {accuracy}")
+    balanced_accuracy = balanced_accuracy_score(y_true, y_classes)
+    logging.info(f"The balanced accuracy is {balanced_accuracy}")
     recall = recall_score(y_true, y_classes, average="weighted")
     logging.info(f"The recall is {recall}")
     f1_score_macro = f1_score(y_true, y_classes, average="macro", zero_division=0)
@@ -178,8 +187,8 @@ def eval_classifier(
         bll = balanced_log_loss(y_true, y_probs)
         logging.info(f"The balanced logloss is {bll}")
     else:
-        bll = 99
-        logging.info("Skip balanced logloss as number of classes is less than 2.")
+        bll = None
+        logging.info("Skip balanced logloss as number of classes is greater than 2.")
 
     if len(y_probs.shape) == 1:
         roc_auc = roc_auc_score(y_true, y_probs)
@@ -209,6 +218,7 @@ def eval_classifier(
     evaluation_scores = {
         "matthews": matthews,
         "accuracy": accuracy,
+        "balanced_accuracy": balanced_accuracy,
         "recall": recall,
         "f1_score_macro": f1_score_macro,
         "f1_score_micro": f1_score_micro,
@@ -216,7 +226,7 @@ def eval_classifier(
         "log_loss": logloss,
         "balanced_logloss": bll,
         "roc_auc": roc_auc,
-        "classfication_report": full_classification_report,
+        "classification_report": full_classification_report,
         "confusion_matrix": confusion_matrix(y_true, y_classes),
     }
     return evaluation_scores
@@ -224,23 +234,23 @@ def eval_classifier(
 
 def mean_squared_error_diff_sklearn_versions(y_true, y_preds):
     mean_squared_error_score = mean_squared_error(y_true, y_preds)
-    print(f"The MSE score is {mean_squared_error_score}")
+    logging.info(f"The MSE score is {mean_squared_error_score}")
     return mean_squared_error_score
 
 
 def root_mean_squared_error_diff_sklearn_versions(y_true, y_preds):
     root_mean_squared_error_score = root_mean_squared_error(y_true, y_preds)
-    print(f"The RMSE score is {root_mean_squared_error_score}")
+    logging.info(f"The RMSE score is {root_mean_squared_error_score}")
     return root_mean_squared_error_score
 
 
 def eval_regressor(y_true: np.ndarray, y_preds: np.ndarray) -> Dict[str, Any]:
     r2 = r2_score(y_true, y_preds)
-    print(f"The R2 score is {r2}")
+    logging.info(f"The R2 score is {r2}")
     mean_absolute_error_score = mean_absolute_error(y_true, y_preds)
-    print(f"The MAE score is {mean_absolute_error_score}")
+    logging.info(f"The MAE score is {mean_absolute_error_score}")
     median_absolute_error_score = median_absolute_error(y_true, y_preds)
-    print(f"The Median absolute error score is {median_absolute_error_score}")
+    logging.info(f"The Median absolute error score is {median_absolute_error_score}")
 
     mean_squared_error_score = mean_squared_error_diff_sklearn_versions(y_true, y_preds)
     root_mean_squared_error_score = root_mean_squared_error_diff_sklearn_versions(
@@ -289,7 +299,7 @@ class ClassificationEvalWrapper:
 
         if eval_against not in ["probas_all_classes", "probas_target_class", "classes"]:
             raise ValueError(
-                f"Argument eval_against must be one of ['probas_all_classes', 'probas_best_class', 'classes']. However {self.eval_against} has been provided."
+                f"Argument eval_against must be one of ['probas_all_classes', 'probas_target_class', 'classes']. However {self.eval_against} has been provided."
             )
 
     def classification_eval_func_wrapper(
@@ -361,7 +371,7 @@ class RegressionEvalWrapper:
         y_hat: Union[np.ndarray, pd.Series, list],
     ) -> Union[float, int]:
         """
-        Wrapper function to evaluate classification metrics.
+        Wrapper function to evaluate regression metrics.
 
         :param y_true: Numpy array of true targets.
         :param y_hat: NumPy array of predicted targets.

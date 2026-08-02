@@ -1,8 +1,11 @@
+import functools
 import hashlib
+import logging
 import math
+import re
 import warnings
 from collections import Counter
-from typing import Any, Dict, List, Literal, Optional, Union
+from typing import Any, Dict, List, Literal, Optional, Tuple, Union
 
 import numpy as np
 import pandas as pd
@@ -13,6 +16,8 @@ from sklearn.decomposition import PCA
 from sklearn.feature_selection import mutual_info_classif, mutual_info_regression
 from sklearn.manifold import TSNE
 from sklearn.preprocessing import StandardScaler
+
+logger = logging.getLogger(__name__)
 
 # For outlier detection enhancement
 try:
@@ -48,8 +53,9 @@ try:
     HAS_SCIPY = True
 except (ImportError, ValueError) as e:
     HAS_SCIPY = False
-    print(
-        f"Warning: scipy.stats could not be imported ({e}). Using fallback implementation for entropy calculations."
+    warnings.warn(
+        f"scipy.stats could not be imported ({e}). Using fallback implementation for entropy calculations.",
+        stacklevel=1,
     )
 
 # Try to import statsmodels, but provide fallback if import fails due to compatibility issues
@@ -59,8 +65,9 @@ try:
     HAS_STATSMODELS = True
 except (ImportError, ValueError) as e:
     HAS_STATSMODELS = False
-    print(
-        f"Warning: statsmodels could not be imported ({e}). Regression analysis will use simplified fallback implementation."
+    warnings.warn(
+        f"statsmodels could not be imported ({e}). Regression analysis will use simplified fallback implementation.",
+        stacklevel=1,
     )
 
 warnings.filterwarnings("ignore", "is_categorical_dtype")
@@ -88,22 +95,18 @@ def _create_data_hash(df: pd.DataFrame, *args) -> str:
 def _cached_plot_computation(func):
     """Decorator to cache expensive plot computations."""
 
+    @functools.wraps(func)
     def wrapper(*args, **kwargs):
-        # Create cache key from function name and arguments
         func_name = func.__name__
         cache_key = f"{func_name}_{_create_data_hash(*args)}_{str(kwargs)}"
 
-        # Check if result is cached
         if cache_key in _plot_cache:
             return _plot_cache[cache_key]
 
-        # Compute and cache result
         result = func(*args, **kwargs)
         _plot_cache[cache_key] = result
 
-        # Limit cache size to prevent memory issues
         if len(_plot_cache) > 50:
-            # Remove oldest entries
             oldest_keys = list(_plot_cache.keys())[:-25]
             for key in oldest_keys:
                 del _plot_cache[key]
@@ -127,13 +130,20 @@ def _entropy_fallback(p_x):
     return -np.sum(p_x * np.log(p_x))
 
 
-def find_bind_with_with_freedman_diaconis(data: np.ndarray):
-    # Calculate the IQR
-    iqr = np.percentile(data, 75) - np.percentile(data, 25)
+def find_bin_width_with_freedman_diaconis(data: np.ndarray) -> float:
+    """Calculate optimal histogram bin width using the Freedman-Diaconis rule.
 
-    # Calculate the bin width using the Freedman-Diaconis rule
+    :param data: 1D array of numerical data.
+    :returns: Bin width as a float. Returns 0.0 when IQR is zero (constant data).
+    """
+    iqr = np.percentile(data, 75) - np.percentile(data, 25)
     bin_width_fd = 2 * iqr / np.power(len(data), 1 / 3)
     return bin_width_fd
+
+
+def find_bind_with_with_freedman_diaconis(data: np.ndarray) -> float:
+    """Deprecated: use find_bin_width_with_freedman_diaconis instead."""
+    return find_bin_width_with_freedman_diaconis(data)
 
 
 def plot_pie_chart(
@@ -251,7 +261,8 @@ def plot_count_pairs(
     cat_cols: List[str],
     df_aliases: Optional[List[str]] = None,
     palette: Optional[List[str]] = None,
-) -> None:
+    show: bool = True,
+) -> List[go.Figure]:
     """
     Compare the counts between two DataFrames of each categorical column in the provided list.
 
@@ -261,23 +272,33 @@ def plot_count_pairs(
         Format: [df_1 representation, df_2 representation]
     :param cat_cols: List with strings indicating categorical column names to plot
     :param palette: List with hexadecimal representations of colors in the RGB color model
+    :param show: Whether to display each plot.
+    :returns: List of plotly Figure objects, one per column.
     """
-    if isinstance(df_aliases, List):
-        assert len(df_aliases) == 2
+    if isinstance(df_aliases, list) and len(df_aliases) != 2:
+        raise ValueError("df_aliases must be a list of exactly 2 strings.")
 
+    figures: List[go.Figure] = []
     for feature in cat_cols:
         order = sorted(df_1[feature].unique())
-        plot_count_pair(
+        fig = plot_count_pair(
             df_1,
             df_2,
             df_aliases=df_aliases,
             feature=feature,
             order=order,
             palette=palette,
+            show=show,
         )
+        figures.append(fig)
+    return figures
 
 
-def univariate_plots(df: pd.DataFrame, col_requires_at_least_n_values: int = 5) -> None:
+def univariate_plots(
+    df: pd.DataFrame,
+    col_requires_at_least_n_values: int = 5,
+    show: bool = True,
+) -> List[go.Figure]:
     """
     Plots univariate plots for all the columns in the dataframe. Only numerical columns are expected.
     The target column does not need to be part of the provided DataFrame.
@@ -287,16 +308,20 @@ def univariate_plots(df: pd.DataFrame, col_requires_at_least_n_values: int = 5) 
     :param df: DataFrame holding the features.
     :param col_requires_at_least_n_values: Minimum number of unique values required to plot the feature.
         If number of unique features is less, the column will be skipped.
+    :param show: Whether to display the plots. Set to False to collect figures without displaying.
+    :returns: List of plotly Figure objects, one per plotted column.
     """
+    figures: List[go.Figure] = []
     for col in df.columns.to_list():
         if df[col].nunique() >= col_requires_at_least_n_values:
-            nb_bins = len(
-                np.arange(
-                    min(df[col]),
-                    max(df[col]),
-                    max(find_bind_with_with_freedman_diaconis(df[col].values), 0.1),
-                )
+            col_clean = df[col].dropna()
+            if len(col_clean) < 2:
+                continue
+            bin_width = max(
+                find_bin_width_with_freedman_diaconis(col_clean.values), 0.1
             )
+            col_range = col_clean.max() - col_clean.min()
+            nb_bins = max(int(col_range / bin_width), 1) if col_range > 0 else 10
 
             fig = make_subplots(
                 rows=1,
@@ -305,7 +330,6 @@ def univariate_plots(df: pd.DataFrame, col_requires_at_least_n_values: int = 5) 
                 specs=[[{"secondary_y": False}, {"secondary_y": False}]],
             )
 
-            # Histogram
             fig.add_trace(
                 go.Histogram(
                     x=df[col],
@@ -318,7 +342,6 @@ def univariate_plots(df: pd.DataFrame, col_requires_at_least_n_values: int = 5) 
                 col=1,
             )
 
-            # Box plot
             fig.add_trace(
                 go.Box(
                     y=df[col],
@@ -338,29 +361,36 @@ def univariate_plots(df: pd.DataFrame, col_requires_at_least_n_values: int = 5) 
                 title_text=f"Univariate Analysis: {col}", showlegend=False
             )
 
-            fig.show()
+            if show:
+                fig.show()
+            figures.append(fig)
+    return figures
 
 
-def bi_variate_plots(df: pd.DataFrame, target: str, num_cols_grid: int = 4) -> None:
+def bi_variate_plots(
+    df: pd.DataFrame, target: str, num_cols_grid: int = 4, show: bool = True
+) -> go.Figure:
     """
     Plots bivariate plots for all column combinations in the dataframe.
     The target column must be part of the provided DataFrame.
-    Param num_cols_grid specifies how many columns the grid shall have.
 
     Expects numeric columns only.
+
+    :param df: Pandas DataFrame with features and target.
+    :param target: Name of the target column.
+    :param num_cols_grid: Number of columns in the subplot grid.
+    :param show: Whether to display the plot.
+    :returns: The plotly Figure object.
     """
     if target not in df.columns.to_list():
         raise ValueError("Target column must be part of the provided DataFrame")
 
-    # Get the list of column names except for the target column
     variables = [col for col in df.columns if col != target]
 
-    # Define the grid layout based on the number of variables
     num_variables = len(variables)
-    num_cols = num_cols_grid  # Number of columns in the grid
+    num_cols = num_cols_grid
     num_rows = (num_variables + num_cols - 1) // num_cols
 
-    # Create subplots
     fig = make_subplots(
         rows=num_rows,
         cols=num_cols,
@@ -370,11 +400,9 @@ def bi_variate_plots(df: pd.DataFrame, target: str, num_cols_grid: int = 4) -> N
         ],
     )
 
-    # Define a color palette for the categories
     unique_categories = df[target].unique()
     colors = px.colors.qualitative.Set1[: len(unique_categories)]
 
-    # Generate violin plots for each variable with respect to the target
     for i, variable in enumerate(variables):
         row = i // num_cols + 1
         col = i % num_cols + 1
@@ -386,7 +414,7 @@ def bi_variate_plots(df: pd.DataFrame, target: str, num_cols_grid: int = 4) -> N
                     y=data_subset[variable],
                     name=f"{category}",
                     line_color=colors[j],
-                    showlegend=(i == 0),  # Only show legend for first subplot
+                    showlegend=(i == 0),
                 ),
                 row=row,
                 col=col,
@@ -399,7 +427,9 @@ def bi_variate_plots(df: pd.DataFrame, target: str, num_cols_grid: int = 4) -> N
         title_text="Bivariate Analysis", height=300 * num_rows, showlegend=True
     )
 
-    fig.show()
+    if show:
+        fig.show()
+    return fig
 
 
 def correlation_heatmap(df: pd.DataFrame, show: bool = True) -> go.Figure:
@@ -411,8 +441,7 @@ def correlation_heatmap(df: pd.DataFrame, show: bool = True) -> go.Figure:
     Returns:
     - plotly.graph_objects.Figure: The correlation heatmap figure
     """
-    # Calculate the correlation matrix
-    corr = df.corr()
+    corr = df.corr(numeric_only=True)
 
     # Generate a mask for the upper triangle
     mask = np.triu(np.ones_like(corr, dtype=bool))
@@ -460,8 +489,7 @@ def correlation_to_target(
     if target not in df.columns.to_list():
         raise ValueError("Target column must be part of the provided DataFrame")
 
-    # Calculate the correlation matrix
-    corr = df.corr()
+    corr = df.corr(numeric_only=True)
 
     # Get correlations without target
     corrs = corr[target].drop([target])
@@ -991,29 +1019,34 @@ def plot_pca_biplot(
 def plot_tsne(
     df: pd.DataFrame,
     target: str,
-    perplexity=50,
-    random_state=42,
+    perplexity: int = 50,
+    random_state: int = 42,
     scale_data: bool = True,
     show: bool = True,
 ) -> go.Figure:
     """
     Plots t-SNE for the dataframe. The target column must be part of the provided DataFrame.
 
-    Expects numeric columns only.
-    :param df: Pandas DataFrame. Should include the target variable.
-    :param target: String indicating which column is the target column. Must be part of the provided DataFrame.
-    :param perplexity: The perplexity parameter for t-SNE
-    :param random_state: The random state for t-SNE
-    :param scale_data: If true, standard scaling will be performed before applying t-SNE, otherwise the raw data is used.
-    :param show: Whether to display the plot
+    Expects numeric columns only. Rows with NaN values are dropped before fitting.
 
-    Returns:
-    - plotly.graph_objects.Figure: The t-SNE plot figure
+    :param df: Pandas DataFrame. Should include the target variable.
+    :param target: String indicating which column is the target column.
+    :param perplexity: The perplexity parameter for t-SNE.
+    :param random_state: The random state for t-SNE.
+    :param scale_data: If true, standard scaling will be performed before applying t-SNE.
+    :param show: Whether to display the plot.
+    :returns: The t-SNE plotly Figure.
     """
     if target not in df.columns.to_list():
         raise ValueError("Target column must be part of the provided DataFrame")
 
-    df_features = df.drop([target], axis=1)
+    df_clean = df.dropna()
+    if len(df_clean) < 10:
+        raise ValueError(
+            f"Not enough non-NaN rows for t-SNE (got {len(df_clean)}, need >= 10)."
+        )
+
+    df_features = df_clean.drop([target], axis=1)
 
     if scale_data:
         scaler = StandardScaler()
@@ -1021,14 +1054,16 @@ def plot_tsne(
     else:
         df_scaled = df_features.values
 
-    tsne = TSNE(n_components=2, perplexity=perplexity, random_state=random_state)
+    effective_perplexity = min(perplexity, len(df_clean) - 1)
+    tsne = TSNE(
+        n_components=2, perplexity=effective_perplexity, random_state=random_state
+    )
     tsne_result = tsne.fit_transform(df_scaled)
 
-    # Create t-SNE plot
     fig = px.scatter(
         x=tsne_result[:, 0],
         y=tsne_result[:, 1],
-        color=df[target],
+        color=df_clean[target],
         title="t-SNE Visualization",
         labels={"x": "Component 1", "y": "Component 2"},
     )
@@ -1038,12 +1073,17 @@ def plot_tsne(
     return fig
 
 
-def conditional_entropy(x, y):
-    # entropy of x given y
+def conditional_entropy(x: pd.Series, y: pd.Series) -> float:
+    """Calculate the conditional entropy H(X|Y).
+
+    :param x: Categorical series.
+    :param y: Categorical series to condition on.
+    :returns: Conditional entropy as a float.
+    """
     y_counter = Counter(y)
     xy_counter = Counter(list(zip(x, y)))
     total_occurrences = sum(y_counter.values())
-    entropy = 0
+    entropy = 0.0
     for xy in xy_counter.keys():
         p_xy = xy_counter[xy] / total_occurrences
         p_y = y_counter[xy[1]] / total_occurrences
@@ -1051,20 +1091,29 @@ def conditional_entropy(x, y):
     return entropy
 
 
-def theil_u(x, y):
+def theil_u(x: pd.Series, y: pd.Series) -> float:
+    """Calculate Theil's U (uncertainty coefficient) of X given Y.
+
+    Measures the association between two categorical variables. Returns a value
+    between 0 (no association) and 1 (perfect association). Note: Theil's U is
+    asymmetric, so theil_u(x, y) != theil_u(y, x) in general.
+
+    :param x: Categorical series.
+    :param y: Categorical series.
+    :returns: Theil's U coefficient as a float. Returns 1.0 if x has zero entropy (constant).
+    """
     s_xy = conditional_entropy(x, y)
     x_counter = Counter(x)
     total_occurrences = sum(x_counter.values())
     p_x = list(map(lambda n: n / total_occurrences, x_counter.values()))
 
-    # Use scipy entropy if available, otherwise use fallback implementation
     if HAS_SCIPY:
         s_x = ss.entropy(p_x)
     else:
         s_x = _entropy_fallback(p_x)
 
     if s_x == 0:
-        return 1
+        return 1.0
     else:
         return (s_x - s_xy) / s_x
 
@@ -1072,11 +1121,13 @@ def theil_u(x, y):
 @_cached_plot_computation
 def plot_theil_u_heatmap(
     data: pd.DataFrame, columns: List[Union[str, int, float]], show: bool = True
-) -> go.Figure:
+) -> Tuple[go.Figure, np.ndarray]:
     """Plot a heatmap for categorical data using Theil's U.
 
-    Returns:
-    - plotly.graph_objects.Figure: The Theil's U heatmap figure
+    :param data: DataFrame containing the categorical columns.
+    :param columns: List of categorical column names to compute Theil's U for.
+    :param show: Whether to display the plot.
+    :returns: Tuple of (plotly Figure, Theil's U matrix as numpy array).
     """
     theil_matrix = np.zeros((len(columns), len(columns)))
 
@@ -1160,26 +1211,31 @@ def check_unique_values(
 
 
 def plot_classification_target_distribution_within_categories(
-    df: pd.DataFrame, cat_columns: List[str], target_col: str
-) -> None:
+    df: pd.DataFrame,
+    cat_columns: List[str],
+    target_col: str,
+    show: bool = True,
+) -> List[go.Figure]:
     """
     Plot distribution of target across categorical features.
 
-    This suitable for classification tasks only.
-    :param df: Pandas dataFrame. Must include the target column.
+    This is suitable for classification tasks only.
+
+    :param df: Pandas DataFrame. Must include the target column.
     :param cat_columns: List of categorical column names.
     :param target_col: String indicating the target column name.
-    :return:
+    :param show: Whether to display the plots.
+    :returns: List of plotly Figure objects, one per categorical column.
     """
     if target_col not in df.columns.to_list():
         raise KeyError("Target column must be part of the provided DataFrame")
 
+    figures: List[go.Figure] = []
     for col in cat_columns:
         contingency_table = pd.crosstab(df[col], df[target_col], normalize="index")
 
         fig = go.Figure()
 
-        # Add traces for each target class
         for _i, target_class in enumerate(contingency_table.columns):
             fig.add_trace(
                 go.Bar(
@@ -1199,7 +1255,10 @@ def plot_classification_target_distribution_within_categories(
             showlegend=True,
         )
 
-        fig.show()
+        if show:
+            fig.show()
+        figures.append(fig)
+    return figures
 
 
 def mutual_info_to_target(
@@ -1287,7 +1346,8 @@ def plot_ecdf(
         fig = go.Figure()
 
         for col in columns:
-            sorted_col = np.sort(df[col])
+            col_clean = df[col].dropna()
+            sorted_col = np.sort(col_clean)
             y = np.arange(1, len(sorted_col) + 1) / len(sorted_col)
 
             fig.add_trace(go.Scatter(x=sorted_col, y=y, mode="lines", name=col))
@@ -1304,13 +1364,14 @@ def plot_ecdf(
     else:
         figures = []
         for col in columns:
-            nb_bins = len(
-                np.arange(
-                    min(df[col]),
-                    max(df[col]),
-                    max(find_bind_with_with_freedman_diaconis(df[col].values), 0.1),
-                )
+            col_clean = df[col].dropna()
+            if len(col_clean) < 2:
+                continue
+            bin_width = max(
+                find_bin_width_with_freedman_diaconis(col_clean.values), 0.1
             )
+            col_range = col_clean.max() - col_clean.min()
+            nb_bins = max(int(col_range / bin_width), 1) if col_range > 0 else 10
 
             fig = make_subplots(
                 rows=1,
@@ -1319,8 +1380,7 @@ def plot_ecdf(
                 specs=[[{"secondary_y": False}, {"secondary_y": False}]],
             )
 
-            # Plot ECDF
-            sorted_col = np.sort(df[col])
+            sorted_col = np.sort(col_clean)
             ecdf_y = np.arange(1, len(sorted_col) + 1) / len(sorted_col)
 
             fig.add_trace(
@@ -1419,13 +1479,18 @@ def plot_error_distributions(
     prediction_error: str,
     num_cols_grid: int = 1,
     max_x_elements: int = 5,
-) -> None:
+    show: bool = True,
+) -> List[go.Figure]:
     """
-    Plots bivariate plots for each column in the dataframe with respect to the target.
-    Each subplot represents unique values of the target column.
-    The 'prediction_error' is plotted using unique values of the target column as the hue.
-    Param num_cols_grid specifies how many columns the grid shall have.
-    max_x_elements determines the maximum number of unique values on the x-axis per plot.
+    Plots violin plots for each feature column with respect to prediction error, colored by target.
+
+    :param df: DataFrame with features, target, and prediction_error columns.
+    :param target: Name of the target column.
+    :param prediction_error: Name of the prediction error column.
+    :param num_cols_grid: Number of columns in the subplot grid (unused, kept for API compatibility).
+    :param max_x_elements: Maximum number of unique values on the x-axis per plot before splitting.
+    :param show: Whether to display the plots.
+    :returns: List of plotly Figure objects.
     """
     if target not in df.columns.to_list():
         raise ValueError("Target column must be part of the provided DataFrame")
@@ -1434,19 +1499,17 @@ def plot_error_distributions(
             "Prediction error column must be part of the provided DataFrame"
         )
 
-    # Get the list of column names except for the target and prediction error columns
     variables = [
         col
         for col in df.columns
         if col not in [target, prediction_error, "prediction", "predictions"]
     ]
 
-    # Generate plots for each variable
+    figures: List[go.Figure] = []
     for variable in variables:
         unique_values = sorted(df[variable].unique())
         unique_values_count = len(unique_values)
 
-        # Split the plot into multiple figures if x-axis elements exceed the threshold
         if unique_values_count > max_x_elements:
             num_splits = (unique_values_count + max_x_elements - 1) // max_x_elements
 
@@ -1465,10 +1528,10 @@ def plot_error_distributions(
                 )
 
                 fig.update_xaxes(tickangle=90)
-                fig.show()
-
+                if show:
+                    fig.show()
+                figures.append(fig)
         else:
-            # If the number of unique values is within the limit, plot normally
             fig = px.violin(
                 df,
                 x=variable,
@@ -1478,14 +1541,17 @@ def plot_error_distributions(
             )
 
             fig.update_xaxes(tickangle=90)
-            fig.show()
+            if show:
+                fig.show()
+            figures.append(fig)
+    return figures
 
 
 def plot_andrews_curve(
     df: pd.DataFrame,
     target: str,
     n_samples: Optional[int] = 200,
-    random_state=500,
+    random_state: int = 500,
     show: bool = True,
 ) -> go.Figure:
     """
@@ -1713,17 +1779,23 @@ def plot_benfords_law(df: pd.DataFrame, column: str, show: bool = True) -> go.Fi
         )
     )
 
-    # Calculate chi-square test statistic for reference
     expected_counts = expected_freq * len(first_digits)
-    chi_square = 0
+    chi_square = 0.0
     for digit in digits:
         observed = observed_freq.get(digit, 0) * len(first_digits)
         expected = expected_counts[digit - 1]
         if expected > 0:
             chi_square += (observed - expected) ** 2 / expected
 
+    dof = len(digits) - 1  # degrees of freedom = 8
+    if HAS_SCIPY:
+        p_value = 1 - ss.chi2.cdf(chi_square, dof)
+        p_str = f", p = {p_value:.4f}"
+    else:
+        p_str = ""
+
     fig.update_layout(
-        title=f"Benford's Law Analysis: {column}<br><sub>χ² = {chi_square:.2f}, n = {len(first_digits)}</sub>",
+        title=f"Benford's Law Analysis: {column}<br><sub>χ² = {chi_square:.2f}{p_str}, n = {len(first_digits)}</sub>",
         xaxis_title="First Digit",
         yaxis_title="Frequency",
         barmode="group",
@@ -2147,6 +2219,11 @@ def _dashboard_update_summary(
     return html.Div(components)
 
 
+def _sql_equals_to_pandas(query: str) -> str:
+    """Convert standalone SQL '=' to pandas '==' without corrupting >=, <=, !=, ==."""
+    return re.sub(r"(?<![<>!=])=(?!=)", "==", query)
+
+
 def _apply_pandas_query_filter(df: pd.DataFrame, query_text: str) -> pd.DataFrame:
     """
     Apply SQL-like filtering using pandas query syntax and operations.
@@ -2159,37 +2236,28 @@ def _apply_pandas_query_filter(df: pd.DataFrame, query_text: str) -> pd.DataFram
         return df.copy()
 
     try:
-        # Clean up the query text
         query = query_text.strip()
 
-        # Handle simple SQL SELECT statements by converting to pandas operations
         if query.upper().startswith("SELECT"):
-            # Extract the part after WHERE if it exists
             if " WHERE " in query.upper():
-                where_part = (
-                    query.split(" WHERE ")[1].split(" FROM ")[0]
-                    if " FROM " in query.upper()
-                    else query.split(" WHERE ")[1]
-                )
-                # Convert common SQL operators to pandas query syntax
-                where_part = where_part.replace("=", "==")
+                where_idx = query.upper().index(" WHERE ") + len(" WHERE ")
+                where_part = query[where_idx:]
+                if " FROM " in where_part.upper():
+                    from_idx = where_part.upper().index(" FROM ")
+                    where_part = where_part[:from_idx]
+                where_part = _sql_equals_to_pandas(where_part)
                 where_part = where_part.replace("AND", "&").replace("and", "&")
                 where_part = where_part.replace("OR", "|").replace("or", "|")
-                # Apply the filter
                 return df.query(where_part)
             else:
-                # SELECT without WHERE, return all data
                 return df.copy()
         else:
-            # Assume it's already in pandas query format
-            # Convert common SQL operators just in case
-            query = query.replace("=", "==")
+            query = _sql_equals_to_pandas(query)
             query = query.replace("AND", "&").replace("and", "&")
             query = query.replace("OR", "|").replace("or", "|")
             return df.query(query)
 
     except Exception as e:
-        # If query fails, return original dataframe and let the caller handle the error
         raise ValueError(f"Invalid query syntax: {str(e)}")
 
 
@@ -3227,53 +3295,7 @@ def _create_benford_plot_classification(
     dark_theme_layout: dict,
 ) -> go.Figure:
     """Create Benford's Law analysis plot for classification dashboard."""
-    if selected_feature_x in numeric_cols:
-        try:
-            fig = plot_benfords_law(df, selected_feature_x, show=False)
-            fig.update_layout(**dark_theme_layout)
-            fig.update_layout(
-                title={
-                    "text": f"🔍 Benford's Law Analysis: {selected_feature_x}",
-                    "font": {"color": "#ffffff", "size": 18},
-                }
-            )
-        except Exception as e:
-            fig = go.Figure()
-            fig.add_annotation(
-                text=f"❌ Benford's Law analysis failed: {str(e)}",
-                x=0.5,
-                y=0.5,
-                xref="paper",
-                yref="paper",
-                showarrow=False,
-                font=dict(size=16, color="#e74c3c"),
-            )
-            fig.update_layout(**dark_theme_layout)
-            fig.update_layout(
-                title={
-                    "text": "🔍 Benford's Law Analysis",
-                    "font": {"color": "#ffffff", "size": 18},
-                }
-            )
-    else:
-        fig = go.Figure()
-        fig.add_annotation(
-            text="⚠️ Benford's Law analysis requires a numerical feature",
-            x=0.5,
-            y=0.5,
-            xref="paper",
-            yref="paper",
-            showarrow=False,
-            font=dict(size=16, color="#f39c12"),
-        )
-        fig.update_layout(**dark_theme_layout)
-        fig.update_layout(
-            title={
-                "text": "🔍 Benford's Law Analysis",
-                "font": {"color": "#ffffff", "size": 18},
-            }
-        )
-    return fig
+    return _create_benford_plot(selected_feature_x, df, numeric_cols, dark_theme_layout)
 
 
 def _create_category_frequency_plot_classification(
@@ -3283,34 +3305,7 @@ def _create_category_frequency_plot_classification(
     dark_theme_layout: dict,
 ) -> go.Figure:
     """Create category frequency plot for classification dashboard."""
-    if selected_feature_x in categorical_cols:
-        fig = plot_category_frequency(df, selected_feature_x, show=False)
-        fig.update_layout(**dark_theme_layout)
-        fig.update_layout(
-            title={
-                "text": f"📊 Category Frequency: {selected_feature_x}",
-                "font": {"color": "#ffffff", "size": 18},
-            }
-        )
-    else:
-        fig = go.Figure()
-        fig.add_annotation(
-            text="⚠️ Category frequency requires a categorical/text feature",
-            x=0.5,
-            y=0.5,
-            xref="paper",
-            yref="paper",
-            showarrow=False,
-            font=dict(size=16, color="#f39c12"),
-        )
-        fig.update_layout(**dark_theme_layout)
-        fig.update_layout(
-            title={
-                "text": "📊 Category Frequency",
-                "font": {"color": "#ffffff", "size": 18},
-            }
-        )
-    return fig
+    return _create_category_frequency_plot(selected_feature_x, df, dark_theme_layout)
 
 
 def _dashboard_update_classification_plot(

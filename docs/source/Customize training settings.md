@@ -201,8 +201,8 @@ y_probs, y_classes = automl.predict(df_val)
 ```
 
 By default `BlueCastCV` trains five models. This can be adjusted in the
-training config via `bluecast_cv_train_n_model`, which expects a tuple like (5, 3)
-to train 5 models via 3 repeats (so 15 models in total).
+training config via `bluecast_cv_train_n_model`, which expects a tuple
+like (5, 3) to train 5 models via 3 repeats (so 15 models in total).
 
 Also here a variant for regression is available:
 
@@ -357,17 +357,20 @@ BlueCast offers various settings to adjust training speed and performance:
   the performance. This is especially useful for large datasets where the tuning
   process takes too long for each trial and thus the tuning process is not able
   to test many hyperparameters (at least 15 rounds).
-* enable `enable_grid_search_fine_tuning`: This will enable another fine-tuning step
-  after the Bayesian optimization. This will require two or three times of the
-  original tuning time additionally. Marginal performance increase possible.
-* enable `precise_cv_tuning`: This will enable a more robust cross-validation routine
-  that will apply random noise to the eval dataset to find even more robust
-  hyperparameters. This is an experimental feature and will slow down the training
-  massively as it runs without parallelism and without trial pruning.
-* Adjust `early_stopping_rounds` (if None, no early stopping happens). By default,
-  early stopping is enabled and will stop the final training if the eval metric does
-  not improve for the given number of rounds. Early stopping returns the best
-  model, not the one after stopping. If `early_stopping_rounds`
+* enable `enable_grid_search_fine_tuning`: This will enable another
+  fine-tuning step after the Bayesian optimization. This will require
+  two or three times of the original tuning time additionally.
+  Marginal performance increase possible.
+* enable `precise_cv_tuning`: This will enable a more robust
+  cross-validation routine that will apply random noise to the eval
+  dataset to find even more robust hyperparameters. This is an
+  experimental feature and will slow down the training massively as
+  it runs without parallelism and without trial pruning.
+* Adjust `early_stopping_rounds` (if None, no early stopping happens).
+  By default, early stopping is enabled and will stop the final
+  training if the eval metric does not improve for the given number
+  of rounds. Early stopping returns the best model, not the one
+  after stopping. If `early_stopping_rounds`
   is set, `use_full_data_for_final_model` must be set to `False` to prevent
   overfitting.
 * Adjust `autotune_n_random_seeds` to optimize the random seed. This will run the

@@ -90,7 +90,7 @@ class CatboostModel(CatboostBaseModel):
                 x_train, y_train
             )
             x_test, y_test = self.custom_in_fold_preprocessor.transform(
-                x_test, y_test, predicton_mode=False
+                x_test, y_test, prediction_mode=False
             )
 
         # Optionally concatenate train + test if config says so
@@ -120,7 +120,7 @@ class CatboostModel(CatboostBaseModel):
 
         # If we detect XGBoost parameters, it means configuration got corrupted
         # Fall back to safe CatBoost defaults
-        if "objective" in final_params or "booster" in final_params:
+        if "booster" in final_params:
             print(
                 "WARNING: Detected XGBoost parameters in CatBoost config. Using safe defaults."
             )
@@ -179,7 +179,7 @@ class CatboostModel(CatboostBaseModel):
         self.model = CatBoostClassifier(**final_params)
 
         # Train model with or without an eval set
-        if test_pool is not None and not test_pool.is_empty():
+        if test_pool is not None and not test_pool.is_empty_:
             self.model.fit(
                 train_pool,
                 # cat_features=self.cat_columns,
@@ -219,7 +219,7 @@ class CatboostModel(CatboostBaseModel):
         def objective(trial):
             # Example: Build CatBoost param dictionary from conf_catboost
             params = {
-                "objective": self.conf_catboost.catboost_objective,
+                "loss_function": self.conf_catboost.catboost_loss_function,
                 "eval_metric": self.conf_catboost.catboost_eval_metric,
                 "random_seed": self.conf_training.global_random_state,
                 "learning_rate": trial.suggest_float(
@@ -279,8 +279,8 @@ class CatboostModel(CatboostBaseModel):
                 ),
             }
             if params["bootstrap_type"] in ["Bayesian", "No"]:
-                params["bagging_temperature"] = None
-                params["subsample"] = None
+                params.pop("bagging_temperature", None)
+                params.pop("subsample", None)
 
             params = {**params, **train_on}
 
@@ -441,7 +441,7 @@ class CatboostModel(CatboostBaseModel):
                 best_param = study.best_trial.params
 
                 final_best_params = {
-                    "objective": self.conf_catboost.catboost_objective,
+                    "loss_function": self.conf_catboost.catboost_loss_function,
                     "eval_metric": self.conf_catboost.catboost_eval_metric,
                     "random_seed": self.conf_training.global_random_state,
                     "depth": best_param["depth"],
@@ -543,7 +543,7 @@ class CatboostModel(CatboostBaseModel):
                     )
                 )
                 X_val_fold, y_val_fold = self.custom_in_fold_preprocessor.transform(
-                    X_val_fold, y_val_fold, predicton_mode=False
+                    X_val_fold, y_val_fold, prediction_mode=False
                 )
                 X_test_fold, y_test_fold = self.custom_in_fold_preprocessor.transform(
                     x_test, y_test
@@ -617,7 +617,7 @@ class CatboostModel(CatboostBaseModel):
         logging.info("Start grid search fine tuning of CatBoost model.")
 
         def objective(trial):
-            tuned_params = self._get_param_space_fpr_grid_search(trial)
+            tuned_params = self._get_param_space_for_grid_search(trial)
 
             if self.conf_params_catboost.sample_weight:
                 weights = class_weight.compute_sample_weight("balanced", y_train)
@@ -720,7 +720,7 @@ class CatboostModel(CatboostBaseModel):
 
         if self.custom_in_fold_preprocessor:
             df, _ = self.custom_in_fold_preprocessor.transform(
-                df, None, predicton_mode=True
+                df, None, prediction_mode=True
             )
 
         if not self.model:
@@ -764,7 +764,7 @@ class CatboostModel(CatboostBaseModel):
 
         if self.custom_in_fold_preprocessor:
             df, _ = self.custom_in_fold_preprocessor.transform(
-                df, None, predicton_mode=True
+                df, None, prediction_mode=True
             )
 
         if not self.model:

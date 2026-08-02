@@ -14,17 +14,7 @@ import xgboost as xgb
 from bluecast.config.training_config import TrainingConfig
 from bluecast.preprocessing.encode_target_labels import TargetLabelEncoder
 
-# Configure logging
-logging.basicConfig(level=logging.INFO)
-logger = logging.getLogger()
-
-
-# Capture warnings and redirect them to logging
-def warning_to_logger(message, category, filename, lineno, file=None, line=None):
-    logger.warning(f"{filename}:{lineno}: {category.__name__}: {message}")
-
-
-warnings.showwarning = warning_to_logger
+logger = logging.getLogger(__name__)
 
 
 def check_gpu_support() -> Dict[str, str]:
@@ -34,7 +24,8 @@ def check_gpu_support() -> Dict[str, str]:
     d_train = xgb.DMatrix(data, label=label)
 
     params_list = [
-        {"tree_method": "gpu_hist"},
+        {"tree_method": "hist", "device": "cuda"},
+        {"tree_method": "hist", "device": "gpu"},
     ]
 
     for params in params_list:
@@ -89,12 +80,15 @@ def save_to_production(
     """
     logging.info("Start saving class instance.")
     if file_path:
-        full_path = file_path + file_name + file_type
+        full_path = (
+            file_path + file_type
+            if file_name == "automl_instance"
+            else file_path + file_name + file_type
+        )
     else:
         full_path = file_name + file_type
-    filehandler = open(full_path, "wb")
-    pickle.dump(class_instance, filehandler)
-    filehandler.close()
+    with open(full_path, "wb") as filehandler:
+        pickle.dump(class_instance, filehandler)
 
 
 def load_for_production(
@@ -118,7 +112,7 @@ def load_for_production(
     try:
         with open(full_path, "rb") as filehandler:
             automl_model = pickle.load(filehandler)
-    except Exception:
+    except FileNotFoundError:
         with open(full_path + file_type, "rb") as filehandler:
             automl_model = pickle.load(filehandler)
     return automl_model
@@ -231,7 +225,7 @@ def save_out_of_fold_data(
         ) as f:
             oof_data_copy.to_parquet(f)
 
-    if isinstance(training_config.out_of_fold_dataset_store_path, str):
+    elif isinstance(training_config.out_of_fold_dataset_store_path, str):
         oof_data_copy.to_parquet(
             training_config.out_of_fold_dataset_store_path
             + f"oof_data_{training_config.global_random_state}.parquet"

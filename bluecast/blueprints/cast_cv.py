@@ -17,9 +17,10 @@ from bluecast.config.training_config import (
 from bluecast.conformal_prediction.conformal_prediction import (
     ConformalPredictionWrapper,
 )
+from bluecast.ensemble.ensemble_config import EnsembleConfig
+from bluecast.ensemble.mean_blending import blend_predictions_mean
 from bluecast.evaluation.eval_metrics import ClassificationEvalWrapper
 from bluecast.experimentation.tracking import ExperimentTracker
-from bluecast.ml_modelling.catboost import CatboostModel
 from bluecast.preprocessing.custom import CustomPreprocessing
 from bluecast.preprocessing.feature_selection import BoostaRootaWrapper
 
@@ -37,14 +38,14 @@ class BlueCastCV:
         BlueCast will infer these automatically.
     :param :time_split_column: Takes a string containing the name of the time split column. If not provided,
         BlueCast will not split the data by time or order, but do a random split instead.
-    :param :ml_model: Takes an instance of a XgboostModel class. If not provided, BlueCast will instantiate one.
+    :param :ml_model: Takes an instance of a CatboostModel class. If not provided, BlueCast will instantiate one.
         This is an API to pass any model class. Inherit the baseclass from ml_modelling.base_model.BaseModel.
-    :param custom_in_fold_preprocessor: Takes an instance of a CustomPreprocessing class. Allows users to eeecute
+    :param custom_in_fold_preprocessor: Takes an instance of a CustomPreprocessing class. Allows users to execute
         preprocessing after the train test split within cv folds. This will be executed only if precise_cv_tuning in
         the conf_Training is True. Custom ML models need to implement this themselves. This step is only useful when
-        the proprocessing step has a high chance of overfitting otherwise (i.e: oversampling techniques).
+        the preprocessing step has a high chance of overfitting otherwise (i.e: oversampling techniques).
     :param custom_preprocessor: Takes an instance of a CustomPreprocessing class. Allows users to inject custom
-        preprocessing steps which take place right after the train test spit.
+        preprocessing steps which take place right after the train test split.
     :param custom_last_mile_computation: Takes an instance of a CustomPreprocessing class. Allows users to inject custom
         preprocessing steps which take place right before the model training.
     :param experiment_tracker: Takes an instance of an ExperimentTracker class. If not provided this will be initialized
@@ -60,10 +61,10 @@ class BlueCastCV:
         cat_columns: Optional[List[Union[str, float, int]]] = None,
         stratifier: Optional[Any] = None,
         conf_training: Optional[TrainingConfig] = None,
-        conf_xgboost: Optional[
+        conf_tuning: Optional[
             Union[XgboostTuneParamsConfig, CatboostTuneParamsConfig]
         ] = None,
-        conf_params_xgboost: Optional[
+        conf_params: Optional[
             Union[XgboostFinalParamConfig, CatboostFinalParamConfig]
         ] = None,
         experiment_tracker: Optional[ExperimentTracker] = None,
@@ -73,12 +74,13 @@ class BlueCastCV:
         custom_feature_selector: Optional[
             Union[BoostaRootaWrapper, CustomPreprocessing]
         ] = None,
-        ml_model: Optional[Union[CatboostModel, Any]] = None,
+        ml_model: Optional[Any] = None,
         single_fold_eval_metric_func: Optional[ClassificationEvalWrapper] = None,
+        ensemble_config: Optional[EnsembleConfig] = None,
     ):
         self.class_problem = class_problem
-        self.conf_xgboost = conf_xgboost
-        self.conf_params_xgboost = conf_params_xgboost
+        self.conf_tuning = conf_tuning
+        self.conf_params = conf_params
         self.custom_in_fold_preprocessor = custom_in_fold_preprocessor
         self.custom_preprocessor = custom_preprocessor
         self.custom_feature_selector = custom_feature_selector
@@ -88,6 +90,7 @@ class BlueCastCV:
         self.ml_model = ml_model
         self.single_fold_eval_metric_func = single_fold_eval_metric_func
         self.conformal_prediction_wrapper: Optional[ConformalPredictionWrapper] = None
+        self.ensemble_config = ensemble_config or EnsembleConfig()
 
         if not cat_columns:
             self.cat_columns = []
@@ -99,13 +102,13 @@ class BlueCastCV:
         else:
             self.experiment_tracker = ExperimentTracker()
 
-        if not self.conf_params_xgboost:
-            self.conf_params_xgboost = CatboostFinalParamConfig()
+        if not self.conf_params:
+            self.conf_params = CatboostFinalParamConfig()
 
         self.conf_training: TrainingConfig = conf_training or TrainingConfig()
 
-        if not self.conf_xgboost:
-            self.conf_xgboost = CatboostTuneParamsConfig()
+        if not self.conf_tuning:
+            self.conf_tuning = CatboostTuneParamsConfig()
 
         if not self.single_fold_eval_metric_func:
             self.single_fold_eval_metric_func = ClassificationEvalWrapper()
@@ -122,10 +125,10 @@ class BlueCastCV:
         """
         Show out of fold scores.
 
-        When calling BlueCastCVRegression's fit_eval function multiple BlueCastRegression
+        When calling BlueCastCV's fit_eval function multiple BlueCast
         instances are called and each of them predicts on unseen/oof data.
 
-        This function collects these scores and return mean and average of them.
+        This function collects these scores and returns the mean and standard deviation of them.
 
         :param metric: String indicating which metric shall be returned.
         :return: Tuple with (mean, std) of oof scores
@@ -154,8 +157,14 @@ class BlueCastCV:
             self.conf_training = TrainingConfig()
 
         if not self.stratifier:
+            n_splits = max(2, self.conf_training.bluecast_cv_train_n_model[0])
+            if n_splits != self.conf_training.bluecast_cv_train_n_model[0]:
+                logging.warning(
+                    f"bluecast_cv_train_n_model[0]={self.conf_training.bluecast_cv_train_n_model[0]} "
+                    f"is less than 2. Clamping n_splits to {n_splits} for cross-validation."
+                )
             self.stratifier = RepeatedStratifiedKFold(
-                n_splits=self.conf_training.bluecast_cv_train_n_model[0],
+                n_splits=n_splits,
                 n_repeats=self.conf_training.bluecast_cv_train_n_model[1],
                 random_state=self.conf_training.global_random_state,
             )
@@ -183,14 +192,30 @@ class BlueCastCV:
                 class_problem=self.class_problem,
                 cat_columns=safe_cat_cols,
                 conf_training=self.conf_training,
-                conf_xgboost=self.conf_xgboost,
-                conf_params_xgboost=deepcopy(self.conf_params_xgboost),
+                conf_tuning=self.conf_tuning,
+                conf_params=deepcopy(self.conf_params),
                 experiment_tracker=self.experiment_tracker,
-                custom_in_fold_preprocessor=self.custom_in_fold_preprocessor,
-                custom_preprocessor=self.custom_preprocessor,
-                custom_feature_selector=self.custom_feature_selector,
-                custom_last_mile_computation=self.custom_last_mile_computation,
-                ml_model=self.ml_model,
+                custom_in_fold_preprocessor=(
+                    deepcopy(self.custom_in_fold_preprocessor)
+                    if self.custom_in_fold_preprocessor
+                    else None
+                ),
+                custom_preprocessor=(
+                    deepcopy(self.custom_preprocessor)
+                    if self.custom_preprocessor
+                    else None
+                ),
+                custom_feature_selector=(
+                    deepcopy(self.custom_feature_selector)
+                    if self.custom_feature_selector
+                    else None
+                ),
+                custom_last_mile_computation=(
+                    deepcopy(self.custom_last_mile_computation)
+                    if self.custom_last_mile_computation
+                    else None
+                ),
+                ml_model=deepcopy(self.ml_model) if self.ml_model else None,
                 single_fold_eval_metric_func=self.single_fold_eval_metric_func,
             )
             automl.fit(X_train, target_col=target_col)
@@ -202,8 +227,9 @@ class BlueCastCV:
     def fit_eval(self, df: pd.DataFrame, target_col: str) -> Tuple[float, float]:
         """Fit multiple BlueCast instances on different data splits.
 
-        Input df is expected the target column. Evaluation is executed on out-of-fold dataset.
-        in each split.
+        Input df is expected the target column. Evaluation is executed on out-of-fold dataset
+        in each split. When using stacking or hill_climbing ensemble strategies, OOF predictions
+        are collected and used to fit the ensemble meta-learner.
         :param df: Pandas DataFrame that includes the target column
         :param target_col: String indicating the name of the target column
         :returns Tuple of (oof_mean, oof_std) with scores on unseen data during eval
@@ -214,15 +240,29 @@ class BlueCastCV:
             self.conf_training = TrainingConfig()
 
         if not self.stratifier:
+            n_splits = max(2, self.conf_training.bluecast_cv_train_n_model[0])
+            if n_splits != self.conf_training.bluecast_cv_train_n_model[0]:
+                logging.warning(
+                    f"bluecast_cv_train_n_model[0]={self.conf_training.bluecast_cv_train_n_model[0]} "
+                    f"is less than 2. Clamping n_splits to {n_splits} for cross-validation."
+                )
             self.stratifier = RepeatedStratifiedKFold(
-                n_splits=self.conf_training.bluecast_cv_train_n_model[0],
+                n_splits=n_splits,
                 n_repeats=self.conf_training.bluecast_cv_train_n_model[1],
                 random_state=self.conf_training.global_random_state,
             )
 
-        for fn, (trn_idx, val_idx) in enumerate(self.stratifier.split(X, y)):
-            X_train, X_val = X.iloc[trn_idx], X.iloc[val_idx]
-            y_train, y_val = y.iloc[trn_idx], y.iloc[val_idx]
+        needs_oof = self.ensemble_config.ensemble_strategy in (
+            "stacking",
+            "hill_climbing",
+        )
+        oof_preds_per_model: List[np.ndarray] = []
+        oof_indices_per_fold: List[np.ndarray] = []
+        all_splits = list(self.stratifier.split(X, y))
+
+        for fn, (trn_idx, val_idx) in enumerate(all_splits):
+            X_train, X_val = X.iloc[trn_idx].copy(), X.iloc[val_idx].copy()
+            y_train, y_val = y.iloc[trn_idx].copy(), y.iloc[val_idx].copy()
 
             X_train.loc[:, target_col] = y_train
 
@@ -233,36 +273,110 @@ class BlueCastCV:
                 f"Start fitting model number {fn} with random seed {self.conf_training.global_random_state}"
             )
 
-            # Ensure we don't pass target as categorical feature
             safe_cat_cols = [c for c in self.cat_columns if c != target_col]
             automl = BlueCast(
                 class_problem=self.class_problem,
                 cat_columns=safe_cat_cols,
                 conf_training=self.conf_training,
-                conf_xgboost=self.conf_xgboost,
-                conf_params_xgboost=deepcopy(self.conf_params_xgboost),
+                conf_tuning=self.conf_tuning,
+                conf_params=deepcopy(self.conf_params),
                 experiment_tracker=self.experiment_tracker,
-                custom_in_fold_preprocessor=self.custom_in_fold_preprocessor,
-                custom_preprocessor=self.custom_preprocessor,
-                custom_feature_selector=self.custom_feature_selector,
-                custom_last_mile_computation=self.custom_last_mile_computation,
-                ml_model=self.ml_model,
+                custom_in_fold_preprocessor=(
+                    deepcopy(self.custom_in_fold_preprocessor)
+                    if self.custom_in_fold_preprocessor
+                    else None
+                ),
+                custom_preprocessor=(
+                    deepcopy(self.custom_preprocessor)
+                    if self.custom_preprocessor
+                    else None
+                ),
+                custom_feature_selector=(
+                    deepcopy(self.custom_feature_selector)
+                    if self.custom_feature_selector
+                    else None
+                ),
+                custom_last_mile_computation=(
+                    deepcopy(self.custom_last_mile_computation)
+                    if self.custom_last_mile_computation
+                    else None
+                ),
+                ml_model=deepcopy(self.ml_model) if self.ml_model else None,
                 single_fold_eval_metric_func=self.single_fold_eval_metric_func,
             )
             automl.fit_eval(X_train, X_val, y_val, target_col=target_col)
             self.bluecast_models.append(automl)
 
-            # overwrite experiment tracker to pass it into next iteration
+            if needs_oof:
+                oof_probs, _oof_classes = automl.predict(X_val)
+                oof_preds_per_model.append(oof_probs)
+                oof_indices_per_fold.append(val_idx)
+
             self.experiment_tracker = automl.experiment_tracker
+
+        if needs_oof:
+            self._fit_ensemble_from_oof(
+                oof_preds_per_model, oof_indices_per_fold, y, all_splits
+            )
 
         oof_mean, oof_std = self.show_oof_scores()
         return oof_mean, oof_std
+
+    def _fit_ensemble_from_oof(
+        self,
+        oof_preds_per_model: List[np.ndarray],
+        oof_indices_per_fold: List[np.ndarray],
+        y_full: pd.Series,
+        all_splits: list,
+    ) -> None:
+        """Fit stacking or hill climbing ensemble from OOF predictions (binary only)."""
+        n_samples = len(y_full)
+        n_models = len(self.bluecast_models)
+
+        is_1d = all(p.ndim == 1 for p in oof_preds_per_model)
+        if not is_1d:
+            logging.warning(
+                "Stacking/hill climbing for multiclass uses argmax probabilities. "
+                "Consider using mean blending for multiclass."
+            )
+            return
+
+        oof_matrix = np.full((n_samples, n_models), np.nan)
+        for fn in range(n_models):
+            val_idx = oof_indices_per_fold[fn]
+            oof_matrix[val_idx, fn] = oof_preds_per_model[fn]
+
+        # For K-fold CV, each row has exactly one real prediction from its validation fold.
+        # nanmean gracefully collapses the matrix into a single 1D array of OOF predictions.
+        valid_mask = ~np.all(np.isnan(oof_matrix), axis=1)
+        y_valid = y_full.values[valid_mask]
+
+        if len(y_valid) == 0:
+            logging.warning(
+                "No valid OOF predictions for ensemble fitting. "
+                "Falling back to mean blending."
+            )
+            self.oof_predictions_ = np.nanmean(oof_matrix, axis=1)
+            self.oof_valid_mask_ = valid_mask
+            self.oof_y_ = y_full.values
+            return
+
+        if self.ensemble_config.ensemble_strategy in ["stacking", "hill_climbing"]:
+            logging.info(
+                f"Note: {self.ensemble_config.ensemble_strategy.capitalize()} is applied at the cross-architecture level. "
+                "Internal CV folds of a single algorithm predict on disjoint sets and will be natively ensembled using 'mean' blending."
+            )
+
+        self.oof_predictions_ = np.nanmean(oof_matrix, axis=1)
+        self.oof_valid_mask_ = valid_mask
+        self.oof_y_ = y_valid
 
     def predict(
         self,
         df: pd.DataFrame,
         return_sub_models_preds: bool = False,
         save_shap_values: bool = False,
+        return_original_labels: bool = False,
     ) -> Tuple[Union[pd.DataFrame, pd.Series], Union[pd.DataFrame, pd.Series]]:
         """Predict on unseen data using multiple trained BlueCast instances.
 
@@ -302,7 +416,10 @@ class BlueCastCV:
             else:
                 classes = result_df.loc[:, class_cols].mode(axis=1)[0].astype(int)
 
-                if self.bluecast_models[0].feat_type_detector:
+                if (
+                    return_original_labels
+                    and self.bluecast_models[0].feat_type_detector
+                ):
                     if (
                         self.bluecast_models[0].target_label_encoder
                         and self.bluecast_models[0].feat_type_detector
@@ -330,20 +447,20 @@ class BlueCastCV:
             if return_sub_models_preds:
                 return result_df.loc[:, prob_cols], result_df.loc[:, class_cols]
             else:
-                if self.conf_params_xgboost:
-                    classification_threshold = (
-                        self.conf_params_xgboost.classification_threshold
-                    )
+                if self.conf_params:
+                    classification_threshold = self.conf_params.classification_threshold
                 else:
                     classification_threshold = 0.5
 
-                y_probs = result_df.loc[:, prob_cols].mean(axis=1)
-                y_classes = (
-                    result_df.loc[:, prob_cols].mean(axis=1) > classification_threshold
-                ).astype(int)
+                y_probs = blend_predictions_mean(
+                    result_df, prob_cols, self.ensemble_config.mean_type
+                )
+
+                y_classes = (y_probs > classification_threshold).astype(int)
 
                 if (
-                    self.bluecast_models[0].feat_type_detector
+                    return_original_labels
+                    and self.bluecast_models[0].feat_type_detector
                     and self.bluecast_models[0].target_label_encoder
                 ):
                     y_classes = self.bluecast_models[
@@ -473,17 +590,21 @@ class BlueCastCV:
                 }
                 string_pred_sets = []
                 for numerical_set in pred_sets:
-                    # Convert numerical labels to string labels
-                    string_set = {reverse_mapping[label] for label in numerical_set}
+                    string_set = {
+                        reverse_mapping[i]
+                        for i, indicator in enumerate(numerical_set)
+                        if indicator == 1
+                    }
                     string_pred_sets.append(string_set)
                 return pd.DataFrame({"prediction_set": string_pred_sets})
             else:
-                string_pred_sets = []
+                pred_sets_list: list = []
                 for numerical_set in pred_sets:
-                    # Convert numerical labels to string labels
-                    string_set = {label for label in numerical_set}
-                    string_pred_sets.append(string_set)
-                return pd.DataFrame({"prediction_set": string_pred_sets})
+                    pred_set = {
+                        i for i, indicator in enumerate(numerical_set) if indicator == 1
+                    }
+                    pred_sets_list.append(pred_set)
+                return pd.DataFrame({"prediction_set": pred_sets_list})
         else:
             raise ValueError(
                 """This instance has not been calibrated yet. Make use of calibrate to fit the

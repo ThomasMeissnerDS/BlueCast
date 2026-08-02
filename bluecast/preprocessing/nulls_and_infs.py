@@ -13,14 +13,14 @@ import pandas as pd
 
 
 def fill_infinite_values(df: pd.DataFrame, fill_with: Union[int, float] = 0):
-    """Replace infinite values with NaN or given value."""
+    """Replace infinite values with the given value (default 0)."""
     logging.info("Start filling infinite values.")
     df = df.replace([np.inf, -np.inf], fill_with)
     return df
 
 
 def fill_nulls(df: pd.DataFrame, fill_with: Union[int, float] = 0):
-    """Replace null values with NaN or given value."""
-    logging.info("Start filling infinite nulls.")
+    """Replace null values with the given value (default 0)."""
+    logging.info("Start filling null values.")
     df = df.fillna(fill_with)
     return df

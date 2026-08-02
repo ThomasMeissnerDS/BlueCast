@@ -45,9 +45,9 @@ def test_initialization(preprocessing_instance):
 def test_fit_transform(sample_data, preprocessing_instance, monkeypatch):
     df, target = sample_data
 
-    # Mock the remove_correlated_columns function
+    # Mock the remove_correlated_columns function at the usage site
     monkeypatch.setattr(
-        "bluecast.preprocessing.remove_collinearity.remove_correlated_columns",
+        "bluecast.blueprints.preprocessing_recipes.remove_correlated_columns",
         mock_remove_correlated_columns,
     )
 
@@ -71,7 +71,7 @@ def test_transform(sample_data, preprocessing_instance, monkeypatch):
 
     # Fit-transform first to simulate the normal flow
     monkeypatch.setattr(
-        "bluecast.preprocessing.remove_collinearity.remove_correlated_columns",
+        "bluecast.blueprints.preprocessing_recipes.remove_correlated_columns",
         mock_remove_correlated_columns,
     )
     preprocessing_instance.fit_transform(df, target)
@@ -102,6 +102,12 @@ def test_no_numerical_columns():
     preprocessing = PreprocessingForLinearModels(num_columns=[])
     transformed_df, transformed_target = preprocessing.fit_transform(df, target)
 
-    # Since there are no numerical columns, the DataFrame should remain unchanged
-    pd.testing.assert_frame_equal(transformed_df, df)
+    # Since there are no numerical columns, all original columns should be present
+    assert set(transformed_df.columns) == set(df.columns)
+    for col in df.columns:
+        pd.testing.assert_series_equal(
+            transformed_df[col].reset_index(drop=True),
+            df[col].reset_index(drop=True),
+            check_names=False,
+        )
     pd.testing.assert_series_equal(transformed_target, target)

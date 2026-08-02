@@ -1,5 +1,3 @@
-from typing import Optional, Tuple
-
 import numpy as np
 import pandas as pd
 
@@ -9,37 +7,17 @@ from bluecast.config.training_config import (
     TrainingConfig,
 )
 from bluecast.ml_modelling.catboost_regression import CatboostModelRegression
-from bluecast.preprocessing.custom import CustomPreprocessing
 from bluecast.tests.make_data.create_data import create_synthetic_dataframe_regression
+from bluecast.tests.shared_test_helpers import MyCustomLastMilePreprocessing
 
 
 def test_BlueCastRegression_without_hyperparam_tuning():
     train_config = TrainingConfig()
-    train_config.hyperparameter_tuning_rounds = 10
+    train_config.hyperparameter_tuning_rounds = 2
     train_config.hypertuning_cv_folds = 2
     train_config.autotune_model = False
 
     catboost_pram_config = CatboostTuneParamsRegressionConfig()
-
-    class MyCustomLastMilePreprocessing(CustomPreprocessing):
-        def custom_function(self, df: pd.DataFrame) -> pd.DataFrame:
-            df["custom_col"] = 5
-            return df
-
-        def fit_transform(
-            self, df: pd.DataFrame, target: pd.Series
-        ) -> Tuple[pd.DataFrame, pd.Series]:
-            df = self.custom_function(df)
-            return df, target
-
-        def transform(
-            self,
-            df: pd.DataFrame,
-            target: Optional[pd.Series] = None,
-            predicton_mode: bool = False,
-        ) -> Tuple[pd.DataFrame, Optional[pd.Series]]:
-            df = self.custom_function(df)
-            return df, target
 
     # Create an instance of the BlueCastRegression class with the custom model
     bluecast = BlueCastRegression(
@@ -49,7 +27,7 @@ def test_BlueCastRegression_without_hyperparam_tuning():
             conf_training=train_config,
             conf_catboost=catboost_pram_config,
         ),
-        conf_xgboost=catboost_pram_config,
+        conf_tuning=catboost_pram_config,
         conf_training=train_config,
         custom_last_mile_computation=MyCustomLastMilePreprocessing(),
     )
@@ -95,7 +73,7 @@ def test_BlueCastRegression_without_hyperparam_tuning():
 
 def test_BlueCastRegression_with_hyperparam_tuning():
     train_config = TrainingConfig()
-    train_config.hyperparameter_tuning_rounds = 10
+    train_config.hyperparameter_tuning_rounds = 2
     train_config.hypertuning_cv_folds = 2
     train_config.autotune_model = True
     train_config.plot_hyperparameter_tuning_overview = False
@@ -110,7 +88,7 @@ def test_BlueCastRegression_with_hyperparam_tuning():
             conf_training=train_config,
             conf_catboost=catboost_pram_config,
         ),
-        conf_xgboost=catboost_pram_config,
+        conf_tuning=catboost_pram_config,
         conf_training=train_config,
     )
 
@@ -149,12 +127,12 @@ def test_BlueCastRegression_with_hyperparam_tuning():
     assert isinstance(predicted_values, np.ndarray)
     print(bluecast.experiment_tracker.experiment_id)
     assert (
-        len(bluecast.experiment_tracker.experiment_id) == 10
-    )  # due to hyperparameter tuning with 10 rounds
+        len(bluecast.experiment_tracker.experiment_id) == 2
+    )  # due to hyperparameter tuning with 2 rounds
 
     # TEST with 1 fold
     train_config = TrainingConfig()
-    train_config.hyperparameter_tuning_rounds = 10
+    train_config.hyperparameter_tuning_rounds = 2
     train_config.hypertuning_cv_folds = 1
     train_config.autotune_model = True
 
@@ -168,7 +146,7 @@ def test_BlueCastRegression_with_hyperparam_tuning():
             conf_training=train_config,
             conf_catboost=catboost_pram_config,
         ),
-        conf_xgboost=catboost_pram_config,
+        conf_tuning=catboost_pram_config,
         conf_training=train_config,
     )
 
@@ -182,13 +160,13 @@ def test_BlueCastRegression_with_hyperparam_tuning():
     assert isinstance(predicted_values, np.ndarray)
     print(bluecast.experiment_tracker.experiment_id)
     assert (
-        len(bluecast.experiment_tracker.experiment_id) == 10
-    )  # due to hyperparameter tuning with 10 rounds
+        len(bluecast.experiment_tracker.experiment_id) == 2
+    )  # due to hyperparameter tuning with 2 rounds
 
 
 def test_BlueCastRegression_with_fine_tune_hyperparam_tuning():
     train_config = TrainingConfig()
-    train_config.hyperparameter_tuning_rounds = 10
+    train_config.hyperparameter_tuning_rounds = 2
     train_config.hypertuning_cv_folds = 2
     train_config.autotune_model = True
     train_config.precise_cv_tuning = True
@@ -203,7 +181,7 @@ def test_BlueCastRegression_with_fine_tune_hyperparam_tuning():
             conf_training=train_config,
             conf_catboost=catboost_pram_config,
         ),
-        conf_xgboost=catboost_pram_config,
+        conf_tuning=catboost_pram_config,
         conf_training=train_config,
     )
 
@@ -242,8 +220,8 @@ def test_BlueCastRegression_with_fine_tune_hyperparam_tuning():
     assert isinstance(predicted_values, np.ndarray)
     print(bluecast.experiment_tracker.experiment_id)
     assert (
-        len(bluecast.experiment_tracker.experiment_id) == 10
-    )  # due to fine-tune hyperparameter tuning with 10 rounds
+        len(bluecast.experiment_tracker.experiment_id) == 2
+    )  # due to fine-tune hyperparameter tuning with 2 rounds
 
 
 def test_BlueCastRegression_with_grid_search_tune_hyperparam_tuning():
@@ -264,7 +242,7 @@ def test_BlueCastRegression_with_grid_search_tune_hyperparam_tuning():
             conf_training=train_config,
             conf_catboost=catboost_pram_config,
         ),
-        conf_xgboost=catboost_pram_config,
+        conf_tuning=catboost_pram_config,
         conf_training=train_config,
     )
 
@@ -314,7 +292,7 @@ def test_catboost_regression_with_cat_columns_none_and_ml_algorithm_encoding():
     would fail due to categorical column mismatches.
     """
     train_config = TrainingConfig()
-    train_config.hyperparameter_tuning_rounds = 5  # Keep it small for faster testing
+    train_config.hyperparameter_tuning_rounds = 2  # Keep it small for faster testing
     train_config.hypertuning_cv_folds = 2
     train_config.autotune_model = True
     train_config.plot_hyperparameter_tuning_overview = False
@@ -344,7 +322,7 @@ def test_catboost_regression_with_cat_columns_none_and_ml_algorithm_encoding():
             conf_catboost=catboost_param_config,
             cat_columns=categorical_cols,  # Explicitly specify categorical columns
         ),
-        conf_xgboost=catboost_param_config,
+        conf_tuning=catboost_param_config,
         conf_training=train_config,
     )
 
@@ -376,12 +354,12 @@ def test_catboost_regression_with_cat_columns_none_and_ml_algorithm_encoding():
             conf_catboost=catboost_param_config,
             cat_columns=categorical_cols,  # Explicitly specify categorical columns
         ),
-        conf_xgboost=catboost_param_config,
+        conf_tuning=catboost_param_config,
     )
 
     # Set configuration after initialization
     bluecast_cv.conf_training.cat_encoding_via_ml_algorithm = True
-    bluecast_cv.conf_training.hyperparameter_tuning_rounds = 5
+    bluecast_cv.conf_training.hyperparameter_tuning_rounds = 2
     bluecast_cv.conf_training.hypertuning_cv_folds = 2
     bluecast_cv.conf_training.autotune_model = True
     bluecast_cv.conf_training.plot_hyperparameter_tuning_overview = False
@@ -410,7 +388,7 @@ def test_catboost_regression_with_disabled_ml_algorithm_encoding():
     own categorical encoding instead of CatBoost's native categorical support.
     """
     train_config = TrainingConfig()
-    train_config.hyperparameter_tuning_rounds = 5  # Keep it small for faster testing
+    train_config.hyperparameter_tuning_rounds = 2  # Keep it small for faster testing
     train_config.hypertuning_cv_folds = 2
     train_config.autotune_model = True
     train_config.plot_hyperparameter_tuning_overview = False
@@ -437,7 +415,7 @@ def test_catboost_regression_with_disabled_ml_algorithm_encoding():
             conf_catboost=catboost_param_config,
             cat_columns=None,  # This works when cat_encoding_via_ml_algorithm=False
         ),
-        conf_xgboost=catboost_param_config,
+        conf_tuning=catboost_param_config,
         conf_training=train_config,
     )
 

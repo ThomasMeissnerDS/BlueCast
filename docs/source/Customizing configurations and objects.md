@@ -386,10 +386,11 @@ automl.fit(train.copy(), target_col=target) # fit_eval is not possible here, bec
 ml_models.append(automl)
 ```
 
-Please note that custom ML models require user defined hyperparameter tuning. Pre-defined
-configurations are not available for custom models.
-Also note that the calculation of SHAP values only works with tree based models by
-default. For other model architectures disable SHAP values in the TrainingConfig
+Please note that custom ML models require user defined hyperparameter
+tuning. Pre-defined configurations are not available for custom models.
+Also note that the calculation of SHAP values only works with tree
+based models by default. For other model architectures disable SHAP
+values in the TrainingConfig
 via:
 
 `train_config.calculate_shap_values = False`

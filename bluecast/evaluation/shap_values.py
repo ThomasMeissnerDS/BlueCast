@@ -4,11 +4,45 @@ The implementation is flexible and can be used for almost any ML model. The impl
 """
 
 import logging
+import warnings
 from typing import List, Literal, Optional, Tuple
 
 import numpy as np
 import pandas as pd
 import shap
+
+logger = logging.getLogger(__name__)
+
+
+def _is_shap_tree_compatible(model) -> bool:
+    """Check if the model is compatible with shap.TreeExplainer.
+
+    TreeExplainer can segfault on certain model types (xgb.Booster from native
+    xgb.train() API, and potentially other backends). Since a C-level segfault
+    cannot be caught by Python, we only allow TreeExplainer for CatBoost models
+    where it is known to be stable. All other models use KernelExplainer.
+    """
+    try:
+        import catboost
+
+        if isinstance(model, catboost.CatBoost):
+            return True
+    except ImportError:
+        pass
+
+    try:
+        import xgboost
+
+        # xgb.Booster from xgb.train() segfaults in TreeExplainer
+        if isinstance(model, xgboost.Booster):
+            return False
+        # XGBClassifier/XGBRegressor (sklearn API) — also skip to be safe
+        if isinstance(model, xgboost.XGBModel):
+            return False
+    except ImportError:
+        pass
+
+    return False
 
 
 def shap_explanations(model, df: pd.DataFrame) -> Tuple[np.ndarray, shap.Explainer]:
@@ -20,34 +54,52 @@ def shap_explanations(model, df: pd.DataFrame) -> Tuple[np.ndarray, shap.Explain
     :return: Shap values
     """
     shap.initjs()
-    try:
-        explainer = shap.TreeExplainer(model)
-        model_shap_values = explainer.shap_values(df)
-        explainer = explainer(df)
-        explainer = shap.Explanation(
-            explainer.values[:, :, 1],
-            explainer.base_values[:, :, 1],
-            data=df.values,
-            feature_names=df.columns,
-        )
-        shap.summary_plot(model_shap_values, df, plot_type="bar", show=True)
-    except IndexError:
-        explainer = shap.TreeExplainer(model)
-        model_shap_values = explainer.shap_values(df)
-        explainer = explainer(df)
-        explainer = shap.Explanation(
-            explainer.values,
-            explainer.base_values,
-            data=df.values,
-            feature_names=df.columns,
-        )
-        shap.summary_plot(model_shap_values, df, plot_type="bar", show=True)
-    except (AssertionError, shap.utils._exceptions.InvalidModelError):
-        explainer = shap.KernelExplainer(model.predict, df)
-        model_shap_values = explainer.shap_values(df)
-        explainer = explainer(df)
+
+    use_tree = _is_shap_tree_compatible(model)
+
+    if use_tree:
+        try:
+            explainer = shap.TreeExplainer(model)
+            model_shap_values = explainer.shap_values(df)
+            explainer = explainer(df)
+            explainer = shap.Explanation(
+                explainer.values[:, :, 1],
+                explainer.base_values[:, :, 1],
+                data=df.values,
+                feature_names=df.columns,
+            )
+            shap.summary_plot(model_shap_values, df, plot_type="bar", show=True)
+            return model_shap_values, explainer
+        except IndexError:
+            try:
+                explainer = shap.TreeExplainer(model)
+                model_shap_values = explainer.shap_values(df)
+                explainer = explainer(df)
+                explainer = shap.Explanation(
+                    explainer.values,
+                    explainer.base_values,
+                    data=df.values,
+                    feature_names=df.columns,
+                )
+                shap.summary_plot(model_shap_values, df, plot_type="bar", show=True)
+                return model_shap_values, explainer
+            except Exception as e:
+                logger.warning(f"TreeExplainer failed with IndexError fallback: {e}")
+                use_tree = False
+        except Exception as e:
+            logger.warning(f"TreeExplainer failed ({type(e).__name__}): {e}")
+            use_tree = False
+
+    # Fallback to KernelExplainer
+    logger.info("Falling back to KernelExplainer.")
+    background = shap.sample(df, min(50, len(df)))
+    explainer = shap.KernelExplainer(model.predict, background)
+    model_shap_values = explainer.shap_values(df)
+    explainer_out = explainer(df)
+    with warnings.catch_warnings():
+        warnings.simplefilter("ignore")
         shap.summary_plot(model_shap_values, df, show=True)
-    return model_shap_values, explainer
+    return model_shap_values, explainer_out
 
 
 def shap_waterfall_plot(
@@ -79,7 +131,6 @@ def shap_waterfall_plot(
 
         elif class_problem == "binary":
             logging.info(f"Show SHAP waterfall plot for idx {idx} and target class.")
-            # try/except catches differences between base estimators like Xgboost and RandomForestClassifier
             try:
                 explainer_values = explainer[idx, :, 1]
                 shap.waterfall_plot(
@@ -123,7 +174,7 @@ def get_most_important_features_by_shap_values(
         or np.asarray(shap_values).shape[1] != df.shape[1]
     ):
         dfs = []
-        for class_shap_values in shap_values:  # Loop through classes
+        for class_shap_values in shap_values:
             class_df = pd.DataFrame(class_shap_values, columns=feature_names)
             dfs.append(class_df)
         result_df = pd.concat(dfs)
@@ -164,7 +215,6 @@ def shap_dependence_plots(
         show_dependence_plots_of_top_n_features = len(df.columns)
 
     sorted_shap_df = get_most_important_features_by_shap_values(shap_values, df)
-    # We can also use the special "rank(i)" systax to specify the i'th most important feature
 
     for col in sorted_shap_df["col_name"].values[
         :show_dependence_plots_of_top_n_features

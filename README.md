@@ -10,8 +10,8 @@
 [![Documentation Status](https://readthedocs.org/projects/bluecast/badge/?version=latest)](https://bluecast.readthedocs.io/en/latest/?badge=latest)
 [![PyPI version](https://badge.fury.io/py/bluecast.svg)](https://pypi.python.org/pypi/bluecast/)
 [![Optuna](https://img.shields.io/badge/Optuna-integrated-blue)](https://optuna.org)
-[![python](https://img.shields.io/badge/Python-3.9-3776AB.svg?style=flat&logo=python&logoColor=white)](https://www.python.org)
-[![python](https://img.shields.io/badge/Python-3.10-3776AB.svg?style=flat&logo=python&logoColor=white)](https://www.python.org)
+[![python](https://img.shields.io/badge/Python-3.11-3776AB.svg?style=flat&logo=python&logoColor=white)](https://www.python.org)
+[![python](https://img.shields.io/badge/Python-3.12-3776AB.svg?style=flat&logo=python&logoColor=white)](https://www.python.org)
 [![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg?style=flat-square)](http://makeapullrequest.com)
 
 ![BlueCast](docs/source/bluecast_dragon_logo_5.jpeg)
@@ -19,13 +19,13 @@
 A lightweight and fast auto-ml library, that helps data scientists
 tackling real world problems from EDA to model explainability
 and even uncertainty quantification.
-BlueCast focuses on a few model architectures (on default Xgboost
-only) and a few preprocessing options (only what is
-needed for Xgboost). This allows for a much faster development
-cycle and a much more stable codebase while also having as few dependencies
-as possible for the library. Despite being lightweight in its core BlueCast
-offers high customization options for advanced users. Find
-the full documentation [on Read the Docs](https://bluecast.readthedocs.io/en/latest/).
+BlueCast focuses on a few model architectures (CatBoost by default)
+and minimal preprocessing. This allows for a much faster development
+cycle and a much more stable codebase while also having as few
+dependencies as possible for the library. Despite being lightweight
+in its core BlueCast offers high customization options for advanced
+users. Find the full documentation
+[on Read the Docs](https://bluecast.readthedocs.io/en/latest/).
 
 Here you can see our test coverage in more detail:
 
@@ -36,13 +36,12 @@ Here you can see our test coverage in more detail:
 * [Philosophy](#philosophy)
 * [What BlueCast has to offer](#what-bluecast-has-to-offer)
   * [Basic usage](#basic-usage)
-  * [Recent Major Improvements (v2.0+)](#recent-major-improvements-v20)
-    * [🗄️ **DuckDB-Powered Experiment Tracking**](#%F0%9F%97%84%EF%B8%8F-duckdb-powered-experiment-tracking)
-    * [📊 **Enhanced Error Analysis Framework**](#%F0%9F%93%8A-enhanced-error-analysis-framework)
-    * [🎯 **Key Benefits**](#%F0%9F%8E%AF-key-benefits)
-    * [📦 **Dependencies**](#%F0%9F%93%A6-dependencies)
+  * [Recent Major Improvements](#recent-major-improvements)
+    * [v3.0 Breaking Changes](#v30-breaking-changes)
+    * [v2.0 Improvements](#v20-improvements)
   * [Convenience features](#convenience-features)
-  * [Kaggle competition results and example notebooks](#kaggle-competition-results-and-example-notebooks)
+  * [Example scripts](#example-scripts)
+  * [Kaggle competition results](#kaggle-competition-results)
 * [About the code](#about-the-code)
   * [Code quality](#code-quality)
   * [Documentation](#documentation)
@@ -75,49 +74,66 @@ uncertainty quantification.
 ### Basic usage
 
 ```sh
-from bluecast.blueprints.cast import BlueCast
+from bluecast.blueprints.unified import BlueCastAuto
+from bluecast.ensemble.ensemble_config import EnsembleConfig
 
-automl = BlueCast(
-        class_problem="binary",
-    )
-
+# Binary classification - single model
+automl = BlueCastAuto(class_problem="binary")
 automl.fit(df_train, target_col="target")
 y_probs, y_classes = automl.predict(df_val)
 
-# from version 0.95 also predict_proba is directly available (also for BlueCastCV)
-y_probs = automl.predict_proba(df_val)
+# Regression with cross-validation and stacking ensemble
+automl = BlueCastAuto(
+    class_problem="regression",
+    use_cross_validation=True,
+    ensemble_config=EnsembleConfig(ensemble_strategy="stacking"),
+)
+automl.fit(df_train, target_col="target")
+y_preds = automl.predict(df_val)
 ```
 
-### Recent Major Improvements (v2.0+)
+The original per-class imports still work for users who prefer them:
 
-BlueCast has undergone significant enhancements to provide enterprise-grade data science capabilities:
+```sh
+from bluecast.blueprints.cast import BlueCast
 
-#### 🗄️ **DuckDB-Powered Experiment Tracking**
-- **Persistent Storage**: Experiment results are now stored in DuckDB databases instead of in-memory lists
-- **Structured Data Management**: Separate tables for hyperparameter tuning (`hyperparameter_experiments`) and final model evaluation (`evaluation_experiments`)
-- **Advanced Querying**: Rich SQL-based analytics on experiment history with methods like `get_experiment_summary()` and `get_best_score()`
-- **Scalability**: Handle thousands of experiments efficiently with analytical database performance
+automl = BlueCast(class_problem="binary")
+automl.fit(df_train, target_col="target")
+y_probs, y_classes = automl.predict(df_val)
+```
 
-#### 📊 **Enhanced Error Analysis Framework**
-- **DuckDB Backend**: Lightning-fast error analysis using DuckDB's analytical capabilities
-- **Interactive Visualizations**: Plotly-powered charts replace static matplotlib plots:
-  - Error distribution histograms with statistical annotations
-  - Q-Q plots for normality testing
-  - Residual plots for regression analysis
-  - Predicted vs Actual scatter plots
-  - Enhanced violin plots with statistical insights
-- **Advanced Statistics**: Automatic calculation of R-squared, correlation, heteroscedasticity detection, and comprehensive error metrics
-- **Unified Interface**: Consistent API for both classification and regression error analysis
+### Recent Major Improvements
 
-#### 🎯 **Key Benefits**
-- **Performance**: 3-5x faster analytics on large experiment datasets
-- **Insights**: Deeper statistical understanding with enhanced visualizations
-- **Persistence**: Experiment data survives between sessions and can be shared
-- **Scalability**: Enterprise-ready architecture that grows with your needs
-- **Backward Compatibility**: All existing code continues to work seamlessly
+#### v3.0 Breaking Changes
 
-#### 📦 **Dependencies**
-The refactoring introduces `duckdb` as a new core dependency for enhanced data management and analytics capabilities, while maintaining all existing functionality.
+BlueCast v3.0 introduces several API improvements that
+require code changes when upgrading from v2.x:
+
+- **Renamed parameters**: `predicton_mode` is now correctly
+  spelled `prediction_mode` across the entire API
+- **Renamed blueprint attributes**: `conf_xgboost` is now
+  `conf_tuning`, and `conf_params_xgboost` is now
+  `conf_params` in all blueprint classes
+- **CatBoost as default**: CatBoost is the default model
+  backend (since v2.x, now reflected in naming)
+- **Fixed `classification_report` key**: The misspelled
+  `classfication_report` dict key has been removed from
+  `eval_classifier()` return values
+- **Proper logging**: Library no longer overrides application
+  logging configuration via `logging.basicConfig`
+- **Instance-isolated configs**: `*FinalParamConfig` classes
+  now use instance-level `params` dicts instead of
+  shared class-level dicts
+
+#### v2.0 Improvements
+
+- **DuckDB-Powered Experiment Tracking**: Persistent storage
+  with structured data management and SQL-based analytics
+- **Enhanced Error Analysis**: Plotly-powered interactive
+  visualizations with DuckDB backend for both classification
+  and regression
+- **Advanced Statistics**: Automatic R-squared, correlation,
+  heteroscedasticity detection, and comprehensive metrics
 
 ### Convenience features
 
@@ -131,11 +147,13 @@ with the following features:
 * **Intelligent Hyperparameter Tuning**: Advanced hyperparameter optimization with extensive customization options
 * **Automatic Feature Engineering**:
   - Automatic feature type detection and casting
-  - Categorical feature encoding (target encoding or directly in Xgboost)
+  - Categorical feature encoding (target encoding or
+    natively in CatBoost/XGBoost)
   - Datetime feature encoding
-  - Automatic DataFrame schema detection for production consistency
+  - Automatic DataFrame schema detection for production
+    consistency
 * **Production-Ready Features**:
-  - Automated GPU availability check and usage for Xgboost
+  - Automated GPU availability check and usage
   - fit_eval method to mimic production environment reality
   - Functions to save and load trained pipelines
   - Comprehensive model evaluation and monitoring capabilities
@@ -144,6 +162,10 @@ with the following features:
   - ROC AUC curves & lift charts
   - Enhanced statistical insights with error distributions and residual analysis
   - Interactive visualizations for better model understanding
+* **LLM-Powered Multi-Agent Pipeline Builder (`BlueCastAI`)**:
+  - Automatically analyze data, engineer features, and train models via natural language
+  - Supports Google Gemini, Vertex AI (GCP Native), OpenAI/GPT-4 (incl. proxies like OpenRouter), and Anthropic Claude
+  - Includes debugging transparency through UI callbacks, token budgeting, and exponential backoff retry loops for API limits
 * **Quality Assurance**: Built-in warnings for potential misconfigurations
 
 The fit_eval method can be used like this:
@@ -162,7 +184,26 @@ y_probs, y_classes = automl.predict(df_val)
 It is important to note that df_train contains the target column while
 df_eval does not. The target column is passed separately as y_eval.
 
-### Kaggle competition results and example notebooks
+### Example scripts
+
+The [examples/](examples/) directory contains self-contained scripts
+using synthetic data that demonstrate BlueCast's full feature set:
+
+| Script | Topics |
+| ------ | ------ |
+| [00_full_showcase.py](examples/00_full_showcase.py) | **End-to-end walkthrough of all features** |
+| [01_quick_start.py](examples/01_quick_start.py) | Binary, multiclass, regression, `fit_eval` |
+| [02_cross_validation_and_ensembles.py](examples/02_cross_validation_and_ensembles.py) | `BlueCastCV`, mean blending, stacking, hill climbing |
+| [03_conformal_prediction.py](examples/03_conformal_prediction.py) | Uncertainty quantification, group-conditional intervals |
+| [04_linear_models.py](examples/04_linear_models.py) | Logistic/Ridge/Lasso regression, configurable preprocessing |
+| [05_unified_interface.py](examples/05_unified_interface.py) | `BlueCastAuto` single entry point for all problem types |
+| [06_advanced_customization.py](examples/06_advanced_customization.py) | Custom preprocessing, XGBoost, drift monitoring, experiment tracking, save/load |
+| [07_fairness.py](examples/07_fairness.py) | Fairness auditing, demographic parity, equalized odds, conformal fairness |
+| [08_eda.py](examples/08_eda.py) | Univariate/bivariate plots, PCA, t-SNE, correlations, data quality, leakage detection |
+| [09_bluecast_ai.py](examples/09_bluecast_ai.py) | Multi-agent LLM-powered AutoML (requires API key) |
+| [10_serving.py](examples/10_serving.py) | Deploy models as REST APIs, export Dockerfile |
+
+### Kaggle competition results
 
 Even though BlueCast has been designed to be a lightweight
 automl framework, it still offers the possibilities to
@@ -180,7 +221,7 @@ feature- and performance-wise.
 and adding conformal prediction ([notebook](https://www.kaggle.com/code/thomasmeiner/bluecast-has-conformal-prediction))
 * 26th place in the Kaggle 24h "AutoMl" GrandPrix July 2024 blitz competition ([notebook](https://www.kaggle.com/code/thomasmeiner/automl-grand-prix-bluecast-26th-place-solution))
 
-Please note that some notebooks ran older versions of BlueCast and
+Please note that some Kaggle notebooks ran older versions of BlueCast and
 might not be compatible with the most recent version anymore.
 
 ## About the code

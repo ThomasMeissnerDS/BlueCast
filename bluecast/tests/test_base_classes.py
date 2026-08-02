@@ -147,7 +147,8 @@ class TestXgboostBaseModel:
 
             # Create a mock sampler without seed attribute
             sampler = Mock()
-            delattr(sampler, "seed") if hasattr(sampler, "seed") else None
+            if hasattr(sampler, "seed"):
+                del sampler.seed
 
             study = xgboost_base_model._create_optuna_study(
                 direction="minimize",

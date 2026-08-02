@@ -26,6 +26,7 @@ from bluecast.conformal_prediction.conformal_prediction_regression import (
     ConformalPredictionRegressionWrapper,
 )
 from bluecast.evaluation.eval_metrics import RegressionEvalWrapper, eval_regressor
+from bluecast.evaluation.fairness import FairnessAuditor
 from bluecast.evaluation.shap_values import (
     shap_dependence_plots,
     shap_explanations,
@@ -49,9 +50,11 @@ from bluecast.preprocessing.schema_checks import SchemaDetector
 from bluecast.preprocessing.target_encoding import RegressionTargetEncoder
 from bluecast.preprocessing.train_test_split import train_test_split
 
+logger = logging.getLogger(__name__)
+
 
 class BlueCastRegression:
-    """Run fully configured classification blueprint.
+    """Run fully configured regression blueprint.
 
     Customization via class attributes is possible. Configs can be instantiated and provided to change Xgboost training.
     Default hyperparameter search space is relatively light-weight to speed up the prototyping.
@@ -66,12 +69,12 @@ class BlueCastRegression:
         BlueCast will not split the data by time or order, but do a random split instead.
     :param :ml_model: Takes an instance of a CatboostModelRegression class. If not provided, BlueCast will instantiate one.
         This is an API to pass any model class. Inherit the baseclass from ml_modelling.base_model.BaseModel.
-    :param custom_in_fold_preprocessor: Takes an instance of a CustomPreprocessing class. Allows users to eeecute
+    :param custom_in_fold_preprocessor: Takes an instance of a CustomPreprocessing class. Allows users to execute
         preprocessing after the train test split within cv folds. This will be executed only if precise_cv_tuning in
         the conf_Training is True. Custom ML models need to implement this themselves. This step is only useful when
-        the proprocessing step has a high chance of overfitting otherwise (i.e: oversampling techniques).
+        the preprocessing step has a high chance of overfitting otherwise (i.e: oversampling techniques).
     :param custom_preprocessor: Takes an instance of a CustomPreprocessing class. Allows users to inject custom
-        preprocessing steps which take place right after the train test spit.
+        preprocessing steps which take place right after the train test split.
     :param custom_last_mile_computation: Takes an instance of a CustomPreprocessing class. Allows users to inject custom
         preprocessing steps which take place right before the model training.
     :param experiment_tracker: Takes an instance of an ExperimentTracker class. If not provided this will be initialized
@@ -87,7 +90,7 @@ class BlueCastRegression:
         cat_columns: Optional[List[Union[str, float, int]]] = None,
         date_columns: Optional[List[Union[str, float, int]]] = None,
         time_split_column: Optional[str] = None,
-        ml_model: Optional[Union[CatboostModelRegression, Any]] = None,
+        ml_model: Optional[Any] = None,
         custom_in_fold_preprocessor: Optional[CustomPreprocessing] = None,
         custom_last_mile_computation: Optional[CustomPreprocessing] = None,
         custom_preprocessor: Optional[CustomPreprocessing] = None,
@@ -95,10 +98,10 @@ class BlueCastRegression:
             Union[BoostaRootaWrapper, CustomPreprocessing]
         ] = None,
         conf_training: Optional[TrainingConfig] = None,
-        conf_xgboost: Optional[
+        conf_tuning: Optional[
             Union[XgboostTuneParamsRegressionConfig, CatboostTuneParamsRegressionConfig]
         ] = None,
-        conf_params_xgboost: Optional[
+        conf_params: Optional[
             Union[XgboostRegressionFinalParamConfig, CatboostRegressionFinalParamConfig]
         ] = None,
         experiment_tracker: Optional[ExperimentTracker] = None,
@@ -115,8 +118,8 @@ class BlueCastRegression:
         self.date_columns = date_columns
         self.time_split_column = time_split_column
         self.target_column = "Undefined"
-        self.conf_xgboost = conf_xgboost
-        self.conf_params_xgboost = conf_params_xgboost
+        self.conf_tuning = conf_tuning
+        self.conf_params = conf_params
         self.feat_type_detector: Optional[FeatureTypeDetector] = None
         self.infreq_cat_encoder: Optional[InFrequentCategoryEncoder] = None
         self.cat_encoder: Optional[RegressionTargetEncoder] = None
@@ -143,14 +146,14 @@ class BlueCastRegression:
         else:
             self.experiment_tracker = ExperimentTracker()
 
-        if not self.conf_params_xgboost:
-            self.conf_params_xgboost = CatboostRegressionFinalParamConfig()
-            self.conf_params_xgboost.params.pop("num_class", None)
+        if not self.conf_params:
+            self.conf_params = CatboostRegressionFinalParamConfig()
+            self.conf_params.params.pop("num_class", None)
 
         self.conf_training: TrainingConfig = conf_training or TrainingConfig()
 
-        if not self.conf_xgboost:
-            self.conf_xgboost = CatboostTuneParamsRegressionConfig()
+        if not self.conf_tuning:
+            self.conf_tuning = CatboostTuneParamsRegressionConfig()
 
         if not self.single_fold_eval_metric_func:
             self.single_fold_eval_metric_func = RegressionEvalWrapper(
@@ -159,13 +162,7 @@ class BlueCastRegression:
                 metric_name="Mean squared error",
             )
 
-        logging.basicConfig(
-            filename=self.conf_training.logging_file_path,
-            filemode="w",
-            format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
-            level=logging.INFO,
-        )
-        logging.info("BlueCastRegression blueprint initialized.")
+        logger.info("BlueCastRegression blueprint initialized.")
 
     def initial_checks(self, df: pd.DataFrame) -> None:
         if not self.conf_training:
@@ -194,7 +191,7 @@ class BlueCastRegression:
             many features have been removed. Otherwise, consider disabling feature selection or providing a custom
             feature selector."""
             warnings.warn(message, UserWarning, stacklevel=2)
-        if not self.conf_xgboost:
+        if not self.conf_tuning:
             message = """No CatboostTuneParamsRegressionConfig has been provided. Falling back to default values. Default values
             have been chosen to speed up the prototyping. For robust hyperparameter tuning consider providing a custom
             CatboostTuneParamsRegressionConfig with a deeper hyperparameter search space and a custom TrainingConfig to enable
@@ -252,13 +249,13 @@ class BlueCastRegression:
             or higher or disable precise_cv_tuning."""
             warnings.warn(message, UserWarning, stacklevel=2)
 
-        if self.conf_xgboost and isinstance(
-            self.conf_xgboost, XgboostTuneParamsRegressionConfig
+        if self.conf_tuning and isinstance(
+            self.conf_tuning, XgboostTuneParamsRegressionConfig
         ):
             if self.conf_training.cat_encoding_via_ml_algorithm:
-                if "exact" in self.conf_xgboost.tree_method:
-                    self.conf_xgboost.tree_method.remove("exact")
-                message = f"""Categorical encoding via ML algorithm is enabled. The tree method 'exact' is not supported with categorical encoding within Xgboost. The tree method 'exact' has been removed. Using {self.conf_xgboost.tree_method} only during hyperparameter tuning."""
+                if "exact" in self.conf_tuning.tree_method:
+                    self.conf_tuning.tree_method.remove("exact")
+                message = f"""Categorical encoding via ML algorithm is enabled. The tree method 'exact' is not supported with categorical encoding within Xgboost. The tree method 'exact' has been removed. Using {self.conf_tuning.tree_method} only during hyperparameter tuning."""
                 warnings.warn(message, UserWarning, stacklevel=2)
 
     def fit(self, df: pd.DataFrame, target_col: str) -> None:
@@ -293,10 +290,12 @@ class BlueCastRegression:
                 x_train.copy(), y_train
             )
             x_test, y_test = self.custom_preprocessor.transform(
-                x_test.copy(), y_test, predicton_mode=False
+                x_test.copy(), y_test, prediction_mode=False
             )
             feat_type_detector = FeatureTypeDetector(
-                cat_columns=[], num_columns=[], date_columns=[]
+                cat_columns=self.cat_columns,
+                num_columns=getattr(self, "num_columns", []),
+                date_columns=self.date_columns,
             )
             _ = feat_type_detector.fit_transform_feature_types(x_train)
             x_train = x_train.reset_index(drop=True)
@@ -307,6 +306,9 @@ class BlueCastRegression:
                 y_test = y_test.reset_index(drop=True)
             if target_col in feat_type_detector.cat_columns:
                 feat_type_detector.cat_columns.remove(target_col)
+
+            self.cat_columns = feat_type_detector.cat_columns
+            self.date_columns = feat_type_detector.date_columns
 
         x_train, x_test = fill_infinite_values(x_train), fill_infinite_values(x_test)
         self.date_part_extractor = DatePartExtractor(
@@ -375,7 +377,7 @@ class BlueCastRegression:
                 x_train.copy(), y_train
             )
             x_test, y_test = self.custom_last_mile_computation.transform(
-                x_test.copy(), y_test, predicton_mode=False
+                x_test.copy(), y_test, prediction_mode=False
             )
 
         if not self.custom_feature_selector:
@@ -389,7 +391,7 @@ class BlueCastRegression:
                 x_train.copy(), y_train
             )
             x_test, _ = self.custom_feature_selector.transform(
-                x_test.copy(), predicton_mode=False
+                x_test.copy(), prediction_mode=False
             )
 
         if not self.ml_model:
@@ -397,15 +399,13 @@ class BlueCastRegression:
                 self.class_problem,
                 conf_training=self.conf_training,
                 conf_catboost=(
-                    self.conf_xgboost
-                    if isinstance(self.conf_xgboost, CatboostTuneParamsRegressionConfig)
+                    self.conf_tuning
+                    if isinstance(self.conf_tuning, CatboostTuneParamsRegressionConfig)
                     else CatboostTuneParamsRegressionConfig()
                 ),
                 conf_params_catboost=(
-                    self.conf_params_xgboost
-                    if isinstance(
-                        self.conf_params_xgboost, CatboostRegressionFinalParamConfig
-                    )
+                    self.conf_params
+                    if isinstance(self.conf_params, CatboostRegressionFinalParamConfig)
                     else CatboostRegressionFinalParamConfig()
                 ),
                 experiment_tracker=self.experiment_tracker,
@@ -427,10 +427,8 @@ class BlueCastRegression:
                 )
             self.ml_model.conf_training = self.conf_training
             if isinstance(self.ml_model, CatboostModelRegression):
-                if isinstance(
-                    self.conf_params_xgboost, CatboostRegressionFinalParamConfig
-                ):
-                    self.ml_model.conf_params_catboost = self.conf_params_xgboost
+                if isinstance(self.conf_params, CatboostRegressionFinalParamConfig):
+                    self.ml_model.conf_params_catboost = self.conf_params
                 else:
                     self.ml_model.conf_params_catboost = (
                         CatboostRegressionFinalParamConfig()
@@ -440,21 +438,30 @@ class BlueCastRegression:
 
         if self.custom_in_fold_preprocessor:
             x_test, _ = self.custom_in_fold_preprocessor.transform(
-                x_test.copy(), None, predicton_mode=True
+                x_test.copy(), None, prediction_mode=True
             )
 
         if self.conf_training and self.conf_training.calculate_shap_values:
-            shap_values, explainer = shap_explanations(self.ml_model.model, x_test)
-            if self.conf_training.store_shap_values_in_instance:
-                self.shap_values = shap_values
-            shap_waterfall_plot(
-                explainer, self.conf_training.shap_waterfall_indices, self.class_problem
-            )
-            shap_dependence_plots(
-                shap_values,
-                x_test,
-                self.conf_training.show_dependence_plots_of_top_n_features,
-            )
+            try:
+                shap_values, explainer = shap_explanations(self.ml_model.model, x_test)
+                if self.conf_training.store_shap_values_in_instance:
+                    self.shap_values = shap_values
+                shap_waterfall_plot(
+                    explainer,
+                    self.conf_training.shap_waterfall_indices,
+                    self.class_problem,
+                )
+                shap_dependence_plots(
+                    shap_values,
+                    x_test,
+                    self.conf_training.show_dependence_plots_of_top_n_features,
+                )
+            except Exception as e:
+                warnings.warn(
+                    f"SHAP value calculation failed: {e}. "
+                    f"Model training and predictions are unaffected.",
+                    stacklevel=2,
+                )
         self.prediction_mode = True
 
     def fit_eval(
@@ -482,7 +489,7 @@ class BlueCastRegression:
         if not self.conf_training:
             raise ValueError("Could not find any training config")
 
-        if not self.conf_params_xgboost:
+        if not self.conf_params:
             raise ValueError("Could not find Xgboost params")
 
         if len(self.experiment_tracker.experiment_id) == 0:
@@ -507,7 +514,7 @@ class BlueCastRegression:
                 "RMSE",
                 "median_absolute_error",
             ],
-            [False, False, False, False, False],
+            [False, True, False, False, False],
         ):
             experiment_ids = self.experiment_tracker.experiment_id
             if len(experiment_ids) == 0:
@@ -519,27 +526,40 @@ class BlueCastRegression:
                 experiment_id=experiment_id,
                 score_category="oof_score",
                 training_config=self.conf_training,
-                model_parameters=self.conf_params_xgboost.params,  # noqa
-                eval_scores=self.eval_metrics["RMSE"],
+                model_parameters=self.conf_params.params,  # noqa
+                eval_scores=self.eval_metrics[metric],
                 metric_used=metric,
                 metric_higher_is_better=higher_is_better,
             )
+
+        if (
+            self.conf_training.fairness_sensitive_columns
+            and len(self.conf_training.fairness_sensitive_columns) > 0
+        ):
+            auditor = FairnessAuditor(
+                sensitive_columns=self.conf_training.fairness_sensitive_columns
+            )
+            fairness_reports = auditor.audit_regression(
+                target_eval.values, y_preds, df_eval
+            )
+            eval_dict["fairness"] = [r.to_dict() for r in fairness_reports]
+
         return eval_dict
 
     def transform_new_data(self, df: pd.DataFrame) -> pd.DataFrame:
         """Transform new data according to preprocessing pipeline."""
         if not self.feat_type_detector:
-            raise Exception("Feature type converter could not be found.")
+            raise RuntimeError("Feature type converter could not be found.")
 
         if not self.conf_training:
-            raise Exception("Training configuration could not be found.")
+            raise RuntimeError("Training configuration could not be found.")
 
         df = self.feat_type_detector.transform_feature_types(
             df, ignore_cols=[self.target_column]
         )
 
         if self.custom_preprocessor:
-            df, _ = self.custom_preprocessor.transform(df, predicton_mode=True)
+            df, _ = self.custom_preprocessor.transform(df, prediction_mode=True)
             df = df.reset_index(drop=True)
 
         df = fill_infinite_values(df)
@@ -580,38 +600,38 @@ class BlueCastRegression:
 
         if self.custom_last_mile_computation:
             df, _ = self.custom_last_mile_computation.transform(
-                df.copy(), predicton_mode=True
+                df.copy(), prediction_mode=True
             )
 
         if self.custom_feature_selector and self.conf_training.enable_feature_selection:
             df, _ = self.custom_feature_selector.transform(
-                df.copy(), predicton_mode=True
+                df.copy(), prediction_mode=True
             )
 
         if self.conf_training.cat_encoding_via_ml_algorithm and self.cat_columns:
             for col in self.cat_columns:
                 if col in df.columns:
-                    df[col] = df[col].astype(str).fillna("nan")
+                    df[col] = df[col].astype(str).fillna("nan").astype("category")
 
         return df
 
     def predict(self, df: pd.DataFrame, save_shap_values: bool = False) -> np.ndarray:
         """Predict on unseen data.
 
-        Return the predicted probabilities and the predicted classes:
-        y_probs, y_classes = predict(df)
+        Return the predicted values:
+        y_preds = predict(df)
         :param df: Pandas DataFrame with unseen data
         :param save_shap_values: If True, calculates and saves shap values, so they can be used to plot
-            waterfall plots for selected rows o demand.
+            waterfall plots for selected rows on demand.
         """
         if not self.ml_model:
-            raise Exception("Ml model could not be found")
+            raise RuntimeError("ML model could not be found.")
 
         if not self.feat_type_detector:
-            raise Exception("Feature type converter could not be found.")
+            raise RuntimeError("Feature type converter could not be found.")
 
         if not self.conf_training:
-            raise ValueError("conf_training is None")
+            raise RuntimeError("Training configuration is None.")
 
         df = self.transform_new_data(df)
 
@@ -619,9 +639,16 @@ class BlueCastRegression:
         y_preds = self.ml_model.predict(df)
 
         if save_shap_values:
-            self.shap_values, self.explainer = shap_explanations(
-                self.ml_model.model, df
-            )
+            try:
+                self.shap_values, self.explainer = shap_explanations(
+                    self.ml_model.model, df
+                )
+            except Exception as e:
+                warnings.warn(
+                    f"SHAP value calculation failed: {e}. "
+                    f"Predictions are unaffected.",
+                    stacklevel=2,
+                )
 
         return y_preds
 

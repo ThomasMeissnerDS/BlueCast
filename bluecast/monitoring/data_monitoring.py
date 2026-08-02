@@ -114,7 +114,7 @@ class DataDrift:
             actual_percents = np.histogram(actual_array, breakpoints)[0] / len(
                 actual_array
             )
-            return np.sum(
+            return sum(
                 sub_psi(expected_percents[i], actual_percents[i])
                 for i in range(len(expected_percents))
             )
@@ -206,8 +206,8 @@ class DataDrift:
             quantiles = np.linspace(start=0, stop=1, num=int(quantiles))
         else:
             quantiles = np.atleast_1d(np.sort(quantiles))
-        x_quantiles = np.quantile(x, quantiles, interpolation=interpolation)
-        y_quantiles = np.quantile(y, quantiles, interpolation=interpolation)
+        x_quantiles = np.quantile(x, quantiles, method=interpolation)
+        y_quantiles = np.quantile(y, quantiles, method=interpolation)
 
         # Draw the rug plots if requested
         if rug:
@@ -263,7 +263,9 @@ class DataDrift:
         :param train_on_device: Device to train the model on. Options are 'cpu' and 'gpu'. (Default is 'cpu')
         :return: Auc score that indicates similarity and displays feature importance.
         """
-        # add the train/test labels
+        df = df.copy()
+        df_new = df_new.copy()
+
         df["AV_label"] = 0
         df_new["AV_label"] = 1
 

@@ -3,18 +3,13 @@ from typing import Tuple
 import numpy as np
 import pandas as pd
 import pytest
-from sklearn.ensemble import RandomForestClassifier
 from sklearn.model_selection import StratifiedKFold
 
 from bluecast.blueprints.cast import BlueCast
 from bluecast.blueprints.cast_cv import BlueCastCV
 from bluecast.config.training_config import TrainingConfig, XgboostTuneParamsConfig
-from bluecast.ml_modelling.base_classes import (
-    BaseClassMlModel,
-    PredictedClasses,
-    PredictedProbas,
-)
 from bluecast.tests.make_data.create_data import create_synthetic_dataframe
+from bluecast.tests.shared_test_helpers import CustomBinaryClassificationModel
 
 
 @pytest.fixture
@@ -55,7 +50,7 @@ def test_blueprint_cv_xgboost(synthetic_train_test_data, synthetic_calibration_d
     )
 
     automl_cv = BlueCastCV(
-        conf_xgboost=xgboost_param_config, conf_training=train_config, stratifier=skf
+        conf_tuning=xgboost_param_config, conf_training=train_config, stratifier=skf
     )
     oof_mean, oof_std = automl_cv.fit_eval(
         df_train,
@@ -117,7 +112,7 @@ def test_blueprint_cv_xgboost(synthetic_train_test_data, synthetic_calibration_d
     train_config.early_stopping_rounds = None
 
     automl_cv = BlueCastCV(
-        conf_xgboost=xgboost_param_config, conf_training=train_config, stratifier=None
+        conf_tuning=xgboost_param_config, conf_training=train_config, stratifier=None
     )
     automl_cv.fit_eval(
         df_train,
@@ -138,28 +133,8 @@ def test_blueprint_cv_xgboost(synthetic_train_test_data, synthetic_calibration_d
         assert isinstance(model, BlueCast)
 
 
-class CustomLRModel(BaseClassMlModel):
-    def __init__(self):
-        self.model = None
-
-    def fit(
-        self,
-        x_train: pd.DataFrame,
-        x_test: pd.DataFrame,
-        y_train: pd.Series,
-        y_test: pd.Series,
-    ) -> None:
-        self.model = RandomForestClassifier()
-        self.model.fit(x_train, y_train)
-
-    def predict(self, df: pd.DataFrame) -> Tuple[PredictedProbas, PredictedClasses]:
-        predicted_probas = self.model.predict_proba(df)[:, 1]
-        predicted_classes = self.model.predict(df)
-        return predicted_probas, predicted_classes
-
-
 def test_bluecast_cv_fit_eval_with_custom_model():
-    custom_model = CustomLRModel()
+    custom_model = CustomBinaryClassificationModel()
 
     # Create an instance of the BlueCast class with the custom model
     bluecast = BlueCast(

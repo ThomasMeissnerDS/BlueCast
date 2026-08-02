@@ -22,9 +22,8 @@ def test_check_gpu_support_gpu_available():
         params = check_gpu_support()
         # Verify that GPU parameters are returned
         assert params in [
-            {"device": "cuda", "tree_method": "gpu_hist"},
-            {"device": "cuda"},
-            {"tree_method": "gpu_hist"},
+            {"tree_method": "hist", "device": "cuda"},
+            {"tree_method": "hist", "device": "gpu"},
         ]
 
         # Ensure that xgb.train was called at least once
@@ -34,11 +33,11 @@ def test_check_gpu_support_gpu_available():
 def test_check_gpu_support_gpu_warning():
     """Test that the function falls back to CPU if GPU-related warnings are captured."""
 
-    # Mock xgb.train to raise a warning with 'GPU' in the message, simulating GPU issues
-    with patch("xgboost.train"):
-        with patch("warnings.warn") as mock_warn:
-            mock_warn.side_effect = lambda *args, **kwargs: mock_warn.message
-            mock_warn.message = "GPU-related warning"
+    import warnings
 
-            params = check_gpu_support()
-            assert params == {"tree_method": "gpu_hist"}
+    def mock_train_with_warning(*args, **kwargs):
+        warnings.warn("GPU-related warning: Xgboost cannot be imported.", stacklevel=2)
+
+    with patch("xgboost.train", side_effect=mock_train_with_warning):
+        params = check_gpu_support()
+        assert params == {"tree_method": "hist"}

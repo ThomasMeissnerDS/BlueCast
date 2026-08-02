@@ -103,6 +103,13 @@ with the following features:
 * functions to save and load a trained pipeline
 * shapley values
 * ROC AUC curve & lift chart
+* **LLM-Powered Multi-Agent Pipeline Builder (`BlueCastAI`)**:
+  * Automatically analyze data, engineer features, and train models via
+    natural language
+  * Supports Google Gemini, Vertex AI (GCP Native), OpenAI/GPT-4 (incl.
+    proxies like OpenRouter), and Anthropic Claude
+  * Includes debugging transparency through UI callbacks, token budgeting, and
+    exponential backoff retry loops for API limits
 * warnings for potential misconfigurations
 
 The fit_eval method can be used like this:

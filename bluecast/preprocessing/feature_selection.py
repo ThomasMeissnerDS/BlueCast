@@ -66,7 +66,7 @@ class BoostaRootaWrapper(CustomPreprocessing):
         self,
         df: pd.DataFrame,
         target: Optional[pd.Series] = None,
-        predicton_mode: bool = False,
+        prediction_mode: bool = False,
     ) -> Tuple[pd.DataFrame, Optional[pd.Series]]:
         logging.info("Apply feature selection.")
         df = df.loc[:, self.selected_features]

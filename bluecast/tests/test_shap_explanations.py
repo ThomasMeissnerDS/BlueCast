@@ -36,14 +36,15 @@ def test_shap_explanations():
     xgboost_param_config.steps_min = 2
     xgboost_param_config.steps_max = 100
     train_config = TrainingConfig()
-    train_config.hyperparameter_tuning_rounds = 10
+    train_config.hyperparameter_tuning_rounds = 2
+    train_config.autotune_model = False
     train_config.enable_feature_selection = False
     train_config.hypertuning_cv_folds = 2
 
     automl = BlueCast(
         class_problem="binary",
         conf_training=train_config,
-        conf_xgboost=xgboost_param_config,
+        conf_tuning=xgboost_param_config,
     )
     eval_dict = automl.fit_eval(
         df_train, df_val.drop("target", axis=1), df_val["target"], target_col="target"

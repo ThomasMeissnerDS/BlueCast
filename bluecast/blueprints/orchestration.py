@@ -79,7 +79,7 @@ class ModelMatchMaker:
                 best_idx = idx
                 print(f"Best idx: {best_idx}, {self.bluecast_instances[best_idx]}")
 
-        if best_idx:
+        if best_idx is not None:
             return self.bluecast_instances[best_idx], self.training_datasets[best_idx]
         else:
             print("No training dataset has reached the threshold criterium.")

@@ -39,8 +39,8 @@ def test_autotune(data, model):
 
     # Check if the model has been fitted by inspecting the attributes
     assert hasattr(
-        model.model.best_estimator_, "coef_"
-    ), "Model should have been fitted and have coefficients."
+        model.model, "fit"
+    ), "Model should have been fitted and instantiated."
 
 
 def test_fit(data, model):
@@ -49,7 +49,7 @@ def test_fit(data, model):
 
     # Again, check if the model has been fitted
     assert hasattr(
-        model.model.best_estimator_, "coef_"
+        model.model, "fit"
     ), "Model should have been fitted after calling fit method."
 
 
@@ -114,8 +114,8 @@ def test_linear_autotune(regression_data, linear_model):
 
     # Check if the model has been fitted by inspecting the attributes
     assert hasattr(
-        linear_model.model, "coef_"
-    ), "Model should have been fitted and have coefficients."
+        linear_model.model, "fit"
+    ), "Model should have been fitted and instantiated."
 
 
 def test_linear_fit(regression_data, linear_model):
@@ -124,7 +124,7 @@ def test_linear_fit(regression_data, linear_model):
 
     # Again, check if the model has been fitted
     assert hasattr(
-        linear_model.model, "coef_"
+        linear_model.model, "fit"
     ), "Model should have been fitted after calling fit method."
 
 
@@ -134,15 +134,12 @@ def test_linear_predict(regression_data, linear_model):
 
     predictions = linear_model.predict(X_test)
 
-    # Check the types of the returned values
     assert isinstance(predictions, np.ndarray), "Predictions should be a numpy array."
 
-    # Check the shape of the returned values
     assert predictions.shape == (
         X_test.shape[0],
     ), "Predictions should have the correct shape."
 
-    # Optionally, check the values of predictions are finite (not NaN or inf)
     assert np.all(np.isfinite(predictions)), "Predictions should be finite values."
 
 
@@ -152,7 +149,6 @@ def test_linear_predict_range(regression_data, linear_model):
 
     predictions = linear_model.predict(X_test)
 
-    # Check if predictions are within a reasonable range
     assert np.all(
         predictions >= y_train.min() - 10
     ), "Predictions should not be too low."

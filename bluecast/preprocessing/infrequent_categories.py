@@ -27,9 +27,8 @@ class InFrequentCategoryEncoder:
 
     def fit_transform(self, x: pd.DataFrame, y: pd.Series) -> pd.DataFrame:
         """Find infrequent categories and transform column."""
-        logging.info("Start fitting binary target encoder.")
-        if self.target_col in self.cat_columns:
-            self.cat_columns.remove(self.target_col)
+        logging.info("Start fitting infrequent category encoder.")
+        self.cat_columns = [c for c in self.cat_columns if c != self.target_col]
 
         for col in self.cat_columns:
             self.frequencies[col] = x[col].value_counts()
@@ -42,7 +41,8 @@ class InFrequentCategoryEncoder:
 
     def transform(self, x: pd.DataFrame) -> pd.DataFrame:
         """Transform categories based on already explored frequencies."""
-        logging.info("Start transforming categories with binary target encoder.")
+        logging.info("Start transforming categories with infrequent category encoder.")
+        x = x.copy()
         for col in self.cat_columns:
             x[col] = x[col].mask(
                 x[col].map(self.frequencies[col], na_action="ignore")

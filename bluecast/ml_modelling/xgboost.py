@@ -85,7 +85,7 @@ class XgboostModel(XgboostBaseModel):
                 x_train, y_train
             )
             x_test, y_test = self.custom_in_fold_preprocessor.transform(
-                x_test, y_test, predicton_mode=False
+                x_test, y_test, prediction_mode=False
             )
 
         if self.conf_training.use_full_data_for_final_model:
@@ -95,30 +95,40 @@ class XgboostModel(XgboostBaseModel):
                 x_test=x_test,
                 y_test=y_test,
             )
+            x_test = pd.DataFrame()
+            y_test = pd.Series(dtype=y_train.dtype)
 
         d_train, d_test = self._create_d_matrices(x_train, y_train, x_test, y_test)
-        eval_set = [(d_test, "test")]
+        if x_test.empty:
+            eval_set = [(d_train, "train")]
+            eval_name = "train"
+        else:
+            eval_set = [(d_test, "test")]
+            eval_name = "test"
 
-        steps = self.conf_params_xgboost.params.pop("steps", 300)
+        steps = self.conf_params_xgboost.params.get("steps", 300)
+        train_params = {
+            k: v for k, v in self.conf_params_xgboost.params.items() if k != "steps"
+        }
 
         if self.conf_training.hypertuning_cv_folds == 1:
             self.model = xgb.train(
-                self.conf_params_xgboost.params,
+                train_params,
                 d_train,
                 num_boost_round=steps,
                 evals=eval_set,
                 verbose_eval=self.conf_xgboost.verbosity_during_final_model_training,
-                callbacks=self.get_early_stopping_callback(),
+                callbacks=self.get_early_stopping_callback(data_name=eval_name),
             )
         elif self.conf_xgboost:
             self.model = xgb.train(
-                self.conf_params_xgboost.params,
+                train_params,
                 d_train,
                 num_boost_round=steps,
                 early_stopping_rounds=self.conf_training.early_stopping_rounds,
                 evals=eval_set,
                 verbose_eval=self.conf_xgboost.verbosity_during_final_model_training,
-                callbacks=self.get_early_stopping_callback(),
+                callbacks=self.get_early_stopping_callback(data_name=eval_name),
             )
         logging.info("Finished training")
         return self.model
@@ -251,8 +261,8 @@ class XgboostModel(XgboostBaseModel):
                         d_train, d_test, y_test, params, steps, pruning_callback
                     )
                 except Exception as e:
-                    logging.error(f"Error during training: {e}. Pruning trial")
-                    trial.should_prune()
+                    logging.error(f"Error during training: {e}. Pruning trial.")
+                    raise optuna.TrialPruned()
             elif (
                 self.conf_training.hypertuning_cv_folds > 1
                 and self.conf_training.precise_cv_tuning
@@ -345,7 +355,14 @@ class XgboostModel(XgboostBaseModel):
                 except (ZeroDivisionError, RuntimeError, ValueError):
                     pass
 
-            if study.best_value < self.best_score:
+            improved = (
+                self.conf_xgboost.xgboost_eval_metric_tune_direction == "minimize"
+                and study.best_value < self.best_score
+            ) or (
+                self.conf_xgboost.xgboost_eval_metric_tune_direction == "maximize"
+                and study.best_value > self.best_score
+            )
+            if improved:
                 self.best_score = study.best_value
                 logging.info(
                     f"New best score: {study.best_value} from random seed  {self.conf_training.global_random_state + rst}"
@@ -463,7 +480,7 @@ class XgboostModel(XgboostBaseModel):
                     X_val_fold,
                     y_val_fold,
                 ) = self.custom_in_fold_preprocessor.transform(
-                    X_val_fold, y_val_fold, predicton_mode=False
+                    X_val_fold, y_val_fold, prediction_mode=False
                 )
             else:
                 X_test_fold, y_test_fold = x_test, y_test
@@ -553,7 +570,7 @@ class XgboostModel(XgboostBaseModel):
                 trial, f"test-{self.conf_xgboost.xgboost_eval_metric}"
             )
             # copy best params to not overwrite them
-            tuned_params = self._get_param_space_fpr_grid_search(trial)
+            tuned_params = self._get_param_space_for_grid_search(trial)
 
             steps = tuned_params.pop("steps", 300)
 
@@ -563,8 +580,8 @@ class XgboostModel(XgboostBaseModel):
                         d_train, d_test, y_test, tuned_params, steps, pruning_callback
                     )
                 except Exception as e:
-                    logging.error(f"Error during training: {e}. Pruning trial")
-                    trial.should_prune()
+                    logging.error(f"Error during training: {e}. Pruning trial.")
+                    raise optuna.TrialPruned()
             elif (
                 self.conf_training.hypertuning_cv_folds > 1
                 and self.conf_training.precise_cv_tuning
@@ -634,7 +651,7 @@ class XgboostModel(XgboostBaseModel):
 
         if self.custom_in_fold_preprocessor:
             df, _ = self.custom_in_fold_preprocessor.transform(
-                df, None, predicton_mode=True
+                df, None, prediction_mode=True
             )
 
         d_test = xgb.DMatrix(
@@ -671,7 +688,7 @@ class XgboostModel(XgboostBaseModel):
 
         if self.custom_in_fold_preprocessor:
             df, _ = self.custom_in_fold_preprocessor.transform(
-                df, None, predicton_mode=True
+                df, None, prediction_mode=True
             )
 
         d_test = xgb.DMatrix(

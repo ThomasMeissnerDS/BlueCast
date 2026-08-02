@@ -29,7 +29,9 @@ def test_get_params_based_on_device_xgboost_auto_gpu():
 
 
 def test_get_params_based_on_device_xgboost_cpu():
-    conf_training = TrainingConfig(autotune_on_device="cpu")
+    conf_training = TrainingConfig(
+        autotune_on_device="cpu", cat_encoding_via_ml_algorithm=False
+    )
     conf_params_xgboost = XgboostFinalParamConfig()
     conf_xgboost = XgboostTuneParamsConfig(tree_method=["exact"])
 
@@ -41,6 +43,23 @@ def test_get_params_based_on_device_xgboost_cpu():
     assert result["device"] == "cpu"
     assert result["tree_method"] == "exact"
     assert "exact" in conf_xgboost.tree_method
+
+
+def test_get_params_based_on_device_xgboost_cpu_with_categorical():
+    conf_training = TrainingConfig(
+        autotune_on_device="cpu", cat_encoding_via_ml_algorithm=True
+    )
+    conf_params_xgboost = XgboostFinalParamConfig()
+    conf_xgboost = XgboostTuneParamsConfig(tree_method=["exact"])
+
+    with patch("bluecast.general_utils.general_utils.check_gpu_support"):
+        result = get_params_based_on_device_xgboost(
+            conf_training, conf_params_xgboost, conf_xgboost
+        )
+
+    assert result["device"] == "cpu"
+    assert result["tree_method"] == "hist"
+    assert "exact" not in conf_xgboost.tree_method
 
 
 def test_get_params_based_on_device_xgboost_gpu_with_exact_tree_method():

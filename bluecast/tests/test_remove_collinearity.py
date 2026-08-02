@@ -3,71 +3,73 @@ import pandas as pd
 from bluecast.preprocessing.remove_collinearity import remove_correlated_columns
 
 
-def test_remove_correlated_columns_high_correlation():
-    # Create a DataFrame with high correlation between columns
+def test_remove_correlated_columns_positive_correlation():
     data = {
         "A": [1, 2, 3, 4, 5],
-        "B": [2, 4, 6, 8, 10],  # B is perfectly correlated with A
-        "C": [5, 4, 3, 2, 1],  # C is not correlated with A or B
+        "B": [2, 4, 6, 8, 10],  # B is perfectly positively correlated with A
+        "C": [1, 3, 2, 5, 4],  # C has low correlation with A
     }
     df = pd.DataFrame(data)
 
     result_df = remove_correlated_columns(df, threshold=0.9)
 
-    # B should be removed because it's highly correlated with A
-    expected_df = pd.DataFrame({"A": [1, 2, 3, 4, 5], "C": [5, 4, 3, 2, 1]})
+    assert "A" in result_df.columns
+    assert "B" not in result_df.columns
+    assert "C" in result_df.columns
 
-    pd.testing.assert_frame_equal(result_df, expected_df)
+
+def test_remove_correlated_columns_negative_correlation():
+    data = {
+        "A": [1, 2, 3, 4, 5],
+        "B": [5, 4, 3, 2, 1],  # B is perfectly negatively correlated with A
+        "C": [1, 3, 2, 5, 4],  # C has low correlation
+    }
+    df = pd.DataFrame(data)
+
+    result_df = remove_correlated_columns(df, threshold=0.9)
+
+    assert "A" in result_df.columns
+    assert "B" not in result_df.columns, "Negative correlation should also be caught"
+    assert "C" in result_df.columns
 
 
 def test_remove_correlated_columns_no_removal():
-    # Create a DataFrame with no high correlations
     data = {
         "A": [1, 2, 3, 4, 5],
-        "B": [2, 3, 4, 5, 6],  # B is not perfectly correlated with A
-        "C": [5, 4, 3, 2, 1],  # C is not correlated with A or B
+        "B": [1, 3, 2, 5, 4],  # Low correlation with A
+        "C": [3, 1, 4, 2, 5],  # Low correlation with A and B
     }
     df = pd.DataFrame(data)
 
     result_df = remove_correlated_columns(df, threshold=0.9)
 
-    # No columns should be removed
-    pd.testing.assert_frame_equal(result_df, df)
+    assert list(result_df.columns) == ["A", "B", "C"]
 
 
-def test_remove_correlated_columns_no_correlation():
-    # Create a DataFrame where no columns are correlated above the threshold
+def test_remove_correlated_columns_does_not_mutate_input():
     data = {
         "A": [1, 2, 3, 4, 5],
-        "B": [2, 3, 4, 5, 6],
-        "C": [5, 4, 3, 2, 1],
-        "D": [1, 2, 1, 2, 1],
+        "B": [2, 4, 6, 8, 10],
+        "C": [1, 3, 2, 5, 4],
     }
     df = pd.DataFrame(data)
+    original_cols = list(df.columns)
 
-    result_df = remove_correlated_columns(df, threshold=0.9)
+    remove_correlated_columns(df, threshold=0.9)
 
-    # Since no columns are correlated above the threshold, the original DataFrame should be returned
-    pd.testing.assert_frame_equal(result_df, df)
+    assert list(df.columns) == original_cols, "Original DataFrame should not be mutated"
 
 
 def test_remove_correlated_columns_different_threshold():
-    # Create a DataFrame with some correlation
     data = {
         "A": [1, 2, 3, 4, 5],
-        "B": [2, 4, 6, 8, 10],  # B is perfectly correlated with A
-        "C": [5, 5, 5, 5, 5],  # C is constant, should have no correlation
+        "B": [2, 4, 6, 8, 10],  # Perfectly correlated with A
+        "C": [1, 3, 2, 5, 4],  # Low correlation
     }
     df = pd.DataFrame(data)
 
-    # Use a higher threshold, so no columns should be removed
-    result_df = remove_correlated_columns(df, threshold=0.95)
+    result_high = remove_correlated_columns(df, threshold=1.01)
+    assert len(result_high.columns) == 3, "No columns removed at threshold > 1.0"
 
-    pd.testing.assert_frame_equal(result_df, df)
-
-    # Use a lower threshold, so column B should be removed
-    result_df = remove_correlated_columns(df, threshold=0.8)
-
-    expected_df = pd.DataFrame({"A": [1, 2, 3, 4, 5], "C": [5, 5, 5, 5, 5]})
-
-    pd.testing.assert_frame_equal(result_df, expected_df)
+    result_low = remove_correlated_columns(df, threshold=0.8)
+    assert "B" not in result_low.columns

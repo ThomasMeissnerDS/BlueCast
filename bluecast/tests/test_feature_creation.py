@@ -8,7 +8,11 @@ from bluecast.preprocessing.feature_creation import (
     AddRowLevelAggFeatures,
     FeatureClusteringScorer,
     GroupLevelAggFeatures,
+    add_binned_features,
+    add_datetime_features,
     add_groupby_agg_feats,
+    add_interaction_features,
+    add_polynomial_features,
 )
 
 
@@ -426,3 +430,88 @@ def test_add_groupby_agg_feats(sample_dataframe):
 
     # Check that the merge retains the number of rows in the original DataFrame
     assert len(result_df) == len(df), "Row count mismatch after merging"
+
+
+def test_add_polynomial_features(sample_dataframe):
+    df = add_polynomial_features(sample_dataframe, ["A"], degree=3)
+    assert "A_pow_2" in df.columns
+    assert "A_pow_3" in df.columns
+    assert "B_pow_2" not in df.columns
+    assert df["A_pow_2"].iloc[1] == 4  # 2^2
+    assert df["A_pow_3"].iloc[2] == 27  # 3^3
+
+
+def test_add_interaction_features(sample_dataframe):
+    df = add_interaction_features(
+        sample_dataframe, ["A", "B"], ["B"], operations=["mul", "add"]
+    )
+    assert "A_mul_B" in df.columns
+    assert "A_add_B" in df.columns
+    # B and B shouldn't be interacted if col1 == col2
+    assert "B_mul_B" not in df.columns
+    assert df["A_mul_B"].iloc[0] == 5  # 1 * 5
+    assert df["A_add_B"].iloc[1] == 8  # 2 + 6
+
+
+def test_add_binned_features():
+    df = pd.DataFrame({"A": [1, 2, 3, 4, 100]})
+    df_out = add_binned_features(df, ["A"], num_bins=2)
+    assert "A_binned" in df_out.columns
+    # Should be 0 or 1
+    assert df_out["A_binned"].nunique() <= 2
+    assert df_out["A_binned"].iloc[0] == 0
+
+
+def test_add_datetime_features():
+    df = pd.DataFrame({"dt": ["2023-01-01 12:00:00", "2023-12-31 23:00:00"]})
+    df_out = add_datetime_features(df, ["dt"])
+    assert "dt_year" in df_out.columns
+    assert "dt_month" in df_out.columns
+    assert "dt_hour" in df_out.columns
+    assert "dt" not in df_out.columns
+    assert df_out["dt_year"].iloc[0] == 2023
+    assert df_out["dt_month"].iloc[1] == 12
+    assert df_out["dt_hour"].iloc[0] == 12
+
+
+def test_tfidf_text_encoder():
+    from bluecast.preprocessing.feature_creation import TfIdfTextEncoder
+
+    df = pd.DataFrame({"text": ["hello world", "hello again", "world is good"] * 10})
+    encoder = TfIdfTextEncoder(max_features=10)
+    df_transformed = encoder.fit_transform(df.copy(), "text")
+    assert "tfidf_text_hello" in df_transformed.columns
+    df_inference = pd.DataFrame({"text": ["hello"]})
+    df_inf_transformed = encoder.transform(df_inference, "text")
+    assert "tfidf_text_hello" in df_inf_transformed.columns
+
+
+def test_state_aware_groupby_aggregator():
+    from bluecast.preprocessing.feature_creation import StateAwareGroupbyAggregator
+
+    df = pd.DataFrame({"cat": ["a", "a", "b"], "num": [1, 2, 3]})
+    agg = StateAwareGroupbyAggregator(
+        groupby_cols=["cat"], agg_cols=["num"], aggregations=["mean"]
+    )
+    df_transformed = agg.fit_transform(df.copy())
+    assert "state_agg_num_mean" in df_transformed.columns
+    df_inference = pd.DataFrame({"cat": ["a", "c"]})
+    df_inf_transformed = agg.transform(df_inference)
+    assert "state_agg_num_mean" in df_inf_transformed.columns
+
+
+def test_add_pca_features():
+    from bluecast.preprocessing.feature_creation import add_pca_features
+
+    df = pd.DataFrame({"x": [1, 2, 3], "y": [4, 5, 6]})
+    state = {}
+    df_transformed = add_pca_features(
+        df.copy(), ["x", "y"], n_components=1, is_fit=True, state=state
+    )
+    assert "pca_1" in df_transformed.columns
+    assert "pca_pca_x_y" in state
+    df_inference = pd.DataFrame({"x": [2, 3], "y": [5, 6]})
+    df_inf_transformed = add_pca_features(
+        df_inference, ["x", "y"], n_components=1, is_fit=False, state=state
+    )
+    assert "pca_1" in df_inf_transformed.columns
