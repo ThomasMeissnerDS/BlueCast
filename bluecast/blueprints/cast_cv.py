@@ -157,8 +157,14 @@ class BlueCastCV:
             self.conf_training = TrainingConfig()
 
         if not self.stratifier:
+            n_splits = max(2, self.conf_training.bluecast_cv_train_n_model[0])
+            if n_splits != self.conf_training.bluecast_cv_train_n_model[0]:
+                logging.warning(
+                    f"bluecast_cv_train_n_model[0]={self.conf_training.bluecast_cv_train_n_model[0]} "
+                    f"is less than 2. Clamping n_splits to {n_splits} for cross-validation."
+                )
             self.stratifier = RepeatedStratifiedKFold(
-                n_splits=self.conf_training.bluecast_cv_train_n_model[0],
+                n_splits=n_splits,
                 n_repeats=self.conf_training.bluecast_cv_train_n_model[1],
                 random_state=self.conf_training.global_random_state,
             )
@@ -234,8 +240,14 @@ class BlueCastCV:
             self.conf_training = TrainingConfig()
 
         if not self.stratifier:
+            n_splits = max(2, self.conf_training.bluecast_cv_train_n_model[0])
+            if n_splits != self.conf_training.bluecast_cv_train_n_model[0]:
+                logging.warning(
+                    f"bluecast_cv_train_n_model[0]={self.conf_training.bluecast_cv_train_n_model[0]} "
+                    f"is less than 2. Clamping n_splits to {n_splits} for cross-validation."
+                )
             self.stratifier = RepeatedStratifiedKFold(
-                n_splits=self.conf_training.bluecast_cv_train_n_model[0],
+                n_splits=n_splits,
                 n_repeats=self.conf_training.bluecast_cv_train_n_model[1],
                 random_state=self.conf_training.global_random_state,
             )

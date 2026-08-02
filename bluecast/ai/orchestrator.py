@@ -865,6 +865,9 @@ class Orchestrator:
                 n_folds = self.config.conf_training.bluecast_cv_train_n_model[0]
                 n_repeats = self.config.conf_training.bluecast_cv_train_n_model[1]
 
+            # Cross-validation requires at least 2 splits
+            n_folds = max(2, n_folds)
+
             # Include all architectures, all exploration iterations + 1 refinement, folds, and repeats
             total_jobs = max(1, total_archs * (iters + 1) * n_folds * n_repeats)
             override_max_runtime = max(
@@ -1328,6 +1331,9 @@ class Orchestrator:
         ):
             n_folds = self.config.conf_training.bluecast_cv_train_n_model[0]
             n_repeats = self.config.conf_training.bluecast_cv_train_n_model[1]
+
+        # Cross-validation requires at least 2 splits
+        n_folds = max(2, n_folds)
 
         config = {
             "class_problem": class_problem,

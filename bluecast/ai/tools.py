@@ -1213,18 +1213,23 @@ def tool_build_and_run_pipeline(  # noqa: C901
         training_config.autotune_on_device = config.get("autotune_on_device")
 
     if "n_folds" in config or "n_repeats" in config:
-        # Only override CV models if the user hasn't explicitly set a custom one
-        if training_config.bluecast_cv_train_n_model == (5, 1):
-            training_config.bluecast_cv_train_n_model = (
-                int(
-                    config.get("n_folds", training_config.bluecast_cv_train_n_model[0])
-                ),
-                int(
-                    config.get(
-                        "n_repeats", training_config.bluecast_cv_train_n_model[1]
-                    )
-                ),
-            )
+        # Apply agent-recommended n_folds/n_repeats.  Always clamp n_folds
+        # to >= 2 because sklearn's cross-validation requires at least 2 splits.
+        n_folds = max(
+            2,
+            int(config.get("n_folds", training_config.bluecast_cv_train_n_model[0])),
+        )
+        n_repeats = int(
+            config.get("n_repeats", training_config.bluecast_cv_train_n_model[1])
+        )
+        training_config.bluecast_cv_train_n_model = (n_folds, n_repeats)
+
+    # Safety net: ensure n_folds >= 2 even when no agent override was provided
+    if use_cv and training_config.bluecast_cv_train_n_model[0] < 2:
+        training_config.bluecast_cv_train_n_model = (
+            2,
+            training_config.bluecast_cv_train_n_model[1],
+        )
 
     # Apply standard fallbacks if not explicitly provided
     if "enable_feature_selection" in config:
