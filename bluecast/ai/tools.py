@@ -419,15 +419,111 @@ def tool_check_feature_quality(
     return "\n".join(results)
 
 
+def _check_feature_leakage(
+    df: pd.DataFrame,
+    target_series: pd.Series,
+    new_cols: List[str],
+    mi_threshold: float = 0.95,
+) -> List[str]:
+    """Check newly created features for potential target leakage.
+
+    Uses mutual information between each new feature and the target to detect
+    features that are suspiciously predictive.  A high MI relative to the
+    theoretical maximum indicates the feature likely contains leaked target
+    information (e.g. a direct copy, a 1:1 mapping, or a near-perfect proxy).
+
+    :param df: DataFrame containing the new feature columns.
+    :param target_series: Target values aligned to df rows.
+    :param new_cols: List of new column names to check.
+    :param mi_threshold: Reject if MI exceeds this fraction of the max MI
+        observed across all existing features.  Default 0.95.
+    :returns: List of column names flagged as likely leaking.
+    """
+    from sklearn.feature_selection import mutual_info_classif, mutual_info_regression
+    from sklearn.preprocessing import LabelEncoder
+
+    if len(new_cols) == 0 or target_series is None or len(target_series) == 0:
+        return []
+
+    flagged = []
+
+    # Prepare target
+    y = target_series.values
+    is_classification = (
+        target_series.dtype == "object"
+        or target_series.dtype.name == "category"
+        or target_series.nunique() <= 20
+    )
+    if is_classification:
+        try:
+            y = LabelEncoder().fit_transform(y.astype(str)).astype(np.float64)
+        except Exception:
+            return []
+        mi_func = mutual_info_classif
+    else:
+        y = pd.to_numeric(pd.Series(y), errors="coerce").values.astype(np.float64)
+        mi_func = mutual_info_regression
+
+    # Remove NaN/Inf rows
+    y_mask = ~(np.isnan(y) | np.isinf(y))
+
+    # Compute MI for each new column
+    for col in new_cols:
+        if col not in df.columns:
+            continue
+
+        x_raw = df[col]
+        if x_raw.dtype == "object" or x_raw.dtype.name == "category":
+            try:
+                x = LabelEncoder().fit_transform(x_raw.astype(str)).astype(np.float64)
+            except Exception:
+                continue
+        else:
+            x = pd.to_numeric(x_raw, errors="coerce").values.astype(np.float64)
+
+        mask = y_mask & ~(np.isnan(x) | np.isinf(x))
+        if mask.sum() < 30:
+            continue
+
+        x_clean = x[mask].reshape(-1, 1)
+        y_clean = y[mask]
+
+        try:
+            mi = float(mi_func(x_clean, y_clean, random_state=42)[0])
+        except Exception:
+            continue
+
+        # Also check perfect or near-perfect correlation
+        try:
+            corr = abs(float(np.corrcoef(x_clean.ravel(), y_clean)[0, 1]))
+        except Exception:
+            corr = 0.0
+
+        # Flag if MI is extremely high or correlation is near-perfect
+        if corr >= 0.99 or mi > 2.0:
+            logger.warning(
+                f"LEAKAGE DETECTED: Feature '{col}' has suspiciously high "
+                f"correlation={corr:.4f} / MI={mi:.4f} with target. "
+                f"Rejecting to prevent data leakage."
+            )
+            flagged.append(col)
+
+    return flagged
+
+
 def tool_create_feature(
     df: pd.DataFrame,
     feature_code: str,
     state: Optional[Dict[str, Any]] = None,
+    target_series: Optional[pd.Series] = None,
 ) -> Dict[str, Any]:
     """Execute feature engineering code and return the modified DataFrame.
 
     The code should modify 'df' in-place or assign new columns.
     Returns dict with 'success', 'new_columns', 'error'.
+
+    If ``target_series`` is provided, newly created columns are automatically
+    checked for target leakage and rejected if suspiciously predictive.
     """
     original_cols = set(df.columns)
     if state is None:
@@ -454,12 +550,27 @@ def tool_create_feature(
 
         df_result = local_vars.get("df", df)
         new_cols = list(set(df_result.columns) - original_cols)
+
+        # --- Automatic leakage check on new features ---
+        leakage_rejected: List[str] = []
+        if target_series is not None and new_cols:
+            # Align target to df_result index
+            aligned_target = target_series.reindex(df_result.index)
+            leakage_rejected = _check_feature_leakage(
+                df_result, aligned_target, new_cols
+            )
+            if leakage_rejected:
+                # Drop leaky features
+                df_result = df_result.drop(columns=leakage_rejected, errors="ignore")
+                new_cols = [c for c in new_cols if c not in leakage_rejected]
+
         return {
             "success": True,
             "new_columns": new_cols,
             "shape": list(df_result.shape),
             "error": None,
             "df": df_result,
+            "leakage_rejected": leakage_rejected,
         }
     except Exception as e:
         return {

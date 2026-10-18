@@ -76,6 +76,10 @@ class TrainingConfig:
         evaluation (e.g. ["gender", "age_group"]). When set, fit_eval will automatically compute fairness metrics
         alongside standard evaluation metrics. The columns must be present in the evaluation DataFrame.
     :param conf_tuning: Optional dictionary with custom tuning overrides for specific ML models (e.g. nn_batch_size_choices).
+    :param enable_autofe: Whether to enable automatic feature engineering (expand and reduce paradigm).
+    :param autofe_pruning_threshold: The minimum gain threshold for a generated feature to be retained.
+    :param use_focal_loss_for_imbalance: Whether to dynamically inject a custom focal loss objective if class imbalance is high.
+    :param advanced_target_encoding: Whether to use out-of-fold target encoding with Bayes smoothing.
     """
 
     def __init__(
@@ -83,8 +87,8 @@ class TrainingConfig:
         global_random_state: int = 33,
         increase_random_state_in_bluecast_cv_by: int = 200,
         shuffle_during_training: bool = True,
-        hyperparameter_tuning_rounds: int = 200,
-        hyperparameter_tuning_max_runtime_secs: int = 3600,
+        hyperparameter_tuning_rounds: int = 250,
+        hyperparameter_tuning_max_runtime_secs: int = 7200,
         hypertuning_cv_folds: int = 5,
         hypertuning_cv_repeats: int = 1,
         sample_data_during_tuning: bool = False,
@@ -118,6 +122,10 @@ class TrainingConfig:
         optuna_db_backend_path: Optional[str] = None,
         fairness_sensitive_columns: Optional[List[str]] = None,
         conf_tuning: Optional[Dict[str, Any]] = None,
+        enable_autofe: bool = False,
+        autofe_pruning_threshold: float = 0.01,
+        use_focal_loss_for_imbalance: bool = False,
+        advanced_target_encoding: bool = True,
     ):
         self.global_random_state = global_random_state
         self.increase_random_state_in_bluecast_cv_by = (
@@ -170,6 +178,10 @@ class TrainingConfig:
         self.optuna_db_backend_path = optuna_db_backend_path
         self.fairness_sensitive_columns = fairness_sensitive_columns
         self.conf_tuning = conf_tuning if conf_tuning is not None else {}
+        self.enable_autofe = enable_autofe
+        self.autofe_pruning_threshold = autofe_pruning_threshold
+        self.use_focal_loss_for_imbalance = use_focal_loss_for_imbalance
+        self.advanced_target_encoding = advanced_target_encoding
 
     def dict(self):
         """
@@ -204,6 +216,8 @@ class XgboostTuneParamsConfig:
     :param col_sample_by_tree_max: Maximum value of subsample ratio of columns when constructing each tree. Defaults to 1.0.
     :param col_sample_by_level_min: Minimum value of subsample columns for each split in each level. Defaults to 1.0.
     :param col_sample_by_level_max: Maximum value of subsample columns for each split in each level. Defaults to 1.0.
+    :param col_sample_by_node_min: Minimum value of subsample columns for each node. Defaults to 0.4.
+    :param col_sample_by_node_max: Maximum value of subsample columns for each node. Defaults to 1.0.
     :param max_bin_min: Minimum value for maximum number of bins. Defaults to 128.
     :param max_bin_max: Maximum value for maximum number of bins. Defaults to 1024.
     :param eta_min: Minimum value for learning rate (eta). Defaults to 1e-3.
@@ -226,9 +240,9 @@ class XgboostTuneParamsConfig:
         max_depth_min: int = 1,
         max_depth_max: int = 10,
         alpha_min: float = 1e-8,
-        alpha_max: float = 100.0,
+        alpha_max: float = 1000.0,
         lambda_min: float = 1.0,
-        lambda_max: float = 100.0,
+        lambda_max: float = 1000.0,
         gamma_min: float = 1e-8,
         gamma_max: float = 10.0,
         min_child_weight_min: float = 1.0,
@@ -239,6 +253,8 @@ class XgboostTuneParamsConfig:
         col_sample_by_tree_max: float = 1.0,
         col_sample_by_level_min: float = 1.0,
         col_sample_by_level_max: float = 1.0,
+        col_sample_by_node_min: float = 0.4,
+        col_sample_by_node_max: float = 1.0,
         max_bin_min: int = 128,
         max_bin_max: int = 1024,
         eta_min: float = 1e-3,
@@ -277,6 +293,8 @@ class XgboostTuneParamsConfig:
         self.col_sample_by_tree_max = col_sample_by_tree_max
         self.col_sample_by_level_min = col_sample_by_level_min
         self.col_sample_by_level_max = col_sample_by_level_max
+        self.col_sample_by_node_min = col_sample_by_node_min
+        self.col_sample_by_node_max = col_sample_by_node_max
         self.max_bin_min = max_bin_min
         self.max_bin_max = max_bin_max
         self.eta_min = eta_min
@@ -328,6 +346,8 @@ class XgboostTuneParamsRegressionConfig:
     :param col_sample_by_tree_max: Maximum value of subsample ratio of columns when constructing each tree. Defaults to 1.0.
     :param col_sample_by_level_min: Minimum value of subsample columns for each split in each level. Defaults to 1.0.
     :param col_sample_by_level_max: Maximum value of subsample columns for each split in each level. Defaults to 1.0.
+    :param col_sample_by_node_min: Minimum value of subsample columns for each node. Defaults to 0.4.
+    :param col_sample_by_node_max: Maximum value of subsample columns for each node. Defaults to 1.0.
     :param max_bin_min: Minimum value for maximum number of bins. Defaults to 128.
     :param max_bin_max: Maximum value for maximum number of bins. Defaults to 1024.
     :param eta_min: Minimum value for learning rate (eta). Defaults to 1e-3.
@@ -350,9 +370,9 @@ class XgboostTuneParamsRegressionConfig:
         max_depth_min: int = 1,
         max_depth_max: int = 10,
         alpha_min: float = 1e-8,
-        alpha_max: float = 100.0,
+        alpha_max: float = 1000.0,
         lambda_min: float = 1.0,
-        lambda_max: float = 100.0,
+        lambda_max: float = 1000.0,
         gamma_min: float = 1e-8,
         gamma_max: float = 10.0,
         min_child_weight_min: float = 1.0,
@@ -363,6 +383,8 @@ class XgboostTuneParamsRegressionConfig:
         col_sample_by_tree_max: float = 1.0,
         col_sample_by_level_min: float = 1.0,
         col_sample_by_level_max: float = 1.0,
+        col_sample_by_node_min: float = 0.4,
+        col_sample_by_node_max: float = 1.0,
         max_bin_min: int = 128,
         max_bin_max: int = 1024,
         eta_min: float = 1e-3,
@@ -401,6 +423,8 @@ class XgboostTuneParamsRegressionConfig:
         self.col_sample_by_tree_max = col_sample_by_tree_max
         self.col_sample_by_level_min = col_sample_by_level_min
         self.col_sample_by_level_max = col_sample_by_level_max
+        self.col_sample_by_node_min = col_sample_by_node_min
+        self.col_sample_by_node_max = col_sample_by_node_max
         self.max_bin_min = max_bin_min
         self.max_bin_max = max_bin_max
         self.eta_min = eta_min

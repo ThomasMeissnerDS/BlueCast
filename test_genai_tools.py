@@ -1,5 +1,3 @@
-import json
-
 from google.genai import types
 
 parameters = {

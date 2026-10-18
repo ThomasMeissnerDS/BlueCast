@@ -172,16 +172,31 @@ class ArchFeatureEngineerAgent(BaseAgent):
                 "error": "No training data available.",
             }
 
-        # Hide target column from feature engineering to prevent schema mismatches on inference
+        target_series = None
         target_col = getattr(self.context, "target_col", None)
+
+        # We need the target_series for leakage checks before hiding the target
+        if (
+            target_col
+            and self.context.df_train is not None
+            and target_col in self.context.df_train.columns
+        ):
+            target_series = self.context.df_train[target_col]
+
+        # Hide target column from feature engineering to prevent schema mismatches on inference
         if target_col and target_col in df.columns:
             df = df.drop(columns=[target_col])
 
         state = self.feature_states.setdefault(self._arch_name, {})
-        result = tool_create_feature(df, feature_code, state=state)
+        result = tool_create_feature(
+            df, feature_code, state=state, target_series=target_series
+        )
+
         if result["success"]:
             df = result.pop("df")
             new_cols = result.get("new_columns", [])
+            leakage_rejected = result.pop("leakage_rejected", [])
+
             valid_cols = []
             for col in new_cols:
                 if col in df.columns:
@@ -191,13 +206,24 @@ class ArchFeatureEngineerAgent(BaseAgent):
                     else:
                         df.drop(columns=[col], inplace=True)
 
-            # If all newly created features were constant, reject the entire snippet
-            if new_cols and not valid_cols:
+            # If all newly created features were constant or rejected, reject the entire snippet
+            if new_cols and not valid_cols and not leakage_rejected:
                 return {
                     "success": False,
                     "new_columns": [],
                     "error": "Snippet rejected: All generated features were constant or had zero variance.",
                 }
+            elif leakage_rejected and not valid_cols:
+                return {
+                    "success": False,
+                    "new_columns": [],
+                    "error": f"Snippet rejected: All generated features were flagged for data leakage: {leakage_rejected}",
+                }
+
+            if leakage_rejected:
+                result["message"] = (
+                    f"Warning: The following features were rejected because they leak the target (MI > threshold): {leakage_rejected}. They have been removed."
+                )
 
             self.context.engineered_df = df
             # Store in arch-specific snippet list
@@ -370,7 +396,8 @@ You are creating features specifically for the **{self._arch_display_name}** mod
 - DO NOT drop existing columns — use the tool to ADD features
 - Keep feature names descriptive and unique
 - STRICT: DO NOT use stateful transformations (StandardScaler, Target Encoding, global means via groupby). These leak validation targets during CV.
-- Use the 'state' dictionary to store and retrieve data-dependent parameters (like means, counts, or scalers) between 'fit' and 'transform' phases.
+- CRITICAL: You MUST use the 'state' dictionary to store and retrieve data-dependent parameters (like aggregators, means, counts, or scalers) between 'fit' and 'transform' phases.
+  NEVER create a new instance of a stateful class like StateAwareGroupbyAggregator outside of the state dictionary! If you do, it will lose its fit and crash during inference!
 - The code runs inside a framework that provides 'is_fit' (bool) and 'state' (dict) in the local scope.
 - DO NOT reference columns with ZERO VARIANCE (only 1 unique value) — they are dropped by the pipeline.
 
@@ -399,6 +426,25 @@ The following tools are available if you need them. Use your judgment about whic
       df = state['my_agg'].fit_transform(df)
   else:
       df = state['my_agg'].transform(df)
+- `from bluecast.preprocessing.feature_creation import FrequencyEncoder`
+  Signature: FrequencyEncoder(cols=['cat_col1', 'cat_col2'])
+  Usage:
+  if 'freq_enc' not in state:
+      state['freq_enc'] = FrequencyEncoder(cols=['cat_col'])
+  if is_fit:
+      df = state['freq_enc'].fit_transform(df)
+  else:
+      df = state['freq_enc'].transform(df)
+- `from bluecast.preprocessing.feature_creation import TargetStatisticEncoder`
+  Signature: TargetStatisticEncoder(cols=['cat_col'], target_col='target', n_folds=5, smoothing=10.0)
+  Usage:
+  if 'te' not in state:
+      state['te'] = TargetStatisticEncoder(cols=['cat_col'], target_col='target_column_name')
+  if is_fit:
+      df = state['te'].fit_transform(df)
+  else:
+      df = state['te'].transform(df)
+  IMPORTANT: TargetStatisticEncoder is OOF-safe and uses K-Fold internally to prevent leakage.
 - `from bluecast.preprocessing.feature_creation import add_pca_features`
   Signature: add_pca_features(df, cols=['num1', 'num2', 'num3'], n_components=3, state=state, is_fit=is_fit)
   IMPORTANT: Always pass state=state and is_fit=is_fit to ensure train/test PCA consistency.

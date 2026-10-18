@@ -737,3 +737,191 @@ def add_pca_features(
         df[f"{prefix}_{i + 1}"] = components[:, i]
 
     return df
+
+
+class FrequencyEncoder:
+    """Stateful frequency encoding for categorical columns.
+
+    Encodes each category by its frequency (count / total) as observed during
+    fit.  Unseen categories at transform time receive a small default value.
+    Safe for train/test splits: frequencies are always derived from training
+    data only.
+
+    Usage inside AIFeaturePreprocessor snippets::
+
+        if 'freq_enc' not in state:
+            state['freq_enc'] = FrequencyEncoder(cols=['city', 'region'])
+        if is_fit:
+            df = state['freq_enc'].fit_transform(df)
+        else:
+            df = state['freq_enc'].transform(df)
+    """
+
+    def __init__(self, cols: Optional[List[str]] = None, prefix: str = "freq"):
+        self.cols = cols or []
+        self.prefix = prefix
+        self.freq_maps: Dict[str, Dict[Any, float]] = {}
+        self.is_fitted = False
+
+    def fit_transform(self, df: pd.DataFrame) -> pd.DataFrame:
+        df_out = df.copy()
+        for col in self.cols:
+            if col not in df_out.columns:
+                continue
+            counts = df_out[col].value_counts(normalize=True)
+            self.freq_maps[col] = counts.to_dict()
+            df_out[f"{self.prefix}_{col}"] = df_out[col].map(counts).fillna(0.0)
+        self.is_fitted = True
+        return df_out
+
+    def transform(self, df: pd.DataFrame) -> pd.DataFrame:
+        if not self.is_fitted:
+            return df
+        df_out = df.copy()
+        for col, fmap in self.freq_maps.items():
+            if col not in df_out.columns:
+                continue
+            # Use stored training frequencies; unseen categories get 0
+            df_out[f"{self.prefix}_{col}"] = df_out[col].map(fmap).fillna(0.0)
+        return df_out
+
+
+class TargetStatisticEncoder:
+    """OOF-safe target statistic encoder for categorical columns.
+
+    During fit, computes smoothed target mean/count per category using
+    K-fold out-of-fold averaging to prevent target leakage.  During
+    transform, applies the global mappings computed from the full
+    training set.
+
+    Produces columns: ``{prefix}_{col}_mean``, ``{prefix}_{col}_count``
+
+    Usage inside AIFeaturePreprocessor snippets::
+
+        if 'te' not in state:
+            state['te'] = TargetStatisticEncoder(
+                cols=['region'], target_col='price', n_folds=5, smoothing=10
+            )
+        if is_fit:
+            df = state['te'].fit_transform(df)
+        else:
+            df = state['te'].transform(df)
+
+    :param cols: Categorical columns to encode.
+    :param target_col: Name of the target column (must be present during fit).
+    :param n_folds: Number of OOF folds for leakage-free encoding during fit.
+    :param smoothing: Bayesian smoothing weight (higher = more regularization
+        toward the global mean).
+    """
+
+    def __init__(
+        self,
+        cols: Optional[List[str]] = None,
+        target_col: str = "target",
+        n_folds: int = 5,
+        smoothing: float = 10.0,
+        prefix: str = "te",
+    ):
+        self.cols = cols or []
+        self.target_col = target_col
+        self.n_folds = max(2, n_folds)
+        self.smoothing = smoothing
+        self.prefix = prefix
+        self.global_stats: Dict[str, pd.DataFrame] = {}
+        self.global_mean: float = 0.0
+        self.is_fitted = False
+
+    @staticmethod
+    def _smoothed_mean(
+        group_mean: float, group_count: int, global_mean: float, smoothing: float
+    ) -> float:
+        return (group_count * group_mean + smoothing * global_mean) / (
+            group_count + smoothing
+        )
+
+    def fit_transform(self, df: pd.DataFrame) -> pd.DataFrame:
+        if self.target_col not in df.columns:
+            return df
+
+        df_out = df.copy()
+        y = df_out[self.target_col].values.astype(np.float64)
+        self.global_mean = float(np.nanmean(y))
+
+        from sklearn.model_selection import KFold
+
+        kf = KFold(n_splits=self.n_folds, shuffle=True, random_state=42)
+
+        for col in self.cols:
+            if col not in df_out.columns:
+                continue
+
+            # --- Compute global stats (for transform / unseen) ---
+            stats = (
+                df_out.groupby(col)[self.target_col]
+                .agg(["mean", "count"])
+                .reset_index()
+            )
+            stats.columns = [col, "mean", "count"]
+            stats["smoothed_mean"] = stats.apply(
+                lambda r: self._smoothed_mean(
+                    r["mean"], r["count"], self.global_mean, self.smoothing
+                ),
+                axis=1,
+            )
+            self.global_stats[col] = stats
+
+            # --- OOF encoding for training rows ---
+            oof_encoded = np.full(len(df_out), self.global_mean, dtype=np.float64)
+            oof_count = np.zeros(len(df_out), dtype=np.float64)
+            col_vals = df_out[col].values
+
+            for train_idx, val_idx in kf.split(df_out):
+                fold_df = df_out.iloc[train_idx]
+                fold_stats = (
+                    fold_df.groupby(col)[self.target_col]
+                    .agg(["mean", "count"])
+                    .reset_index()
+                )
+                fold_stats.columns = [col, "fold_mean", "fold_count"]
+                fold_global_mean = float(np.nanmean(y[train_idx]))
+
+                fold_map_mean = {}
+                fold_map_count = {}
+                for _, row in fold_stats.iterrows():
+                    cat_val = row[col]
+                    sm = self._smoothed_mean(
+                        row["fold_mean"],
+                        row["fold_count"],
+                        fold_global_mean,
+                        self.smoothing,
+                    )
+                    fold_map_mean[cat_val] = sm
+                    fold_map_count[cat_val] = row["fold_count"]
+
+                for idx in val_idx:
+                    cat = col_vals[idx]
+                    oof_encoded[idx] = fold_map_mean.get(cat, fold_global_mean)
+                    oof_count[idx] = fold_map_count.get(cat, 0.0)
+
+            df_out[f"{self.prefix}_{col}_mean"] = oof_encoded
+            df_out[f"{self.prefix}_{col}_count"] = oof_count
+
+        self.is_fitted = True
+        return df_out
+
+    def transform(self, df: pd.DataFrame) -> pd.DataFrame:
+        if not self.is_fitted:
+            return df
+        df_out = df.copy()
+        for col, stats in self.global_stats.items():
+            if col not in df_out.columns:
+                continue
+            mapping_mean = dict(zip(stats[col], stats["smoothed_mean"]))
+            mapping_count = dict(zip(stats[col], stats["count"]))
+            df_out[f"{self.prefix}_{col}_mean"] = (
+                df_out[col].map(mapping_mean).fillna(self.global_mean)
+            )
+            df_out[f"{self.prefix}_{col}_count"] = (
+                df_out[col].map(mapping_count).fillna(0.0)
+            )
+        return df_out

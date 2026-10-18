@@ -34,6 +34,7 @@ from bluecast.evaluation.shap_values import (
 from bluecast.experimentation.tracking import ExperimentTracker
 from bluecast.general_utils.general_utils import save_out_of_fold_data
 from bluecast.ml_modelling.catboost import CatboostModel
+from bluecast.preprocessing.auto_fe import BlueCastFeatureGenerator
 from bluecast.preprocessing.category_encoder_orchestration import (
     CategoryEncoderOrchestrator,
 )
@@ -52,6 +53,7 @@ from bluecast.preprocessing.schema_checks import SchemaDetector
 from bluecast.preprocessing.target_encoding import (
     BinaryClassTargetEncoder,
     MultiClassTargetEncoder,
+    OOFTargetEncoder,
 )
 from bluecast.preprocessing.train_test_split import train_test_split
 
@@ -127,7 +129,7 @@ class BlueCast:
         self.feat_type_detector: Optional[FeatureTypeDetector] = None
         self.infreq_cat_encoder: Optional[InFrequentCategoryEncoder] = None
         self.cat_encoder: Optional[
-            Union[BinaryClassTargetEncoder, MultiClassTargetEncoder]
+            Union[BinaryClassTargetEncoder, MultiClassTargetEncoder, OOFTargetEncoder]
         ] = None
         self.onehot_encoder: Optional[OneHotCategoryEncoder] = None
         self.category_encoder_orchestrator: Optional[CategoryEncoderOrchestrator] = None
@@ -144,6 +146,7 @@ class BlueCast:
         self.eval_metrics: Optional[Dict[str, Any]] = None
         self.conformal_prediction_wrapper: Optional[ConformalPredictionWrapper] = None
         self.single_fold_eval_metric_func = single_fold_eval_metric_func
+        self.autofe_generator: Optional[BlueCastFeatureGenerator] = None
 
         if experiment_tracker:
             self.experiment_tracker = experiment_tracker
@@ -289,13 +292,43 @@ class BlueCast:
                     )
                 )
 
-        self.cat_columns = self.feat_type_detector.cat_columns
-        self.date_columns = self.feat_type_detector.date_columns
+        self.cat_columns = [
+            col
+            for col in self.feat_type_detector.cat_columns
+            if col != self.target_column
+        ]
+        self.date_columns = [
+            col
+            for col in self.feat_type_detector.date_columns
+            if col != self.target_column
+        ]
 
         df = cast_bool_to_int(df, self.target_column)
 
         if not self.conf_training:
             self.conf_training = TrainingConfig()
+
+        if getattr(self.conf_training, "enable_autofe", False):
+            self.autofe_generator = BlueCastFeatureGenerator(
+                autofe_pruning_threshold=self.conf_training.autofe_pruning_threshold,
+                cat_columns=self.cat_columns,
+                class_problem=self.class_problem,
+                random_state=self.conf_training.global_random_state,
+                target_column=self.target_column,
+            )
+            df = self.autofe_generator.fit_transform(df, df[self.target_column])
+
+            # Log AutoFE feature counts
+            if hasattr(self.experiment_tracker, "add_results"):
+                _autofe_generated = (
+                    len(getattr(self.autofe_generator, "_group_by_means", {})) + 1
+                )
+                _autofe_retained = len(self.autofe_generator.retained_features)
+                logger.info(
+                    "AutoFE generated %d features, retained %d.",
+                    _autofe_generated,
+                    _autofe_retained,
+                )
 
         self.initial_checks(df)
 
@@ -385,27 +418,47 @@ class BlueCast:
             and self.category_encoder_orchestrator
             and not self.conf_training.cat_encoding_via_ml_algorithm
         ):
-            self.cat_encoder = BinaryClassTargetEncoder(
-                self.category_encoder_orchestrator.to_target_encode,
-                random_state=self.conf_training.global_random_state,
-            )
-            x_train = self.cat_encoder.fit_target_encode_binary_class(x_train, y_train)
-            x_test = self.cat_encoder.transform_target_encode_binary_class(x_test)
+            if getattr(self.conf_training, "advanced_target_encoding", False):
+                self.cat_encoder = OOFTargetEncoder(
+                    cat_columns=self.category_encoder_orchestrator.to_target_encode,
+                    random_state=self.conf_training.global_random_state,
+                )
+                x_train = self.cat_encoder.fit_transform(x_train, y_train)
+                x_test = self.cat_encoder.transform(x_test)
+            else:
+                self.cat_encoder = BinaryClassTargetEncoder(
+                    self.category_encoder_orchestrator.to_target_encode,
+                    random_state=self.conf_training.global_random_state,
+                )
+                x_train = self.cat_encoder.fit_target_encode_binary_class(
+                    x_train, y_train
+                )
+                x_test = self.cat_encoder.transform_target_encode_binary_class(x_test)
         elif (
             self.cat_columns is not None
             and self.class_problem == "multiclass"
             and self.category_encoder_orchestrator
             and not self.conf_training.cat_encoding_via_ml_algorithm
         ):
-            self.cat_encoder = MultiClassTargetEncoder(
-                self.category_encoder_orchestrator.to_target_encode,
-                self.target_column,
-                random_state=self.conf_training.global_random_state,
-            )
-            x_train = self.cat_encoder.fit_target_encode_multiclass(
-                x_train.copy(), y_train
-            )
-            x_test = self.cat_encoder.transform_target_encode_multiclass(x_test.copy())
+            if getattr(self.conf_training, "advanced_target_encoding", False):
+                self.cat_encoder = OOFTargetEncoder(
+                    cat_columns=self.category_encoder_orchestrator.to_target_encode,
+                    random_state=self.conf_training.global_random_state,
+                )
+                x_train = self.cat_encoder.fit_transform(x_train, y_train)
+                x_test = self.cat_encoder.transform(x_test)
+            else:
+                self.cat_encoder = MultiClassTargetEncoder(
+                    self.category_encoder_orchestrator.to_target_encode,
+                    self.target_column,
+                    random_state=self.conf_training.global_random_state,
+                )
+                x_train = self.cat_encoder.fit_target_encode_multiclass(
+                    x_train.copy(), y_train
+                )
+                x_test = self.cat_encoder.transform_target_encode_multiclass(
+                    x_test.copy()
+                )
 
         if self.conf_training.cat_encoding_via_ml_algorithm:
             cat_cols = [col for col in self.cat_columns if col != self.target_column]
@@ -479,6 +532,27 @@ class BlueCast:
                 self.ml_model.conf_params_catboost = self.conf_params
             else:
                 self.ml_model.conf_params_catboost = CatboostFinalParamConfig()
+        elif hasattr(self.ml_model, "conf_params_xgboost"):
+            if (
+                getattr(self.conf_training, "use_focal_loss_for_imbalance", False)
+                and self.class_problem == "binary"
+            ):
+                minority_count = (
+                    y_train.sum()
+                    if y_train.mean() < 0.5
+                    else len(y_train) - y_train.sum()
+                )
+                if minority_count / len(y_train) < 0.0001:
+                    scale_pos_weight = (len(y_train) - y_train.sum()) / max(
+                        y_train.sum(), 1
+                    )
+                    if getattr(self.ml_model, "conf_params_xgboost", None) is not None:
+                        self.ml_model.conf_params_xgboost.params["scale_pos_weight"] = (
+                            scale_pos_weight
+                        )
+                        logger.info(
+                            f"Extreme imbalance detected (<0.01%). Injecting scale_pos_weight={scale_pos_weight} (Focal Loss Mod)."
+                        )
 
         self.ml_model.fit(x_train, x_test, y_train, y_test)
 
@@ -625,6 +699,12 @@ class BlueCast:
             df, ignore_cols=[self.target_column]
         )
 
+        if (
+            getattr(self.conf_training, "enable_autofe", False)
+            and self.autofe_generator
+        ):
+            df = self.autofe_generator.transform(df)
+
         if self.custom_preprocessor:
             df, _ = self.custom_preprocessor.transform(df, prediction_mode=True)
             df = df.reset_index(drop=True)
@@ -654,19 +734,20 @@ class BlueCast:
         if (
             self.cat_columns
             and self.cat_encoder
-            and self.class_problem == "binary"
-            and isinstance(self.cat_encoder, BinaryClassTargetEncoder)
             and not self.conf_training.cat_encoding_via_ml_algorithm
         ):
-            df = self.cat_encoder.transform_target_encode_binary_class(df.copy())
-        elif (
-            self.cat_columns
-            and self.cat_encoder
-            and self.class_problem == "multiclass"
-            and isinstance(self.cat_encoder, MultiClassTargetEncoder)
-            and not self.conf_training.cat_encoding_via_ml_algorithm
-        ):
-            df = self.cat_encoder.transform_target_encode_multiclass(df.copy())
+            if getattr(
+                self.conf_training, "advanced_target_encoding", False
+            ) and isinstance(self.cat_encoder, OOFTargetEncoder):
+                df = self.cat_encoder.transform(df.copy())
+            elif self.class_problem == "binary" and isinstance(
+                self.cat_encoder, BinaryClassTargetEncoder
+            ):
+                df = self.cat_encoder.transform_target_encode_binary_class(df.copy())
+            elif self.class_problem == "multiclass" and isinstance(
+                self.cat_encoder, MultiClassTargetEncoder
+            ):
+                df = self.cat_encoder.transform_target_encode_multiclass(df.copy())
 
         if self.conf_training.cat_encoding_via_ml_algorithm:
             cat_cols = [col for col in self.cat_columns if col != self.target_column]

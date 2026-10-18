@@ -188,3 +188,110 @@ class RegressionTargetEncoder:
         x.loc[:, self.cat_columns] = enc.transform(x[self.cat_columns])
         x[self.cat_columns] = x[self.cat_columns].astype(float)
         return x
+
+
+class OOFTargetEncoder:
+    """Out-of-Fold Target Encoder with Bayesian Smoothing.
+
+    Designed to strictly prevent target leakage while keeping robust encodings for rare categories.
+    """
+
+    def __init__(
+        self,
+        cat_columns: List[Union[str, float, int]],
+        random_state: int = 42,
+        cv: int = 5,
+        smoothing: float = 10.0,
+    ):
+        self.cat_columns = cat_columns
+        self.random_state = random_state
+        self.cv = cv
+        self.smoothing = smoothing
+        self.global_mean: float = 0.0
+        self.global_mappings: Dict[str, pd.DataFrame] = {}
+        self.is_fitted: bool = False
+
+    def _bayesian_smoothing(
+        self, df_cat: pd.Series, target: pd.Series, global_mean: float
+    ) -> pd.Series:
+        """Calculate Bayesian smoothed target encoding for a single categorical column."""
+        stats = target.groupby(df_cat).agg(["count", "mean"])
+
+        # Bayesian smoothing formula: (count * mean + smoothing * global_mean) / (count + smoothing)
+        smoothed = (stats["count"] * stats["mean"] + self.smoothing * global_mean) / (
+            stats["count"] + self.smoothing
+        )
+        return smoothed
+
+    def fit_transform(self, X: pd.DataFrame, y: pd.Series) -> pd.DataFrame:
+        """Fit and transform using Out-of-Fold methodology."""
+        logging.info(
+            f"Start OOF Target Encoding for {len(self.cat_columns)} columns..."
+        )
+
+        # Encode targets temporarily if they are strings
+        y_encoded = y
+        if y.dtype == "object" or y.dtype.name == "category":
+            y_encoded = pd.Series(LabelEncoder().fit_transform(y), index=y.index)
+
+        self.global_mean = y_encoded.mean()
+        X_encoded = X.copy()
+
+        kf = StratifiedKFold(
+            n_splits=self.cv, shuffle=True, random_state=self.random_state
+        )
+
+        # Determine if regression or classification for StratifiedKFold
+        # If too many unique values, fallback to normal KFold logic by binning
+        if y_encoded.nunique() > 20:
+            y_stratify = pd.qcut(y_encoded, q=10, labels=False, duplicates="drop")
+        else:
+            y_stratify = y_encoded
+
+        # OOF Loop
+        for cat_col in self.cat_columns:
+            oof_encoded = pd.Series(np.nan, index=X.index)
+
+            for train_idx, val_idx in kf.split(X, y_stratify):
+                X_tr, y_tr = X.iloc[train_idx][cat_col], y_encoded.iloc[train_idx]
+                X_va = X.iloc[val_idx][cat_col]
+
+                smoothed_mapping = self._bayesian_smoothing(
+                    X_tr, y_tr, self.global_mean
+                )
+                oof_encoded.iloc[val_idx] = X_va.map(smoothed_mapping)
+
+            # Fill unseen categories in validation folds with global mean
+            oof_encoded = oof_encoded.fillna(self.global_mean)
+            X_encoded[cat_col] = oof_encoded.astype(float)
+
+            # Calculate global mapping for transform (test set)
+            self.global_mappings[str(cat_col)] = self._bayesian_smoothing(
+                X[cat_col], y_encoded, self.global_mean
+            )
+
+        self.is_fitted = True
+        return X_encoded
+
+    def transform(self, X: pd.DataFrame) -> pd.DataFrame:
+        """Transform unseen data using global mappings."""
+        if not self.is_fitted:
+            raise RuntimeError(
+                "OOFTargetEncoder must be fitted before calling transform."
+            )
+
+        logging.info("Start transforming data with OOF Target Encoder...")
+        X_encoded = X.copy()
+
+        for cat_col in self.cat_columns:
+            if cat_col in X_encoded.columns:
+                mapping = self.global_mappings.get(str(cat_col))
+                if mapping is not None:
+                    X_encoded[cat_col] = (
+                        X_encoded[cat_col]
+                        .map(mapping)
+                        .fillna(self.global_mean)
+                        .astype(float)
+                    )
+
+        return X_encoded

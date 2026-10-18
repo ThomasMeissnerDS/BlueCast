@@ -394,7 +394,8 @@ class RegularizedRegressionModel(BaseClassMlRegressionModel):
         else:
             self.imputer = SimpleImputer(strategy=imputer_strategy)
 
-        scaled_alpha = best_params.get("alpha") / len(x_train)
+        _alpha: float = best_params.get("alpha", 1.0)  # type: ignore[assignment]
+        scaled_alpha = _alpha / len(x_train)
 
         if model_type == "ridge":
             base_model = PyTorchMLPRegressor(

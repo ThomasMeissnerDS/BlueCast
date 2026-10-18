@@ -212,6 +212,11 @@ class XgboostModel(XgboostBaseModel):
                     self.conf_xgboost.col_sample_by_level_min,
                     self.conf_xgboost.col_sample_by_level_max,
                 ),
+                "colsample_bynode": trial.suggest_float(
+                    "colsample_bynode",
+                    self.conf_xgboost.col_sample_by_node_min,
+                    self.conf_xgboost.col_sample_by_node_max,
+                ),
                 "steps": trial.suggest_int(
                     "steps",
                     self.conf_xgboost.steps_min,
@@ -220,6 +225,11 @@ class XgboostModel(XgboostBaseModel):
                 ),
             }
             params = {**param, **train_on}
+
+            if "scale_pos_weight" in self.conf_params_xgboost.params:
+                params["scale_pos_weight"] = self.conf_params_xgboost.params[
+                    "scale_pos_weight"
+                ]
 
             sample_weight = trial.suggest_categorical("sample_weight", [True, False])
             params = update_params_based_on_tree_method(
@@ -368,6 +378,9 @@ class XgboostModel(XgboostBaseModel):
                     f"New best score: {study.best_value} from random seed  {self.conf_training.global_random_state + rst}"
                 )
                 xgboost_best_param = study.best_trial.params
+                old_scale_pos_weight = self.conf_params_xgboost.params.get(
+                    "scale_pos_weight"
+                )
 
                 self.conf_params_xgboost.params = {
                     "validate_parameters": False,
@@ -385,6 +398,7 @@ class XgboostModel(XgboostBaseModel):
                     "subsample": xgboost_best_param["subsample"],
                     "colsample_bytree": xgboost_best_param["colsample_bytree"],
                     "colsample_bylevel": xgboost_best_param["colsample_bylevel"],
+                    "colsample_bynode": xgboost_best_param["colsample_bynode"],
                     "eta": xgboost_best_param["eta"],
                     "steps": xgboost_best_param["steps"],
                 }
@@ -395,6 +409,10 @@ class XgboostModel(XgboostBaseModel):
                 self.conf_params_xgboost.params = update_params_with_best_params(
                     self.conf_params_xgboost.params, xgboost_best_param
                 )
+                if old_scale_pos_weight is not None:
+                    self.conf_params_xgboost.params["scale_pos_weight"] = (
+                        old_scale_pos_weight
+                    )
                 logging.info(f"Best params: {self.conf_params_xgboost.params}")
                 print(f"Best params: {self.conf_params_xgboost.params}")
                 self.conf_params_xgboost.sample_weight = xgboost_best_param[

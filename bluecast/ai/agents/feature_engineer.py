@@ -37,23 +37,53 @@ class FeatureEngineerAgent(BaseAgent):
                 "error": "No training data available.",
             }
 
-        # Hide target column from feature engineering to prevent schema mismatches on inference
+        target_series = None
         target_col = getattr(self.context, "target_col", None)
+
+        # We need the target_series for leakage checks before hiding the target
+        if (
+            target_col
+            and self.context.df_train is not None
+            and target_col in self.context.df_train.columns
+        ):
+            target_series = self.context.df_train[target_col]
+
+        # Hide target column from feature engineering to prevent schema mismatches on inference
         if target_col and target_col in df.columns:
             df = df.drop(columns=[target_col])
 
-        result = tool_create_feature(df, feature_code, state=self.feature_state)
+        result = tool_create_feature(
+            df, feature_code, state=self.feature_state, target_series=target_series
+        )
         if result["success"]:
             df = result.pop("df")
-            self.context.engineered_df = df
-            if feature_code not in self.context.feature_code_snippets:
-                self.context.feature_code_snippets.append(feature_code)
 
-            existing_code = self.context.feature_engineering_code or ""
-            if feature_code not in existing_code:
-                self.context.feature_engineering_code = (
-                    existing_code + f"\n# {description}\n{feature_code}\n"
+            leakage_rejected = result.pop("leakage_rejected", [])
+            if leakage_rejected:
+                result["message"] = (
+                    f"Warning: The following features were rejected because they leak the target (MI > threshold): {leakage_rejected}. They have been removed."
                 )
+
+            self.context.engineered_df = df
+
+            # Only add to snippets if there's still a valid new column or the snippet didn't create columns but still succeeded (e.g. state init)
+            # Actually, to be safe, if all newly created columns were rejected due to leakage, we should probably not append the code snippet.
+            new_cols = result.get("new_columns", [])
+            if not leakage_rejected or new_cols:
+                if feature_code not in self.context.feature_code_snippets:
+                    self.context.feature_code_snippets.append(feature_code)
+
+                existing_code = self.context.feature_engineering_code or ""
+                if feature_code not in existing_code:
+                    self.context.feature_engineering_code = (
+                        existing_code + f"\n# {description}\n{feature_code}\n"
+                    )
+            elif leakage_rejected and not new_cols:
+                result["success"] = False
+                result["error"] = (
+                    f"Snippet rejected: All generated features were flagged for data leakage: {leakage_rejected}"
+                )
+
         return result
 
     def _create_tfidf_wrapper(self, text_col: str, max_features: int = 50, **kw):
@@ -171,6 +201,25 @@ The following tools are available if you need them. Choose the most appropriate 
       df = state['my_agg'].fit_transform(df)
   else:
       df = state['my_agg'].transform(df)
+- `from bluecast.preprocessing.feature_creation import FrequencyEncoder`
+  Signature: FrequencyEncoder(cols=['cat_col1', 'cat_col2'])
+  Usage:
+  if 'freq_enc' not in state:
+      state['freq_enc'] = FrequencyEncoder(cols=['cat_col'])
+  if is_fit:
+      df = state['freq_enc'].fit_transform(df)
+  else:
+      df = state['freq_enc'].transform(df)
+- `from bluecast.preprocessing.feature_creation import TargetStatisticEncoder`
+  Signature: TargetStatisticEncoder(cols=['cat_col'], target_col='target', n_folds=5, smoothing=10.0)
+  Usage:
+  if 'te' not in state:
+      state['te'] = TargetStatisticEncoder(cols=['cat_col'], target_col='target_column_name')
+  if is_fit:
+      df = state['te'].fit_transform(df)
+  else:
+      df = state['te'].transform(df)
+  IMPORTANT: TargetStatisticEncoder is OOF-safe and uses K-Fold internally to prevent leakage.
 - `from bluecast.preprocessing.feature_creation import add_pca_features`
   Signature: add_pca_features(df, cols=['num1', 'num2', 'num3'], n_components=3, state=state, is_fit=is_fit)
   IMPORTANT: Always pass state=state and is_fit=is_fit to ensure train/test PCA consistency.

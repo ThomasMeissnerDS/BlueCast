@@ -37,7 +37,7 @@ def main():
     # optional: Force big batch sizes to speed up training
     custom_train = TrainingConfig(
         autotune_on_device="gpu",
-        #bluecast_cv_train_n_model=(5, 3),
+        # bluecast_cv_train_n_model=(5, 3),
         conf_tuning={"nn_batch_size_choices": [512, 1024, 2048]},
         calculate_shap_values=False,
         plot_hyperparameter_tuning_overview=False,
@@ -45,7 +45,7 @@ def main():
 
     # 2. RUN BLUECAST AI
     print("Initializing BlueCast AI...")
-    # Locally, Vertex AI automatically picks up Application Default Credentials 
+    # Locally, Vertex AI automatically picks up Application Default Credentials
     # if you have run `gcloud auth application-default login`.
     ai = BlueCastAI(
         api_key="",
@@ -78,7 +78,6 @@ In a nutshell:
     * use up to 200 hypertuning rounds for each model
     * make sure we do not have schema mismatches between train and unseen data (inference)
 """
-
 
     print("Starting pipeline execution...")
     # 4. Run BlueCastAI in 'precise' mode
@@ -134,7 +133,9 @@ In a nutshell:
 
     submission_path = "output/submission_stellar.csv"
     submission.to_csv(submission_path, index=False)
-    print(f"Submission saved successfully to {submission_path}! Ready to submit to Kaggle.")
+    print(
+        f"Submission saved successfully to {submission_path}! Ready to submit to Kaggle."
+    )
 
 
 if __name__ == "__main__":
